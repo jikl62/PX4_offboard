@@ -1,0 +1,2 @@
+i_authority_boundary_red: tests/test_authority_boundary.cpp:24: void denied(fc01::attitude::BoundaryContext, const char*): Assertion `!d.allowed&&arms==0' failed.
+bash: line 1:    11 Aborted                 /tmp/i_authority_boundary_red

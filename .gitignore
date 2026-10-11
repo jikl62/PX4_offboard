@@ -1,0 +1,47 @@
+# Local assistant state and editor indexes/settings
+/.agents/
+/.codex/
+/.vscode/
+/.idea/
+
+# ROS/colcon/CMake generated outputs (keep baseline evidence logs)
+build/
+install/
+log/
+logs/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+
+# Python environments and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.cache/
+
+# Local credentials; sanitized examples may be committed
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+credentials.json
+
+# Editor/OS temporary files; keep existing source/config backups
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Local upload review artifacts
+/UPLOAD_PREPARATION/

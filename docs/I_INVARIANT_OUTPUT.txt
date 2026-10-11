@@ -1,0 +1,8 @@
+{
+  "protected_files": 38,
+  "input_checks": 17,
+  "frozen_g2_headers": 14,
+  "ack_track_byte_equal": true,
+  "unchanged_flight_sentinels": 21,
+  "result": "PASS"
+}

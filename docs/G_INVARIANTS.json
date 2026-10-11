@@ -1,0 +1,132 @@
+{
+  "protected_candidate_files": {
+    "config/attitude_altitude.yaml": {
+      "sha256": "1cba75619a1f7ffc9894bcfbac2270a00bb80f4debc57c6efd28bab1664dfee3",
+      "byte_equal": true
+    },
+    "config/flight.yaml": {
+      "sha256": "d1c5196e4c9511e68be359b86d1913fa6eb2f8d25c0d93625c5d1f66752ebd30",
+      "byte_equal": true
+    },
+    "config/ground.yaml": {
+      "sha256": "639af4273ed614b065c50ec287af80a7330a89dfcc3152b386ddbaf64d414f60",
+      "byte_equal": true
+    },
+    "config/sim.yaml": {
+      "sha256": "36dcbacd1d393443724bfa6df0c7b5ec1806b081be71281910d3ea51fafd908f",
+      "byte_equal": true
+    },
+    "scripts/install.sh": {
+      "sha256": "042830f4c3f862a1745b671043e41370d3f5e09307c708af068449f8fd3ac11e",
+      "byte_equal": true
+    },
+    "scripts/common.sh": {
+      "sha256": "c8fa56491d9e7a36b2b7e0480af45b6bd3a906491f95cb6085cafc4720fccc35",
+      "byte_equal": true
+    },
+    "scripts/start.sh": {
+      "sha256": "94f73fef7c39d17746c6c88c15343bed2d0711d4eacc03bf0d1426f14ba01f82",
+      "byte_equal": true
+    },
+    "scripts/agent.sh": {
+      "sha256": "51a4eb8537ca03bddb95e122797ae24c6418d68576f3bac4688ee21aa4955412",
+      "byte_equal": true
+    },
+    "scripts/build_agent.sh": {
+      "sha256": "3ab174d0bfaabefd21e38d3a229939973146009a84115c3d094d6048da164b12",
+      "byte_equal": true
+    },
+    "tools/deploy.py": {
+      "sha256": "98c1af524d0e5172d41aee9de9d4cd330d7bea1ad296a8bb3b72b4097b5546a2",
+      "byte_equal": true
+    },
+    "tools/fcctl.py": {
+      "sha256": "c0b3c942762f36ae7229d5d76d2aaca7f151c77111f7b806de9897c764df40ec",
+      "byte_equal": true
+    },
+    "tools/start.py": {
+      "sha256": "9c05793ba86fac5483648bacfa70ff1efcc71fa482ec29a034368eb7dd85b5b0",
+      "byte_equal": true
+    },
+    "tools/pc.py": {
+      "sha256": "ca8ac56b7cd0f4f0afd54f0b555769ebc1c1d0e14dc2c65fe0e9d32150adf840",
+      "byte_equal": true
+    },
+    "src/jikl_fc01_system/CMakeLists.txt": {
+      "sha256": "3e2b96f7e5aa7b54c2d26e3861abc439e87a64f239ce0f13c9b52701afd98f67",
+      "byte_equal": true
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp": {
+      "sha256": "2fecf8bec7959e5972e9b166726e986391a16a7219c0b40b7368b09c4a2c4588",
+      "byte_equal": true
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp": {
+      "sha256": "393ad2ccd9280d314bd4e4623ff5f0b567fe3739626d6f10899b7079f80f16e8",
+      "byte_equal": true
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp": {
+      "sha256": "4b691b760e549494343bd4bb19f35aa4ee156e8e4b65e513d20065adf05b630f",
+      "byte_equal": true
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp": {
+      "sha256": "41830a6f3fb528c7f113ec8e266c62f65eae79ff864aceaca515fd08fb597038",
+      "byte_equal": true
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp": {
+      "sha256": "1494331116776b6877fd5e68ac8dbc616f162d78bc8c115e41c8a6b0ca05626b",
+      "byte_equal": true
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp": {
+      "sha256": "d251f5d71c4a32362cea2f4a0294828f4df7b123aeefabb8b9ae3ccad5a0a121",
+      "byte_equal": true
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp": {
+      "sha256": "1d93123b5118426fb99968ba9f443cbcd95573be8cd6b39357ad6efe37682638",
+      "byte_equal": true
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp": {
+      "sha256": "2c5220e947211dc5c42bc40ff480beed9f522fe90044cd570bb3cdbb7d13b1bd",
+      "byte_equal": true
+    },
+    "tests/test_ack_lifecycle.cpp": {
+      "sha256": "33a5f3e292dd8b19da1ae3b54c4f11d6443dc48dcec796c3bd506d016b5f007f",
+      "byte_equal": true
+    },
+    "tests/test_attitude_runtime.cpp": {
+      "sha256": "33b3dc0d1206cfe2c235b6a092e278e848b179c9b3bf83ee6945da062e439628",
+      "byte_equal": true
+    },
+    "tests/test_attitude_vertical.cpp": {
+      "sha256": "e3b2211494b2fb03626aa01ff4db81ba5703cdaecb643101d4259d25898d2790",
+      "byte_equal": true
+    },
+    "tests/test_attitude_wire.cpp": {
+      "sha256": "e049922dd63f2f62d8dd0af9b142d3a75c67abee9d07b2abc1ccab67e4efb8df",
+      "byte_equal": true
+    }
+  },
+  "ack_functions": {
+    "void ack(": {
+      "sha256": "75d02bd3009d09ce2a2de429c2aae51b65314e9d3b625e4047731fc18144c090",
+      "0.3.1_0.4.0_0.4.1_byte_equal": true
+    },
+    "void track(": {
+      "sha256": "bf2672b9ff3be4dcfa70b982bc9f83af21b72975fb367b64e2ffb996f8ee7854",
+      "0.3.1_0.4.0_0.4.1_byte_equal": true
+    }
+  },
+  "frozen_archive_checks": {
+    "baseline": {
+      "file_count": 30,
+      "matches_original_zip_bytes": true,
+      "zip_sha256": "56b61d8e599f08ac32098bb5825b80fa3c28dade01b70050e9099e90d4cc0e79"
+    },
+    "candidate": {
+      "file_count": 58,
+      "matches_original_zip_bytes": true,
+      "zip_sha256": "091b7425f8ba0a421545124965e026a7f2df62f5ba5dab54d4fec8d34c0a6bc8"
+    }
+  },
+  "px4_msgs_pin": "392e831c1f659429ca83902e66820d7094591410",
+  "delivered_defaults": "all four flight gates false; reviewed flight numbers -1.0 unchanged; no real flight values invented"
+}

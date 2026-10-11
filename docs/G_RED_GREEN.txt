@@ -1,0 +1,75 @@
+G1 RED/GREEN evidence. Final GREEN: G_TEST_OUTPUT.txt.
+Native socket EPERM ERROR in the first RED run is an environment/test-harness issue; it was corrected to explicit SKIP/UNKNOWN, not counted as product evidence.
+
+guard_red.txt
+exit=134
+g_guard_red: tests/test_publication_boundary.cpp:99: int main(): Assertion `!"final publisher guard missing (D I-01)"' failed.
+bash: line 1:    12 Aborted                 /tmp/g_guard_red
+
+socket_red.txt
+exit=1
+test_live_listener_refuses_update (test_socket_safety.SocketSafetyTests.test_live_listener_refuses_update) ... ERROR
+test_lock_busy_changed_path_unknown_service_fail_closed (test_socket_safety.SocketSafetyTests.test_lock_busy_changed_path_unknown_service_fail_closed) ... skipped 'RED: helper not implemented yet'
+test_policy_helper_required (test_socket_safety.SocketSafetyTests.test_policy_helper_required) ... FAIL
+test_socket_appearing_during_activation_refuses (test_socket_safety.SocketSafetyTests.test_socket_appearing_during_activation_refuses) ... skipped 'RED: helper not implemented yet'
+test_stale_looking_socket_diagnostic_only_retained (test_socket_safety.SocketSafetyTests.test_stale_looking_socket_diagnostic_only_retained) ... skipped 'RED: helper not implemented yet'
+test_update_rejects_regular_file_symlink_fifo_never_deletes (test_socket_safety.SocketSafetyTests.test_update_rejects_regular_file_symlink_fifo_never_deletes) ... 
+  test_update_rejects_regular_file_symlink_fifo_never_deletes (test_socket_safety.SocketSafetyTests.test_update_rejects_regular_file_symlink_fifo_never_deletes) (kind='file') ... FAIL
+  test_update_rejects_regular_file_symlink_fifo_never_deletes (test_socket_safety.SocketSafetyTests.test_update_rejects_regular_file_symlink_fifo_never_deletes) (kind='symlink') ... FAIL
+  test_update_rejects_regular_file_symlink_fifo_never_deletes (test_socket_safety.SocketSafetyTests.test_update_rejects_regular_file_symlink_fifo_never_deletes) (kind='fifo') ... FAIL
+
+======================================================================
+ERROR: test_live_listener_refuses_update (test_socket_safety.SocketSafetyTests.test_live_listener_refuses_update)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/3ab56a3c0fc8/g_work/implementation/fc01_system_v0.4.1-safety-hardening/tests/test_socket_safety.py", line 83, in test_live_listener_refuses_update
+    with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as listener:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py", line 233, in __init__
+    _socket.socket.__init__(self, family, type, proto, fileno)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+FAIL: test_policy_helper_required (test_socket_safety.SocketSafetyTests.test_policy_helper_required)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/3ab56a3c0fc8/g_work/implementation/fc01_system_v0.4.1-safety-hardening/tests/test_socket_safety.py", line 43, in test_policy_helper_required
+    self.assertTrue((ROOT/'tools/socket_safety.py').is_file(),'safe socket policy/diagnostic is absent')
+AssertionError: False is not true : safe socket policy/diagnostic is absent
+
+======================================================================
+FAIL: test_update_rejects_regular_file_symlink_fifo_never_deletes (test_socket_safety.SocketSafetyTests.test_update_rejects_regular_file_symlink_fifo_never_deletes) (kind='file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/3ab56a3c0fc8/g_work/implementation/fc01_system_v0.4.1-safety-hardening/tests/test_socket_safety.py", line 39, in test_update_rejects_regular_file_symlink_fifo_never_deletes
+    self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
+AssertionError: 0 == 0 : 已切换到 /tmp/tmpi_ier6bp/system/releases/new；新进程从空闲开始，不恢复旧任务。
+
+
+======================================================================
+FAIL: test_update_rejects_regular_file_symlink_fifo_never_deletes (test_socket_safety.SocketSafetyTests.test_update_rejects_regular_file_symlink_fifo_never_deletes) (kind='symlink')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/3ab56a3c0fc8/g_work/implementation/fc01_system_v0.4.1-safety-hardening/tests/test_socket_safety.py", line 39, in test_update_rejects_regular_file_symlink_fifo_never_deletes
+    self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
+AssertionError: 0 == 0 : 已切换到 /tmp/tmpna4463s7/system/releases/new；新进程从空闲开始，不恢复旧任务。
+
+
+======================================================================
+FAIL: test_update_rejects_regular_file_symlink_fifo_never_deletes (test_socket_safety.SocketSafetyTests.test_update_rejects_regular_file_symlink_fifo_never_deletes) (kind='fifo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/3ab56a3c0fc8/g_work/implementation/fc01_system_v0.4.1-safety-hardening/tests/test_socket_safety.py", line 39, in test_update_rejects_regular_file_symlink_fifo_never_deletes
+    self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
+AssertionError: 0 == 0 : 已切换到 /tmp/tmpd41il4sl/system/releases/new；新进程从空闲开始，不恢复旧任务。
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.084s
+
+FAILED (failures=4, errors=1, skipped=3)
+
+unknown_phase_red.txt
+exit=134
+g_unknown_red: tests/test_publication_boundary.cpp:25: void pair_denied(const fc01::attitude::BoundaryContext&, const fc01::attitude::Output&, const char*): Assertion `!d.allowed&&target==0&&heartbeat==0' failed.
+bash: line 1:    12 Aborted                 /tmp/g_unknown_red

@@ -1,0 +1,11 @@
+# 0.4.2 authority implementation decisions
+
+The binding design is the supplied Agent I formal task and authority contract. This document resolves their permitted choices.
+
+- Stage-one UNSET is allowed: disarmed exact-zero preparation preserves the field-tested 0.4.1 route. It locks UNSET; selecting a flight route then requires release and a fresh live safe-ground authorization.
+- Mode selection uses the existing trusted same-user live-console lease and is allowed only in IDLE with fresh, unique, healthy disarmed/landed/rest telemetry, actual and generated outputs off, no flight, no pending command and no fault. Locking starts in SELF_CHECK, earlier than PRESTREAM.
+- Confirmation flags are immutable startup configuration. Selection never confirms either contract and never writes PX4 parameters. RC link comes from observed InputRc plus PX4 manual-loss flags, not one manual_ready boolean. RC takeover additionally requires fresh mapped switch telemetry and explicit reviewed confirmation. Autonomous confirmation is separate and does not require RC.
+- Actual switch changes and observed kill/termination/failsafe/mode loss release the attempt. Mode loss is observable once Offboard has been seen, including before the terminal ACK. There is no retry/reacquisition state. All existing general/publication faults require restart; a takeover can be cleared only by explicit live `authority reset` on verified safe ground, outputs off and no pending transaction. Successful flight completion also requires this reset to reach selectable IDLE. Reset returns authority to UNSET and never starts preparation.
+- Session disconnect/lease expiry preserves 0.4.1 healthy controlled-descent behavior; RC loss or explicit takeover takes precedence and stops target/heartbeat. No unsafe automatic Disarm is added. Unresolved command-400 cannot be cleared by reset; safe-ground process restart remains the fallback.
+- Inputs are observation only. Absent RC/switch DDS topics leave RC readiness false, while stage-one and autonomous remain usable according to their own predicates. Exact firmware topic exposure, calibration, switches/kill and native override are UNKNOWN until separately tested.
+- Numerical gates/sentinels remain baseline values. Synthetic test configurations only are used to exercise second-stage paths.

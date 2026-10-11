@@ -1,0 +1,10 @@
+test_failure_flows_keep_output_stopped (test_runner.RunnerAcceptance.test_failure_flows_keep_output_stopped) ... ok
+test_required_scenarios_are_real_and_pass (test_runner.RunnerAcceptance.test_required_scenarios_are_real_and_pass) ... ok
+test_results_are_byte_deterministic (test_runner.RunnerAcceptance.test_results_are_byte_deterministic) ... ok
+test_scope_is_explicit (test_runner.RunnerAcceptance.test_scope_is_explicit) ... ok
+test_success_is_zero_only_without_arm (test_runner.RunnerAcceptance.test_success_is_zero_only_without_arm) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 2.791s
+
+OK

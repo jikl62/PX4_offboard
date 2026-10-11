@@ -1,0 +1,2 @@
+i_authority_runtime_red: tests/test_authority_runtime.cpp:11: void default_and_selection(): Assertion `!r.request("TAKEOFF",{1},s,t).accepted' failed.
+bash: line 1:    11 Aborted                 /tmp/i_authority_runtime_red

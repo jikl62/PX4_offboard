@@ -1,0 +1,220 @@
+{
+  "input_handoff_sha256_checks": {
+    "passed": 17,
+    "total": 17
+  },
+  "frozen_input_checks": {
+    "supplied_0.4.1": {
+      "file_count": 86,
+      "matches_original_zip_bytes_and_modes": true,
+      "zip_sha256": "cc7ba2384524855790138dc18f63265ff66358a3eaeaf8fd3ff775580a44c5dc"
+    },
+    "supplied_G2": {
+      "file_count": 29,
+      "matches_original_zip_bytes_and_modes": true,
+      "zip_sha256": "ea85c18797b049c07e86948c50be9316eaa1e4677c3b6994526bb0959008f2c2"
+    }
+  },
+  "protected_candidate_files": {
+    "config/flight.yaml": {
+      "byte_and_mode_equal": true,
+      "sha256": "d1c5196e4c9511e68be359b86d1913fa6eb2f8d25c0d93625c5d1f66752ebd30"
+    },
+    "config/ground.yaml": {
+      "byte_and_mode_equal": true,
+      "sha256": "639af4273ed614b065c50ec287af80a7330a89dfcc3152b386ddbaf64d414f60"
+    },
+    "config/sim.yaml": {
+      "byte_and_mode_equal": true,
+      "sha256": "36dcbacd1d393443724bfa6df0c7b5ec1806b081be71281910d3ea51fafd908f"
+    },
+    "scripts/agent.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "51a4eb8537ca03bddb95e122797ae24c6418d68576f3bac4688ee21aa4955412"
+    },
+    "scripts/build_agent.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "3ab174d0bfaabefd21e38d3a229939973146009a84115c3d094d6048da164b12"
+    },
+    "scripts/collect.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "b8e730cf35df39dca06e44bf23f1dd26ce8683741ac973c1190d2e313c988096"
+    },
+    "scripts/common.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "c8fa56491d9e7a36b2b7e0480af45b6bd3a906491f95cb6085cafc4720fccc35"
+    },
+    "scripts/console.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "0e9648fa2d701395b16207bca15efc205cf7b71e5cdf6292646e067a52be9be3"
+    },
+    "scripts/export_portable.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "6531c5f6844929568adba58f1764f6c0bb904f35dab73d1649539fe3b7605f3d"
+    },
+    "scripts/install.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "042830f4c3f862a1745b671043e41370d3f5e09307c708af068449f8fd3ac11e"
+    },
+    "scripts/run.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "09fff8f4c136930d4328d5cad69fbabf3e1b54d60e30fa7f3fe1e89790f125cf"
+    },
+    "scripts/service.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "254a891f8a5759bae3fe43093c0fca699560c52c3663d45aad26cf3e95883701"
+    },
+    "scripts/start.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "94f73fef7c39d17746c6c88c15343bed2d0711d4eacc03bf0d1426f14ba01f82"
+    },
+    "scripts/test.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "66904ad0bae51262249b7b12fea977a88aa155093eb10fbea30b9b6f38022d25"
+    },
+    "scripts/update.sh": {
+      "byte_and_mode_equal": true,
+      "sha256": "55c4a83d4f540df286cee840fa97e1c420f8b740d6b61c5fc039feb166faf73c"
+    },
+    "src/jikl_fc01_system/CMakeLists.txt": {
+      "byte_and_mode_equal": true,
+      "sha256": "3e2b96f7e5aa7b54c2d26e3861abc439e87a64f239ce0f13c9b52701afd98f67"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "41830a6f3fb528c7f113ec8e266c62f65eae79ff864aceaca515fd08fb597038"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "d251f5d71c4a32362cea2f4a0294828f4df7b123aeefabb8b9ae3ccad5a0a121"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "2fecf8bec7959e5972e9b166726e986391a16a7219c0b40b7368b09c4a2c4588"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "393ad2ccd9280d314bd4e4623ff5f0b567fe3739626d6f10899b7079f80f16e8"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "2ba7525cbd3f34fe53deb4d04223678e6d72389d94d6b44805209a1256d01b08"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "1d93123b5118426fb99968ba9f443cbcd95573be8cd6b39357ad6efe37682638"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "1f2e0c4ca84b71ab20cd63177dfbedd9a920591f5daf5b65be8604e128909b58"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "e450d86a6b47fe06d596a2354083ead6231833dc661abe766e82f145f7258858"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "4b691b760e549494343bd4bb19f35aa4ee156e8e4b65e513d20065adf05b630f"
+    },
+    "src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "2c5220e947211dc5c42bc40ff480beed9f522fe90044cd570bb3cdbb7d13b1bd"
+    },
+    "tests/test_ack_lifecycle.cpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "33a5f3e292dd8b19da1ae3b54c4f11d6443dc48dcec796c3bd506d016b5f007f"
+    },
+    "tests/test_attitude_vertical.cpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "e3b2211494b2fb03626aa01ff4db81ba5703cdaecb643101d4259d25898d2790"
+    },
+    "tests/test_attitude_wire.cpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "e049922dd63f2f62d8dd0af9b142d3a75c67abee9d07b2abc1ccab67e4efb8df"
+    },
+    "tests/test_publication_runtime.cpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "43042958f577f2db1b32092a7770584ded95b767fe33d80f6ce24738e7804a33"
+    },
+    "tests/test_socket.cpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "93294556d6f20c741ec7d0adf610fa547d5c3e0c262cb5e177cdd8fdb0fa57a5"
+    },
+    "tests/test_socket_boundary.cpp": {
+      "byte_and_mode_equal": true,
+      "sha256": "fbac45e78ee75fa020498db72ad273c5a23bb546dd2c75c3892a8002a0901365"
+    },
+    "tests/test_socket_safety.py": {
+      "byte_and_mode_equal": true,
+      "sha256": "06f15b7bae10688f24dfca700a3f1f2b8be61475e72d09e5dd99068ec4d58296"
+    },
+    "tools/deploy.py": {
+      "byte_and_mode_equal": true,
+      "sha256": "98c1af524d0e5172d41aee9de9d4cd330d7bea1ad296a8bb3b72b4097b5546a2"
+    },
+    "tools/pc.py": {
+      "byte_and_mode_equal": true,
+      "sha256": "ca8ac56b7cd0f4f0afd54f0b555769ebc1c1d0e14dc2c65fe0e9d32150adf840"
+    },
+    "tools/socket_safety.py": {
+      "byte_and_mode_equal": true,
+      "sha256": "ccde51fe06c9a82d97513373d2a0e88bd66121c1f7ff0f73b731da5aeb9c45c4"
+    },
+    "tools/start.py": {
+      "byte_and_mode_equal": true,
+      "sha256": "9c05793ba86fac5483648bacfa70ff1efcc71fa482ec29a034368eb7dd85b5b0"
+    },
+    "tools/update.py": {
+      "byte_and_mode_equal": true,
+      "sha256": "16e44c981776c5aeb6c121101d33e7d9904d6dc5ea67e71dd5931bb6231a7776"
+    }
+  },
+  "protected_methods": {
+    "ack": {
+      "byte_equal": true,
+      "sha256": "a2799da1e1dd27d4e8e90c0e87f38085337423219c9a2f066698a859b4c6ca8e"
+    },
+    "track": {
+      "byte_equal": true,
+      "sha256": "832b0154ede9c7c90f553d1051d6d2f111203ebb51eaca56c15aa8aab588e870"
+    }
+  },
+  "existing_attitude_config_and_validation_byte_equal_after_removing_two_booleans": true,
+  "delivered_existing_yaml_values_unchanged": true,
+  "four_flight_gates": {
+    "flight_actions_enabled": false,
+    "arm_enabled": false,
+    "takeoff_enabled": false,
+    "flight_parameters_confirmed": false
+  },
+  "two_authority_confirmations": {
+    "rc_takeover_confirmed": false,
+    "autonomous_failsafe_confirmed": false
+  },
+  "flight_numerical_sentinels": {
+    "aa_hover_thrust": -1.0,
+    "aa_thrust_min": -1.0,
+    "aa_thrust_max": -1.0,
+    "aa_thrust_slew": -1.0,
+    "aa_height_gain": -1.0,
+    "aa_velocity_gain": -1.0,
+    "aa_integral_gain": -1.0,
+    "aa_integral_limit": -1.0,
+    "aa_max_height": -1.0,
+    "aa_max_climb": -1.0,
+    "aa_max_descent": -1.0,
+    "aa_ramp_seconds": -1.0,
+    "aa_settle_seconds": -1.0,
+    "aa_landing_seconds": -1.0,
+    "aa_height_tolerance": -1.0,
+    "aa_speed_tolerance": -1.0,
+    "aa_ascent_timeout": -1.0,
+    "aa_descent_timeout": -1.0,
+    "aa_saturation_seconds": -1.0,
+    "aa_max_flight_seconds": -1.0,
+    "aa_max_tilt_deg": -1.0
+  },
+  "px4_msgs_pin": "392e831c1f659429ca83902e66820d7094591410",
+  "frozen_g2_headers_match_supplied_0.4.1": 14,
+  "real_arm_takeoff_nonzero_authorized": false
+}

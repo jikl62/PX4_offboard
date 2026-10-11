@@ -1,0 +1,5 @@
+C01_ARMED_GROUND_LAND at_rest=false landed=true accepted=1 phase=SAFETY fault=UNKNOWN_AIRBORNE publish=0 cmd=0 still_armed=1 reason=GROUND_NOT_CONFIRMED_BEFORE_CANCEL
+C02_LIFTOFF_TIMEOUT powered=1 peak_thrust=0.4 phase=SAFETY fault=GROUND_ABORT publish_after=0 cmd_after=0 last_400_tracker_sent=1 (this may be prior Arm)
+C04_ZERO_THRUST_90ROLL_FINAL_SINK allowed=1 target_publishes=1 mode_publishes=1 reason=ALLOWED
+C05_TTY_AUTHORITY_TAKEOVER previous_phase=THRUST_RAMP accepted=1 resulting_phase=SAFETY px4_still_offboard=1 still_armed=1 post_command=0 heartbeat=0
+C03_FROZEN_LAND_STAMP since_arm=28000 current=28000 phase=THRUST_RAMP (ArmedGround requires continuous land evidence)

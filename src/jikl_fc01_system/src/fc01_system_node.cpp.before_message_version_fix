@@ -1,0 +1,177 @@
+#include "jikl_fc01_system/runtime.hpp"
+#include "jikl_fc01_system/unix_server.hpp"
+#include <px4_msgs/msg/battery_status.hpp>
+#include <px4_msgs/msg/failsafe_flags.hpp>
+#include <px4_msgs/msg/offboard_control_mode.hpp>
+#include <px4_msgs/msg/trajectory_setpoint.hpp>
+#include <px4_msgs/msg/vehicle_command.hpp>
+#include <px4_msgs/msg/vehicle_command_ack.hpp>
+#include <px4_msgs/msg/vehicle_land_detected.hpp>
+#include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <px4_msgs/msg/vehicle_status.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <chrono>
+#include <csignal>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <thread>
+
+namespace f=fc01;namespace v=jikl_velocity;
+using Local=px4_msgs::msg::VehicleLocalPosition;
+using Status=px4_msgs::msg::VehicleStatus;
+using Land=px4_msgs::msg::VehicleLandDetected;
+using Battery=px4_msgs::msg::BatteryStatus;
+using Flags=px4_msgs::msg::FailsafeFlags;
+using Ack=px4_msgs::msg::VehicleCommandAck;
+using Command=px4_msgs::msg::VehicleCommand;
+using Mode=px4_msgs::msg::OffboardControlMode;
+using Target=px4_msgs::msg::TrajectorySetpoint;
+static_assert(Status::MESSAGE_VERSION==1&&Local::MESSAGE_VERSION==0&&Land::MESSAGE_VERSION==0&&Ack::MESSAGE_VERSION==0&&Command::MESSAGE_VERSION==0&&Mode::MESSAGE_VERSION==0&&Target::MESSAGE_VERSION==0,"FC01 requires pinned PX4 v1.16.0 message definitions");
+namespace {
+volatile std::sig_atomic_t stop_requested=0;
+void stop_handler(int){stop_requested=1;}
+double steady(){return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();}
+std::string number(double value,bool valid=true){if(!valid||!std::isfinite(value))return "null";std::ostringstream out;out<<std::setprecision(9)<<value;return out.str();}
+const char* boolean(bool value){return value?"true":"false";}
+std::string default_socket(){const char* env=std::getenv("FC01_SOCKET");if(env)return env;const char* home=std::getenv("HOME");if(!home)throw std::runtime_error("HOME missing");return std::string(home)+"/.cache/fc01/control.sock";}
+}
+class SystemNode final:public rclcpp::Node {
+ public:
+  SystemNode():Node("fc01_system"){
+    if(get_parameter("use_sim_time").as_bool())throw std::runtime_error("use_sim_time must be false");
+    f::Config config;
+    config.profile=declare_parameter<std::string>("profile","ground");
+    config.flight_enabled=declare_parameter<bool>("flight_enabled",false);
+    config.control.max_height=declare_parameter<double>("max_height_m",5.);
+    config.control.max_radius=declare_parameter<double>("max_radius_m",3.);
+    config.control.xy_speed=declare_parameter<double>("max_xy_speed",.3);
+    config.control.z_speed=declare_parameter<double>("max_z_speed",.3);
+    config.control.climb_speed=config.control.z_speed;
+    config.control.yaw_speed=declare_parameter<double>("max_yaw_rate",.5);
+    config.validate();runtime_=std::make_unique<f::Runtime>(config);config_=config;
+    const std::string socket=declare_parameter<std::string>("socket_path",default_socket());
+    const auto parent=std::filesystem::path(socket).parent_path();
+    std::filesystem::create_directories(parent);
+    struct stat parent_stat{};
+    if(lstat(parent.c_str(),&parent_stat)!=0||!S_ISDIR(parent_stat.st_mode)||parent_stat.st_uid!=getuid()||(parent_stat.st_mode&0022))throw std::runtime_error("socket directory must be owned and not writable by other users");
+    server_=std::make_unique<f::UnixServer>(socket);
+    const auto qos=rclcpp::SensorDataQoS().keep_last(10);
+    local_sub_=create_subscription<Local>("/fmu/out/vehicle_local_position",qos,[this](Local::ConstSharedPtr m){receive(*m,local_,local_stamp_);});
+    status_sub_=create_subscription<Status>("/fmu/out/vehicle_status_v1",qos,[this](Status::ConstSharedPtr m){receive(*m,status_,status_stamp_);});
+    land_sub_=create_subscription<Land>("/fmu/out/vehicle_land_detected",qos,[this](Land::ConstSharedPtr m){receive(*m,land_,land_stamp_);});
+    battery_sub_=create_subscription<Battery>("/fmu/out/battery_status",qos,[this](Battery::ConstSharedPtr m){if(m->id==1)receive(*m,battery_,battery_stamp_);});
+    flags_sub_=create_subscription<Flags>("/fmu/out/failsafe_flags",qos,[this](Flags::ConstSharedPtr m){receive(*m,flags_,flags_stamp_);});
+    ack_sub_=create_subscription<Ack>("/fmu/out/vehicle_command_ack",qos,[this](Ack::ConstSharedPtr m){runtime_->ack({m->timestamp,m->command,m->result,m->target_system,m->target_component,m->from_external},steady());
+      std::cout<<"{\"kind\":\"ack\",\"command\":"<<m->command<<",\"result\":"<<int(m->result)<<",\"target_system\":"<<int(m->target_system)<<",\"target_component\":"<<m->target_component<<"}"<<std::endl;});
+    command_pub_=create_publisher<Command>("/fmu/in/vehicle_command",10);
+    mode_pub_=create_publisher<Mode>("/fmu/in/offboard_control_mode",10);
+    target_pub_=create_publisher<Target>("/fmu/in/trajectory_setpoint",10);
+    const auto logpath=declare_parameter<std::string>("csv_path","");
+    if(!logpath.empty()){
+      csv_.open(logpath,std::ios::app);
+      if(!csv_)throw std::runtime_error("cannot open CSV log");
+      csv_<<"steady_s,phase,nav_state,armed,landed,xy_valid,z_valid,vxy_valid,vz_valid,heading_good,local_age_s,x_ned,y_ned,z_ned,vx_ned,vy_ned,vz_ned,ax_ned,ay_ned,az_ned,relative_height_m,reason\n";
+    }
+    std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)<<",\"flight_enabled\":"<<boolean(config.flight_enabled)<<",\"automatic_arm\":false,\"socket\":"<<f::quote(socket)<<"}"<<std::endl;
+  }
+  bool tick(){
+    const double now=steady();auto s=snapshot(now);
+    const bool resting=s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed&&s.at_rest;
+    if(resting){if(rest_since_<0)rest_since_=now;s.stationary_seconds=now-rest_since_;}
+    else rest_since_=-1;
+    if(resting&&s.local_fresh&&local_.z_valid&&!reference_set_&&s.stationary_seconds>=2){reference_z_=local_.z;reference_set_=true;}
+    if(runtime_->active()){reference_z_=runtime_->flight_core().origin().z;reference_set_=true;}
+    if(stop_requested&&!stopping_){stopping_=true;stop_since_=now;runtime_->request("LAND",{},s,now);}
+    server_->poll([this,&s,now](const f::Request& req){
+      auto reply=runtime_->request(req.op,req.values,s,now);
+      if(req.op=="STOP"&&reply.accepted)stop_requested=1;
+      std::string out=state(s,now,"reply",req.seq,reply.accepted,reply.message);
+      if(req.op!="PING")std::cout<<out<<std::endl;
+      return out;
+    },[this,&s,now]{runtime_->disconnect(s,now);});
+    auto output=runtime_->step(s,now);
+    if(output.send_ground)publish_command(Command::VEHICLE_CMD_DO_SET_MODE,1,7);
+    if(output.flight.command==v::VehicleCommand::Offboard)publish_command(Command::VEHICLE_CMD_DO_SET_MODE,1,6);
+    else if(output.flight.command==v::VehicleCommand::Arm)publish_command(Command::VEHICLE_CMD_COMPONENT_ARM_DISARM,1,0);
+    else if(output.flight.command==v::VehicleCommand::Land)publish_command(Command::VEHICLE_CMD_NAV_LAND,0,0);
+    if(output.flight.control!=v::Control::None){
+      Mode mode{};mode.timestamp=timestamp();mode.position=output.flight.control==v::Control::Position;mode.velocity=output.flight.control==v::Control::Velocity;
+      Target target{};target.timestamp=mode.timestamp;target.position.fill(NAN);target.velocity.fill(NAN);target.acceleration.fill(NAN);target.jerk.fill(NAN);
+      if(mode.position)target.position={float(output.flight.position.x),float(output.flight.position.y),float(output.flight.position.z)};
+      if(mode.velocity)target.velocity={float(output.flight.velocity.x),float(output.flight.velocity.y),float(output.flight.velocity.z)};
+      target.yaw=float(output.flight.yaw);target.yawspeed=float(output.flight.yaw_rate);
+      target_pub_->publish(target);mode_pub_->publish(mode);
+    }
+    if(now-printed_>=.5){printed_=now;auto line=state(s,now);server_->publish(line);std::cout<<line<<std::endl;write_csv(s,now);}
+    if(stopping_){
+      if(s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed&&!runtime_->active())return false;
+      if(now-stop_since_>=60){std::cerr<<"Shutdown timed out: PX4/operator must complete recovery; no re-arm or forced disarm\n";return false;}
+    }
+    return true;
+  }
+ private:
+  template<class T>void receive(const T& msg,T& destination,f::Stamp& stamp){if(stamp.accept(msg.timestamp,steady()))destination=msg;}
+  std::uint64_t timestamp(){return std::uint64_t(get_clock()->now().nanoseconds()/1000);}
+  void publish_command(std::uint32_t id,float p1,float p2){
+    Command cmd{};cmd.timestamp=timestamp();cmd.command=id;cmd.param1=p1;cmd.param2=p2;
+    cmd.target_system=1;cmd.target_component=1;cmd.source_system=1;cmd.source_component=191;cmd.from_external=true;command_pub_->publish(cmd);
+    std::cout<<"{\"kind\":\"send\",\"command\":"<<id<<",\"param1\":"<<p1<<",\"param2\":"<<p2<<"}"<<std::endl;
+  }
+  f::Snapshot snapshot(double now){
+    f::Snapshot s;s.status_fresh=status_stamp_.fresh(now,2.5);s.land_fresh=land_stamp_.fresh(now,2.5);s.local_fresh=local_stamp_.fresh(now,.5);
+    s.battery_fresh=battery_stamp_.fresh(now,1.);s.manual_fresh=flags_stamp_.fresh(now,2.5);
+    s.time_regressed=status_stamp_.regressed||land_stamp_.regressed||local_stamp_.regressed||battery_stamp_.regressed||flags_stamp_.regressed;
+    s.status_stamp=status_stamp_.value;s.land_stamp=land_stamp_.value;s.system=status_.system_id;s.component=status_.component_id;
+    s.at_rest=land_.at_rest;s.calibration=status_.calibration_enabled||status_.rc_calibration_in_progress;s.hil=status_.hil_state!=Status::HIL_STATE_OFF;
+    s.stabilized_selectable=(status_.can_set_nav_states_mask&(1U<<Status::NAVIGATION_STATE_STAB))!=0;
+    s.battery_connected=battery_.connected;s.battery_warning=battery_.warning;s.power_valid=status_.power_input_valid;s.manual_lost=flags_.manual_control_signal_lost;s.dead_reckoning=local_.dead_reckoning;s.nav_state=status_.nav_state;
+    auto& fb=s.feedback;fb.position={local_.x,local_.y,local_.z};fb.velocity={local_.vx,local_.vy,local_.vz};fb.yaw=local_.heading;
+    fb.fresh=s.status_fresh&&s.land_fresh&&s.local_fresh;
+    fb.valid=local_.xy_valid&&local_.z_valid&&local_.v_xy_valid&&local_.v_z_valid&&v::finite(fb.position)&&v::finite(fb.velocity)&&std::isfinite(fb.yaw);
+    fb.heading_ok=local_.heading_good_for_control;fb.preflight=status_.pre_flight_checks_pass;fb.armed=status_.arming_state==Status::ARMING_STATE_ARMED;fb.landed=land_.landed;
+    fb.offboard=s.nav_state==Status::NAVIGATION_STATE_OFFBOARD;fb.landing=s.nav_state==Status::NAVIGATION_STATE_AUTO_LAND;fb.failsafe=status_.failsafe;
+    // Each packed counter occupies its own byte. All position/velocity/heading resets terminate the mission.
+    fb.reset_id=std::uint32_t(local_.xy_reset_counter)|(std::uint32_t(local_.z_reset_counter)<<8)|(std::uint32_t(local_.vxy_reset_counter)<<16)|(std::uint32_t(local_.vz_reset_counter)<<24);
+    if(local_.heading_reset_counter!=heading_reset_){heading_reset_=local_.heading_reset_counter;if(runtime_->active())heading_changed_=true;}
+    s.time_regressed=s.time_regressed||heading_changed_;
+    s.traffic={count_publishers("/fmu/out/vehicle_status_v1"),count_publishers("/fmu/out/vehicle_land_detected"),count_publishers("/fmu/out/vehicle_command_ack"),count_subscribers("/fmu/in/vehicle_command"),count_publishers("/fmu/in/vehicle_command")};
+    fb.exclusive=s.system==1&&s.component==1&&s.traffic.status_publishers==1&&s.traffic.land_publishers==1&&s.traffic.ack_publishers==1&&s.traffic.command_subscribers==1&&s.traffic.command_publishers==1&&count_publishers("/fmu/out/vehicle_local_position")==1&&count_publishers("/fmu/in/offboard_control_mode")==1&&count_publishers("/fmu/in/trajectory_setpoint")==1&&count_subscribers("/fmu/in/offboard_control_mode")==1&&count_subscribers("/fmu/in/trajectory_setpoint")==1;
+    for(const char* topic:{"/fmu/in/vehicle_attitude_setpoint","/fmu/in/vehicle_rates_setpoint","/fmu/in/vehicle_thrust_setpoint","/fmu/in/vehicle_torque_setpoint","/fmu/in/actuator_motors"})if(count_publishers(topic)>0)fb.exclusive=false;
+    if(config_.profile!="sim"&&(count_publishers("/fmu/out/battery_status")!=1||count_publishers("/fmu/out/failsafe_flags")!=1))fb.exclusive=false;
+    return s;
+  }
+  std::string state(const f::Snapshot& s,double now,const char* kind="state",std::uint64_t seq=0,bool accepted=true,const std::string& message="")const{
+    std::ostringstream out;out<<"{\"kind\":"<<f::quote(kind)<<",\"seq\":"<<seq<<",\"accepted\":"<<boolean(accepted)<<",\"message\":"<<f::quote(message)
+      <<",\"phase\":"<<f::quote(v::name(runtime_->phase()))<<",\"active\":"<<boolean(runtime_->active())<<",\"profile\":"<<f::quote(config_.profile)<<",\"flight_enabled\":"<<boolean(config_.flight_enabled)
+      <<",\"nav_state\":"<<s.nav_state<<",\"armed\":"<<boolean(s.feedback.armed)<<",\"landed\":"<<boolean(s.feedback.landed)<<",\"at_rest\":"<<boolean(s.at_rest)
+      <<",\"status_fresh\":"<<boolean(s.status_fresh)<<",\"estimate_valid\":"<<boolean(s.feedback.fresh&&s.feedback.valid&&s.feedback.heading_ok&&!s.dead_reckoning)
+      <<",\"xy_valid\":"<<boolean(s.local_fresh&&local_.xy_valid)<<",\"z_valid\":"<<boolean(s.local_fresh&&local_.z_valid)<<",\"vxy_valid\":"<<boolean(s.local_fresh&&local_.v_xy_valid)<<",\"vz_valid\":"<<boolean(s.local_fresh&&local_.v_z_valid)
+      <<",\"heading_good\":"<<boolean(s.local_fresh&&local_.heading_good_for_control)<<",\"dead_reckoning\":"<<boolean(s.dead_reckoning)<<",\"preflight\":"<<boolean(s.status_fresh&&s.feedback.preflight)
+      <<",\"manual_signal\":"<<boolean(s.manual_fresh&&!s.manual_lost)<<",\"battery_connected\":"<<boolean(s.battery_fresh&&s.battery_connected)<<",\"voltage_v\":"<<number(battery_.voltage_v,s.battery_fresh&&s.battery_connected)
+      <<",\"local_age_s\":"<<number(now-local_stamp_.received,local_stamp_.received>=0)<<",\"position_ned\":["<<number(local_.x,s.local_fresh&&local_.xy_valid)<<','<<number(local_.y,s.local_fresh&&local_.xy_valid)<<','<<number(local_.z,s.local_fresh&&local_.z_valid)<<"]"
+      <<",\"velocity_ned\":["<<number(local_.vx,s.local_fresh&&local_.v_xy_valid)<<','<<number(local_.vy,s.local_fresh&&local_.v_xy_valid)<<','<<number(local_.vz,s.local_fresh&&local_.v_z_valid)<<"]"
+      <<",\"acceleration_ned_estimate\":["<<number(local_.ax,s.local_fresh&&local_.v_xy_valid)<<','<<number(local_.ay,s.local_fresh&&local_.v_xy_valid)<<','<<number(local_.az,s.local_fresh&&local_.v_z_valid)<<"]"
+      <<",\"relative_height_m\":"<<number(reference_z_-local_.z,reference_set_&&s.local_fresh&&local_.z_valid)
+      <<",\"ground_test\":"<<f::quote(runtime_->ground_name())<<",\"ground_reason\":"<<f::quote(runtime_->ground_reason())<<",\"reason\":"<<f::quote(runtime_->message())
+      <<",\"source_counts\":["<<s.traffic.status_publishers<<','<<s.traffic.land_publishers<<','<<s.traffic.ack_publishers<<"]"
+      <<",\"offboard_ack\":"<<runtime_->pending(176).result<<",\"arm_ack\":"<<runtime_->pending(400).result<<",\"land_ack\":"<<runtime_->pending(21).result<<'}';return out.str();
+  }
+  void write_csv(const f::Snapshot& s,double now){if(!csv_)return;csv_<<std::setprecision(9)<<now<<','<<v::name(runtime_->phase())<<','<<s.nav_state<<','<<s.feedback.armed<<','<<s.feedback.landed<<','<<local_.xy_valid<<','<<local_.z_valid<<','<<local_.v_xy_valid<<','<<local_.v_z_valid<<','<<local_.heading_good_for_control<<','<<number(now-local_stamp_.received,local_stamp_.received>=0)<<','<<local_.x<<','<<local_.y<<','<<local_.z<<','<<local_.vx<<','<<local_.vy<<','<<local_.vz<<','<<local_.ax<<','<<local_.ay<<','<<local_.az<<','<<number(reference_z_-local_.z,reference_set_&&s.local_fresh&&local_.z_valid)<<','<<f::quote(runtime_->message())<<'\n';csv_.flush();}
+  f::Config config_;std::unique_ptr<f::Runtime> runtime_;std::unique_ptr<f::UnixServer> server_;
+  Local local_{};Status status_{};Land land_{};Battery battery_{};Flags flags_{};
+  f::Stamp local_stamp_,status_stamp_,land_stamp_,battery_stamp_,flags_stamp_;
+  double printed_{},rest_since_{-1},reference_z_{},stop_since_{};bool reference_set_{},stopping_{},heading_changed_{};std::uint8_t heading_reset_{};
+  std::ofstream csv_;
+  rclcpp::Subscription<Local>::SharedPtr local_sub_;rclcpp::Subscription<Status>::SharedPtr status_sub_;rclcpp::Subscription<Land>::SharedPtr land_sub_;rclcpp::Subscription<Battery>::SharedPtr battery_sub_;rclcpp::Subscription<Flags>::SharedPtr flags_sub_;rclcpp::Subscription<Ack>::SharedPtr ack_sub_;
+  rclcpp::Publisher<Command>::SharedPtr command_pub_;rclcpp::Publisher<Mode>::SharedPtr mode_pub_;rclcpp::Publisher<Target>::SharedPtr target_pub_;
+};
+int main(int argc,char** argv){
+  rclcpp::init(argc,argv);std::signal(SIGINT,stop_handler);std::signal(SIGTERM,stop_handler);
+  int code=0;
+  try{auto node=std::make_shared<SystemNode>();while(rclcpp::ok()){const auto start=std::chrono::steady_clock::now();rclcpp::spin_some(node);if(!node->tick())break;std::this_thread::sleep_until(start+std::chrono::milliseconds(50));}}
+  catch(const std::exception& error){std::cerr<<"[ERROR] "<<error.what()<<'\n';code=2;}
+  rclcpp::shutdown();return code;
+}

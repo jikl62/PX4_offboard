@@ -1,0 +1,1 @@
+i_kill_retention_red: tests/test_authority_telemetry.cpp:38: int main(): Assertion `killed.facts(.05,.5,true,false,1,1).kill' failed.

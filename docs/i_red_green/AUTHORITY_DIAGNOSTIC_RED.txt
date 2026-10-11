@@ -1,0 +1,1 @@
+i_authority_diagnostic_red: tests/test_publication_boundary.cpp:32: void arm_denied(const fc01::attitude::BoundaryContext&, const char*): Assertion `!d.allowed&&sent==0&&std::string(a::name(d.reason))==reason' failed.

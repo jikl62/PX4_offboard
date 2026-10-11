@@ -1,0 +1,20 @@
+{
+  "baseline": {
+    "zip_tar_bytes_match": true,
+    "zip_files": 30,
+    "tar_files": 30,
+    "different": []
+  },
+  "candidate": {
+    "zip_tar_bytes_match": true,
+    "zip_files": 58,
+    "tar_files": 58,
+    "different": []
+  },
+  "original_patch_replay": {
+    "exit": 0,
+    "byte_equal": true,
+    "different": []
+  },
+  "normalization": "Strip archive root and normalize harmless ./ member prefix before byte comparison."
+}

@@ -1,0 +1,5 @@
+24/24 PASS
+Repeated JSON byte-identical: PASS
+SHA256: 10a1ff37c1b27f69b9126325fa1ccb7b786fbc5f608d899028db9cdabd7a58a8
+Real hardware authorized: false
+Real DDS: UNKNOWN

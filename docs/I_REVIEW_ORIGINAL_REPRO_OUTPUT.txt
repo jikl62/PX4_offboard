@@ -1,0 +1,7 @@
+first_sample rc_ready=1 switches_ready=1 takeoff_accepted=1 command=2 arm_sink=1 boundary=ALLOWED
+idle_kill "authority_mode":"AUTONOMOUS_NO_RC","authority_attempt_mode":"UNSET","authority_locked":false,"authority_ready":true,"authority_reason":"AUTHORITY_READY","rc_link_ready":false,"rc_takeover_ready":false,"rc_takeover_confirmed":false,"autonomous_failsafe_ready":true,"autonomous_failsafe_confirmed":true,"operator_takeover_latched":false,"takeover_reason":""
+pre_step_kill "authority_mode":"AUTONOMOUS_NO_RC","authority_attempt_mode":"AUTONOMOUS_NO_RC","authority_locked":true,"authority_ready":true,"authority_reason":"AUTHORITY_READY","rc_link_ready":false,"rc_takeover_ready":false,"rc_takeover_confirmed":false,"autonomous_failsafe_ready":true,"autonomous_failsafe_confirmed":true,"operator_takeover_latched":false,"takeover_reason":""
+kill takeoff_accepted=1 arm_sink=0 boundary=OPERATOR_TAKEOVER_LATCHED
+generic_fault_after_takeover reset_accepted=1 reply=AUTHORITY_RESET_ACCEPTED
+
+switch_changes=2 observed_generation=0 takeover=0 publish=1

@@ -1,0 +1,1 @@
+i_authority_telemetry_red: tests/test_authority_telemetry.cpp:40: int main(): Assertion `!"actual distinct RC/switch authority observation is absent"' failed.

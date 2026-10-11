@@ -1,0 +1,11 @@
+first: returncode=-6
+review-regressions-red: tests/test_authority_review.cpp:25: void first_sample(): Assertion `!facts.rc_link_ready&&!facts.rc_switches_ready' failed.
+
+fault: returncode=-6
+review-regressions-red: tests/test_authority_review.cpp:55: void fault_after_takeover(): Assertion `!r.request("AUTHORITY_RESET",{},s,t).accepted' failed.
+
+counter: returncode=-6
+review-regressions-red: tests/test_authority_review.cpp:75: void switch_counter(): Assertion `facts.switch_generation!=s.attitude.operator_switch_generation' failed.
+
+diagnostic: returncode=-6
+review-regressions-red: tests/test_authority_review.cpp:99: void immediate_diagnostics(): Assertion `json.find("\"authority_ready\":false")!=std::string::npos' failed.

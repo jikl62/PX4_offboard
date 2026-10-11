@@ -1,0 +1,46 @@
+ack lifecycle tests: PASS
+attitude-altitude runtime tests: PASS (stage locks, ACK+status, faults, full flight lifecycle, sequential 400)
+attitude/vertical/ownership tests: PASS (quaternion, resets, signs, feed-forward, limits, anti-windup, faults)
+PX4 attitude wire / profile publisher plan: PASS
+authority final Arm/nonzero sinks, both routes, lock identity and exact-zero regression: PASS
+independent review regressions (all): PASS
+authority Runtime admission/selection/phase locks/takeover/ground reset/pending400: PASS
+actual authority RC/switch observation helper: PASS
+stage_one_nonzero_thrust_rejected_at_final_boundary: PASS
+stage_one_zero_thrust_allowed_with_four_gates_false: PASS
+arm_blocked_if_flight_actions_false: PASS
+arm_blocked_if_arm_enabled_false: PASS
+arm_blocked_if_takeoff_enabled_false: PASS
+arm_blocked_if_parameters_confirmed_false: PASS
+arm_phase_shutdown_lease_disarmed_health_and_all_inputs_policy_only: PASS
+nonzero_gate_truth_table_phase_shutdown_health_lease_and_heartbeat_supervision: PASS
+four_gates_json_and_attitude_profile_ownership: PASS
+runtime_to_final_boundary_stage_one_ready_with_four_gates_false_one_shot_and_disconnect: PASS
+native AF_UNIX bind/listen: SKIP (execution sandbox permission; runtime UNKNOWN): cannot bind controller socket
+socket regular-file protection / telemetry stamp regression: PASS
+server_stale_looking_socket_refused_without_connect_or_delete: PASS
+server_lifetime_lock_and_lock_symlink_refusal: PASS
+actual ROS adapter syntax against type/API fixture: PASS; real Humble build/link and DDS: UNKNOWN
+test_deterministic_real_core_and_sink_evidence (test_authority_harness.AuthorityHarnessTests.test_deterministic_real_core_and_sink_evidence) ... ok
+test_actual_runtime_authority_json (test_authority_tools.AuthorityToolsTests.test_actual_runtime_authority_json) ... ok
+test_authority_changes_one_shot_never_connect (test_authority_tools.AuthorityToolsTests.test_authority_changes_one_shot_never_connect) ... ok
+test_authority_console_syntax (test_authority_tools.AuthorityToolsTests.test_authority_console_syntax) ... ok
+test_live_listener_refuses_update (test_socket_safety.SocketSafetyTests.test_live_listener_refuses_update) ... skipped 'native AF_UNIX listener forbidden: UNKNOWN'
+test_lock_busy_changed_path_unknown_service_fail_closed (test_socket_safety.SocketSafetyTests.test_lock_busy_changed_path_unknown_service_fail_closed) ... ok
+test_policy_helper_required (test_socket_safety.SocketSafetyTests.test_policy_helper_required) ... ok
+test_socket_appearing_during_activation_refuses (test_socket_safety.SocketSafetyTests.test_socket_appearing_during_activation_refuses) ... ok
+test_stale_looking_socket_diagnostic_only_retained (test_socket_safety.SocketSafetyTests.test_stale_looking_socket_diagnostic_only_retained) ... ok
+test_update_rejects_regular_file_symlink_fifo_never_deletes (test_socket_safety.SocketSafetyTests.test_update_rejects_regular_file_symlink_fifo_never_deletes) ... ok
+test_install_never_switches_current_and_explicit_rollback (test_tools.ToolsTests.test_install_never_switches_current_and_explicit_rollback) ... ok
+test_pinned_messages_refuse_wrong_vendor_hash (test_tools.ToolsTests.test_pinned_messages_refuse_wrong_vendor_hash) ... ok
+test_piped_input_is_not_a_live_console (test_tools.ToolsTests.test_piped_input_is_not_a_live_console) ... ok
+test_portable_export_name_and_clean_source (test_tools.ToolsTests.test_portable_export_name_and_clean_source) ... ok
+test_ready_client_waits_for_confirmed_state (test_tools.ToolsTests.test_ready_client_waits_for_confirmed_state) ... skipped 'AF_UNIX denied by execution sandbox; native console transport UNKNOWN'
+test_ready_command (test_tools.ToolsTests.test_ready_command) ... ok
+test_ready_protocol_over_pipe_fixture (test_tools.ToolsTests.test_ready_protocol_over_pipe_fixture) ... ok
+test_single_flight_commands_never_connect (test_tools.ToolsTests.test_single_flight_commands_never_connect) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.188s
+
+OK (skipped=2)

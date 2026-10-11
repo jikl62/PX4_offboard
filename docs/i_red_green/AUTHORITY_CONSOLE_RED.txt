@@ -1,0 +1,31 @@
+test_authority_changes_one_shot_never_connect (test_authority_tools.AuthorityToolsTests.test_authority_changes_one_shot_never_connect) ... FAIL
+test_authority_console_syntax (test_authority_tools.AuthorityToolsTests.test_authority_console_syntax) ... ERROR
+
+======================================================================
+ERROR: test_authority_console_syntax (test_authority_tools.AuthorityToolsTests.test_authority_console_syntax)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/2d5dc5588762/candidate/fc01_system_v0.4.2-authority-modes/tests/test_authority_tools.py", line 19, in test_authority_console_syntax
+    self.assertEqual(ctl.parse_command(text),(op,[],0.))
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/2d5dc5588762/candidate/fc01_system_v0.4.2-authority-modes/tools/fcctl.py", line 21, in parse_command
+    raise ValueError('未知命令；输入 help')
+ValueError: 未知命令；输入 help
+
+======================================================================
+FAIL: test_authority_changes_one_shot_never_connect (test_authority_tools.AuthorityToolsTests.test_authority_changes_one_shot_never_connect)
+----------------------------------------------------------------------
+ValueError: 未知命令；输入 help
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/2d5dc5588762/candidate/fc01_system_v0.4.2-authority-modes/tests/test_authority_tools.py", line 28, in test_authority_changes_one_shot_never_connect
+    with self.assertRaisesRegex(ValueError,'live interactive console'):ctl.run(args)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "live interactive console" does not match "未知命令；输入 help"
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.005s
+
+FAILED (failures=1, errors=1)
