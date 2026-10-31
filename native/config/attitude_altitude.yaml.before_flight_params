@@ -1,0 +1,46 @@
+fc01_system:
+  ros__parameters:
+    use_sim_time: false
+    profile: attitude_altitude
+    flight_enabled: false
+    flight_actions_enabled: false
+    arm_enabled: false
+    takeoff_enabled: false
+    flight_parameters_confirmed: false
+    # Separate reviewed contracts. Selecting an authority never confirms these.
+    rc_takeover_confirmed: true
+    autonomous_failsafe_confirmed: false
+    control_loop_hz: 20.0
+    aa_prestream_seconds: 1.2
+    aa_ground_seconds: 2.0
+    aa_stall_seconds: 0.3
+    aa_attitude_timeout: 0.5
+    aa_local_timeout: 0.5
+    aa_status_timeout: 2.5
+    aa_land_timeout: 2.5
+    aa_flags_timeout: 2.5
+    aa_console_timeout: 3.0
+    aa_command_timeout: 5.0
+    aa_ground_vz_tolerance: 0.1
+    # All flight parameters below are UNKNOWN sentinels. Not flight defaults.
+    aa_hover_thrust: -1.0
+    aa_thrust_min: -1.0
+    aa_thrust_max: -1.0
+    aa_thrust_slew: -1.0
+    aa_height_gain: -1.0
+    aa_velocity_gain: -1.0
+    aa_integral_gain: -1.0
+    aa_integral_limit: -1.0
+    aa_max_height: -1.0
+    aa_max_climb: -1.0
+    aa_max_descent: -1.0
+    aa_ramp_seconds: -1.0
+    aa_settle_seconds: -1.0
+    aa_landing_seconds: -1.0
+    aa_height_tolerance: -1.0
+    aa_speed_tolerance: -1.0
+    aa_ascent_timeout: -1.0
+    aa_descent_timeout: -1.0
+    aa_saturation_seconds: -1.0
+    aa_max_flight_seconds: -1.0
+    aa_max_tilt_deg: -1.0

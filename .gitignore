@@ -1,0 +1,9 @@
+/build/
+/install/
+/dist/
+/log/
+/.build/
+/.superpowers/
+/.vscode/
+__pycache__/
+*.py[cod]

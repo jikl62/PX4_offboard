@@ -1,0 +1,56 @@
+fc01_system:
+  ros__parameters:
+    use_sim_time: false
+    profile: attitude_altitude
+    flight_enabled: false
+    flight_actions_enabled: false
+    arm_enabled: false
+    takeoff_enabled: false
+    flight_parameters_confirmed: false
+    # Separate reviewed contracts. Selecting an authority never confirms these.
+    rc_takeover_confirmed: true
+    autonomous_failsafe_confirmed: false
+    control_loop_hz: 20.0
+    aa_prestream_seconds: 1.2
+    aa_ground_seconds: 2.0
+    aa_stall_seconds: 0.3
+    aa_attitude_timeout: 0.5
+    aa_local_timeout: 0.5
+    aa_status_timeout: 2.5
+    aa_land_timeout: 2.5
+    aa_flags_timeout: 2.5
+    aa_console_timeout: 3.0
+    aa_command_timeout: 5.0
+    aa_ground_vz_tolerance: 0.1
+    # Flight-only values are unvalidated engineering candidates, not permission to fly.
+    # All four flight gates above remain false; no autonomous Arm is enabled.
+    aa_armed_dwell_seconds: 1.0 # s, powered ground observation
+    aa_liftoff_dwell_seconds: 0.20 # s, joint detector and Z/VZ evidence
+    aa_liftoff_height_m: 0.12 # m relative to z0
+    aa_liftoff_speed_mps: 0.08 # m/s upwards (NED vz negative)
+    aa_touchdown_dwell_seconds: 0.30 # s, contact debounce
+    aa_height_lower_margin_m: 0.25 # m below z0, negative height envelope
+    aa_z_jump_limit_m: 0.45 # m/sample, structural estimator check
+    aa_vz_jump_limit_mps: 1.5 # m/s per sample
+    # All thrust/gain values below are CANDIDATES, NOT calibrated. Not flight defaults.
+    aa_hover_thrust: 0.5
+    aa_thrust_min: 0.12
+    aa_thrust_max: 0.75
+    aa_thrust_slew: 0.4
+    aa_height_gain: 0.5
+    aa_velocity_gain: 0.15
+    aa_integral_gain: 0.03
+    aa_integral_limit: 0.08
+    aa_max_height: 1.0
+    aa_max_climb: 0.3
+    aa_max_descent: 0.2
+    aa_ramp_seconds: 2.0
+    aa_settle_seconds: 2.0
+    aa_landing_seconds: 3.0
+    aa_height_tolerance: 0.15
+    aa_speed_tolerance: 0.15
+    aa_ascent_timeout: 10.0
+    aa_descent_timeout: 10.0
+    aa_saturation_seconds: 1.5
+    aa_max_flight_seconds: 30.0
+    aa_max_tilt_deg: 10.0

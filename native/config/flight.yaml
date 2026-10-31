@@ -1,0 +1,10 @@
+fc01_system:
+  ros__parameters:
+    use_sim_time: false
+    profile: flight
+    flight_enabled: false
+    max_height_m: 5.0
+    max_radius_m: 3.0
+    max_xy_speed: 0.3
+    max_z_speed: 0.3
+    max_yaw_rate: 0.5
