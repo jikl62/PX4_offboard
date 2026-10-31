@@ -4,6 +4,7 @@
 #include "jikl_fc01_system/vertical_feedback_guard.hpp"
 #include "jikl_fc01_system/authority.hpp"
 #include "jikl_fc01_system/rc_navigation.hpp"
+#include "jikl_fc01_system/vision_navigation.hpp"
 #include <memory>
 #include <cstdint>
 
@@ -21,6 +22,7 @@ struct Config {
   bool rc_takeover_confirmed{},autonomous_failsafe_confirmed{};
   VerticalConfig vertical;
   VerticalFeedbackConfig feedback_guard;
+  vision::Config visual;
   double prestream_seconds{1.2},ground_seconds{2},loop_hz{20},stall_seconds{.3};
   double attitude_timeout{.5},local_timeout{.5},status_timeout{2.5},land_timeout{2.5},flags_timeout{2.5};
   double console_timeout{3},command_timeout{5},ground_vz_tolerance{.1};
@@ -40,6 +42,10 @@ struct Config {
   bool px4_land_fallback_confirmed{};
   std::string px4_land_evidence_id;
   void validate() const{
+    visual.validate();
+    if(visual.enabled&&(!rc_navigation_enabled||visual.max_tilt_deg>max_tilt_deg||
+       visual.max_height>vertical.max_height||visual.max_vertical_speed>std::min(vertical.max_climb,vertical.max_descent)))
+      throw std::invalid_argument("VISUAL_NAVIGATION_REQUIRES_RC_ROUTE_AND_EXISTING_ENVELOPE");
     if(rc_navigation_enabled&&(!flight_actions_enabled||arm_enabled||!takeoff_enabled||!parameters_confirmed||
        !rc_takeover_confirmed||autonomous_failsafe_confirmed||bench_arm_only_enabled||rc_navigation_mode_slot<1||rc_navigation_mode_slot>6||
        !std::isfinite(rc_target_height)||rc_target_height<=0||rc_target_height>=vertical.max_height||
@@ -81,6 +87,7 @@ struct Config {
   }
 };
 struct Feedback {
+  vision::Input visual_input;
   Quaternion q{1,0,0,0};
   std::uint8_t quat_reset{},z_reset{},vz_reset{};
   double z{},vz{},stationary_seconds{},battery_voltage{NAN};
@@ -180,6 +187,7 @@ inline const char* name(FaultClass f){switch(f){
   case FaultClass::UnknownAirborne:return "UNKNOWN_AIRBORNE";
 }return "UNKNOWN_AIRBORNE";}
 struct Output {
+  bool visual_motion{};
   bool publish{};Quaternion q{1,0,0,0};std::array<double,3> thrust{};
   Command command{Command::None};double height{},speed{},target_height{},velocity_target{};
   bool saturated{},slew_limited{};
@@ -214,7 +222,7 @@ struct AuthorityGroundEvidence {
 };
 class Core {
  public:
-  explicit Core(Config config={}):c_(config),feedback_guard_(config.feedback_guard){c_.validate();
+  explicit Core(Config config={}):c_(config),visual_(config.visual),feedback_guard_(config.feedback_guard){c_.validate();
     if(c_.flight_actions_enabled){
       auto vertical=c_.vertical;
       vertical.ground_lower_margin=c_.height_lower_margin_m;
@@ -227,7 +235,22 @@ class Core {
   const VerticalFeedbackEvidence& vertical_feedback_evidence() const{return feedback_guard_.evidence();}
   bool active() const{return (phase_>=Phase::SelfCheck&&phase_<=Phase::ReleaseOffboard)||
     phase_==Phase::RcPrestream||phase_==Phase::RcWaitArm||phase_==Phase::RcWaitNavigation;}
-  void note_rc_publication(bool allowed,double now){if(c_.rc_navigation_enabled)rc_start_.note_commit(allowed,now);}
+  void note_rc_publication(bool allowed,double now){
+    if(c_.rc_navigation_enabled)rc_start_.note_commit(allowed,now);
+    if(allowed&&phase_==Phase::HeightHold&&visual_result_.active&&now>=visual_plan_at_&&now-visual_plan_at_<=c_.stall_seconds){
+      committed_yaw_=visual_result_.yaw;committed_yaw_set_=true;
+    }
+  }
+  const vision::Result& visual_result()const{return visual_result_;}
+  bool visual_current(const Feedback& s,double now)const{
+    return c_.visual.enabled&&phase_==Phase::HeightHold&&visual_result_.active&&
+      now>=visual_plan_at_&&now-visual_plan_at_<=c_.stall_seconds&&visual_.current(s.visual_input,now);
+  }
+  void visual_land(const Feedback& s,double now,const std::string& reason){
+    visual_result_.active=false;visual_result_.request_land=true;visual_result_.reason=reason;
+    visual_.stop();const auto failure=descend(s,now);
+    if(!failure.empty())fault(failure);else reason_="VISUAL_RECOVERY_"+reason;
+  }
   unsigned rc_prestream_commits()const{return rc_start_.commits();}
   bool rc_manual_arm_proven()const{return rc_start_.manual_arm_proven();}
   std::uint64_t rc_manual_armed_time()const{return rc_start_.manual_armed_time();}
@@ -278,7 +301,8 @@ class Core {
       ((!std::isfinite(s.stationary_seconds)||s.stationary_seconds<c_.ground_seconds)?8U:0U)|
       ((!std::isfinite(s.vz)||std::abs(s.vz)>c_.ground_vz_tolerance)?16U:0U);
   }
-  double yaw_reference() const{return reference_.yaw();}
+  double yaw_reference() const{return committed_yaw_set_?committed_yaw_:reference_.yaw();}
+  Quaternion level_target()const{const double yaw=yaw_reference();return {std::cos(yaw/2),0,0,std::sin(yaw/2)};}
   const authority::State& authority_state() const{return authority_;}
   const std::string& takeover_reason() const{return takeover_reason_;}
   bool restart_required() const{return restart_required_;}
@@ -515,6 +539,7 @@ class Core {
     enter(Phase::RequestArm,now);return {};
   }
   std::string descend(const Feedback& s,double now){
+    visual_.stop();visual_result_.active=false;
     if(c_.rc_navigation_enabled&&!rc_joined_){
       release_to_operator("RC_PREPARATION_CANCELLED_NO_AUTOMATIC_ARM_OR_DISARM");return {};
     }
@@ -731,7 +756,7 @@ class Core {
       }
       z0_=s.z;z_reset_=s.z_reset;vz_reset_=s.vz_reset;z_set_=true;enter(Phase::Prestream,now);
     }
-    out.publish=true;out.q=reference_.level();out.height=z0_-s.z;out.speed=-s.vz;out.target_height=command_height_;
+    out.publish=true;out.q=level_target();out.height=z0_-s.z;out.speed=-s.vz;out.target_height=command_height_;
     if(!std::isfinite(out.height)||!std::isfinite(out.speed)){fault("NONFINITE_RELATIVE_HEIGHT");return {};}
     if(flight_started_){
       const double lower_margin=bench_arm_only_active_?c_.bench_ground_down_tolerance_m:c_.height_lower_margin_m;
@@ -985,6 +1010,16 @@ class Core {
           // another 21/176/400. Same absolute completion deadline survives.
           enter(Phase::RecoveryDescent,now);
           reason_="PX4_LAND_ACK_OR_MODE_UNRESOLVED_NO_RETRY_GUARDED_RECOVERY";
+        }
+      }
+      if(phase_==Phase::HeightHold&&c_.visual.enabled){
+        visual_result_=visual_.step(s.visual_input,now,out.height,yaw_reference(),elapsed);
+        if(visual_result_.request_land){
+          visual_land(s,now,visual_result_.reason);descending=true;out.q=level_target();
+          if(phase_==Phase::Safety)return {};
+        }else if(visual_result_.active){
+          target_=visual_result_.target_height;out.q=visual_result_.q;out.visual_motion=true;
+          visual_plan_at_=now;reason_="VISUAL_"+visual_result_.reason;
         }
       }
       if(!height_feedback(s,out,now,elapsed,descending))return {};
@@ -1262,10 +1297,13 @@ class Core {
                        double takeoff_ceiling=1.){
     const double previous_height_target=command_height_;
     command_height_=descending?std::max(0.,command_height_-c_.vertical.max_descent*elapsed):
-                               std::min(target_,command_height_+c_.vertical.max_climb*elapsed);
+      (c_.visual.enabled&&phase_==Phase::HeightHold?
+        command_height_+std::clamp(target_-command_height_,-c_.vertical.max_descent*elapsed,c_.vertical.max_climb*elapsed):
+        std::min(target_,command_height_+c_.vertical.max_climb*elapsed));
     const double trajectory_velocity=(command_height_-previous_height_target)/elapsed;
     const double approach_speed=c_.vertical.height_gain*
-      (descending?command_height_:target_-command_height_);
+      (descending?command_height_:c_.visual.enabled&&phase_==Phase::HeightHold?
+        std::abs(target_-command_height_):target_-command_height_);
     const double velocity_feedforward=std::clamp(trajectory_velocity,-approach_speed,approach_speed);
     const auto control=vertical_->step({z0_,s.z,s.vz,true,true,true,s.z_reset,s.vz_reset},
                                      command_height_,elapsed,velocity_feedforward,takeoff_ceiling);
@@ -1439,6 +1477,8 @@ class Core {
   }
   RcNavigationStart rc_start_;bool rc_joined_{},rc_operator_live_{};double rc_observed_at_{};
   Config c_;Phase phase_{Phase::Idle};AttitudeReference reference_;
+  vision::Controller visual_;vision::Result visual_result_;
+  double visual_plan_at_{-1},committed_yaw_{};bool committed_yaw_set_{};
   VerticalFeedbackGuard feedback_guard_;
   std::unique_ptr<VerticalController> vertical_;
   bool interactive_{},flight_started_{},bench_arm_only_active_{},ground_abort_{},z_set_{},command_sent_{};

@@ -9,6 +9,9 @@
 #include "jikl_fc01_system/publication_audit.hpp"
 #include "jikl_fc01_system/authority_telemetry.hpp"
 #include "jikl_fc01_system/source_clock.hpp"
+#include "jikl_fc01_system/vision_ros_adapter.hpp"
+#include <jikl_fc01_system/msg/vision_state.hpp>
+#include <jikl_fc01_system/msg/navigation_command.hpp>
 #include <px4_msgs/msg/manual_control_setpoint.hpp>
 #include <px4_msgs/msg/manual_control_switches.hpp>
 #include <px4_msgs/msg/vehicle_attitude.hpp>
@@ -46,6 +49,8 @@ using Attitude=px4_msgs::msg::VehicleAttitude;
 using AttitudeTarget=px4_msgs::msg::VehicleAttitudeSetpoint;
 using Manual=px4_msgs::msg::ManualControlSetpoint;
 using Switches=px4_msgs::msg::ManualControlSwitches;
+using VisualState=jikl_fc01_system::msg::VisionState;
+using VisualCommand=jikl_fc01_system::msg::NavigationCommand;
 static_assert(Status::MESSAGE_VERSION==1&&Local::MESSAGE_VERSION==0&&Land::MESSAGE_VERSION==0&&Ack::MESSAGE_VERSION==0&&Command::MESSAGE_VERSION==0&&Target::MESSAGE_VERSION==0,"FC01 requires pinned PX4 v1.16.0 message definitions");
 static_assert(Attitude::MESSAGE_VERSION==0&&AttitudeTarget::MESSAGE_VERSION==0&&Manual::MESSAGE_VERSION==0,"FC01 attitude/manual interfaces require pinned PX4 v1.16 messages");
 namespace {
@@ -68,6 +73,28 @@ class SystemNode final:public rclcpp::Node {
     if(lstat(parent.c_str(),&parent_stat)!=0||!S_ISDIR(parent_stat.st_mode)||parent_stat.st_uid!=getuid()||(parent_stat.st_mode&0022))throw std::runtime_error("socket directory must be owned and not writable by other users");
     server_=std::make_unique<f::UnixServer>(socket);
     const auto qos=rclcpp::SensorDataQoS().keep_last(10);
+    if(config.attitude.visual.enabled){
+      visual_state_topic_=declare_parameter<std::string>("visual_state_topic","/fc01/vision/state");
+      visual_command_topic_=declare_parameter<std::string>("visual_command_topic","/fc01/navigation/command");
+      const auto depth=declare_parameter<std::int64_t>("visual_qos_depth",5);
+      const bool state_reliable=declare_parameter<bool>("visual_state_reliable",false);
+      const bool command_reliable=declare_parameter<bool>("visual_command_reliable",true);
+      if(depth<1||depth>20||visual_state_topic_.empty()||visual_command_topic_.empty()||
+         visual_state_topic_[0]!='/'||visual_command_topic_[0]!='/'||visual_state_topic_==visual_command_topic_||
+         visual_state_topic_.rfind("/fmu/",0)==0||visual_command_topic_.rfind("/fmu/",0)==0)
+        throw std::invalid_argument("INVALID_VISUAL_INPUT_TOPICS_OR_QOS");
+      auto state_qos=rclcpp::QoS(std::size_t(depth)).durability_volatile();
+      auto command_qos=rclcpp::QoS(std::size_t(depth)).durability_volatile();
+      if(state_reliable)state_qos.reliable();else state_qos.best_effort();
+      if(command_reliable)command_qos.reliable();else command_qos.best_effort();
+      visual_state_sub_=create_subscription<VisualState>(visual_state_topic_,state_qos,
+        [this](VisualState::ConstSharedPtr m){visual_inbox_.state(f::vision::state_from_message(*m),steady());});
+      visual_command_sub_=create_subscription<VisualCommand>(visual_command_topic_,command_qos,
+        [this](VisualCommand::ConstSharedPtr m){visual_inbox_.command(f::vision::command_from_message(*m),steady());});
+      std::cout<<"{\"kind\":\"visual_inputs\",\"state_topic\":"<<f::quote(visual_state_topic_)
+        <<",\"command_topic\":"<<f::quote(visual_command_topic_)<<",\"state_reliable\":"<<boolean(state_reliable)
+        <<",\"command_reliable\":"<<boolean(command_reliable)<<",\"qos_depth\":"<<depth<<"}"<<std::endl;
+    }
     if(config.profile=="attitude_altitude"){
       attitude_sub_=create_subscription<Attitude>("/fmu/out/vehicle_attitude",qos,[this](Attitude::ConstSharedPtr m){f::receive_sampled_source(*m,attitude_,attitude_stamp_,attitude_sample_,steady());});
       manual_sub_=create_subscription<Manual>("/fmu/out/manual_control_setpoint",qos,[this](Manual::ConstSharedPtr m){authority_telemetry_.manual(*m,steady(),timestamp(),config_.attitude.flags_timeout);});
@@ -138,6 +165,15 @@ class SystemNode final:public rclcpp::Node {
       return out;
     },[this,&s,now]{runtime_->disconnect(s,now);});
     auto output=runtime_->step(s,now);
+    // A task-input TTL may expire between calculation and the first sink.
+    // Re-enter the original descent controller before any motion is committed.
+    if(output.attitude.visual_motion){
+      const auto actual_time=steady();const auto actual=snapshot(actual_time);
+      if(!runtime_->visual_output_current(actual,actual_time)){
+        runtime_->request_visual_land(actual,actual_time,"INPUT_EXPIRED_BEFORE_SINK");
+        output=runtime_->step(actual,steady());
+      }
+    }
     if(config_.profile=="attitude_altitude"&&steady()-now>config_.attitude.stall_seconds){
       runtime_->abort_attitude("ROS_ADAPTER_CONTROL_LOOP_STALL");output={};
     }
@@ -171,19 +207,19 @@ class SystemNode final:public rclcpp::Node {
     bool attitude_sent=!output.attitude.publish;
     if(output.attitude.publish){
       try{
-        const auto decision=f::attitude::publish_attitude_at_boundary<Mode,AttitudeTarget>(
-          boundary_context(),output.attitude,timestamp(),
-          [this,&output](const AttitudeTarget& target){
-            if(!f::attitude::attitude_publication_policy(boundary_context(),output.attitude).allowed)
-              throw std::runtime_error("TARGET_FINAL_CONTEXT_CHANGED");
+        const auto decision=f::attitude::publish_attitude_resampled<Mode,AttitudeTarget>(
+          [this]{return boundary_context();},output.attitude,timestamp(),
+          [this](const AttitudeTarget& target){
             attitude_pub_->publish(target);publication_audit_.target_committed(steady(),target.thrust_body[2]);},
-          [this,&output](const Mode& mode){
-            // Re-sample after target publish; it can block/throw independently.
-            if(!f::attitude::attitude_publication_policy(boundary_context(),output.attitude).allowed)
-              throw std::runtime_error("HEARTBEAT_FINAL_CONTEXT_CHANGED");
+          [this](const Mode& mode){
             mode_pub_->publish(mode);publication_audit_.mode_committed(steady());});
         if(decision.allowed){last_attitude_output_=output.attitude;attitude_sent=true;runtime_->confirm_rc_output(true,steady());}
-        else {refuse_publication("attitude",decision);output={};}
+        else if(decision.reason==f::attitude::BoundaryReason::VisualInput){
+          // No sink ran: only the mission input expired/changed. A partial
+          // target/heartbeat failure still takes the hard exception path below.
+          const auto actual_time=steady();runtime_->request_visual_land(snapshot(actual_time),actual_time,"INPUT_EXPIRED_AT_FIRST_SINK");
+          publication_block_reason_="VISUAL_INPUT_RECOVERY_REQUESTED";output={};
+        }else {refuse_publication("attitude",decision);output={};}
       }catch(const std::exception& e){
         publication_audit_.failed();attitude_sent=false;boundary_fault_latched_=true;
         publication_block_reason_=std::string("PARTIAL_OR_FAILED_SETPOINT_PUBLICATION_")+e.what();
@@ -428,6 +464,11 @@ class SystemNode final:public rclcpp::Node {
       fb.exclusive=fb.exclusive&&count_publishers("/fmu/out/vehicle_attitude")==1;
     }
     if(config_.profile!="sim"&&(count_publishers("/fmu/out/battery_status")!=1||count_publishers("/fmu/out/failsafe_flags")!=1))fb.exclusive=false;
+    if(config_.attitude.visual.enabled){
+      const auto clock_ns=get_clock()->now().nanoseconds();
+      s.attitude.visual_input=visual_inbox_.snapshot(clock_ns>0?std::uint64_t(clock_ns):0,
+        count_publishers(visual_state_topic_),count_publishers(visual_command_topic_));
+    }
     return s;
   }
   std::string vertical_feedback_fields() const{
@@ -545,6 +586,16 @@ class SystemNode final:public rclcpp::Node {
       <<','<<f::attitude::flight_gates_json(config_.attitude)
       <<','<<runtime_->authority_json(s)
       <<",\"rc_navigation_enabled\":"<<boolean(config_.attitude.rc_navigation_enabled)
+      <<",\"visual_navigation_enabled\":"<<boolean(config_.attitude.visual.enabled)
+      <<",\"visual_motion\":"<<boolean(last_attitude_output_.visual_motion)
+      <<",\"visual_reason\":"<<f::quote(runtime_->attitude_core().visual_result().reason)
+      <<",\"visual_mode\":"<<int(runtime_->attitude_core().visual_result().mode)
+      <<",\"visual_state_sequence\":"<<s.attitude.visual_input.state.sequence
+      <<",\"visual_command_sequence\":"<<s.attitude.visual_input.command.sequence
+      <<",\"visual_state_valid_fields\":"<<s.attitude.visual_input.state.valid_fields
+      <<",\"visual_reset_counter\":"<<s.attitude.visual_input.state.reset_counter
+      <<",\"visual_state_age_s\":"<<number(now-s.attitude.visual_input.state.received_at,s.attitude.visual_input.state.received_at>=0)
+      <<",\"visual_command_age_s\":"<<number(now-s.attitude.visual_input.command.received_at,s.attitude.visual_input.command.received_at>=0)
       <<",\"rc_target_height\":"<<number(config_.attitude.rc_target_height)
       <<",\"rc_navigation_mode_slot\":"<<config_.attitude.rc_navigation_mode_slot
       <<",\"rc_prestream_commits\":"<<runtime_->attitude_core().rc_prestream_commits()
@@ -646,6 +697,9 @@ class SystemNode final:public rclcpp::Node {
   bool boundary_fault_latched_{};double control_started_{};std::string publication_block_reason_;
   Attitude attitude_{};f::attitude::Output last_attitude_output_;
   f::AuthorityTelemetry authority_telemetry_;
+  f::vision::Inbox visual_inbox_;std::string visual_state_topic_,visual_command_topic_;
+  rclcpp::Subscription<VisualState>::SharedPtr visual_state_sub_;
+  rclcpp::Subscription<VisualCommand>::SharedPtr visual_command_sub_;
   Local local_{};Status status_{};Land land_{};Battery battery_{};Flags flags_{};
   f::Stamp local_stamp_,status_stamp_,land_stamp_,battery_stamp_,flags_stamp_,attitude_stamp_;
   f::SourceSampleProgress local_sample_,attitude_sample_;

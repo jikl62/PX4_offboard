@@ -33,4 +33,19 @@ Decision publish_attitude_at_boundary(const BoundaryContext& c,const Output& out
   if(!nonzero(output.thrust))packet->second.thrust_body.fill(0.f);
   target_sink(packet->second);mode_sink(packet->first);return allow();
 }
+template<class Mode,class Target,class Context,class TargetSink,class ModeSink>
+Decision publish_attitude_resampled(Context&& context,const Output& output,std::uint64_t stamp,
+    TargetSink&& target_sink,ModeSink&& mode_sink){
+  auto decision=attitude_publication_policy(context(),output);if(!decision.allowed)return decision;
+  auto packet=wire<Mode,Target>(output,stamp);if(!packet)return deny(BoundaryReason::InvalidOutput);
+  if(!nonzero(output.thrust))packet->second.thrust_body.fill(0.f);
+  // Encoding may consume the remaining mission-input lifetime. No sink has
+  // run, so a refusal here remains recoverable by the native descent path.
+  decision=attitude_publication_policy(context(),output);if(!decision.allowed)return decision;
+  target_sink(packet->second);
+  // Once target committed, failure is partial publication, including TTL.
+  decision=attitude_publication_policy(context(),output);
+  if(!decision.allowed)throw std::runtime_error(std::string("HEARTBEAT_FINAL_CONTEXT_CHANGED_")+name(decision.reason));
+  mode_sink(packet->first);return allow();
+}
 } // namespace fc01::attitude

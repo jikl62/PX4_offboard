@@ -26,6 +26,8 @@ struct BoundaryContext {
   bool px4_land_command_committed{};
   std::uint64_t touchdown_baseline{};
   double yaw_reference{};
+  bool visual_motion_allowed{};
+  Quaternion visual_target_q{1,0,0,0};
   bool rc_manual_arm_proven{},rc_arm_evidence_pending{},rc_navigation_zero_allowed{};std::uint64_t rc_manual_armed_time{};
 };
 enum class BoundaryReason {
@@ -37,10 +39,12 @@ enum class BoundaryReason {
   NonfiniteTelemetry,TimeRegression,SourceClock,EstimatorReset,BatteryPreflight,FlightEnvelope,
   AuthorityUnset,AuthorityNotLocked,AuthorityChanged,OperatorTakeover,
   RcLink,RcUnconfirmed,RcTelemetry,AutonomousUnconfirmed,InvalidAuthority,CommandedAttitude,DisarmPhase,DisarmGround,
-  ReleasePhase,DisarmTransaction,LandFallback
+  ReleasePhase,DisarmTransaction,LandFallback,VisualInput,VisualAttitude
 };
 inline const char* name(BoundaryReason reason){
   switch(reason){
+    case BoundaryReason::VisualInput:return "VISUAL_INPUT_EXPIRED_OR_CHANGED";
+    case BoundaryReason::VisualAttitude:return "VISUAL_ATTITUDE_NOT_MATCHING_PLAN";
     case BoundaryReason::Allowed:return "ALLOWED";
     case BoundaryReason::WrongProfile:return "WRONG_PROFILE";
     case BoundaryReason::Shutdown:return "SHUTDOWN_LATCHED";
@@ -276,11 +280,20 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
   // target attitude/yaw reference. Exact-double nonzero test remains above.
   const auto commanded=normalized(output.q);
   if(!commanded||!std::isfinite(c.yaw_reference))return deny(BoundaryReason::CommandedAttitude);
-  const Quaternion level{std::cos(c.yaw_reference/2),0,0,std::sin(c.yaw_reference/2)};
+  Quaternion level{std::cos(c.yaw_reference/2),0,0,std::sin(c.yaw_reference/2)};
+  if(output.visual_motion){
+    if(!c.config.visual.enabled||c.phase!=Phase::HeightHold||!c.flight_started||!c.visual_motion_allowed)
+      return deny(BoundaryReason::VisualInput);
+    const auto expected=normalized(c.visual_target_q);if(!expected)return deny(BoundaryReason::VisualAttitude);
+    level=*expected;
+    const double cosine=std::clamp(1-2*((*commanded)[1]*(*commanded)[1]+(*commanded)[2]*(*commanded)[2]),-1.,1.);
+    if(std::acos(cosine)*180/3.14159265358979323846>std::min(c.config.visual.max_tilt_deg,c.config.max_tilt_deg)+1e-8)
+      return deny(BoundaryReason::VisualAttitude);
+  }
   double dot=0;for(unsigned k=0;k<4;++k)dot+=(*commanded)[k]*level[k];
   const double angle=2*std::acos(std::clamp(std::abs(dot),0.,1.));
-  if(!std::isfinite(angle)||angle>2.*3.14159265358979323846/180.)
-    return deny(BoundaryReason::CommandedAttitude);
+  if(!std::isfinite(angle)||angle>(output.visual_motion?1e-5:2.*3.14159265358979323846/180.))
+    return deny(output.visual_motion?BoundaryReason::VisualAttitude:BoundaryReason::CommandedAttitude);
   if(rc_stage(c.phase)){
     const auto& s=c.feedback;
     if(!c.config.rc_navigation_enabled||thrust_nonzero)return deny(BoundaryReason::StageOneNonzero);

@@ -17,7 +17,17 @@ namespace rclcpp {
 struct Parameter {bool as_bool() const{return false;}};
 struct Time {std::int64_t nanoseconds() const{return 1000000000;}};
 struct Clock {Time now() const{return {};}};
-struct SensorDataQoS {SensorDataQoS keep_last(int) const{return {};}};
+struct QoS {
+  explicit QoS(std::size_t){}
+  QoS keep_last(int) const{return *this;}
+  QoS reliable() const{return *this;}
+  QoS best_effort() const{return *this;}
+  QoS durability_volatile() const{return *this;}
+};
+struct SensorDataQoS:QoS {
+  SensorDataQoS():QoS(5){}
+  SensorDataQoS keep_last(int) const{return {};}
+};
 template<class T>struct Subscription {using SharedPtr=std::shared_ptr<Subscription<T>>;};
 template<class T>struct Publisher {using SharedPtr=std::shared_ptr<Publisher<T>>;void publish(const T&){};};
 class Node {
@@ -25,8 +35,8 @@ class Node {
   explicit Node(const std::string&){}
   Parameter get_parameter(const std::string&) const{return {};}
   template<class T>T declare_parameter(const std::string&,const T& value){return value;}
-  template<class T,class Callback>typename Subscription<T>::SharedPtr create_subscription(const std::string&,SensorDataQoS,Callback){return std::make_shared<Subscription<T>>();}
-  template<class T>typename Publisher<T>::SharedPtr create_publisher(const std::string&,int){return std::make_shared<Publisher<T>>();}
+  template<class T,class Qos,class Callback>typename Subscription<T>::SharedPtr create_subscription(const std::string&,Qos,Callback){return std::make_shared<Subscription<T>>();}
+  template<class T,class Qos>typename Publisher<T>::SharedPtr create_publisher(const std::string&,Qos){return std::make_shared<Publisher<T>>();}
   std::shared_ptr<Clock> get_clock(){return std::make_shared<Clock>();}
   std::size_t count_publishers(const std::string&) const{return 1;}
   std::size_t count_subscribers(const std::string&) const{return 1;}
@@ -52,6 +62,10 @@ MESSAGES={
     'vehicle_local_position':('VehicleLocalPosition',0,'std::uint64_t timestamp_sample{};float x{},y{},z{},vx{},vy{},vz{},z_deriv{},ax{},ay{},az{},heading{};bool xy_valid{},z_valid{},v_xy_valid{},v_z_valid{},heading_good_for_control{},dead_reckoning{};std::uint8_t xy_reset_counter{},z_reset_counter{},vxy_reset_counter{},vz_reset_counter{},heading_reset_counter{};'),
     'trajectory_setpoint':('TrajectorySetpoint',0,'std::array<float,3> position{},velocity{},acceleration{},jerk{};float yaw{},yawspeed{};'),
 }
+VISION_MESSAGES={
+    'vision_state':('VisionState', 'std::uint16_t valid_fields{};std::uint64_t sequence{};Stamp stamp;std::uint32_t reset_counter{};std::string frame_id,body_frame_id,source_id,angular_velocity_source;bool initialized{},tracking{},calibration_valid{};std::array<double,3> position{},velocity{},angular_velocity{};std::array<double,4> attitude{};std::array<double,36> pose_covariance{},twist_covariance{};double quality{};'),
+    'navigation_command':('NavigationCommand', 'std::uint64_t sequence{};Stamp stamp;std::uint32_t reset_counter{};std::string source_id,frame_id;std::uint8_t mode{};bool valid{},position_valid{},yaw_valid{},sticks_valid{};std::array<double,3> position{};double yaw{};std::array<double,4> sticks{};'),
+}
 def main():
     with tempfile.TemporaryDirectory(prefix='g_adapter_api_') as directory:
         root=Path(directory);(root/'rclcpp').mkdir();(root/'rclcpp/rclcpp.hpp').write_text(RCLCPP)
@@ -59,6 +73,10 @@ def main():
         for filename,(name,version,fields) in MESSAGES.items():
             const='' if version is None else f'static constexpr int MESSAGE_VERSION={version};'
             (msg/(filename+'.hpp')).write_text('#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\nnamespace px4_msgs::msg {struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;std::uint64_t timestamp{};'+const+fields+'};}\n')
+        vision=root/'jikl_fc01_system/msg';vision.mkdir(parents=True)
+        (vision/'stamp.hpp').write_text('#pragma once\n#include <cstdint>\nnamespace jikl_fc01_system::msg {struct Stamp{std::int32_t sec{};std::uint32_t nanosec{};};}\n')
+        for filename,(name,fields) in VISION_MESSAGES.items():
+            (vision/(filename+'.hpp')).write_text('#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\n#include <string>\n#include "jikl_fc01_system/msg/stamp.hpp"\nnamespace jikl_fc01_system::msg {struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;std::uint16_t schema_version{1};'+fields+'};}\n')
         for source in ('fc01_system_node.cpp','fc01_config_check.cpp'):
             subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-fsyntax-only','-I',str(root),'-I',str(ROOT/'src/jikl_fc01_system/include'),str(ROOT/'src/jikl_fc01_system/src'/source)],check=True)
     print('actual ROS adapter syntax against type/API fixture: PASS; real Humble build/link and DDS: UNKNOWN')

@@ -4,6 +4,7 @@
 namespace fc01 {
 inline attitude::Config attitude_parameters(rclcpp::Node& node){
   attitude::Config c;
+  c.visual.enabled=node.declare_parameter<bool>("visual_navigation_enabled",false);
   c.rc_navigation_enabled=node.declare_parameter<bool>("rc_navigation_enabled",false);
   c.rc_target_height=node.declare_parameter<double>("rc_target_height",.5);
   c.rc_navigation_mode_slot=node.declare_parameter<std::int64_t>("rc_navigation_mode_slot",6);
@@ -21,6 +22,16 @@ inline attitude::Config attitude_parameters(rclcpp::Node& node){
   c.loop_hz=node.declare_parameter<double>("control_loop_hz",20.);
   struct Entry {const char* name;double* value;};
   for(const auto& e:{
+      Entry{"visual_state_timeout",&c.visual.state_timeout},
+      {"visual_command_timeout",&c.visual.command_timeout},
+      {"visual_max_measurement_delay",&c.visual.max_measurement_delay},
+      {"visual_future_tolerance",&c.visual.future_tolerance},
+      {"visual_position_gain",&c.visual.position_gain},{"visual_velocity_gain",&c.visual.velocity_gain},
+      {"visual_max_speed",&c.visual.max_speed},{"visual_max_acceleration",&c.visual.max_acceleration},
+      {"visual_max_tilt_deg",&c.visual.max_tilt_deg},{"visual_max_yaw_rate",&c.visual.max_yaw_rate},
+      {"visual_max_vertical_speed",&c.visual.max_vertical_speed},{"visual_max_radius",&c.visual.max_radius},
+      {"visual_max_height",&c.visual.max_height},{"visual_min_quality",&c.visual.min_quality},
+      {"visual_max_position_jump",&c.visual.max_position_jump},{"visual_max_velocity_jump",&c.visual.max_velocity_jump},
       Entry{"aa_armed_dwell_seconds",&c.armed_dwell_seconds},
       {"aa_feedback_rate_tolerance_mps",&c.feedback_guard.rate_tolerance_mps},
       {"aa_feedback_dwell_seconds",&c.feedback_guard.dwell_seconds},

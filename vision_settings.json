@@ -1,0 +1,9 @@
+{
+  "enabled": false,
+  "state_topic": "/fc01/vision/state",
+  "command_topic": "/fc01/navigation/command",
+  "state_reliable": false,
+  "command_reliable": true,
+  "qos_depth": 5,
+  "parameters": {}
+}

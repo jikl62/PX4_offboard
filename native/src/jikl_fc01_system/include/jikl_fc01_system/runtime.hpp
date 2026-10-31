@@ -138,6 +138,10 @@ class Runtime {
     shutdown_latched_=true;request("LAND",{},s,now);
   }
   void abort_attitude(const std::string& reason){attitude_core_.block(reason);message_=reason;}
+  bool visual_output_current(const Snapshot& s,double now)const{return attitude_core_.visual_current(attitude_snapshot(s),now);}
+  void request_visual_land(const Snapshot& s,double now,const std::string& reason){
+    attitude_core_.visual_land(attitude_snapshot(s),now,reason);message_=attitude_core_.reason();
+  }
   const attitude::Core& attitude_core() const{return attitude_core_;}
   const char* phase_name() const{return config_.profile=="attitude_altitude"?attitude::name(attitude_core_.phase()):v::name(core_.phase());}
   g::State ground_state() const{return ground_?ground_->state():g::State::Waiting;}
@@ -224,6 +228,8 @@ class Runtime {
       pending_[index(400)].published;
     c.touchdown_baseline=attitude_core_.touchdown_baseline();
     c.yaw_reference=attitude_core_.yaw_reference();
+    c.visual_motion_allowed=attitude_core_.visual_current(c.feedback,now);
+    c.visual_target_q=attitude_core_.visual_result().q;
     c.shutdown=c.shutdown||s.publication_fault_latched;return c;
   }
   std::string authority_json(const Snapshot& s) const{

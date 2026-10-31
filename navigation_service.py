@@ -51,7 +51,9 @@ def load_profile(root,agent,entry=ENTRY):
     base=standby.validate(root,agent)
     selected=settings(entry)
     slot=selected.get('navigation_mode_slot',base['fc01_system']['ros__parameters'].get('rc_navigation_mode_slot',6))
-    return navigation_profile(base,selected.get('target_height_m',.5),slot)
+    config=navigation_profile(base,selected.get('target_height_m',.5),slot)
+    from vision_settings import load
+    return load(config,entry)
 
 def describe_row(row):
     state=row.get('state') or {}
