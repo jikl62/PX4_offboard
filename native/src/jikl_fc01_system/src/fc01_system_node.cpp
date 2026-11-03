@@ -221,9 +221,11 @@ class SystemNode final:public rclcpp::Node {
             mode_pub_->publish(mode);publication_audit_.mode_committed(steady());});
         if(decision.allowed){last_attitude_output_=output.attitude;attitude_sent=true;runtime_->confirm_rc_output(true,steady());}
         else if(decision.reason==f::attitude::BoundaryReason::VisualInput){
-          // No sink ran: only the mission input expired/changed. A partial
+          // No sink ran: the motion input or detector agreement changed. A partial
           // target/heartbeat failure still takes the hard exception path below.
-          const auto actual_time=steady();runtime_->request_visual_land(snapshot(actual_time),actual_time,"INPUT_EXPIRED_AT_FIRST_SINK");
+          const auto actual_time=steady();const auto actual=snapshot(actual_time);
+          runtime_->request_visual_land(actual,actual_time,actual.feedback.landed?
+            "FLIGHT_DETECTOR_CONTRADICTION_AT_FIRST_SINK":"INPUT_EXPIRED_AT_FIRST_SINK");
           publication_block_reason_="VISUAL_INPUT_RECOVERY_REQUESTED";output={};
         }else {refuse_publication("attitude",decision);output={};}
       }catch(const std::exception& e){

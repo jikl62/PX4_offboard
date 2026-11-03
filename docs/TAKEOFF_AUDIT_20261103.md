@@ -58,10 +58,11 @@ Python 负责配置、监督和观察；飞行设定值由原生控制器发布�
 
 ## 阶段、阈值与证据矩阵
 
-相对高度使用 `h=z0-z_NED`，向上速度使用 `up_v=-vz_NED`。`z0` 来自本次任务的新鲜安全地面准入；同一任务重复命令不重建基准。来源时间戳使用 PX4 时间域，本地持续时间使用 monotonic 时间；两者分别检查，不能互相替代。
+相对高度使用 `h=z0-z_NED`，向上速度使用 `up_v=-vz_NED`。`z0` 来自本次任务的新鲜安全地面准入；同一任务重复命令不重建基准。当前固件 uXRCE 序列化会给来源时间戳加 Agent 同步偏移；本工程要求收到的信封与原始样本时间和 ROS 系统时钟处于同一时间域，最多允许未来 100 ms。来源序列差分与本机 monotonic 持续时间分别检查；不能直接拿 ULog 中的 PX4 启动时间与 Unix 系统时间相减。映射不成立时拒绝控制，不能用接收新信封刷新原始样本寿命。
 
 | 阶段 / 字段 | 准入或退出证据 | 默认阈值及行为 |
 |---|---|---|
+| 全阶段反馈健康 | 严格递增的来源/原始样本、有效有限值、唯一发布源、时钟与 RC 权限；互不要求同一 tick 同时更新 | attitude/local 0.5 s；status/land/flags 2.5 s；battery 1.0 s；未来源偏差最多 0.1 s；活跃估计器重置、来源回退与循环停顿仍拒绝输出 |
 | 地面准备 / `NOT_STARTED` | 未解锁、landed、at_rest、稳定模式、杆位安全、RC 来源有效、健康反馈、连续静止 | 地面 2 s，`|vz|≤0.1 m/s`；不重复等待第二个 2 s |
 | `RC_PRESTREAM` / `NOT_STARTED` | 真实本地成功提交的零推力目标和心跳，PX4 Offboard signal 未丢失 | 1.2 s；提交数不少于 `ceil(loop_hz×1.2×0.8)`，20 Hz 时为 20 次；阻塞/拒绝发布不能充数 |
 | `RC_READY_WAIT_ARM` / `NOT_STARTED` | 准备完成后产生的新 CH5 手动解锁边沿，加匹配的新 Armed 状态与 RC 解锁原因 | 准备前产生、延迟到达的开关事件不算授权；程序 `arm_enabled=false` |
@@ -77,7 +78,7 @@ Python 负责配置、监督和观察；飞行设定值由原生控制器发布�
 
 离地汇合还要求 local 新鲜度 ≤0.5 s、land 新鲜度 ≤2.5 s；检测序列来源与接收最大间隔为 `min(1.25,2.5/2)=1.25 s`。原始 local 样本冻结、来源回退、接收时间回退、超龄、检测反弹为 landed 都会清理相应证据。上升段可桥接短暂刹停以等待慢检测；其有效期从**实际测得向上运动**起最多 2.5 s，新信封携带固定高度不能无限续期。
 
-`liftoff_confirmed` 记录本轮曾经通过的内部离地证据，降落过程中仍可为 true；它不是当前接触状态。`target_height_settled` 与 `navigation_allowed` 跟随当前阶段，退出高度保持就撤销。Core 在爬升/高度保持收到 landed 矛盾时立即停止视觉、转受控下降；最终发布端还会挡住计划之后才到达的 landed 矛盾。**单一矛盾检测不授权停桨**，实际 Disarm 仍须原有新的接地、状态和命令因果证据。
+`liftoff_confirmed` 记录本轮曾经通过的内部离地证据，降落过程中仍可为 true；它不是当前接触状态。`target_height_settled` 与 `navigation_allowed` 跟随当前阶段，退出高度保持就撤销。Core 在爬升/高度保持收到 landed 矛盾时立即停止视觉、转受控下降；最终发布端还会挡住计划之后才到达的 landed 矛盾，并单独记录 `FLIGHT_DETECTOR_CONTRADICTION_AT_FIRST_SINK`，避免误报为视觉指令过期。**单一矛盾检测不授权停桨**，实际 Disarm 仍须原有新的接地、状态和命令因果证据。
 
 1.5 m、0.3 m/s 和 2 s 稳定窗口在离线轨迹中可检查时序，但模型未覆盖真实机体的全部动力学；不能据此保证在当前机体与当前反馈延迟下必然满足上升时限。
 
@@ -178,7 +179,7 @@ uorb top
 |---|---|
 | 原基线 | `python3 -m unittest discover -s tests -v`：160/160，通过；日志 `/tmp/fc01_1103_baseline_tests.log` |
 | 新增针对性回归 | 覆盖异步离地/冻结/反弹/证据过期、RC 阶段与到高门、reprepare 准入/旧 ACK、配置一致性、后台输出/写盘、只读采集；对应 `native/tests/test_takeoff_evidence.cpp`、`test_rc_takeoff_stage.cpp`、`test_rc_reprepare_admission.cpp` 与 Python 新用例 |
-| 完整回归最终统计 | **182/182，通过，32.347 s**；日志 `/tmp/fc01_1103_release_tests.log`。两个旧 fixture 的来源时序操纵同步为真实 50 ms 增量，拒绝条件保留；新增真实满 PIPE/journal、磁盘写错+满 stderr 测试通过 |
+| 完整回归最终统计 | **182/182，通过，32.944 s**；日志 `/tmp/fc01_1103_release_tests.log`。两个旧 fixture 的来源时序操纵同步为真实 50 ms 增量，拒绝条件保留；新增真实满 PIPE/journal、磁盘写错+满 stderr 测试通过 |
 | 原生 C++ 回归 | `python3 tests/run_native_cpp.py`，`-std=c++17 -Wall -Wextra -Werror -pedantic -pthread`；**60/60 个程序通过**（由上述完整回归执行） |
 | 真实 ROS 构建 | 开发机 x86 的真实 Humble + 现有 FC01 `px4_msgs` 构建并安装到 `/tmp/fc01_takeoff_ros_20261103/install`；`ldd` 无 missing。最终重构后构建日志 `/tmp/fc01_1103_verified_build.log`；不是 ARM64 或香橙派部署验收 |
 | 真实参数消费者 | 视觉开/关两份导出的 runtime YAML 经真实 `fc01_config_check` 读取，均为 `manual_arm_only=true`、`rc_target_height=1.5`；文件 `/tmp/fc01_1103_runtime_on.yaml`、`/tmp/fc01_1103_runtime_off.yaml` |
@@ -221,7 +222,7 @@ git status --short
 主线合并和香橙派安装是两个独立步骤。部署前保留当前实际 service/unit、已加载二进制与 runtime YAML 指纹，先用候选安装的真实 checker 验证配置；设备版本未绑定前不能把旧目录名当回退点。源码回退可逐提交 `git revert`，结构提交可独立撤销；设备回退须恢复经过指纹确认的旧 service/安装/config 组合。由于本轮没有切换设备，当前设备状态没有本轮部署需要撤回。
 
 
-已有共同历史的修复主线可以合并此分支（同时包含此前视觉开发提交），或逐个 cherry-pick 上述行为和结构提交。请先查看 `git log --graph --oneline --all`；来源不具共同历史时用补丁迁移，不使用强制无关历史合并。
+已有共同历史的修复主线可以合并此分支（同时包含此前视觉开发提交），或按提交顺序 cherry-pick 本轮全部修复提交（包含末尾的最终发布原因诊断补充）；纯结构提交可独立审查与撤回。请先查看 `git log --graph --oneline --all`；来源不具共同历史时用补丁迁移，不使用强制无关历史合并。
 
 交付文件分为：
 
