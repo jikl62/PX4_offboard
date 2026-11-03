@@ -205,9 +205,9 @@ python3 vision_replay.py --demo height > /tmp/fc01_height.jsonl
 
 | 项目 | 记录 |
 |---|---|
-| 行为修复提交 | 待收尾填写 |
-| 纯结构提取提交 | 待收尾填写 |
-| 交付归档与 SHA-256 | 待收尾填写 |
+| 行为修复提交 | `a74362c`，修复、配置、观测、故障回归及通信采集 |
+| 纯结构提取提交 | `5ca1125`，类型及纯谓词逐字搬移；已比对搬移前后内容一致 |
+| 交付归档与 SHA-256 | `dist/FC01_takeoff_20261103_SHA256SUMS` 列出新源码包、bundle、两份补丁与安装包的实际校验值 |
 | 主线状态 | 本轮工作分支交付；未自动合并主线或切换设备服务 |
 
 合并审查以 `28bdf95` 视觉开发为基线，确认保留视觉接口与到高门，核对完整回归、真实构建和实际生成 YAML。保留用户已有 `native/src/jikl_fc01_system/src/fc01_config_check.cpp` 空白改动，不纳本轮提交。可用以下只读命令审查提交与工作区：
@@ -219,3 +219,25 @@ git status --short
 ```
 
 主线合并和香橙派安装是两个独立步骤。部署前保留当前实际 service/unit、已加载二进制与 runtime YAML 指纹，先用候选安装的真实 checker 验证配置；设备版本未绑定前不能把旧目录名当回退点。源码回退可逐提交 `git revert`，结构提交可独立撤销；设备回退须恢复经过指纹确认的旧 service/安装/config 组合。由于本轮没有切换设备，当前设备状态没有本轮部署需要撤回。
+
+
+已有共同历史的修复主线可以合并此分支（同时包含此前视觉开发提交），或逐个 cherry-pick 上述行为和结构提交。请先查看 `git log --graph --oneline --all`；来源不具共同历史时用补丁迁移，不使用强制无关历史合并。
+
+交付文件分为：
+
+- `FC01_takeoff_readiness_20261103.patch`：相对视觉开发 `28bdf95` 的增量，适合已包含视觉开发的主线。
+- `FC01_vision_takeoff_20261103.patch`：相对导航修复快照 `6b440ab` 的累计变更，适合尚无视觉开发的修复基线。
+- `FC01_takeoff_readiness_20261103.bundle`：包含本地快照与完整开发提交历史；`git bundle verify` 可检查。
+- `FC01_takeoff_readiness_20261103_source.tar.gz`：本轮提交源码，无主机编译二进制，也不包含用户未提交的空白改动。
+- `FC01_OrangePi_Navigation_20261103_takeoff.sh`：离线源码安装包；先通过设备构建、真实 YAML 校验和被动地面观察，才由既有安装流程切换受管理服务。
+
+补丁迁移先在接收仓库的开发分支执行 `git apply --check /path/to/对应补丁.patch`，核对基线后再应用、测试和提交。冲突必须结合接收主线源码处理，不能靠目录日期覆盖。
+
+本轮仅验证安装包的离线解压和内容一致性；设备安装另行执行。需要部署时，先保留当前版本指纹，复制新安装包后可先只解压：
+
+```bash
+FC01_NAVIGATION_INSTALL_DIR="$HOME/FC01_OrangePi_Navigation_20261103_takeoff" \
+  bash ~/Desktop/FC01_OrangePi_Navigation_20261103_takeoff.sh --install-only
+```
+
+这一步不启动控制器。之后在未解锁接地并完成现场部署安排时，运行新目录下 `bash navigation.sh install`。既有安装器负责构建、配置验证、被动地面证据和受管理旧服务切换；不要只删除旧目录或额外启动第二个控制节点。若旧自启并非本工程管理的 systemd unit，安装器会拒绝，须先用只读采集确认实际来源。安装后再核对 `/proc/PID/exe`、实际 runtime 与服务日志，不能把 service active 当成起飞验收。
