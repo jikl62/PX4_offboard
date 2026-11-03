@@ -10,6 +10,7 @@
 #include "jikl_fc01_system/authority_telemetry.hpp"
 #include "jikl_fc01_system/source_clock.hpp"
 #include "jikl_fc01_system/vision_ros_adapter.hpp"
+#include "jikl_fc01_system/control_diagnostics.hpp"
 #include <jikl_fc01_system/msg/vision_state.hpp>
 #include <jikl_fc01_system/msg/navigation_command.hpp>
 #include <px4_msgs/msg/manual_control_setpoint.hpp>
@@ -132,9 +133,12 @@ class SystemNode final:public rclcpp::Node {
       if(!csv_)throw std::runtime_error("cannot open CSV log");
       csv_<<"steady_s,phase,nav_state,armed,landed,xy_valid,z_valid,vxy_valid,vz_valid,heading_good,local_age_s,x_ned,y_ned,z_ned,vx_ned,vy_ned,vz_ned,ax_ned,ay_ned,az_ned,relative_height_m,reason,aa_healthy,aa_yaw_reference,aa_thrust_z,aa_height_target,aa_velocity_target,aa_saturated,aa_slew_limited,aa_z_deriv_ned,aa_feedback_checked,aa_feedback_suspect,aa_feedback_rate_error_mps,aa_feedback_position_rate_error_mps,aa_feedback_disagreement_s,aa_feedback_reason,aa_vertical_closed_loop,aa_takeoff_thrust_limited,aa_p_thrust,aa_i_thrust,aa_raw_thrust,aa_thrust_ceiling\n";
     }
-    std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)<<",\"flight_enabled\":"<<boolean(config.flight_enabled)<<",\"automatic_arm\":false,\"rc_navigation_policy\":\"RC_NAVIGATION_MANUAL_ARM_V1\",\"vertical_control_policy\":\"R632_SCHEDULED_TAKEOFF_CEILING_V1\",\"socket\":"<<f::quote(socket)<<"}"<<std::endl;
+    std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)<<",\"flight_enabled\":"<<boolean(config.flight_enabled)<<",\"automatic_arm\":false,\"rc_navigation_policy\":\"RC_NAVIGATION_MANUAL_ARM_V1\",\"takeoff_policy\":\"NAV_TAKEOFF_EVIDENCE_V2_20261103\",\"vertical_control_policy\":\"R632_SCHEDULED_TAKEOFF_CEILING_V1\",\"socket\":"<<f::quote(socket)<<"}"<<std::endl;
   }
   std::chrono::duration<double> loop_period() const{return std::chrono::duration<double>(1./config_.attitude.loop_hz);}
+  void observe_cycle(double start,double callbacks_done,double done){
+    timing_.observe(start,callbacks_done,done,config_.attitude.stall_seconds);
+  }
   bool tick(){
     const double now=steady();
     publication_audit_.begin(now);
@@ -151,10 +155,12 @@ class SystemNode final:public rclcpp::Node {
     }
     if(resting){if(rest_since_<0)rest_since_=now;s.stationary_seconds=now-rest_since_;}
     else {rest_since_=-1;s.stationary_seconds=0;}
-    if(resting&&s.local_fresh&&local_.z_valid&&!reference_set_&&s.stationary_seconds>=2){reference_z_=local_.z;reference_set_=true;}
-    if(config_.profile=="attitude_altitude"){
-      if(runtime_->attitude_core().reference_ready()){reference_z_=runtime_->attitude_core().reference_z();reference_set_=true;}
-    }else if(runtime_->active()){reference_z_=runtime_->flight_core().origin().z;reference_set_=true;}
+    if(config_.profile!="attitude_altitude"){
+      if(resting&&s.local_fresh&&local_.z_valid&&!velocity_reference_set_&&s.stationary_seconds>=2){
+        velocity_reference_z_=local_.z;velocity_reference_set_=true;
+      }
+      if(runtime_->active()){velocity_reference_z_=runtime_->flight_core().origin().z;velocity_reference_set_=true;}
+    }
     if(stop_requested)begin_shutdown(s,now);
     server_->poll([this,&s,now](const f::Request& req){
       if(stop_requested)begin_shutdown(s,now);
@@ -313,11 +319,15 @@ class SystemNode final:public rclcpp::Node {
         <<",\"local_heartbeat_this_tick\":"<<boolean(publication_audit_.mode_this_tick)
         <<"}"<<std::endl;
     }
-    if(config_.profile=="attitude_altitude")write_phase_event(phase_before,snapshot(steady()),attempted_attitude,now);
+    // Keep every transition; ordinary thrust samples need only the existing
+    // 2 Hz reporting cadence. Avoid a second full DDS graph snapshot and a
+    // large diagnostic record on all 20 control ticks.
+    if(config_.profile=="attitude_altitude"&&
+       (phase_before!=runtime_->phase_name()||now-printed_>=.5))
+      write_phase_event(phase_before,s,attempted_attitude,now);
     if(now-printed_>=.5){printed_=now;auto line=state(s,now);server_->publish(line);std::cout<<line<<std::endl;write_csv(s,now);}
-    if(!stopping_&&runtime_->rc_restart_allowed(s)){
-      std::cout<<"{\"kind\":\"rc_safe_process_reset\",\"reason\":\"NEW_DISARMED_GROUND_AND_CONTROLS_RESET\"}"<<std::endl;
-      return false;
+    if(!stopping_&&runtime_->reprepare_rc(s,now)){
+      std::cout<<"{\"kind\":\"rc_safe_reprepare\",\"reason\":\"NEW_DISARMED_GROUND_AND_CONTROLS_RESET\"}"<<std::endl;
     }
     if(stopping_){
       if(s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed&&!runtime_->active())return false;
@@ -338,6 +348,12 @@ class SystemNode final:public rclcpp::Node {
     return true;
   }
  private:
+  bool reference_ready()const{
+    return config_.profile=="attitude_altitude"?runtime_->attitude_core().reference_ready():velocity_reference_set_;
+  }
+  double reference_z()const{
+    return config_.profile=="attitude_altitude"?runtime_->attitude_core().reference_z():velocity_reference_z_;
+  }
   void begin_shutdown(const f::Snapshot& s,double now){
     if(stopping_)return;
     stopping_=true;stop_since_=now;runtime_->begin_shutdown(s,now);
@@ -509,7 +525,7 @@ class SystemNode final:public rclcpp::Node {
     const auto tilt_att=f::attitude::attitude_diagnostics(tilt.actual_q,tilt.requested_q);
     std::cout<<"{\"kind\":\"phase_event\",\"monotonic_s\":"<<number(now)
       <<",\"phase_before\":"<<f::quote(before)<<",\"phase_after\":"<<f::quote(runtime_->phase_name())
-      <<",\"reason\":"<<f::quote(core.reason())<<vertical_feedback_fields()<<vertical_control_fields(planned,true)<<",\"ownership\":"<<f::quote(core.recovery_responsibility(fb))
+      <<",\"reason\":"<<f::quote(core.reason())<<progress_fields()<<vertical_feedback_fields()<<vertical_control_fields(planned,true)<<",\"ownership\":"<<f::quote(core.recovery_responsibility(fb))
       <<",\"armed\":"<<boolean(s.feedback.armed)<<",\"nav_state\":"<<s.nav_state
       <<",\"status_stamp\":"<<s.status_stamp<<",\"land_stamp\":"<<s.land_stamp
       <<",\"local_stamp\":"<<s.attitude.local_stamp<<",\"landed\":"<<boolean(s.feedback.landed)
@@ -580,6 +596,49 @@ class SystemNode final:public rclcpp::Node {
       <<",\"command400_ack_result\":"<<p.result
       <<",\"px4_receipt_proven\":false}"<<std::endl;
   }
+  std::string progress_fields()const{
+    const auto& core=runtime_->attitude_core();const auto& e=core.liftoff_evidence();
+    const char* pending=e.detector_samples<2?"WAIT_NEW_AIRBORNE_DETECTOR_SAMPLES":
+      e.local_samples<2?"WAIT_NEW_LOCAL_MOTION_SAMPLES":
+      !e.rise_confirmed?"WAIT_SUSTAINED_HEIGHT_AND_VELOCITY_AGREEMENT":"WAIT_JOINT_EVIDENCE";
+    std::ostringstream out;
+    out<<",\"takeoff_stage\":"<<f::quote(core.takeoff_stage())
+      <<",\"takeoff_request_accepted\":"<<boolean(!core.bench_arm_only_active()&&(core.flight_started()||core.arm_confirmed()))
+      <<",\"liftoff_confirmed\":"<<boolean(core.liftoff_confirmed())
+      <<",\"target_height_settled\":"<<boolean(core.target_height_settled())
+      <<",\"navigation_allowed\":"<<boolean(core.navigation_allowed())
+      <<",\"liftoff_unconfirmed_reason\":"<<f::quote(core.liftoff_confirmed()?"":pending)
+      <<",\"liftoff_detector_samples\":"<<e.detector_samples
+      <<",\"liftoff_local_samples\":"<<e.local_samples
+      <<",\"liftoff_detector_confirmed\":"<<boolean(e.detector_confirmed)
+      <<",\"liftoff_rise_confirmed\":"<<boolean(e.rise_confirmed)
+      <<",\"liftoff_first_land_stamp\":"<<e.first_land_stamp
+      <<",\"liftoff_last_land_stamp\":"<<e.last_land_stamp
+      <<",\"liftoff_first_local_sample_stamp\":"<<e.first_local_stamp
+      <<",\"liftoff_last_local_sample_stamp\":"<<e.last_local_stamp;
+    return out.str();
+  }
+  std::string feedback_timing_fields(const f::Snapshot& s,double now)const{
+    std::ostringstream out;
+    const auto host=s.attitude.source_host_stamp;
+    const auto age=[host](std::uint64_t stamp){return number((double(host)-double(stamp))*1e-6,host&&stamp);};
+    out<<",\"land_age_s\":"<<number(now-land_stamp_.received,land_stamp_.received>=0)
+      <<",\"flags_age_s\":"<<number(now-flags_stamp_.received,flags_stamp_.received>=0)
+      <<",\"battery_age_s\":"<<number(now-battery_stamp_.received,battery_stamp_.received>=0)
+      <<",\"status_source_age_s\":"<<age(status_stamp_.value)
+      <<",\"land_source_age_s\":"<<age(land_stamp_.value)
+      <<",\"local_source_age_s\":"<<age(local_stamp_.value)
+      <<",\"local_sample_age_s\":"<<age(local_.timestamp_sample)
+      <<",\"attitude_source_age_s\":"<<age(attitude_stamp_.value)
+      <<",\"attitude_sample_age_s\":"<<age(attitude_.timestamp_sample)
+      <<",\"flags_source_age_s\":"<<age(flags_stamp_.value)
+      <<",\"last_cycle_callbacks_s\":"<<number(timing_.callback_seconds,timing_.valid)
+      <<",\"last_cycle_control_s\":"<<number(timing_.control_seconds,timing_.valid)
+      <<",\"last_cycle_period_s\":"<<number(timing_.period_seconds,timing_.period_valid)
+      <<",\"max_cycle_period_s\":"<<number(timing_.max_period_seconds,timing_.period_valid)
+      <<",\"cycle_stall_count\":"<<timing_.stall_count;
+    return out.str();
+  }
   std::string state(const f::Snapshot& s,double now,const char* kind="state",std::uint64_t seq=0,bool accepted=true,const std::string& message="")const{
     std::ostringstream out;out<<"{\"kind\":"<<f::quote(kind)<<",\"seq\":"<<seq<<",\"accepted\":"<<boolean(accepted)<<",\"message\":"<<f::quote(message)
       <<",\"phase\":"<<f::quote(runtime_->phase_name())<<",\"active\":"<<boolean(runtime_->active())<<",\"profile\":"<<f::quote(config_.profile)<<",\"flight_enabled\":"<<boolean(config_.flight_enabled)
@@ -597,12 +656,19 @@ class SystemNode final:public rclcpp::Node {
       <<",\"visual_state_age_s\":"<<number(now-s.attitude.visual_input.state.received_at,s.attitude.visual_input.state.received_at>=0)
       <<",\"visual_command_age_s\":"<<number(now-s.attitude.visual_input.command.received_at,s.attitude.visual_input.command.received_at>=0)
       <<",\"rc_target_height\":"<<number(config_.attitude.rc_target_height)
+      <<progress_fields()<<feedback_timing_fields(s,now)
       <<",\"rc_navigation_mode_slot\":"<<config_.attitude.rc_navigation_mode_slot
       <<",\"rc_prestream_commits\":"<<runtime_->attitude_core().rc_prestream_commits()
       <<",\"rc_manual_arm_proven\":"<<boolean(runtime_->attitude_core().rc_manual_arm_proven())
       <<",\"rc_axes_safe\":"<<boolean(s.attitude.rc_axes_safe)
       <<",\"rc_throttle\":"<<number(s.attitude.rc_throttle)
       <<",\"native_log_dropped\":"<<f::native_log_dropped.load()
+      <<",\"target_local_commits\":"<<publication_audit_.target_count
+      <<",\"heartbeat_local_commits\":"<<publication_audit_.mode_count
+      <<",\"last_target_local_thrust_z\":"<<number(publication_audit_.last_target_thrust_z,publication_audit_.target_count>0)
+      <<",\"last_target_local_commit_monotonic_s\":"<<number(publication_audit_.target_last,publication_audit_.target_last>=0)
+      <<",\"last_heartbeat_local_commit_monotonic_s\":"<<number(publication_audit_.mode_last,publication_audit_.mode_last>=0)
+      <<",\"px4_thrust_adoption\":\"UNOBSERVED\",\"physical_liftoff\":\"EXTERNAL_OBSERVATION_REQUIRED\""
       <<",\"heartbeat_enabled\":"<<boolean(last_attitude_output_.publish)<<",\"attitude_output_enabled\":"<<boolean(last_attitude_output_.publish)
       <<",\"publication_block_reason\":"<<f::quote(publication_block_reason_)<<",\"publication_fault_latched\":"<<boolean(boundary_fault_latched_)
       <<",\"attitude_fresh\":"<<boolean(s.attitude.attitude_fresh)<<",\"attitude_healthy_output\":"<<boolean(last_attitude_output_.publish)
@@ -677,17 +743,17 @@ class SystemNode final:public rclcpp::Node {
       <<",\"local_age_s\":"<<number(now-local_stamp_.received,local_stamp_.received>=0)<<",\"position_ned\":["<<number(local_.x,s.local_fresh&&local_.xy_valid)<<','<<number(local_.y,s.local_fresh&&local_.xy_valid)<<','<<number(local_.z,s.local_fresh&&local_.z_valid)<<"]"
       <<",\"velocity_ned\":["<<number(local_.vx,s.local_fresh&&local_.v_xy_valid)<<','<<number(local_.vy,s.local_fresh&&local_.v_xy_valid)<<','<<number(local_.vz,s.local_fresh&&local_.v_z_valid)<<"]"
       <<",\"acceleration_ned_estimate\":["<<number(local_.ax,s.local_fresh&&local_.v_xy_valid)<<','<<number(local_.ay,s.local_fresh&&local_.v_xy_valid)<<','<<number(local_.az,s.local_fresh&&local_.v_z_valid)<<"]"
-      <<",\"relative_height_m\":"<<number(reference_z_-local_.z,reference_set_&&s.local_fresh&&local_.z_valid)
-      <<",\"height_reference_ready\":"<<boolean(reference_set_)
-      <<",\"height_unavailable_reason\":"<<f::quote(!reference_set_?"REFERENCE_NOT_READY":
+      <<",\"relative_height_m\":"<<number(reference_z()-local_.z,reference_ready()&&s.local_fresh&&local_.z_valid)
+      <<",\"height_reference_ready\":"<<boolean(reference_ready())
+      <<",\"height_unavailable_reason\":"<<f::quote(!reference_ready()?"REFERENCE_NOT_READY":
          !s.local_fresh?"LOCAL_POSITION_STALE":
-         !local_.z_valid||!std::isfinite(local_.z)||!std::isfinite(reference_z_)?"Z_ESTIMATE_INVALID":"")
+         !local_.z_valid||!std::isfinite(local_.z)||!std::isfinite(reference_z())?"Z_ESTIMATE_INVALID":"")
       <<vertical_feedback_fields()<<vertical_control_fields(last_attitude_output_)
       <<",\"ground_test\":"<<f::quote(runtime_->ground_name())<<",\"ground_reason\":"<<f::quote(runtime_->ground_reason())<<",\"reason\":"<<f::quote(runtime_->message())
       <<",\"source_counts\":["<<s.traffic.status_publishers<<','<<s.traffic.land_publishers<<','<<s.traffic.ack_publishers<<"]"
       <<",\"offboard_ack\":"<<runtime_->pending(176).result<<",\"arm_ack\":"<<runtime_->pending(400).result<<",\"land_ack\":"<<runtime_->pending(21).result<<'}';return out.str();
   }
-  void write_csv(const f::Snapshot& s,double now){if(!csv_)return;csv_<<std::setprecision(9)<<now<<','<<runtime_->phase_name()<<','<<s.nav_state<<','<<s.feedback.armed<<','<<s.feedback.landed<<','<<local_.xy_valid<<','<<local_.z_valid<<','<<local_.v_xy_valid<<','<<local_.v_z_valid<<','<<local_.heading_good_for_control<<','<<number(now-local_stamp_.received,local_stamp_.received>=0)<<','<<local_.x<<','<<local_.y<<','<<local_.z<<','<<local_.vx<<','<<local_.vy<<','<<local_.vz<<','<<local_.ax<<','<<local_.ay<<','<<local_.az<<','<<number(reference_z_-local_.z,reference_set_&&s.local_fresh&&local_.z_valid)<<','<<f::quote(runtime_->message())<<','<<last_attitude_output_.publish<<','<<number(runtime_->attitude_core().yaw_reference())<<','<<last_attitude_output_.thrust[2]<<','<<last_attitude_output_.target_height<<','<<last_attitude_output_.velocity_target<<','<<last_attitude_output_.saturated<<','<<last_attitude_output_.slew_limited<<','<<number(local_.z_deriv,s.local_fresh)<<','<<runtime_->attitude_core().vertical_feedback_evidence().checked<<','<<runtime_->attitude_core().vertical_feedback_evidence().suspect<<','<<number(runtime_->attitude_core().vertical_feedback_evidence().rate_error_mps,runtime_->attitude_core().vertical_feedback_evidence().checked)<<','<<number(runtime_->attitude_core().vertical_feedback_evidence().position_rate_error_mps,runtime_->attitude_core().vertical_feedback_evidence().position_window_checked)<<','<<runtime_->attitude_core().vertical_feedback_evidence().disagreement_seconds<<','<<f::quote(runtime_->attitude_core().vertical_feedback_evidence().reason)
+  void write_csv(const f::Snapshot& s,double now){if(!csv_)return;csv_<<std::setprecision(9)<<now<<','<<runtime_->phase_name()<<','<<s.nav_state<<','<<s.feedback.armed<<','<<s.feedback.landed<<','<<local_.xy_valid<<','<<local_.z_valid<<','<<local_.v_xy_valid<<','<<local_.v_z_valid<<','<<local_.heading_good_for_control<<','<<number(now-local_stamp_.received,local_stamp_.received>=0)<<','<<local_.x<<','<<local_.y<<','<<local_.z<<','<<local_.vx<<','<<local_.vy<<','<<local_.vz<<','<<local_.ax<<','<<local_.ay<<','<<local_.az<<','<<number(reference_z()-local_.z,reference_ready()&&s.local_fresh&&local_.z_valid)<<','<<f::quote(runtime_->message())<<','<<last_attitude_output_.publish<<','<<number(runtime_->attitude_core().yaw_reference())<<','<<last_attitude_output_.thrust[2]<<','<<last_attitude_output_.target_height<<','<<last_attitude_output_.velocity_target<<','<<last_attitude_output_.saturated<<','<<last_attitude_output_.slew_limited<<','<<number(local_.z_deriv,s.local_fresh)<<','<<runtime_->attitude_core().vertical_feedback_evidence().checked<<','<<runtime_->attitude_core().vertical_feedback_evidence().suspect<<','<<number(runtime_->attitude_core().vertical_feedback_evidence().rate_error_mps,runtime_->attitude_core().vertical_feedback_evidence().checked)<<','<<number(runtime_->attitude_core().vertical_feedback_evidence().position_rate_error_mps,runtime_->attitude_core().vertical_feedback_evidence().position_window_checked)<<','<<runtime_->attitude_core().vertical_feedback_evidence().disagreement_seconds<<','<<f::quote(runtime_->attitude_core().vertical_feedback_evidence().reason)
       <<','<<last_attitude_output_.vertical_closed_loop<<','<<last_attitude_output_.takeoff_thrust_limited
       <<','<<number(last_attitude_output_.proportional_thrust,last_attitude_output_.vertical_closed_loop)
       <<','<<number(last_attitude_output_.integral_thrust,last_attitude_output_.vertical_closed_loop)
@@ -704,7 +770,9 @@ class SystemNode final:public rclcpp::Node {
   f::Stamp local_stamp_,status_stamp_,land_stamp_,battery_stamp_,flags_stamp_,attitude_stamp_;
   f::SourceSampleProgress local_sample_,attitude_sample_;
   bool clock_regressed_{};std::uint64_t last_wall_stamp_{};std::uint8_t ground_z_reset_{},ground_vz_reset_{};
-  double printed_{},rest_since_{-1},reference_z_{},stop_since_{},last_shutdown_warning_{};bool reference_set_{},stopping_{},heading_changed_{};std::uint8_t heading_reset_{};
+  f::ControlTiming timing_;
+  double printed_{},rest_since_{-1},velocity_reference_z_{},stop_since_{},last_shutdown_warning_{};
+  bool velocity_reference_set_{},stopping_{},heading_changed_{};std::uint8_t heading_reset_{};
   std::ofstream csv_;
   f::attitude::PublicationAudit publication_audit_;
   rclcpp::Subscription<Attitude>::SharedPtr attitude_sub_;
@@ -717,7 +785,17 @@ class SystemNode final:public rclcpp::Node {
 int main(int argc,char** argv){
   int code=0;std::unique_ptr<f::AsyncLog> logs;
   try{logs=std::make_unique<f::AsyncLog>();rclcpp::init(argc,argv);std::signal(SIGINT,stop_handler);std::signal(SIGTERM,stop_handler);
-    auto node=std::make_shared<SystemNode>();while(rclcpp::ok()){const auto start=std::chrono::steady_clock::now();rclcpp::spin_some(node);if(!node->tick())break;std::this_thread::sleep_until(start+node->loop_period());}}
+    auto node=std::make_shared<SystemNode>();
+    while(rclcpp::ok()){
+      const auto deadline=std::chrono::steady_clock::now()+node->loop_period();
+      const double start=steady();
+      rclcpp::spin_some(node);
+      const double callbacks_done=steady();
+      const bool running=node->tick();
+      node->observe_cycle(start,callbacks_done,steady());
+      if(!running)break;
+      std::this_thread::sleep_until(deadline);
+    }}
   catch(const std::exception& error){std::cerr<<"[ERROR] "<<error.what()<<'\n';code=2;}
   rclcpp::shutdown();return code;
 }

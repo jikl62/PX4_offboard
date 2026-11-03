@@ -282,7 +282,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
   if(!commanded||!std::isfinite(c.yaw_reference))return deny(BoundaryReason::CommandedAttitude);
   Quaternion level{std::cos(c.yaw_reference/2),0,0,std::sin(c.yaw_reference/2)};
   if(output.visual_motion){
-    if(!c.config.visual.enabled||c.phase!=Phase::HeightHold||!c.flight_started||!c.visual_motion_allowed)
+    if(!c.config.visual.enabled||c.phase!=Phase::HeightHold||!c.flight_started||!c.visual_motion_allowed||c.feedback.landed)
       return deny(BoundaryReason::VisualInput);
     const auto expected=normalized(c.visual_target_q);if(!expected)return deny(BoundaryReason::VisualAttitude);
     level=*expected;

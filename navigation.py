@@ -54,6 +54,9 @@ def render_status(row,info,now=None):
     if not current and row.get('feedback_current') is True and status not in ('STARTING','STALE','STOPPED','STOPPING','WAITING'):
         reason=f'飞机反馈已过期或无效；最近状态 {status}；{reason}'
         status='STALE'
+    if current and status=='HEIGHT_HOLD' and state.get('liftoff_confirmed') is False:
+        status='LIFTOFF_UNCONFIRMED'
+        reason='离地未确认：'+str(state.get('liftoff_unconfirmed_reason','反馈证据未满足'))
     mode={15:'Stabilized',14:'Offboard',1:'Altitude'}.get(state.get('nav_state'),str(state.get('nav_state','未知（未收到 nav_state）')))
     armed=state.get('armed')
     armed_text=str(armed) if type(armed) is bool else '未知（未收到有效 armed）'
@@ -69,8 +72,17 @@ def render_status(row,info,now=None):
     else:
         lines.append('当前飞机状态未知：尚未收到飞机反馈；模式、armed 和相对高度均未知。')
     if state:
-        lines.append(f"目标：{state.get('rc_target_height',.5)} m  心跳预发送提交：{state.get('rc_prestream_commits',0)}  日志丢弃：{state.get('native_log_dropped',0)}")
+        lines.append(f"起飞平台：{state.get('rc_target_height','未知')} m  心跳预发送提交：{state.get('rc_prestream_commits',0)}  日志丢弃：{state.get('native_log_dropped',0)}")
         lines.append(f"导航档位：期望 {state.get('rc_navigation_mode_slot','未知')} / 观测 {state.get('rc_mode_slot','未知')}")
+        if state.get('takeoff_stage'):
+            liftoff='本轮曾通过离地反馈确认，实际离地需现场核对' if state.get('liftoff_confirmed') is True else '离地未确认'
+            navigation='导航已允许' if state.get('navigation_allowed') is True else '导航未允许'
+            lines.append(f"阶段：{state['takeoff_stage']}；{liftoff}；{navigation}")
+            if state.get('liftoff_confirmed') is not True:
+                lines.append('离地等待：'+str(state.get('liftoff_unconfirmed_reason','未知')))
+        thrust=state.get('last_target_local_thrust_z')
+        if type(thrust) in (int,float) and math.isfinite(thrust):
+            lines.append(f'本地推力 FRD z：{thrust:.3f}；PX4 采用尚未取证（需对应飞控记录）')
     if row.get('retry_in_seconds') is not None:
         lines.append(f"重试：{row['retry_in_seconds']} 秒后")
     error=row.get('ipc_error')

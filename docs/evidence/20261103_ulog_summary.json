@@ -1,0 +1,288 @@
+{
+  "source": "/home/jikl62/桌面/log_96_2026-10-31-17-52-00.ulg",
+  "sha256": "2286de041e9e0cae7fab7c2cd28d2d7b64e80e53df9fa83805da77487a350ad4",
+  "duration_s": 17.181194,
+  "px4_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+  "board": "DAMIAO_DM_FC01",
+  "scope": "Historical PX4 internal observations only. Not bound to current companion binary; no independent physical liftoff observation. ULog rates are logger rates, not measured UART throughput.",
+  "transitions": {
+    "vehicle_status.nav_state": [
+      {
+        "relative_s": -0.00559,
+        "value": 15
+      },
+      {
+        "relative_s": 5.234422,
+        "value": 14
+      },
+      {
+        "relative_s": 10.052902,
+        "value": 12
+      },
+      {
+        "relative_s": 16.185624,
+        "value": 14
+      }
+    ],
+    "vehicle_status.arming_state": [
+      {
+        "relative_s": -0.00559,
+        "value": 2
+      },
+      {
+        "relative_s": 16.185624,
+        "value": 1
+      }
+    ],
+    "vehicle_status.failsafe": [
+      {
+        "relative_s": -0.00559,
+        "value": 0
+      },
+      {
+        "relative_s": 10.052902,
+        "value": 1
+      },
+      {
+        "relative_s": 16.185624,
+        "value": 0
+      }
+    ],
+    "vehicle_land_detected.landed": [
+      {
+        "relative_s": 0.152781,
+        "value": 1
+      },
+      {
+        "relative_s": 7.034238,
+        "value": 0
+      },
+      {
+        "relative_s": 14.166812,
+        "value": 1
+      }
+    ],
+    "vehicle_land_detected.at_rest": [
+      {
+        "relative_s": 0.152781,
+        "value": 1
+      },
+      {
+        "relative_s": 0.496576,
+        "value": 0
+      }
+    ],
+    "vehicle_control_mode.flag_control_offboard_enabled": [
+      {
+        "relative_s": -0.005596,
+        "value": 0
+      },
+      {
+        "relative_s": 5.23442,
+        "value": 1
+      },
+      {
+        "relative_s": 10.052897,
+        "value": 0
+      },
+      {
+        "relative_s": 16.185617,
+        "value": 1
+      }
+    ],
+    "vehicle_control_mode.flag_control_attitude_enabled": [
+      {
+        "relative_s": -0.005596,
+        "value": 1
+      }
+    ],
+    "vehicle_control_mode.flag_control_rates_enabled": [
+      {
+        "relative_s": -0.005596,
+        "value": 1
+      }
+    ],
+    "vehicle_control_mode.flag_control_altitude_enabled": [
+      {
+        "relative_s": -0.005596,
+        "value": 0
+      }
+    ],
+    "offboard_control_mode.attitude": [
+      {
+        "relative_s": 0.199282,
+        "value": 1
+      }
+    ],
+    "offboard_control_mode.position": [
+      {
+        "relative_s": 0.199282,
+        "value": 0
+      }
+    ],
+    "offboard_control_mode.velocity": [
+      {
+        "relative_s": 0.199282,
+        "value": 0
+      }
+    ],
+    "offboard_control_mode.acceleration": [
+      {
+        "relative_s": 0.199282,
+        "value": 0
+      }
+    ],
+    "offboard_control_mode.body_rate": [
+      {
+        "relative_s": 0.199282,
+        "value": 0
+      }
+    ]
+  },
+  "topics": {
+    "vehicle_attitude_setpoint": {
+      "count": 321,
+      "first_relative_s": 0.275959,
+      "last_relative_s": 16.18347,
+      "median_logged_interval_s": 0.049207,
+      "max_logged_interval_s": 0.08313,
+      "fields": {
+        "thrust_body[2]": {
+          "first": -0.0,
+          "last": -0.0010000000474974513,
+          "min": -0.4751368463039398,
+          "max": -0.0
+        }
+      }
+    },
+    "vehicle_thrust_setpoint": {
+      "count": 847,
+      "first_relative_s": 0.2766,
+      "last_relative_s": 17.177832,
+      "median_logged_interval_s": 0.02099,
+      "max_logged_interval_s": 0.022533,
+      "fields": {
+        "xyz[2]": {
+          "first": -0.0,
+          "last": -0.0010000000474974513,
+          "min": -0.4751368463039398,
+          "max": -0.0
+        }
+      }
+    },
+    "vehicle_local_position": {
+      "count": 171,
+      "first_relative_s": 0.271363,
+      "last_relative_s": 17.168929,
+      "median_logged_interval_s": 0.09559,
+      "max_logged_interval_s": 0.108129,
+      "fields": {
+        "z": {
+          "first": -4.36550760269165,
+          "last": -4.971584796905518,
+          "min": -5.49172830581665,
+          "max": -4.36550760269165
+        },
+        "vz": {
+          "first": 0.0016746886540204287,
+          "last": -0.008620377629995346,
+          "min": -0.3703310787677765,
+          "max": 0.24939823150634766
+        },
+        "z_deriv": {
+          "first": -0.0029556704685091972,
+          "last": 0.17299428582191467,
+          "min": -0.4587445855140686,
+          "max": 0.23923319578170776
+        },
+        "z_reset_counter": {
+          "first": 1.0,
+          "last": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "vz_reset_counter": {
+          "first": 1.0,
+          "last": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        }
+      }
+    },
+    "offboard_control_mode": {
+      "count": 100,
+      "first_relative_s": 0.199282,
+      "last_relative_s": 9.978318,
+      "median_logged_interval_s": 0.100264,
+      "max_logged_interval_s": 0.151052,
+      "fields": {}
+    },
+    "vehicle_land_detected": {
+      "count": 23,
+      "first_relative_s": 0.152781,
+      "last_relative_s": 16.195648,
+      "median_logged_interval_s": 1.006954,
+      "max_logged_interval_s": 1.010577,
+      "fields": {}
+    }
+  },
+  "parameters": {
+    "COM_OF_LOSS_T": 1.0,
+    "EKF2_HGT_REF": 1,
+    "MPC_THR_CURVE": 0,
+    "MPC_THR_HOVER": 0.4722999930381775,
+    "MPC_THR_MAX": 1.0,
+    "MPC_THR_MIN": 0.11999999731779099,
+    "MPC_THR_XY_MARG": 0.30000001192092896,
+    "SER_TEL1_BAUD": 115200,
+    "SER_TEL3_BAUD": 115200,
+    "UXRCE_DDS_CFG": 103,
+    "UXRCE_DDS_DOM_ID": 0,
+    "UXRCE_DDS_KEY": 1,
+    "UXRCE_DDS_PTCFG": 0,
+    "UXRCE_DDS_RX_TO": -1,
+    "UXRCE_DDS_SYNCC": 0,
+    "UXRCE_DDS_SYNCT": 1,
+    "UXRCE_DDS_TX_TO": 3
+  },
+  "events": [
+    {
+      "relative_s": -0.005604,
+      "text": "[commander] Armed by RC switch\t"
+    },
+    {
+      "relative_s": -0.003383,
+      "text": "[logger] Start file log (type: full)"
+    },
+    {
+      "relative_s": -0.001412,
+      "text": "[logger] [logger] /fs/microsd/log/2026-10-31/09_51_44.ulg\t"
+    },
+    {
+      "relative_s": -4e-06,
+      "text": "[logger] Opened full log file: /fs/microsd/log/2026-10-31/09_51_44.ulg"
+    },
+    {
+      "relative_s": 7.043414,
+      "text": "[commander] Takeoff detected\t"
+    },
+    {
+      "relative_s": 10.052488,
+      "text": "[failsafe] Failsafe activated\t"
+    },
+    {
+      "relative_s": 14.176168,
+      "text": "[commander] Landing detected\t"
+    },
+    {
+      "relative_s": 15.714373,
+      "text": "[timesync] RTT too high for timesync: 31 ms"
+    },
+    {
+      "relative_s": 16.185301,
+      "text": "[commander] Disarmed by landing\t"
+    }
+  ],
+  "max_vz_z_deriv_disagreement_mps": 0.19478368759155273,
+  "estimated_z_span_m": 1.126220703125
+}

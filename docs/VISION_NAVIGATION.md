@@ -1,6 +1,8 @@
 # 视觉导航内部合同、离线验收与集成
 
-本次增加伴随端通用定点、点目标和连续运动输入。新增视觉控制默认关闭。真实设备消息、外参和时钟尚未确认时，不能把下面的内部合同当作相机驱动接口。原导航档位 1、遥控手动解锁、0.5 m 起飞、20 Hz、30 s 任务上限以及原 Z/Vz 控制器继续生效。
+2026-11-03 的起飞证据、1.5 m 平台、重新准备及通信审查见 [当前修复记录](TAKEOFF_AUDIT_20261103.md)。下面单独指定的回放位置和外环限幅不代表默认起飞高度。
+
+本次增加伴随端通用定点、点目标和连续运动输入。新增视觉控制默认关闭。真实设备消息、外参和时钟尚未确认时，不能把下面的内部合同当作相机驱动接口。原导航档位 1、遥控手动解锁、1.5 m 默认起飞平台、20 Hz、30 s 任务上限以及原 Z/Vz 控制器继续生效。
 
 设计依据见 [设计稿](superpowers/specs/2026-10-31-vision-navigation-design.md)。离线程序只使用合成 PX4/RC 状态；即使输入标记为 `recorded`，回放中的 RC 启动、PX4 反馈和发布接收端仍然是虚拟对象。它不会建立 ROS 节点或 `/fmu/in/**` publisher，不调用 service、agent、安装程序或飞控参数接口。
 
@@ -82,11 +84,11 @@ python3 vision_replay.py tests/fixtures/vision/follow_land.jsonl
 python3 -m unittest tests.test_vision_replay -v
 ```
 
-`--config PATH` 可选择另一份 `fc01_system.ros__parameters` YAML。默认直接读取 `native/config/attitude_altitude.yaml`；从实际 `attitude_ros_parameters.hpp` 导出 ROS 参数→C++ 成员映射，再将 YAML 值送入真实 `Config::validate()`。因此原 hover=0.475、height_gain=0.50、velocity_gain=0.15、integral_gain=0.03 等参数进入真实控制器，工具没有替换一套简化 PID。模拟会在当前进程中启用 RC 路由及参数确认、关闭自动 Arm/bench/autonomous 权限，固定导航档位 1、起飞目标 0.5 m；不写回 YAML 或改变系统配置。
+`--config PATH` 可选择另一份 `fc01_system.ros__parameters` YAML。默认直接读取 `native/config/attitude_altitude.yaml`；从实际 `attitude_ros_parameters.hpp` 导出 ROS 参数→C++ 成员映射，再将 YAML 值送入真实 `Config::validate()`。因此原 hover=0.475、height_gain=0.50、velocity_gain=0.15、integral_gain=0.03 等参数进入真实控制器，工具没有替换一套简化 PID。模拟会在当前进程中启用 RC 路由及参数确认、关闭自动 Arm/bench/autonomous 权限，固定导航档位 1，起飞平台读取当前 `rc_target_height`（默认 1.5 m）；不写回 YAML 或改变系统配置。
 
 启动时，`VisionFlight` 先模拟合法新鲜 RC/预流、真实双 sink 提交、手动解锁开关与 PX4 armed 证据、导航开关与 PX4 Offboard 证据，再走原 ground dwell/ramp/liftoff/ascent/settle。它不会调用 Core 的阶段跳转或注入权限。输出中的 `arm_commands`、`mode_commands` 应始终为零。
 
-`--demo cruise` 是 9 s 理想闭环：目标 `[0.8,0.4,-0.5]` m，植物只从最后实际提交的 q/thrust 积分出速度和位置，再经 Inbox 回到真实 Runtime。`--demo height` 把绝对高度目标改为 0.9 m，验证原垂直环的推力响应。模型假设姿态瞬时跟踪、小阻尼、hover 对应重力，无真实执行器、延迟、噪声或气动模型；误差下降只能证明代码闭环，不是飞行性能验收。
+`--demo cruise` 是 9 s 理想闭环：目标 `[0.8,0.4,-1.5]` m（默认平台配置），植物只从最后实际提交的 q/thrust 积分出速度和位置，再经 Inbox 回到真实 Runtime。`--demo height` 把高度目标改为平台上方 0.4 m（默认 1.9 m），验证原垂直环的推力响应。模型假设姿态瞬时跟踪、小阻尼、hover 对应重力，无真实执行器、延迟、噪声或气动模型；误差下降只能证明代码闭环，不是飞行性能验收。
 
 ### JSONL 会话格式
 

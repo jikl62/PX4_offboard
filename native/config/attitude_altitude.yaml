@@ -13,6 +13,8 @@ fc01_system:
     rc_takeover_confirmed: false
     autonomous_failsafe_confirmed: false
     control_loop_hz: 20.0
+    # Initial platform above the current task's ground anchor; NED height=z0-z.
+    rc_target_height: 1.5
     aa_prestream_seconds: 1.2
     aa_ground_seconds: 2.0
     aa_stall_seconds: 0.3

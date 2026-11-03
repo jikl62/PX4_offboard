@@ -64,6 +64,7 @@ static void r63_flight_chain(){
   }
   s.attitude.z=1.87;s.attitude.vz=-.1;
   for(int i=0;i<8&&r.attitude_core().phase()!=a::Phase::Ascend;++i){
+    s.attitude.z-=.005; // new local samples observe the claimed 0.1 m/s rise
     assert(r.request("PING",{},s,t).accepted);
     o=tick(r,s,t+=.05);
   }

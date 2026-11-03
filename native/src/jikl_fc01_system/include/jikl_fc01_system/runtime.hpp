@@ -155,6 +155,24 @@ class Runtime {
     attitude_sink_commit_required_=true;}
   void confirm_rc_output(bool allowed,double now){attitude_core_.note_rc_publication(allowed,now);}
   bool rc_restart_allowed(const Snapshot& s)const{return attitude_core_.rc_restart_allowed(attitude_snapshot(s));}
+  bool reprepare_rc(const Snapshot& s,double now){
+    if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled||
+       shutdown_latched_||maintenance_||ground_||!std::isfinite(now)||now<0||
+       s.publication_fault_latched||s.time_regressed||last_attitude_output_active_||
+       s.attitude_output_active||s.offboard_heartbeat_active||!rc_restart_allowed(s))return false;
+    // Rebuild only task state. Wire generations and ACK watermarks outlive
+    // every RC attempt, including accepted/state-only Disarm transactions.
+    for(const auto& p:pending_){
+      if(!p.requested)continue;
+      const bool newer_status=s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor});
+      const bool terminal=p.state_verified||(!p.ack_ambiguous&&p.rejected)||
+        (p.command400_kind==Command400Kind::None&&p.accepted&&newer_status);
+      if(!terminal)return false; // Planned or timed-out alone is unresolved.
+    }
+    attitude_core_=attitude::Core(config_.attitude);
+    message_="RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET";
+    return true;
+  }
   void confirm_attitude_command_publication(attitude::Command command,bool allowed,
       std::uint64_t wire_stamp,const Snapshot& actual,double now){
     if(command==attitude::Command::None)return;

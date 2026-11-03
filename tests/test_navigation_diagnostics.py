@@ -23,6 +23,30 @@ STATE = dict(kind='state', phase='HEIGHT_HOLD', reason='last native feedback',
 
 
 class NavigationDiagnosticsTests(unittest.TestCase):
+    def test_explicit_unconfirmed_liftoff_never_displays_height_hold_as_ready(self):
+        state=dict(STATE,takeoff_stage='LIFTOFF_UNCONFIRMED',liftoff_confirmed=False,
+                   target_height_settled=False,navigation_allowed=False,
+                   liftoff_unconfirmed_reason='WAIT_NEW_LOCAL_MOTION_SAMPLES')
+        row=dict(status='HEIGHT_HOLD',reason='previous phase',supervisor_pid=10,
+                 updated_unix=1000,state=state,state_age_seconds=.1,feedback_current=True)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('离地未确认',view)
+        self.assertIn('WAIT_NEW_LOCAL_MOTION_SAMPLES',view)
+        self.assertIn('导航未允许',view)
+        self.assertNotIn('正在定高',view)
+
+    def test_view_distinguishes_local_thrust_commit_from_px4_adoption(self):
+        state=dict(STATE,takeoff_stage='TARGET_SETTLED',liftoff_confirmed=True,
+                   target_height_settled=True,navigation_allowed=True,
+                   target_local_commits=25,last_target_local_thrust_z=-.475,
+                   px4_thrust_adoption='UNOBSERVED')
+        row=dict(status='HEIGHT_HOLD',reason='hold',supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=True)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('本地推力',view)
+        self.assertIn('-0.475',view)
+        self.assertIn('PX4 采用尚未取证',view)
+
     def peer(self, *, tail=b'', exit_code=0, exit_signal=None, silent_seconds=.08,
              keep_open=False, exit_on_stop=False):
         a, b = socket.socketpair()
@@ -115,7 +139,16 @@ class NavigationDiagnosticsTests(unittest.TestCase):
             class StopOnRetries(threading.Event):
                 def wait(self, timeout=None):
                     if timeout == 5:
-                        retries.append(json.loads((home/'state/status.json').read_text()))
+                        end=time.monotonic()+1
+                        while True:
+                            try:row=json.loads((home/'state/status.json').read_text())
+                            except (OSError,ValueError):row={}
+                            newer=not retries or row.get('updated_unix',0)>retries[-1].get('updated_unix',0)
+                            if newer and row.get('controller_returncode')==7 and 'retry_in_seconds' in row and (attempts[0]<=1 or 'UART disappeared' in row.get('reason','')):
+                                break
+                            if time.monotonic()>=end:break
+                            time.sleep(.002)
+                        retries.append(row)
                         if len(retries) == 8:
                             self.set()
                         else:

@@ -25,7 +25,7 @@ static void feedback_starts_at_liftoff_height(){
 static void one_detector_message_never_completes_dwell(){
   GuardFlight q;q.ground_ramp();q.observe(.2,.10);
   q.s.feedback.landed=false;q.s.at_rest=false;q.advance();
-  for(int i=0;i<18;++i)q.advance(.05,false);
+  for(int i=0;i<18;++i){q.observe(.20+.005*(i+1),.10);q.advance(.05,false);}
   require_guard(q.r.attitude_core().phase()==a::Phase::ThrustRamp,"replayed !landed must not count as independent samples");
   require_guard(q.o.attitude.velocity_target>0,"detector delay does not freeze the feedback controller");
   q.advance();
@@ -69,7 +69,7 @@ static void ground_thrust_reaches_bounded_reserve(){
 static void feedback_retains_lift_reserve_but_allows_braking(){
   GuardFlight climb;climb.ground_ramp();climb.observe(.13,.10);
   climb.s.feedback.landed=false;climb.s.at_rest=false;
-  for(int i=0;i<8;++i)climb.advance();
+  for(int i=0;i<8;++i){climb.observe(.13+.005*i,.10);climb.advance();}
   require_guard(climb.o.attitude.velocity_target>.10,"positive speed error in this scenario");
   require_guard(climb.thrust()>.515,"feedback may add correction to established lift trim, not fall back to 0.475");
   GuardFlight brake;brake.ground_ramp();brake.observe(.13,.5);brake.advance();

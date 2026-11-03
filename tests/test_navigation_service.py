@@ -21,6 +21,39 @@ class NavigationServiceTests(unittest.TestCase):
         self.assertTrue((ROOT/'navigation_service.py').exists(),'navigation background controller missing')
         return importlib.import_module('navigation_service')
 
+    def test_private_controller_does_not_require_the_sdk_controller_binary(self):
+        import launcher
+        import standby
+        import types
+        self.api()
+        msgs=types.ModuleType('px4_msgs.msg')
+        for name in ('BatteryStatus','VehicleAttitude','VehicleLocalPosition','VehicleStatus','VehicleLandDetected','FailsafeFlags'):
+            setattr(msgs,name,type(name,(),{}))
+        px4=types.ModuleType('px4_msgs');px4.msg=msgs
+        rclpy=types.ModuleType('rclpy');support=types.ModuleType('rclpy.type_support')
+        support.check_for_type_support=lambda _:None
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);(root/'config').mkdir()
+            (root/'config/attitude_altitude.yaml').write_text((ROOT/'tests/fixtures/base.yaml').read_text())
+            binary=root/'private/fc01_system_node';binary.parent.mkdir()
+            data=bytearray(64);data[:6]=b'\x7fELF\x02\x01';data[18:20]=(183).to_bytes(2,'little')
+            binary.write_bytes(bytes(data)+b''.join(launcher.BINARY_MARKERS));binary.chmod(0o700)
+            agent=root/'MicroXRCEAgent';agent.write_text('#!/bin/sh\n');agent.chmod(0o700)
+            with patch.dict(sys.modules,{'px4_msgs':px4,'px4_msgs.msg':msgs,'rclpy':rclpy,'rclpy.type_support':support}),\
+                 patch.object(launcher.platform,'machine',return_value='aarch64'),\
+                 patch.object(launcher,'process_list',return_value=[]),patch.object(launcher,'uart_owners',return_value=set()),\
+                 patch.object(standby.shutil,'which',return_value='/usr/bin/fuser'),\
+                 patch.dict(os.environ,ROS_DOMAIN_ID='0',ROS_LOCALHOST_ONLY='0'):
+                selected,_=launcher.preflight(root,agent,'/dev/null',controller=binary)
+                config=standby.validate(root,agent,controller=binary)
+                self.assertEqual(selected,binary)
+                self.assertEqual(config['fc01_system']['ros__parameters']['profile'],'attitude_altitude')
+                binary.write_bytes(b'invalid')
+                with self.assertRaises(launcher.ControlError):launcher.preflight(root,agent,'/dev/null',controller=binary)
+                with self.assertRaises(launcher.ControlError):standby.validate(root,agent,controller=binary)
+                # Installation prepares YAML before compiling its controller.
+                self.assertEqual(standby.validate(root,agent)['fc01_system']['ros__parameters']['profile'],'attitude_altitude')
+
     def test_navigation_profile_keeps_program_arm_disabled_and_numeric_limits(self):
         m=self.api();base=yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text())
         result=m.navigation_profile(base)['fc01_system']['ros__parameters']
@@ -29,7 +62,7 @@ class NavigationServiceTests(unittest.TestCase):
         self.assertFalse(result['arm_enabled'] or result['flight_enabled'] or result['bench_arm_only_enabled'])
         self.assertTrue(result['rc_takeover_confirmed'] and result['flight_parameters_confirmed'])
         self.assertFalse(result['autonomous_failsafe_confirmed'])
-        self.assertEqual(result['rc_target_height'],.5)
+        self.assertEqual(result['rc_target_height'],1.5)
         self.assertEqual(result['rc_navigation_mode_slot'],6)
         self.assertEqual(result['csv_path'],'')
         for name in ('aa_hover_thrust','aa_takeoff_reserve_thrust','aa_max_tilt_deg','aa_feedback_rate_tolerance_mps','aa_feedback_dwell_seconds'):
@@ -97,7 +130,7 @@ class NavigationServiceTests(unittest.TestCase):
                 if path==Path('/proc',str(agent.pid),'cmdline'):return b'\0'.join(os.fsencode(x) for x in agent.args)+b'\0'
                 return real_read(path)
             start=time.monotonic()
-            with patch.object(Path,'home',return_value=home),patch.object(standby,'preflight',return_value=(home/'old_binary',existing)),\
+            with patch.object(Path,'home',return_value=home),patch.object(standby,'preflight',return_value=(native,existing)),\
                  patch.object(standby,'verify_binary'),patch.object(standby.subprocess,'Popen',side_effect=spawn),\
                  patch.object(standby,'connect_controller',return_value=Channel(a)),patch.object(Path,'read_bytes',new=read_bytes):
                 standby.supervise(home/'base',home/'agent',home/'FC01_navigation',stopped,

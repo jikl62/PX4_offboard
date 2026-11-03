@@ -27,7 +27,7 @@ import time
 import uuid
 import zipfile
 
-from fc01_control import ControlError, Mission, readiness_issues, runtime_profile
+from fc01_control import ControlError, DEFAULT_TAKEOFF_HEIGHT_M, Mission, readiness_issues, runtime_profile
 
 PROJECT = 'FC01_ARM64_PORT_20261020/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE'
 BINARY_MARKERS = (b'R632_ACK176_STATE_CANDIDATE_V1', b'R632_SCHEDULED_TAKEOFF_CEILING_V1')
@@ -418,7 +418,7 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
     try:
         send('INTERACTIVE', [])
         send('STATUS', [])
-        say('命令：takeoff [高度m，默认0.5] | land | status | quit' if flight else '只检查：动作门关闭，正在收集实时状态……')
+        say(f'命令：takeoff [高度m，默认{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit' if flight else '只检查：动作门关闭，正在收集实时状态……')
         while node.poll() is None:
             now = time.monotonic()
             if stop_signal[0]:
@@ -483,7 +483,7 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
                         if not parts:
                             continue
                         if parts[0] == 'takeoff' and len(parts) in (1, 2):
-                            mission.request_takeoff(float(parts[1]) if len(parts) == 2 else 0.5, now)
+                            mission.request_takeoff(float(parts[1]) if len(parts) == 2 else DEFAULT_TAKEOFF_HEIGHT_M, now)
                             say('准备起飞 %.2f m；核对 RC 和实时反馈后由原生控制器执行一次 TAKEOFF。' % mission.target)
                         elif parts == ['land']:
                             mission.cancel()
@@ -496,7 +496,7 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
                         elif parts == ['quit']:
                             close_session('operator_quit')
                         else:
-                            say('命令：takeoff [0.5] | land | status | quit')
+                            say(f'命令：takeoff [{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit')
                     except (ControlError, ValueError) as exc:
                         evidence.failure(exc)
                         say('未执行：'+str(exc))
@@ -553,12 +553,12 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
         display.close()
 
 
-def preflight(root, agent_binary, device):
+def preflight(root, agent_binary, device, *, controller=None):
     if platform.machine().lower() not in ('aarch64', 'arm64'):
         raise ControlError('本入口只在实际 ARM64 香橙派上运行；本机架构='+platform.machine())
     if os.environ.get('ROS_DOMAIN_ID', '0') != '0' or os.environ.get('ROS_LOCALHOST_ONLY', '0') != '0':
         raise ControlError('当前固定使用 ROS_DOMAIN_ID=0、ROS_LOCALHOST_ONLY=0')
-    node = root/'install_r632/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node'
+    node = controller if controller is not None else root/'install_r632/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node'
     verify_binary(node)
     if not (root/'config/attitude_altitude.yaml').is_file():
         raise ControlError('缺少原配置 attitude_altitude.yaml')

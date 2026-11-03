@@ -27,6 +27,7 @@ static f::Config guard_config(){
 struct GuardFlight {
   f::Config c{guard_config()};f::Runtime r{c};f::Snapshot s{sample()};
   double t{},ramp_start{};f::Output o;
+  std::uint64_t land_elapsed_us{},local_elapsed_us{};
   explicit GuardFlight(double target=.5,f::Config config=guard_config()):c(config),r(c){
     t=ready(r,s,true);
     require_guard(r.request("INTERACTIVE",{},s,t).accepted,"interactive admission");
@@ -40,11 +41,12 @@ struct GuardFlight {
   }
   void advance(double dt=.05,bool new_land=true,bool new_local=true){
     require_guard(r.request("PING",{},s,t).accepted,"console lease");
-    s.status_stamp+=50000;
-    if(new_land)s.land_stamp+=50000;
+    const auto increment=static_cast<std::uint64_t>(std::llround(dt*1e6));
+    s.status_stamp+=increment;land_elapsed_us+=increment;local_elapsed_us+=increment;
+    if(new_land){s.land_stamp+=land_elapsed_us;land_elapsed_us=0;}
     if(new_local){
-      const auto increment=static_cast<std::uint64_t>(std::llround(dt*1e6));
-      s.attitude.local_stamp+=increment;s.attitude.vertical_sample_stamp+=increment;
+      s.attitude.local_stamp+=local_elapsed_us;s.attitude.vertical_sample_stamp+=local_elapsed_us;
+      local_elapsed_us=0;
     }
     o=r.step(s,t+=dt);
   }

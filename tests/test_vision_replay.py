@@ -40,7 +40,7 @@ class VisionReplay(unittest.TestCase):
     def test_target_height_changes_original_vertical_controller_thrust(self):
         rows = self.run_replay('--demo', 'height')
         moving = [r for r in rows if r['active']]
-        self.assertGreater(max(r['target_height'] for r in moving), .55)
+        self.assertGreater(max(r['target_height'] for r in moving), 1.55)
         self.assertGreater(max(-r['thrust'][2] for r in moving), min(-r['thrust'][2] for r in moving) + .005)
         self.assertAlmostEqual(rows[0]['baseline_hover_thrust'], .475)
         self.assertAlmostEqual(rows[0]['baseline_height_gain'], .5)

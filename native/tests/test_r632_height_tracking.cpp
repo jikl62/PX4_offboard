@@ -35,8 +35,8 @@ struct HeightFlight {
     require_height(r.attitude_core().phase()==a::Phase::ThrustRamp,"armed ground dwell");
     for(int i=0;i<42;++i)advance();
     require_height(r.attitude_core().phase()==a::Phase::ThrustRamp,"time/thrust cannot prove liftoff");
-    s.feedback.landed=false;s.at_rest=false;s.attitude.z=2.-height;s.attitude.vz=-.1;
-    for(int i=0;i<12&&r.attitude_core().phase()!=a::Phase::Ascend;++i)advance();
+    s.feedback.landed=false;s.at_rest=false;s.attitude.z=2.-height+.04;s.attitude.vz=-.1;
+    for(int i=0;i<12&&r.attitude_core().phase()!=a::Phase::Ascend;++i){s.attitude.z-=.005;advance();}
     require_height(r.attitude_core().phase()==a::Phase::Ascend,"joint liftoff evidence");
   }
   void advance(double dt=.05){

@@ -150,6 +150,9 @@ class StandbyTests(unittest.TestCase):
                 self.waits.append(timeout)
                 elapsed[0] += timeout
                 if elapsed[0] == 15:
+                    end=time.monotonic()+1
+                    while not (home/'FC01_autostart/status.json').exists() and time.monotonic()<end:
+                        time.sleep(.002)
                     with contextlib.redirect_stdout(midway):
                         manager.status(home)
                 if elapsed[0] >= 30:

@@ -24,9 +24,13 @@ static f::Snapshot sample(){
   s.feedback.exclusive=true;s.feedback.landed=true;
   s.battery_fresh=s.battery_connected=s.power_valid=s.manual_fresh=true;s.feedback.preflight=true;
   s.attitude.attitude_fresh=s.attitude.failsafe_fresh=s.attitude.z_valid=s.attitude.vz_valid=true;
-  s.attitude.battery_voltage=7.6;s.attitude.q={1,0,0,0};s.attitude.z=2;s.attitude.vz=0;return s;
+  s.attitude.battery_voltage=7.6;s.attitude.q={1,0,0,0};s.attitude.z=2;s.attitude.vz=0;
+  s.attitude.local_stamp=s.attitude.vertical_sample_stamp=1000;return s;
 }
-static f::Output tick(f::Runtime& r,f::Snapshot& s,double now){s.status_stamp+=1000;s.land_stamp+=1000;return r.step(s,now);}
+static f::Output tick(f::Runtime& r,f::Snapshot& s,double now){
+  s.status_stamp+=50000;s.land_stamp+=50000;
+  s.attitude.local_stamp+=50000;s.attitude.vertical_sample_stamp+=50000;return r.step(s,now);
+}
 static double prepare(f::Runtime& r,f::Snapshot& s,bool select_authority=false){
   if(select_authority){
     assert(r.request("INTERACTIVE",{},s,0).accepted);

@@ -8,7 +8,7 @@ static void need(bool ok,const char* why){if(!ok)throw std::runtime_error(why);}
 static f::Config rc_config(std::int64_t slot=6){
   auto c=config();auto& p=c.attitude;
   p.rc_navigation_enabled=true;p.arm_enabled=false;p.rc_takeover_confirmed=true;
-  p.rc_navigation_mode_slot=slot;
+  p.rc_navigation_mode_slot=slot;p.rc_target_height=.5;
   p.max_flight_seconds=30;p.max_tilt_deg=10;p.land_sample_max_gap=1.25;
   p.height_tolerance=.15;p.vertical.max_climb=.3;
   c.validate();return c;
@@ -441,7 +441,52 @@ static void full_height_hold_land_and_safe_reset(){
   need(!q.r.rc_restart_allowed(q.s),"held navigation/arm cannot restart mission");
   q.s.feedback.offboard=false;q.s.nav_state=15;q.s.attitude.rc_mode_slot=1;q.s.attitude.rc_arm_switch=3;
   q.s.stationary_seconds=3;q.tick();
-  need(q.r.rc_restart_allowed(q.s),"new safe disarmed ground plus reset controls permits fresh process only");
+  need(q.r.rc_restart_allowed(q.s),"new safe disarmed ground plus reset controls permits a fresh RC attempt");
+  const auto completed_disarm=q.r.pending(400);const auto history=q.r.command400_history().size();
+  for(int failure=0;failure<7;++failure){auto bad=q.s;
+    if(failure==0)bad.attitude_output_active=true;
+    if(failure==1)bad.offboard_heartbeat_active=true;
+    if(failure==2)bad.publication_fault_latched=true;
+    if(failure==3)bad.time_regressed=true;
+    if(failure==4)bad.status_fresh=false;
+    if(failure==5)bad.feedback.armed=true;
+    if(failure==6)bad.attitude.source_clock_validated=false;
+    need(!q.r.reprepare_rc(bad,q.t),"unsafe current evidence cannot rebuild the RC core");
+  }
+  need(q.r.reprepare_rc(q.s,q.t),"safe completed RC mission must reprepare in the same Runtime");
+  need(q.r.attitude_core().phase()==a::Phase::Idle&&!q.r.attitude_core().reference_ready(),
+    "reprepare captures a fresh ground reference rather than retaining the old attempt");
+  need(q.r.pending(400).generation==completed_disarm.generation&&q.r.pending(400).wire_stamp==completed_disarm.wire_stamp&&
+    q.r.pending(400).state_verified==completed_disarm.state_verified&&q.r.command400_history().size()==history,
+    "reprepare must preserve command400 wire history and its local generation");
+  need(!q.r.reprepare_rc(q.s,q.t),"idle new attempt cannot repeatedly rebuild itself");
+  q.s.attitude.z=2.02;q.warm();
+  need(q.r.attitude_core().phase()==a::Phase::RcWaitArm&&q.r.attitude_core().reference_z()==2.02,
+    "same process reaches second readiness using the current ground reference");
+  q.s.attitude.rc_arm_switch=1;++q.s.attitude.operator_switch_generation;q.tick();
+  q.s.feedback.armed=true;q.s.armed_time=20;q.s.latest_arming_reason=2;q.s.at_rest=false;q.tick();
+  q.navigation();need(q.r.attitude_core().phase()==a::Phase::ArmedGround,
+    "fresh manual arm and navigation edges start the second mission");
+  need(q.r.pending(400).generation==completed_disarm.generation,
+    "second manual arm never fabricates a new command400 transaction");
+  q.s.at_rest=true;
+  need(q.r.request("LAND",{},q.s,q.t).accepted,"second mission can request guarded landing");
+  bool second_disarm=false;
+  for(int i=0;i<100&&!second_disarm;++i){q.tick();
+    if(q.o.attitude.command==a::Command::Disarm){
+      q.r.confirm_attitude_command_publication(a::Command::Disarm,true,q.s.status_stamp+1,q.s,q.t);
+      second_disarm=true;
+    }
+  }
+  need(second_disarm&&q.r.pending(400).generation==2&&q.r.pending(400).ack_ambiguous&&
+    q.r.command400_history().size()==history+1,"second Disarm preserves reuse ambiguity and archives the first transaction");
+  q.r.ack({q.s.status_stamp+200001,400,0,1,191,false},q.t+.201);
+  need(!q.r.pending(400).accepted&&!q.r.pending(400).state_verified,
+    "a delayed first-mission ACK cannot complete the reused second Disarm");
+  q.s.feedback.armed=false;
+  for(int i=0;i<10&&q.r.attitude_core().phase()!=a::Phase::SafeDisarmed;++i)q.tick();
+  need(q.r.attitude_core().phase()==a::Phase::SafeDisarmed&&q.r.pending(400).state_verified,
+    "independent new disarmed ground evidence completes the second physical landing");
   need(q.arm_commands==0&&q.mode_commands==0,"full flight never emits automatic Arm or Offboard entry");
 }
 int main(int argc,char** argv){

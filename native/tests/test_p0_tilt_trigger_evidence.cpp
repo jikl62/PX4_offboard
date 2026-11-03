@@ -24,9 +24,9 @@ int main(){
   assert(!r.attitude_core().tilt_fault_evidence().valid);
   s.attitude.q={std::cos(20.2*3.14159265358979323846/360.),
     std::sin(20.2*3.14159265358979323846/360.),0,0};
-  const auto status_at_fault=s.status_stamp+1000;
-  const auto land_at_fault=s.land_stamp+1000;
-  s.attitude.local_stamp=90001;
+  const auto status_at_fault=s.status_stamp+50000;
+  const auto land_at_fault=s.land_stamp+50000;
+  const auto local_at_fault=s.attitude.local_stamp+50000;
   o=tick(r,s,t+=.05);
   assert(!o.attitude.publish);
   assert(r.attitude_core().phase()==a::Phase::Safety);
@@ -36,7 +36,7 @@ int main(){
   assert(std::abs(evidence.measured_tilt_deg-20.2)<1e-8);
   assert(std::abs(evidence.limit_deg-cfg(true).attitude.max_tilt_deg)<1e-8);
   assert(evidence.armed&&evidence.offboard);
-  assert(evidence.status_stamp==status_at_fault&&evidence.land_stamp==land_at_fault&&evidence.local_stamp==90001);
+  assert(evidence.status_stamp==status_at_fault&&evidence.land_stamp==land_at_fault&&evidence.local_stamp==local_at_fault);
   assert(std::abs(evidence.actual_q[1]-s.attitude.q[1])<1e-12);
   const auto stored=evidence;
   s.attitude.q={1,0,0,0};

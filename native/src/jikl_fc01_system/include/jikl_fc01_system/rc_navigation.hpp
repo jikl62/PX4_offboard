@@ -6,6 +6,13 @@
 
 namespace fc01::attitude {
 enum class RcStartPhase {WaitGround,Prestream,WaitArm,WaitNavigation,Joined,Blocked};
+inline bool rc_preparation_retry_reason(const std::string& reason){
+  return reason=="RC_MANUAL_ARM_EVIDENCE_TIMEOUT"||reason=="RC_NAVIGATION_SELECTION_TIMEOUT"||
+    reason=="RC_NAVIGATION_CONFIRMATION_TIMEOUT"||reason=="RC_NAVIGATION_MODE_SLOT_MISMATCH"||
+    reason=="RC_NAVIGATION_BEFORE_MANUAL_ARM"||reason=="RC_ARM_OR_NAVIGATION_BEFORE_READY"||
+    reason=="RC_NAVIGATION_SELECTION_WITHDRAWN"||reason=="RC_NAVIGATION_MODE_WITHDRAWN"||
+    reason=="RC_ARM_AUTHORIZATION_WITHDRAWN"||reason=="RC_UNEXPECTED_MODE_BEFORE_NAVIGATION";
+}
 // Admission only. This object cannot construct an ARM command or nonzero thrust.
 class RcNavigationStart {
  public:
@@ -113,11 +120,13 @@ class RcNavigationStart {
     }
     if(phase_==RcStartPhase::WaitGround){
       if(s.armed||arm_on||nav||s.offboard||!s.stabilized_selected||!s.landed||!s.at_rest||
-         s.rc_arm_switch!=3||s.rc_mode_slot==0||s.stationary_seconds<c.ground_seconds||std::abs(s.vz)>c.ground_vz_tolerance){
+         s.rc_arm_switch!=3||s.rc_mode_slot==0||s.rc_mode_slot>6||
+         s.stationary_seconds<c.ground_seconds||std::abs(s.vz)>c.ground_vz_tolerance){
         reset("RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND");return false;
       }
-      if(ground_since_<0)ground_since_=now;
-      if(now-ground_since_<c.ground_seconds){reason_="RC_WAIT_CONTINUOUS_SAFE_GROUND";return false;}
+      // stationary_seconds already proves the required continuous ground
+      // rest. The following committed prestream independently verifies live
+      // RC sources and safe controls; do not add another serial rest dwell.
       phase_=RcStartPhase::Prestream;
     }
     if(phase_==RcStartPhase::Prestream){
@@ -200,7 +209,7 @@ class RcNavigationStart {
     return false;
   }
  private:
-  void reset(const std::string& why){phase_=RcStartPhase::WaitGround;anchor_=false;ground_since_=-1;
+  void reset(const std::string& why){phase_=RcStartPhase::WaitGround;anchor_=false;
     stream_first_=stream_last_=-1;commits_=0;ready_source_floor_=0;reason_=why;}
   template<class F>void capture(const F& s){
     anchor_=true;z0_=s.z;q0_=s.q;z_reset_=s.z_reset;vz_reset_=s.vz_reset;quat_reset_=s.quat_reset;
@@ -210,7 +219,7 @@ class RcNavigationStart {
   RcStartPhase phase_{RcStartPhase::WaitGround};std::string reason_{"RC_WAIT_SAFE_GROUND"};
   bool anchor_{},manual_arm_proven_{},navigation_offboard_observed_{};Quaternion q0_{1,0,0,0};double z0_{};
   std::uint8_t z_reset_{},vz_reset_{},quat_reset_{},last_arm_switch_{},last_mode_slot_{};
-  double ground_since_{-1},arm_since_{-1},navigation_since_{-1},stream_first_{-1},stream_last_{-1},observed_at_{-1};unsigned commits_{};
+  double arm_since_{-1},navigation_since_{-1},stream_first_{-1},stream_last_{-1},observed_at_{-1};unsigned commits_{};
   std::uint64_t disarmed_status_{},disarmed_armed_time_{},manual_armed_time_{},arm_edge_{},navigation_edge_{},last_switch_stamp_{};
   std::uint64_t ready_source_floor_{},pending_armed_time_{},last_stabilized_status_{};
 };

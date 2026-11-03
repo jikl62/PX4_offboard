@@ -10,14 +10,15 @@ import signal
 import subprocess
 import threading
 
-from fc01_control import ControlError, runtime_profile
+from fc01_control import ControlError, DEFAULT_TAKEOFF_HEIGHT_M, runtime_profile
 from launcher import PROJECT, private_dir, verify_binary
 import standby
 
 ENTRY = Path(__file__).resolve().parent
 MARKER = b'RC_NAVIGATION_MANUAL_ARM_V1'
+TAKEOFF_MARKER = b'NAV_TAKEOFF_EVIDENCE_V2_20261103'
 
-def navigation_profile(base, target=.5, mode_slot=6):
+def navigation_profile(base, target=DEFAULT_TAKEOFF_HEIGHT_M, mode_slot=6):
     config = runtime_profile(base, False)
     p = config['fc01_system']['ros__parameters']
     if type(target) not in (int,float) or not math.isfinite(target) or not 0 < target < p['aa_max_height']:
@@ -35,7 +36,7 @@ def navigation_profile(base, target=.5, mode_slot=6):
 
 def settings(entry=ENTRY):
     path=entry/'navigation_settings.json'
-    return json.loads(path.read_text()) if path.exists() else {'target_height_m':.5}
+    return json.loads(path.read_text()) if path.exists() else {'target_height_m':DEFAULT_TAKEOFF_HEIGHT_M}
 
 def controller_path(entry=ENTRY,prefix=None):
     return (prefix or entry/'install')/'lib/jikl_fc01_system/fc01_system_node'
@@ -45,13 +46,15 @@ def check_controller(entry=ENTRY,prefix=None):
     verify_binary(binary)
     if MARKER not in binary.read_bytes():
         raise ControlError('可执行程序缺少手动解锁导航标识，保留原服务')
+    if TAKEOFF_MARKER not in binary.read_bytes():
+        raise ControlError('可执行程序缺少本版起飞证据标识，请重新构建；保留原服务')
     return binary
 
 def load_profile(root,agent,entry=ENTRY):
     base=standby.validate(root,agent)
     selected=settings(entry)
     slot=selected.get('navigation_mode_slot',base['fc01_system']['ros__parameters'].get('rc_navigation_mode_slot',6))
-    config=navigation_profile(base,selected.get('target_height_m',.5),slot)
+    config=navigation_profile(base,selected.get('target_height_m',DEFAULT_TAKEOFF_HEIGHT_M),slot)
     from vision_settings import load
     return load(config,entry)
 

@@ -1,6 +1,8 @@
 # FC01 香橙派导航定高入口（2026-10-28）
 
-此包实现开机后台控制、遥控器独立解锁、CH6 导航触发和只读状态窗口。目标相对高度默认 **0.5 m**；20 Hz；起飞/定高任务总时限 **30 秒**，随后进入原生降落流程。默认运行配置只控制姿态、航向和相对高度。
+本轮修复与验证记录见 [2026-11-03 起飞审查](docs/TAKEOFF_AUDIT_20261103.md)，通信取证见 [通信审查](docs/COMMUNICATIONS_AUDIT_20261103.md)。当前源码不会自动更新已部署的香橙派服务。
+
+此包实现开机后台控制、遥控器独立解锁、CH6 导航触发和只读状态窗口。目标相对高度默认 **1.5 m**；20 Hz；起飞/定高任务总时限 **30 秒**，随后进入原生降落流程。默认运行配置只控制姿态、航向和相对高度。
 
 视觉开发分支增加可选的视觉水平位置/速度外环、点目标和连续运动输入，默认关闭。临时接口、无硬件回放和合并步骤见 [视觉导航说明](docs/VISION_NAVIGATION.md)，本轮代码验证边界见 [验收记录](docs/VISION_VERIFICATION_20261031.md)。新相机接口与实机视觉飞行仍需分别验收。
 
@@ -9,7 +11,7 @@
 飞机保持未解锁、接地、静止。将下载的文件放到香橙派桌面，用普通 `orangepi` 用户运行：
 
 ```bash
-bash ~/Desktop/FC01_OrangePi_Navigation_20261028.sh
+FC01_NAVIGATION_INSTALL_DIR="$HOME/FC01_OrangePi_Navigation_20261103_takeoff" bash ~/Desktop/FC01_OrangePi_Navigation_20261103_takeoff.sh
 ```
 
 安装会读取已有 Humble / `install_r632` 消息环境，单任务离线编译私有 C++ 控制器，用实际 rclcpp 参数解析检查完整 YAML，再被动观察新鲜的未解锁、接地、静止反馈。通过后停用已验证的旧 `fc01-standby.service`，启用新 `fc01-navigation.service`。保留原工程和旧入口。
@@ -23,8 +25,8 @@ bash ~/Desktop/FC01_OrangePi_Navigation_20261028.sh
 1. CH6 置 **Stabilized** 档位，CH5 置未解锁，CH7 Kill 保持正常，油门最低，其他杆居中；飞机接地静止。
 2. 等待状态显示 **READY_WAIT_ARM**。这代表真实预发送和 PX4 信号条件已通过；普通 CONNECTED 不等于可以起飞。
 3. 用 **CH5 手动解锁**，然后在 **8 秒内**将 **CH6 拨入 Offboard／导航位置**。本工程 `navigation_settings.json` 中的 `navigation_mode_slot` 为 **1**，对应此前飞控报告的 Offboard 档位。CH6 是遥控器物理通道号，和飞控的 `mode_slot` 是两回事。维持最低油门、其他杆居中。程序确认实际解锁和实际 Offboard 后，执行一次起飞定高。
-4. 观察实际状态：`THRUST_RAMP → ASCEND → HEIGHT_HOLD`。只有进入 `HEIGHT_HOLD` 才代表控制器进入定高阶段。30 秒总任务时限结束会转入降落；接地证据满足后可自动上锁。
-5. 再次执行前，接地上锁、CH5 OFF、CH6 回 Stabilized，等待完整重新待命。上一轮正常退出后后台有约 30 秒重试等待，再重新做地面检查。保持导航拨杆不会重复起飞。
+4. 观察实际状态：`THRUST_RAMP（离地未确认）→ ASCEND（反馈确认离地）→ HEIGHT_HOLD（1.5 m 到高稳定）`。`navigation_allowed=true` 后才允许视觉运动；反馈确认仍需目视或录像核对。30 秒总任务时限结束会转入降落；新的接地证据满足后可自动上锁。
+5. 再次执行前，接地上锁、CH5 OFF、CH6 回 Stabilized，等待完整重新待命。正常结束后在同一控制进程内重新准备，不再为下一轮任务退出并等待后台 30 秒重试；反馈持续有效时复用已有静止时间，再验证实际零推力预发送和新授权。进程异常退出仍保留有界重连等待。保持导航拨杆不会重复起飞。
 
 必须先在 Stabilized 手动解锁，再拨 Offboard。程序不会发送自动 ARM 或主动进入 Offboard 的命令。开机时已经解锁、导航杆已保持、准备前就解锁、顺序错误或新鲜反馈不足，均不启动任务。
 
@@ -33,12 +35,12 @@ CH6 拨离导航会取消任务。程序观察实际模式变化；仍处于 arm
 ## 管理
 
 ```bash
-bash ~/FC01_OrangePi_Navigation_20261028/navigation.sh monitor
-bash ~/FC01_OrangePi_Navigation_20261028/navigation.sh status
-bash ~/FC01_OrangePi_Navigation_20261028/navigation.sh land
-bash ~/FC01_OrangePi_Navigation_20261028/navigation.sh start
-bash ~/FC01_OrangePi_Navigation_20261028/navigation.sh logs
-bash ~/FC01_OrangePi_Navigation_20261028/navigation.sh report
+bash ~/FC01_OrangePi_Navigation_20261103_takeoff/navigation.sh monitor
+bash ~/FC01_OrangePi_Navigation_20261103_takeoff/navigation.sh status
+bash ~/FC01_OrangePi_Navigation_20261103_takeoff/navigation.sh land
+bash ~/FC01_OrangePi_Navigation_20261103_takeoff/navigation.sh start
+bash ~/FC01_OrangePi_Navigation_20261103_takeoff/navigation.sh logs
+bash ~/FC01_OrangePi_Navigation_20261103_takeoff/navigation.sh report
 ```
 
 `monitor` 只读；Ctrl+C 仅退出查看。`land` 与 `stop` 均请求原生优雅退出；`start` 启动等待下一次全新授权。`disable` 停止并停用导航自启。
@@ -46,7 +48,7 @@ bash ~/FC01_OrangePi_Navigation_20261028/navigation.sh report
 回到旧的关闭动作门待命服务：
 
 ```bash
-bash ~/FC01_OrangePi_Navigation_20261028/navigation.sh rollback
+bash ~/FC01_OrangePi_Navigation_20261103_takeoff/navigation.sh rollback
 ```
 
 回滚也必须先取得新鲜的未解锁接地证据。旧服务只待命，不会自动起飞。原安装目录和服务文件均保留。升级过程中管理员命令失败时，新旧服务不会被强杀；用 `report` 提供完整状态后再处理。
@@ -62,7 +64,7 @@ bash ~/FC01_OrangePi_Navigation_20261028/navigation.sh rollback
 目标和导航档位在 `navigation_settings.json`：
 
 ```json
-{"target_height_m": 0.5, "navigation_mode_slot": 1}
+{"target_height_m": 1.5, "navigation_mode_slot": 1}
 ```
 
 `navigation_mode_slot` 必须为 1–6 的整数，需与飞控实际报告的 Offboard 档位一致。旧设置没有此字段时沿用基础配置的 `rc_navigation_mode_slot`；基础配置也未提供时保持旧缺省 6。更改设置后需在未解锁接地时重新执行 `navigation.sh install` 验证和重启。改变目标不会绕过高度、倾角、推力和估计器保护。

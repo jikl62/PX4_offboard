@@ -1,3 +1,5 @@
+Current verification: [2026-11-03 takeoff and readiness audit](docs/TAKEOFF_AUDIT_20261103.md). The record below describes the original release and its environment at that time.
+
 # RC navigation verification record
 
 Scope: native manual-RC admission integrated into the supplied R632 attitude/height controller, supervised boot service, visible read-only status and staged offline installation. The original supplied candidate tree remains unchanged. `native/BASELINE_SHA256.json` records the pristine overlay inputs.
