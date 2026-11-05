@@ -1,5 +1,7 @@
 # 2026-11-03 通信证据审计与只读采集
 
+**2026-11-05 端口更正：** 最终用户确认现用 **香橙派 UART2 `/dev/ttyS2` ↔ FC01 UART6**；新增候选是 **香橙派 UART6 `/dev/ttyS6` ↔ FC01 UART4 / TELEM3**，暂不启用。本文中的10/31 TELEM3/103属于历史日志，不能用于认定或修改当前接线。最新映射、官方引脚核验与只读步骤以 [双串口方案](FC01_DUAL_UART_20261105.md) 为准。
+
 结论：历史完整话题负载确实超过115200容量；现有资料还不能证明当前故障是串口饱和，也不能把UART6加第二个Agent当成已经支持的DDS分流方案。先绑定实际部署、采集同步窗口，再决定是否需要第二链路。本轮没有SSH、改服务、改飞控参数、打开串口或改接线。
 
 ## 证据时间与固件身份
@@ -17,7 +19,7 @@
 
 ## 部署、SDK、QoS与应用等待
 
-当前入口约定是香橙派`/dev/ttyS2 @115200`、FC01 TELEM3 `/dev/ttyS3 @115200`、ROS Domain0；[navigation_boot.sh](../navigation_boot.sh:4)加载Humble和原工程`install_r632`。这说明代码预期，不能证明实际systemd在该目录、使用该二进制或加载了该SDK。
+当前入口约定是香橙派`/dev/ttyS2 @115200`、ROS Domain0；[navigation_boot.sh](../navigation_boot.sh:4)加载Humble和原工程`install_r632`。FC01端不能由香橙派入口推断；11/5用户确认现用FC01 UART6，本地源码映射为`/dev/ttyS5`。早先依据历史记录写成“当前TELEM3”不再适用。这些信息仍不能证明实际systemd在该目录、使用该二进制或加载了该SDK。
 
 [节点](../native/src/jikl_fc01_system/src/fc01_system_node.cpp:54)固定`VehicleStatus`版本1等消息，状态订阅名是`/fmu/out/vehicle_status_v1`。已有[SDK构建记录](navigation_repair_20261031.md:35)显示通用`px4_msgs`曾缺少实际所需字段，必须绑定实际部署的SDK，不能任意换成最新消息包。
 
@@ -36,7 +38,7 @@
 | [V3最终NuttX配置](/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/build/damiao_dm-fc01_default/NuttX/nuttx/.config:1008)的USART6为RX180B、TX256B、默认57600/8N1、无流控；板级未启用USART6 DMA。现有UART4/TELEM3为3000B缓冲及RXDMA。 | UART6不是等价缓冲与DMA条件的替换接口；实际运行参数仍未知。 |
 | [uXRCE类](/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/src/modules/uxrce_dds_client/uxrce_dds_client.h:59)继承ModuleBase；[基类start](/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/platforms/common/include/px4_platform_common/module.h:199)在运行时返回`Task already running`。 | 读取的定制固件没有双串口uXRCE实例或逐话题跨串口分片能力。只在Linux多开Agent不能增加飞控端的第二个DDS发送源。当前板上镜像能力仍需身份绑定。 |
 
-因此现在不改接UART6。先排除SDK/Domain/QoS/进程冲突与应用等待，再看当前双向字节和样本年龄。只有证据显示容量不足时，才评估扩容或明确的双链路桥接设计；第二链路还需核实硬件、端点身份、话题归属与固件资源。图像/视觉内部数据也不应未经预算整体送入飞控串口。
+11/5更正后，FC01 UART6属于现用链路，不改动；候选是FC01 UART4，详见新方案。先排除SDK/Domain/QoS/进程冲突与应用等待，再看当前双向字节和样本年龄。只有证据显示容量不足时，才评估扩容或明确的双链路桥接设计；第二链路还需核实硬件、端点身份、话题归属与固件资源。图像/视觉内部数据也不应未经预算整体送入飞控串口。
 
 ## 只读采集工具
 

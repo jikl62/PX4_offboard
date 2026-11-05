@@ -1,0 +1,155 @@
+{
+  "audit_date_client": "2026-11-05",
+  "scope": "Local custom firmware source evidence only; no connection to OrangePi or FC01. Not the identity of the currently flashed firmware.",
+  "source_tree": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD",
+  "source_git_head": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+  "source_uncommitted_deltas_present": true,
+  "final_user_hardware_topology": {
+    "existing": {
+      "orangepi_uart": "UART2",
+      "orangepi_candidate_device": "/dev/ttyS2",
+      "tx_pin": 11,
+      "rx_pin": 13,
+      "baud": 115200,
+      "fc01_uart": "UART6",
+      "state": "USER_CONFIRMED_EXISTING_DO_NOT_CHANGE"
+    },
+    "candidate": {
+      "orangepi_uart": "UART6",
+      "orangepi_candidate_device": "/dev/ttyS6",
+      "tx_pin": 24,
+      "rx_pin": 23,
+      "gnd_pin": 25,
+      "fc01_uart": "UART4/TELEM3",
+      "state": "USER_DECLARED_NOT_ENABLED"
+    }
+  },
+  "fc01_source_mapping": {
+    "UART6": {
+      "device": "/dev/ttyS5",
+      "selector": 6,
+      "baud_param": "SER_URT6_BAUD"
+    },
+    "UART4_TELEM3": {
+      "device": "/dev/ttyS3",
+      "selector": 103,
+      "baud_param": "SER_TEL3_BAUD"
+    }
+  },
+  "generated_enum_crosscheck": {
+    "MAV_0_CONFIG": [
+      {
+        "value": "6",
+        "label": "UART 6"
+      },
+      {
+        "value": "103",
+        "label": "TELEM 3"
+      }
+    ],
+    "MAV_1_CONFIG": [
+      {
+        "value": "6",
+        "label": "UART 6"
+      },
+      {
+        "value": "103",
+        "label": "TELEM 3"
+      }
+    ],
+    "MAV_2_CONFIG": [
+      {
+        "value": "6",
+        "label": "UART 6"
+      },
+      {
+        "value": "103",
+        "label": "TELEM 3"
+      }
+    ],
+    "UXRCE_DDS_CFG": [
+      {
+        "value": "6",
+        "label": "UART 6"
+      },
+      {
+        "value": "103",
+        "label": "TELEM 3"
+      }
+    ]
+  },
+  "current_runtime_observation": {
+    "orangepi_device_tree": "NOT_OBSERVED",
+    "orangepi_ttyS6": "NOT_OBSERVED",
+    "fc01_uart4_ownership": "NOT_OBSERVED",
+    "fc01_flashed_firmware_identity": "NOT_OBSERVED"
+  },
+  "findings": {
+    "uxrce_modulebase_single_instance": true,
+    "single_serial_config_parameter": "UXRCE_DDS_CFG",
+    "built_in_parallel_serial_topic_partition": false,
+    "critical_feedback_must_remain_primary": [
+      "vehicle_attitude",
+      "vehicle_local_position",
+      "vehicle_status_v1",
+      "vehicle_land_detected",
+      "battery_status",
+      "failsafe_flags",
+      "vehicle_command_ack",
+      "manual_control_setpoint",
+      "manual_control_switches"
+    ],
+    "duplicate_telemetry_does_not_reduce_primary_load": true,
+    "future_new_transport_requires_new_firmware_and_separate_acceptance": true
+  },
+  "files": [
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/boards/damiao/dm-fc01/default.px4board",
+      "sha256": "f5733a461a8aba1c2b6960bc8173c33c6440ea21590d4f201cf837564761e4fb"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/build/damiao_dm-fc01_default/etc/init.d/rc.serial_port",
+      "sha256": "9d4f007cf7c94e4594b56e561235964318f8bbad945ffd928df6e7e5a1e3f2c5"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/build/damiao_dm-fc01_default/etc/init.d/rc.serial",
+      "sha256": "94f3a2eb39246435b78cbeb41526214df7dc65341c48ff9115dad30a7adc7b87"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/src/modules/uxrce_dds_client/module.yaml",
+      "sha256": "e1b8a2dc8b769505829b33607735d93d17ce223679038bcc0d3af083e8650c09"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/src/modules/uxrce_dds_client/uxrce_dds_client.h",
+      "sha256": "597a0b3e17a5e02167183aec3aa413e6a79fb4e4584d4ad34b63dea5595b1fb4"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/platforms/common/include/px4_platform_common/module.h",
+      "sha256": "5b1976bc797921bde854cb35f332d509f1d42f360ec6de64a98214c1e0f94b93"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/src/modules/uxrce_dds_client/dds_topics.yaml",
+      "sha256": "db3a53c346fb7d5d358f76edf55bb7a4ccd1343b8e2302c210be2fa79e01aed6"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/src/modules/uxrce_dds_client/dds_topics.h.em",
+      "sha256": "69ffb03198ff08c4f18d8905ce702830c419a4d3cd6ebee60b9be76180915c94"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/src/modules/uxrce_dds_client/dds_rate_profile.json",
+      "sha256": "439dcf98683dbf36c4e57dcdbd80563faecd5572e35666cdaf1ad67cb30c483d"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/src/modules/uxrce_dds_client/generate_dds_topics.py",
+      "sha256": "b9b2df0787d683f5bda94f7eb3deca4c6e52d4996a56f72b8ca607e5c5cc110d"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/build/damiao_dm-fc01_default/parameters.xml",
+      "sha256": "83411f4a6a028e9cb06aede072b77366c00575b97de48c8f642cac0cb70003ec"
+    },
+    {
+      "path": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/build/damiao_dm-fc01_default/NuttX/nuttx/.config",
+      "sha256": "7a8359765f27171ecbe5e5f6d0bf56a171e6bdafc7023838d2df6753fefbc29c"
+    }
+  ]
+}
