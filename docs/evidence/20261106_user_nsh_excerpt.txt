@@ -1,0 +1,62 @@
+Evidence class: USER_PROVIDED_NSH_OUTPUT_EXCERPT
+Received in conversation: 2026-11-06 (Asia/Shanghai)
+Actual capture timestamp: not provided
+Scope: excerpt of user-pasted terminal output, not an agent SSH session.
+Formatting: pasted line escapes decoded; GUID and repetitive entity creation omitted.
+
+nsh> ver all
+HW arch: DAMIAO_DM_FC01
+PX4 git-hash: 07983bfb894b9372d7520d43ac10dc792d0b4b9f
+PX4 version: 1.16.0 0 (17825792)
+OS: NuttX
+OS version: Release 12.12.0 (202113279)
+OS git-hash: 886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849
+Build datetime: Oct 27 2026 00:49:27
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 10.3.1 20210621 (release)
+MCU: STM32H7[4|5]xxx, rev. V
+
+nsh> param show UXRCE_DDS_CFG
+Symbols: x = used, + = saved, * = unsaved
+x + UXRCE_DDS_CFG [1009,1686] : 103
+
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Startup stage=run transport_inits=1
+INFO  [uxrce_dds_client] Discovery calls=1 replies=1 round_timeouts=0
+INFO  [uxrce_dds_client] Using transport:     serial
+INFO  [uxrce_dds_client] Payload tx:          6614 B/s
+INFO  [uxrce_dds_client] Payload rx:          0 B/s
+INFO  [uxrce_dds_client] timesync converged: true
+INFO  [uxrce_dds_client] Ping pending=no id=43 misses=0
+INFO  [uxrce_dds_client] Ping attempts=43 replies=43 expired=0 send_errors=0
+INFO  [uxrce_dds_client] DDS sessions=1 last_pong_us=54158900
+uxrce_dds_client: cycle: 4556 events, 43938637us elapsed, 9644.13us avg, min 113us max 25147us 4144.803us rms
+uxrce_dds_client: cycle interval: 4557 events, 9645.74us avg, min 114us max 25148us 4145.167us rms
+
+nsh> dmesg
+[Excerpt; beginning of ring buffer is incomplete in supplied output.]
+INFO  [mavlink] mode: Normal, data rate: 24000 B/s on /dev/ttyS1 @ 115200B
+ERROR [parameters] get: param 65535 invalid
+Starting UXRCE-DDS Client on /dev/ttyS3
+INFO  [uxrce_dds_client] init serial /dev/ttyS3 @ 115200 baud
+INFO  [cdcacm_autostart] Starting CDC/ACM autostart
+Board extras: /etc/init.d/rc.board_extras
+INFO  [logger] logger started (mode=all)
+INFO  [uavcan] Node ID 1, bitrate 1000000
+INFO  [cdcacm_autostart] Starting mavlink on /dev/ttyACM0 (SYS_USB_AUTO=2)
+INFO  [mavlink] mode: Onboard, data rate: 100000 B/s on /dev/ttyACM0 @ 2000000B
+ERROR [parameters] get: param 65535 invalid
+ERROR [parameters] get: param 65535 invalid
+ERROR [mavlink] vehicle_command_ack lost, generation 5 -> 7
+ERROR [mavlink] vehicle_command_ack lost, generation 8 -> 14
+ERROR [mavlink] vehicle_command_ack lost, generation 14 -> 16
+ERROR [mavlink] vehicle_command_ack lost, generation 11 -> 20
+ERROR [mavlink] vehicle_command_ack lost, generation 20 -> 24
+INFO  [uxrce_dds_client] synchronized with time offset 1792581310963743us
+[25 successful DDS output entity creation lines omitted.]
+INFO  [uxrce_dds_client] time sync converged
+WARN  [timesync] RTT too high for timesync: 200 ms
+WARN  [timesync] RTT too high for timesync: 36 ms
+INFO  [mavlink] Starting mavlink shell

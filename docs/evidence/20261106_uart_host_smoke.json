@@ -1,0 +1,20 @@
+{
+  "audit_date_client": "2026-11-06",
+  "scope": "Developer host smoke only; not an OrangePi or FC01 hardware test",
+  "host": "x86_64",
+  "command": "python3 uart_preflight.py --output /tmp/fc01_uart_host_20261106_01",
+  "report_path": "/tmp/fc01_uart_host_20261106_01/report.json",
+  "summary": "unknown",
+  "summary_scope": "LOCAL_LINUX_CHECKS_ONLY_NOT_END_TO_END_LINK_READINESS",
+  "board_confirmation": "NOT_CONFIRMED_ON_ORANGEPI",
+  "hardware_validation": "NOT_PERFORMED",
+  "candidate_device": "/dev/ttyS6",
+  "primary_device": "/dev/ttyS2",
+  "observed_host_character_devices": true,
+  "fc01_dated_evidence_reconciliation": "CONFLICT",
+  "candidate_availability": "UNRESOLVED_DO_NOT_ENABLE",
+  "source_fingerprints_checked": 19,
+  "source_fingerprints_match": true,
+  "serial_device_opened": false,
+  "services_or_overlays_changed": false
+}

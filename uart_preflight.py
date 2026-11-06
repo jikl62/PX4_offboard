@@ -19,17 +19,123 @@ READ_LIMIT = 65536
 COMMAND_TIMEOUT = 4
 COMMANDS = ("systemctl show", "fuser --")
 DECLARED_USER_MAPPING = {
-    "evidence_class": "DECLARED_USER_MAPPING",
+    "evidence_class": "USER_REPORTED_PHYSICAL_CONNECTION",
+    "reported_date": "2026-11-06",
+    "fc01_wiring_verification": "USER_REPORT_REQUIRES_EVIDENCE_RECONCILIATION",
     "primary": {"board": "OrangePi Zero3W V1.2", "uart": "UART2",
                 "device": "/dev/ttyS2", "tx_pin": 11, "rx_pin": 13,
-                "baud": 115200, "peer": "FC01 UART6 RX6/TX6",
+                "baud": 115200, "peer": "FC01 UART6 (USART6), RX6/TX6",
+                "peer_hardware_uart_claim": "USART6", "peer_physical_connector_claim": None,
+                "peer_verification": "USER_REPORTED_PHYSICAL_CONNECTION",
                 "change_policy": "DO_NOT_CHANGE"},
     "candidate": {"board": "OrangePi Zero3W V1.2", "uart": "UART6",
                   "device": "/dev/ttyS6", "tx_pin": 24, "rx_pin": 23,
-                  "ground_pin": 25, "peer": "FC01 UART4/TELEM3 RX4/TX4",
+                  "ground_pin": 25, "peer": "FC01 UART4, physical TELEM3, RX4/TX4",
+                  "peer_hardware_uart_claim": "UART4", "peer_physical_connector_claim": "TELEM3",
+                  "peer_verification": "PENDING_ON_DEVICE",
                   "activation": "NOT_ENABLED_BY_THIS_TOOL"},
-    "notice": "User-declared wiring is not locally verified hardware evidence.",
+    "notice": "Latest user-reported physical connection. Supplied NSH confirms the DDS startup device "
+              "/dev/ttyS3, not its physical connector; reconcile the separate runtime/source evidence "
+              "before enabling the candidate. A physical connector name is not a PX4 logical port selector.",
 }
+
+# Dated source reference, never an observation of the attached flight controller.
+# The script remains standalone: this table is explanatory, not runtime config.
+FC01_SOURCE_REFERENCE = {
+    "evidence_class": "LOCAL_FIRMWARE_SOURCE_REFERENCE",
+    "reviewed_date": "2026-11-06",
+    "source_git_head": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "source_has_custom_changes": True,
+    "on_device_firmware_match": "NOT_VERIFIED",
+    "ports": [
+        {"stm32_hardware_uart": "UART4", "px4_logical_port": "TELEM3", "px4_selector": 103,
+         "nuttx_device": "/dev/ttyS3", "baud_parameter": "SER_TEL3_BAUD"},
+        {"stm32_hardware_uart": "USART6", "px4_logical_port": "URT6", "px4_selector": 6,
+         "nuttx_device": "/dev/ttyS5", "baud_parameter": "SER_URT6_BAUD"},
+        {"stm32_hardware_uart": "UART7", "px4_logical_port": "TELEM4", "px4_selector": 104,
+         "nuttx_device": "/dev/ttyS6", "baud_parameter": "SER_TEL4_BAUD"},
+    ],
+    "notice": "In the reviewed source, USART6 uses URT6/6; PX4 logical TELEM4/104 uses UART7. "
+              "Do not derive the PX4 selector from a physical TELEM4 label or OrangePi ttyS6. "
+              "This tool neither reads nor validates live PX4 parameters.",
+}
+
+USER_REPORTED_PROGRESS = {
+    "evidence_class": "USER_REPORTED_PROGRESS",
+    "reported_date": "2026-11-06",
+    "orangepi": {
+        "primary_device_registered": "/dev/ttyS2",
+        "uart6_overlay_enabled": True,
+        "removed_conflicting_overlay": "spi3-cs0-cs1-spidev",
+        "reboot_completed": True,
+        "candidate_device_registered": "/dev/ttyS6",
+        "candidate_driver": "uart-ng",
+        "navigation_service_release": "20261103",
+        "navigation_service_state": "active",
+        "candidate_physical_loopback_test": "NOT_COMPLETED",
+        "candidate_fc01_connection_test": "NOT_COMPLETED",
+    },
+    "notice": "User reports these results from the OrangePi terminal; the collector has not "
+              "independently inspected that terminal output. These claims never replace "
+              "ACTUAL_LOCAL_OBSERVATION or affect its checks and summary.",
+}
+
+USER_PROVIDED_FC01_RUNTIME = {
+    "evidence_class": "USER_PROVIDED_NSH_OUTPUT",
+    "provided_date": "2026-11-06",
+    "capture_time": "UNKNOWN",
+    "board": "DAMIAO_DM_FC01",
+    "firmware_git_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "firmware_build_date": "Oct 27 2026 00:49:27",
+    "UXRCE_DDS_CFG": 103,
+    "client_status": "Running, connected, serial",
+    "transport_inits": 1,
+    "startup_device": "/dev/ttyS3",
+    "startup_baud": 115200,
+    "normalized_startup_log_signals": [
+        "Starting UXRCE-DDS Client on /dev/ttyS3",
+        "init serial /dev/ttyS3 @ 115200 baud",
+    ],
+    "notice": "Dated evidence supplied by the user, not live discovery by this collector. "
+              "Startup device and parameters support the primary DDS endpoint at that time; "
+              "they do not validate the candidate link, physical pin continuity, or current occupancy.",
+}
+
+
+def reconcile_fc01_evidence(declaration, runtime, source):
+    """Compare dated evidence only; never discover a live port or grant readiness."""
+    primary = declaration.get("primary", {}).get("peer_hardware_uart_claim")
+    candidate = declaration.get("candidate", {}).get("peer_hardware_uart_claim")
+    result = {
+        "status": "UNKNOWN", "evidence_class": "DATED_EVIDENCE_COMPARISON",
+        "reported_primary_hardware_uart": primary,
+        "reported_candidate_hardware_uart": candidate,
+        "source_mapped_runtime_hardware_uart": None,
+        "runtime_selector": runtime.get("UXRCE_DDS_CFG"),
+        "runtime_device": runtime.get("startup_device"),
+        "candidate_availability": "UNRESOLVED_DO_NOT_ENABLE",
+        "notice": "A local source mapping does not prove the installed binary or physical wiring. "
+                  "Even consistent dated evidence does not validate a candidate link.",
+    }
+    ports = [row for row in source.get("ports", [])
+             if row.get("px4_selector") == result["runtime_selector"]]
+    if len(ports) != 1 or not primary or not result["runtime_device"]:
+        result["reason"] = "Missing or ambiguous source/runtime/physical-connection evidence."
+        return result
+    port = ports[0]
+    if port.get("nuttx_device") != result["runtime_device"]:
+        result.update(status="CONFLICT", reason="Runtime selector and startup device disagree with the reviewed source.")
+        return result
+    mapped = port.get("stm32_hardware_uart")
+    result["source_mapped_runtime_hardware_uart"] = mapped
+    result["candidate_matches_source_mapped_runtime"] = candidate == mapped
+    if not mapped:
+        result["reason"] = "Source hardware UART mapping is unavailable."
+    elif primary != mapped:
+        result.update(status="CONFLICT", reason="User-reported physical primary UART differs from source-mapped NSH runtime.")
+    else:
+        result.update(status="CONSISTENT_DATED_EVIDENCE_ONLY", reason="No mismatch in these records; live wiring remains unverified.")
+    return result
 
 
 def device_name(value):
@@ -559,7 +665,9 @@ def collect_report(*, paths=None, device="/dev/ttyS6", primary="/dev/ttyS2", run
                                "action": "Resolve this missing or conflicting evidence by manual review before enabling the candidate UART."})
     next_steps.extend([
         {"check": "physical_header_and_peer", "status": "unknown",
-         "action": "Manually verify board revision, header TX/RX/GND and FC01 UART4/TELEM3 RX4/TX4 against authoritative schematics."},
+         "action": "Resolve the conflict between reported primary FC01 RX6/TX6 wiring and supplied "
+                   "NSH /dev/ttyS3 evidence mapped to UART4 by local source. Preserve the working link; "
+                   "candidate UART4 availability is unresolved and must not be enabled."},
         {"check": "electrical_and_bidirectional_link", "status": "unknown",
          "action": "This passive report does not validate voltage, wiring, baud, data transfer, or the flight-controller endpoint."},
     ])
@@ -571,9 +679,15 @@ def collect_report(*, paths=None, device="/dev/ttyS6", primary="/dev/ttyS2", run
         "schema_version": 1,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "summary": summary,
+        "summary_scope": "LOCAL_LINUX_CHECKS_ONLY_NOT_END_TO_END_LINK_READINESS",
         "hardware_validation": "NOT_PERFORMED",
         "board_confirmation": board_status,
         "DECLARED_USER_MAPPING": DECLARED_USER_MAPPING,
+        "FC01_SOURCE_REFERENCE": FC01_SOURCE_REFERENCE,
+        "USER_REPORTED_PROGRESS": USER_REPORTED_PROGRESS,
+        "USER_PROVIDED_FC01_RUNTIME": USER_PROVIDED_FC01_RUNTIME,
+        "FC01_EVIDENCE_RECONCILIATION": reconcile_fc01_evidence(
+            DECLARED_USER_MAPPING, USER_PROVIDED_FC01_RUNTIME, FC01_SOURCE_REFERENCE),
         "ACTUAL_LOCAL_OBSERVATION": {
             "evidence_class": "ACTUAL_LOCAL_OBSERVATION",
             "filesystem_context": "live_host" if paths.is_host else "injected_filesystem_not_hardware_evidence",
@@ -590,6 +704,7 @@ def collect_report(*, paths=None, device="/dev/ttyS6", primary="/dev/ttyS2", run
                   "No overlay, boot configuration, firmware, flight parameter, or existing primary link changes.",
                   "The highest possible outcome is eligible_for_manual_review, never hardware validated.",
                   "An x86/other host cannot establish OrangePi UART availability.",
+                  "Dated user evidence and source references do not describe this collector's current observations.",
                   "fuser reports only processes visible to this user at collection time."],
     }
 
@@ -601,7 +716,11 @@ def write_report(report, output):
     (output / "report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     lines = ["UART passive preflight", "", "Summary: " + report["summary"],
              "Board: " + report["board_confirmation"], "Hardware validation: NOT_PERFORMED", "",
-             "Declared user mapping and actual local observations are separate in report.json.",
+             "User wiring hypotheses, reported progress, source references and actual local observations are separate in report.json.",
+             "Summary covers local Linux checks only, not end-to-end link readiness.",
+             "FC01 dated evidence: " + report["FC01_EVIDENCE_RECONCILIATION"]["status"],
+             "Candidate FC01 availability: " + report["FC01_EVIDENCE_RECONCILIATION"]["candidate_availability"],
+             "PX4 logical TELEM4/104 is not USART6/URT6/6.",
              "No UART device was opened or configured.", "", "Evidence requiring further review:"]
     lines.extend("- " + row["check"] + " [" + row["status"] + "]: " + row["action"] for row in report["next_steps"])
     (output / "report.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -625,6 +744,8 @@ def main(argv=None):
         parser.error(str(error))
     print(str(output.resolve()))
     print(report["summary"] + "; " + report["board_confirmation"] + "; hardware validation NOT_PERFORMED")
+    comparison = report["FC01_EVIDENCE_RECONCILIATION"]
+    print("FC01 dated evidence: " + comparison["status"] + "; candidate: " + comparison["candidate_availability"])
     return 0
 
 

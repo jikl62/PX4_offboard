@@ -113,6 +113,104 @@ class UartPreflightTests(unittest.TestCase):
         self.assertEqual(checks["default_candidate_mapping"]["status"], "observed")
         self.assertTrue(any(row["check"] == "physical_header_and_peer" for row in report["next_steps"]))
 
+    def test_corrected_fc01_hypothesis_keeps_orangepi_devices_and_pins(self):
+        report = self.fixture.report()
+        declaration = report["DECLARED_USER_MAPPING"]
+        self.assertEqual(declaration["evidence_class"], "USER_REPORTED_PHYSICAL_CONNECTION")
+        primary, candidate = declaration["primary"], declaration["candidate"]
+        self.assertEqual((primary["device"], primary["uart"], primary["tx_pin"], primary["rx_pin"], primary["baud"]),
+                         ("/dev/ttyS2", "UART2", 11, 13, 115200))
+        self.assertEqual((candidate["device"], candidate["uart"], candidate["tx_pin"], candidate["rx_pin"]),
+                         ("/dev/ttyS6", "UART6", 24, 23))
+        self.assertEqual((primary["peer_hardware_uart_claim"], primary["peer_physical_connector_claim"]),
+                         ("USART6", None))
+        self.assertEqual((candidate["peer_hardware_uart_claim"], candidate["peer_physical_connector_claim"]),
+                         ("UART4", "TELEM3"))
+        self.assertEqual(primary["peer_verification"], "USER_REPORTED_PHYSICAL_CONNECTION")
+        self.assertEqual(candidate["peer_verification"], "PENDING_ON_DEVICE")
+        observation = report["ACTUAL_LOCAL_OBSERVATION"]
+        self.assertEqual((observation["requested_primary"], observation["requested_device"]),
+                         ("/dev/ttyS2", "/dev/ttyS6"))
+        self.assertEqual(report["hardware_validation"], "NOT_PERFORMED")
+
+    def test_physical_telem4_cannot_alias_px4_logical_telem4(self):
+        report = self.fixture.report()
+        reference = report["FC01_SOURCE_REFERENCE"]
+        self.assertEqual(reference["evidence_class"], "LOCAL_FIRMWARE_SOURCE_REFERENCE")
+        self.assertEqual(reference["on_device_firmware_match"], "NOT_VERIFIED")
+        ports = {row["stm32_hardware_uart"]: row for row in reference["ports"]}
+        observed = [(ports[uart]["px4_logical_port"], ports[uart]["px4_selector"],
+                     ports[uart]["nuttx_device"], ports[uart]["baud_parameter"])
+                    for uart in ("UART4", "USART6", "UART7")]
+        self.assertEqual(observed, [("TELEM3", 103, "/dev/ttyS3", "SER_TEL3_BAUD"),
+                                    ("URT6", 6, "/dev/ttyS5", "SER_URT6_BAUD"),
+                                    ("TELEM4", 104, "/dev/ttyS6", "SER_TEL4_BAUD")])
+        self.assertEqual(len({row["px4_selector"] for row in ports.values()}), 3)
+        self.assertNotEqual(ports["USART6"]["nuttx_device"], report["ACTUAL_LOCAL_OBSERVATION"]["requested_device"])
+        self.assertTrue(all(cmd[0] in ("systemctl", "fuser") for cmd in self.fixture.commands))
+
+    def test_user_reported_progress_does_not_override_current_observation(self):
+        self.fixture.write(self.fixture.dt + "/model", "Fixture desktop")
+        self.fixture.write(self.fixture.dt + "/compatible", "fixture,desktop")
+        (self.root / "dev/ttyS6").unlink()
+        report = self.fixture.report()
+        progress = report["USER_REPORTED_PROGRESS"]
+        self.assertEqual(progress["evidence_class"], "USER_REPORTED_PROGRESS")
+        self.assertEqual(progress["orangepi"]["candidate_device_registered"], "/dev/ttyS6")
+        self.assertEqual(progress["orangepi"]["candidate_driver"], "uart-ng")
+        self.assertEqual(progress["orangepi"]["removed_conflicting_overlay"], "spi3-cs0-cs1-spidev")
+        self.assertEqual(report["board_confirmation"], "NOT_CONFIRMED_ON_ORANGEPI")
+        self.assertEqual(report["summary"], "unknown")
+        self.assertEqual(self.checks(report)["candidate_character_device"]["status"], "unknown")
+        self.assertEqual(report["hardware_validation"], "NOT_PERFORMED")
+
+    def test_user_nsh_evidence_confirms_device_not_physical_uart(self):
+        report = self.fixture.report()
+        evidence = report["USER_PROVIDED_FC01_RUNTIME"]
+        self.assertEqual(evidence["evidence_class"], "USER_PROVIDED_NSH_OUTPUT")
+        self.assertEqual(evidence["capture_time"], "UNKNOWN")
+        self.assertEqual((evidence["UXRCE_DDS_CFG"], evidence["startup_device"], evidence["startup_baud"]),
+                         (103, "/dev/ttyS3", 115200))
+        self.assertNotIn("USER_PROVIDED_FC01_RUNTIME", report["ACTUAL_LOCAL_OBSERVATION"])
+        self.assertEqual(report["DECLARED_USER_MAPPING"]["candidate"]["peer_verification"], "PENDING_ON_DEVICE")
+        self.assertEqual(report["hardware_validation"], "NOT_PERFORMED")
+        self.assertTrue(all(cmd[0] in ("systemctl", "fuser") for cmd in self.fixture.commands))
+
+    def test_linux_eligible_cannot_override_conflicting_fc01_evidence(self):
+        report = self.fixture.report()
+        comparison = report["FC01_EVIDENCE_RECONCILIATION"]
+        self.assertEqual(report["summary"], "eligible_for_manual_review")
+        self.assertEqual(report["summary_scope"], "LOCAL_LINUX_CHECKS_ONLY_NOT_END_TO_END_LINK_READINESS")
+        self.assertEqual(comparison["status"], "CONFLICT")
+        self.assertEqual(comparison["source_mapped_runtime_hardware_uart"], "UART4")
+        self.assertEqual(comparison["reported_primary_hardware_uart"], "USART6")
+        self.assertTrue(comparison["candidate_matches_source_mapped_runtime"])
+        self.assertEqual(comparison["candidate_availability"], "UNRESOLVED_DO_NOT_ENABLE")
+
+    def test_fc01_comparison_resolves_selector_and_device_without_linux_number_inference(self):
+        runtime = copy.deepcopy(audit.USER_PROVIDED_FC01_RUNTIME)
+        for selector, device, hardware, status in (
+                (103, "/dev/ttyS3", "UART4", "CONFLICT"),
+                (6, "/dev/ttyS5", "USART6", "CONSISTENT_DATED_EVIDENCE_ONLY"),
+                (104, "/dev/ttyS6", "UART7", "CONFLICT")):
+            with self.subTest(selector=selector):
+                runtime.update(UXRCE_DDS_CFG=selector, startup_device=device)
+                row = audit.reconcile_fc01_evidence(audit.DECLARED_USER_MAPPING, runtime, audit.FC01_SOURCE_REFERENCE)
+                self.assertEqual(row["source_mapped_runtime_hardware_uart"], hardware)
+                self.assertEqual(row["status"], status)
+                self.assertEqual(row["candidate_availability"], "UNRESOLVED_DO_NOT_ENABLE")
+
+    def test_missing_or_mismatched_runtime_evidence_cannot_resolve_fc01_conflict(self):
+        runtime = copy.deepcopy(audit.USER_PROVIDED_FC01_RUNTIME)
+        runtime["startup_device"] = "/dev/ttyS5"
+        row = audit.reconcile_fc01_evidence(audit.DECLARED_USER_MAPPING, runtime, audit.FC01_SOURCE_REFERENCE)
+        self.assertEqual(row["status"], "CONFLICT")
+        self.assertIsNone(row["source_mapped_runtime_hardware_uart"])
+        runtime.pop("UXRCE_DDS_CFG")
+        row = audit.reconcile_fc01_evidence(audit.DECLARED_USER_MAPPING, runtime, audit.FC01_SOURCE_REFERENCE)
+        self.assertEqual(row["status"], "UNKNOWN")
+        self.assertEqual(row["candidate_availability"], "UNRESOLVED_DO_NOT_ENABLE")
+
     def test_device_type_missing_and_primary_missing_cannot_pass(self):
         raw = audit.collect_report(paths=audit.SystemPaths(self.root), runner=self.fixture.runner)
         self.assertEqual(self.checks(raw)["candidate_character_device"]["status"], "not_ready")
@@ -380,6 +478,7 @@ class UartPreflightTests(unittest.TestCase):
         self.assertNotEqual(report["summary"], "eligible_for_manual_review")
         self.assertEqual(report["hardware_validation"], "NOT_PERFORMED")
         self.assertTrue((output / "report.txt").is_file())
+        self.assertIn("FC01 dated evidence: CONFLICT; candidate: UNRESOLVED_DO_NOT_ENABLE", process.stdout)
 
 
 if __name__ == "__main__":

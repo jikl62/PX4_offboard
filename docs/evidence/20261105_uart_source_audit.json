@@ -1,4 +1,8 @@
 {
+  "record_status": "HISTORICAL_SOURCE_AUDIT_SUPERSEDED_FOR_PHYSICAL_TOPOLOGY",
+  "superseded_on": "2026-11-06",
+  "superseded_by": "20261106_uart_mapping_audit.json",
+  "superseded_scope": "The former final_user_hardware_topology was a dated user declaration and is not a verified physical mapping. The source mapping and hashes in this record remain historical evidence.",
   "audit_date_client": "2026-11-05",
   "scope": "Local custom firmware source evidence only; no connection to OrangePi or FC01. Not the identity of the currently flashed firmware.",
   "source_tree": "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD",
