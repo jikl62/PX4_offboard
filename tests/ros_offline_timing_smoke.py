@@ -25,7 +25,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--node', type=Path, default=root / '.build/offline-stability-20261107/install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node')
     parser.add_argument('--report', type=Path)
+    parser.add_argument('--feedback-hz', type=float, default=20.)
+    parser.add_argument('--observe-seconds', type=float, default=0.)
     args = parser.parse_args()
+    if not (20. <= args.feedback_hz <= 50.) or not (0. <= args.observe_seconds <= 180.):
+        parser.error('feedback rate must be 20..50 Hz; observation 0..180 seconds')
     if not args.node.is_file():
         parser.error('build the real ROS 2 node before this opt-in smoke')
 
@@ -132,7 +136,7 @@ def main():
         now = time.monotonic()
         if process.poll() is not None:
             raise RuntimeError('native node exited early: ' + str(process.returncode))
-        if publish_feedback and now-last_publish >= .05:
+        if publish_feedback and now-last_publish >= 1./args.feedback_hz:
             publish()
             last_publish = now
         rclpy.spin_once(node, timeout_sec=.003)
@@ -197,6 +201,36 @@ def main():
                                        stdin=subprocess.DEVNULL, stdout=logs, stderr=subprocess.STDOUT,
                                        env=os.environ.copy())
             until(lambda: bool(records) and healthy(records[-1]), 8., 'fresh real ROS callbacks')
+            feedback_observation = None
+            if args.observe_seconds:
+                began = time.monotonic()
+                begin_index = len(records)
+                until(lambda: time.monotonic()-began >= args.observe_seconds,
+                      args.observe_seconds+2., 'sustained feedback observation')
+                observed = records[begin_index:]
+                window = max(1, len(observed)//4)
+                ages = {name: [row['source_timing'][name]['rmw_to_callback_s'] for row in observed]
+                        for name in ('local', 'attitude')}
+                feedback_observation = dict(duration_s=time.monotonic()-began,
+                    requested_feedback_hz=args.feedback_hz,
+                    maximum_cycle_s=max(row['max_cycle_period_s'] for row in observed),
+                    stall_count=max(row['cycle_stall_count'] for row in observed), sources={})
+                for name, values in ages.items():
+                    if not values or any(value is None for value in values):
+                        raise RuntimeError('RMW diagnostic unavailable for queue regression')
+                    growth = sum(values[-window:])/window-sum(values[:window])/window
+                    peak_callbacks = max(row['source_timing'][name].get('callbacks_this_cycle', 1)
+                                         for row in observed)
+                    feedback_observation['sources'][name] = dict(first_s=values[0], last_s=values[-1],
+                        max_s=max(values), last_minus_first_window_s=growth,
+                        max_callbacks_per_cycle=peak_callbacks,
+                        max_source_age_s=max(row['source_timing'][name]['envelope_age_s'] for row in observed))
+                    if growth > .05 or max(values) > .15:
+                        raise RuntimeError('feedback queue growth: '+json.dumps(feedback_observation))
+                    if args.feedback_hz >= 30 and args.observe_seconds >= 3 and peak_callbacks < 2:
+                        raise RuntimeError('fast source was never consumed twice in a control cycle')
+                if feedback_observation['stall_count'] or not all(healthy(row) for row in observed):
+                    raise RuntimeError('feedback scheduling regressed safety/timing')
             fresh = records[-1]
             ready_sequence = send('ATTITUDE_READY')
             until(lambda: any(x.get('seq') == ready_sequence for x in records), 2., 'prepare reply')
@@ -244,6 +278,7 @@ def main():
                           real_target_messages=len(received_targets), real_heartbeat_messages=len(received_modes),
                           vehicle_commands=0, nonzero_thrust_messages=0, native_exit_code=process.returncode,
                           loss_to_safety_s=stale_observed_at-stopped_at,
+                          feedback_observation=feedback_observation,
                           fresh=fresh, zero_prestream=prestream, stale=stale,
                           limitation='Synthetic local ROS feedback and sinks; no Agent, UART, PX4 adoption or flight evidence.')
             if args.report:

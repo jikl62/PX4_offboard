@@ -143,6 +143,68 @@ class Core {
   std::uint8_t reference_z_reset() const{return z_reset_;}
   std::uint8_t reference_vz_reset() const{return vz_reset_;}
   std::uint8_t reference_quat_reset() const{return reference_.reset_counter();}
+  // Read-only receive scheduling hint. A true result ends EXTRA callback
+  // collection so step() sees this candidate before a later sample can hide
+  // it. It neither advances guards/references nor faults or authorizes output.
+  bool local_requires_control_step(std::uint64_t stamp,double z,double vz,double z_deriv)const{
+    if(!std::isfinite(z)||!std::isfinite(vz)||!std::isfinite(z_deriv))return true;
+    // Compare against the last CONTROL observation as well as adjacent
+    // callbacks: 0 -> .6 -> 1.2 -> .6 can otherwise hide a >1 cumulative jump.
+    if((flight_started_||(bench_arm_only_active_&&bench_disarmed_seen_))&&last_sample_set_&&
+       (std::abs(z-last_sample_z_)>c_.z_jump_limit_m||
+       std::abs(vz-last_sample_vz_)>c_.vz_jump_limit_mps))return true;
+    const double height=z0_-z;
+    const bool stopped_bench=bench_arm_only_active_&&bench_disarmed_seen_;
+    if(flight_started_&&!stopped_bench&&
+       ((z_set_&&(height>c_.vertical.max_height||
+          height< -(bench_arm_only_active_?c_.bench_ground_down_tolerance_m:c_.height_lower_margin_m)))||
+        std::abs(vz)>c_.vertical.max_climb+c_.vertical.max_descent+2*c_.vz_jump_limit_mps))return true;
+    // Preview the actual monitor from its last control-step state. In
+    // particular, matching vz/z_deriv may still violate its position window.
+    if(c_.feedback_guard.enabled&&flight_started_&&!bench_arm_only_active_&&
+       phase_>=Phase::ThrustRamp&&phase_<=Phase::RequestDisarm){
+      auto preview=feedback_guard_;
+      const auto& evidence=preview.observe(stamp,z,vz,z_deriv,c_.local_timeout);
+      if(evidence.suspect||!evidence.healthy)return true;
+    }
+    // The RC arm/navigation join owns its existing disarmed anchor. A
+    // callback must not erase movement across that armed admission window.
+    if(c_.rc_navigation_enabled&&!rc_joined_&&rc_start_.anchor_valid()&&
+       (rc_start_.phase()==RcStartPhase::WaitArm||rc_start_.phase()==RcStartPhase::WaitNavigation)&&
+       (std::abs(rc_start_.z0()-z)>c_.height_tolerance||std::abs(vz)>c_.ground_vz_tolerance))return true;
+    if(phase_==Phase::SelfCheck&&prep_since_>=0&&std::abs(z-prep_z_)>c_.height_tolerance)return true;
+    if(!z_set_)return false;
+    const auto normal_ground=[&](double speed){
+      return std::abs(height)<=c_.height_tolerance&&std::abs(vz)<=speed;
+    };
+    const auto bench_ground=[&]{
+      return height<=std::min(c_.height_tolerance,c_.liftoff_height_m)&&
+        height>=-c_.bench_ground_down_tolerance_m&&std::abs(vz)<=c_.bench_ground_vz_tolerance_mps;
+    };
+    if(phase_==Phase::ArmedGround&&!normal_ground(c_.ground_vz_tolerance))return true;
+    if(phase_==Phase::BenchArmedGround&&!bench_ground())return true;
+    if(phase_==Phase::PoweredGround||phase_==Phase::RequestDisarm||phase_==Phase::SafeDisarmed){
+      if(bench_arm_only_active_){
+        // A confirmed disarmed bench intentionally accepts finite estimator
+        // drift; the actual step still requires NEW disarmed/rest evidence.
+        if(!bench_disarmed_seen_&&!external_bench_disarm_pending_&&!bench_ground())return true;
+      }else if(!normal_ground(c_.speed_tolerance))return true;
+    }
+    if(phase_==Phase::Landed&&!normal_ground(c_.speed_tolerance))return true;
+    // Once a touchdown/settling dwell exists, a transient false sample must
+    // clear it. Ordinary high-altitude descent can continue catching up.
+    if((phase_==Phase::Descent||phase_==Phase::RecoveryDescent||phase_==Phase::Px4LandPending)&&
+       land_dwell_first_time_>=0&&!normal_ground(c_.speed_tolerance))return true;
+    if(phase_==Phase::Ascend&&dwell_since_>=0&&
+       (std::abs(height-target_)>c_.height_tolerance||std::abs(vz)>c_.speed_tolerance))return true;
+    if(phase_==Phase::ThrustRamp){
+      if(!ramp_feedback_active_&&height>=std::min(target_,c_.liftoff_height_m))return true;
+      const auto& rise=takeoff_evidence_.evidence();
+      if(rise.local_samples&&(height<c_.liftoff_height_m||
+         (!rise.rise_confirmed&&-vz<c_.liftoff_speed_mps)))return true;
+    }
+    return false;
+  }
   const ArmedGroundFaultEvidence& armed_ground_fault_evidence() const{return armed_ground_fault_evidence_;}
   const TiltFaultEvidence& tilt_fault_evidence() const{return tilt_fault_evidence_;}
   const AuthorityGroundEvidence& authority_ground_evidence() const{return authority_ground_evidence_;}

@@ -12,6 +12,8 @@
 #include "jikl_fc01_system/source_diagnostics.hpp"
 #include "jikl_fc01_system/vision_ros_adapter.hpp"
 #include "jikl_fc01_system/control_diagnostics.hpp"
+#include "jikl_fc01_system/receive_schedule.hpp"
+#include "jikl_fc01_system/receive_events.hpp"
 #include <jikl_fc01_system/msg/vision_state.hpp>
 #include <jikl_fc01_system/msg/navigation_command.hpp>
 #include <px4_msgs/msg/manual_control_setpoint.hpp>
@@ -90,24 +92,31 @@ class SystemNode final:public rclcpp::Node {
       if(state_reliable)state_qos.reliable();else state_qos.best_effort();
       if(command_reliable)command_qos.reliable();else command_qos.best_effort();
       visual_state_sub_=create_subscription<VisualState>(visual_state_topic_,state_qos,
-        [this](VisualState::ConstSharedPtr m){visual_inbox_.state(f::vision::state_from_message(*m),steady());});
+        [this](VisualState::ConstSharedPtr m){++received_callbacks_;++receive_events_;visual_inbox_.state(f::vision::state_from_message(*m),steady());});
       visual_command_sub_=create_subscription<VisualCommand>(visual_command_topic_,command_qos,
-        [this](VisualCommand::ConstSharedPtr m){visual_inbox_.command(f::vision::command_from_message(*m),steady());});
+        [this](VisualCommand::ConstSharedPtr m){++received_callbacks_;++receive_events_;visual_inbox_.command(f::vision::command_from_message(*m),steady());});
       std::cout<<"{\"kind\":\"visual_inputs\",\"state_topic\":"<<f::quote(visual_state_topic_)
         <<",\"command_topic\":"<<f::quote(visual_command_topic_)<<",\"state_reliable\":"<<boolean(state_reliable)
         <<",\"command_reliable\":"<<boolean(command_reliable)<<",\"qos_depth\":"<<depth<<"}"<<std::endl;
     }
     if(config.profile=="attitude_altitude"){
-      attitude_sub_=create_subscription<Attitude>("/fmu/out/vehicle_attitude",qos,[this](Attitude::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive_sampled(*m,attitude_,attitude_stamp_,attitude_sample_,f::SourceSlot::Attitude,info);});
-      manual_sub_=create_subscription<Manual>("/fmu/out/manual_control_setpoint",qos,[this](Manual::ConstSharedPtr m){authority_telemetry_.manual(*m,steady(),timestamp(),config_.attitude.flags_timeout);});
-      switches_sub_=create_subscription<Switches>("/fmu/out/manual_control_switches",qos,[this](Switches::ConstSharedPtr m){authority_telemetry_.switches(*m,steady(),config_.attitude.flags_timeout,timestamp());});
+      attitude_sub_=create_subscription<Attitude>("/fmu/out/vehicle_attitude",qos,[this](Attitude::ConstSharedPtr m,const rclcpp::MessageInfo& info){const auto previous=attitude_;receive_sampled(*m,attitude_,attitude_stamp_,attitude_sample_,f::SourceSlot::Attitude,info);
+        if(f::attitude_receive_event(previous,attitude_,config_.attitude))++receive_events_;});
+      manual_sub_=create_subscription<Manual>("/fmu/out/manual_control_setpoint",qos,[this](Manual::ConstSharedPtr m){receive_manual(*m);});
+      switches_sub_=create_subscription<Switches>("/fmu/out/manual_control_switches",qos,[this](Switches::ConstSharedPtr m){receive_switches(*m);});
     }
-    local_sub_=create_subscription<Local>("/fmu/out/vehicle_local_position",qos,[this](Local::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive_sampled(*m,local_,local_stamp_,local_sample_,f::SourceSlot::Local,info);});
-    status_sub_=create_subscription<Status>("/fmu/out/vehicle_status_v1",qos,[this](Status::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive(*m,status_,status_stamp_,f::SourceSlot::Status,info);});
-    land_sub_=create_subscription<Land>("/fmu/out/vehicle_land_detected",qos,[this](Land::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive(*m,land_,land_stamp_,f::SourceSlot::Land,info);});
-    battery_sub_=create_subscription<Battery>("/fmu/out/battery_status",qos,[this](Battery::ConstSharedPtr m,const rclcpp::MessageInfo& info){if(m->id==1)receive(*m,battery_,battery_stamp_,f::SourceSlot::Battery,info);});
-    flags_sub_=create_subscription<Flags>("/fmu/out/failsafe_flags",qos,[this](Flags::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive(*m,flags_,flags_stamp_,f::SourceSlot::Flags,info);});
+    local_sub_=create_subscription<Local>("/fmu/out/vehicle_local_position",qos,[this](Local::ConstSharedPtr m,const rclcpp::MessageInfo& info){const auto previous=local_;receive_sampled(*m,local_,local_stamp_,local_sample_,f::SourceSlot::Local,info);
+      const auto& core=runtime_->attitude_core();
+      if(f::local_receive_event(previous,local_,config_.attitude)||
+         core.local_requires_control_step(local_.timestamp_sample,local_.z,local_.vz,local_.z_deriv))++receive_events_;});
+    status_sub_=create_subscription<Status>("/fmu/out/vehicle_status_v1",qos,[this](Status::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive_event(*m,status_,status_stamp_,f::SourceSlot::Status,info,f::status_receive_event<Status>);});
+    land_sub_=create_subscription<Land>("/fmu/out/vehicle_land_detected",qos,[this](Land::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive_event(*m,land_,land_stamp_,f::SourceSlot::Land,info,f::land_receive_event<Land>);});
+    battery_sub_=create_subscription<Battery>("/fmu/out/battery_status",qos,[this](Battery::ConstSharedPtr m,const rclcpp::MessageInfo& info){
+      if(m->id==1)receive_event(*m,battery_,battery_stamp_,f::SourceSlot::Battery,info,f::battery_receive_event<Battery>);
+      else ++received_callbacks_;});
+    flags_sub_=create_subscription<Flags>("/fmu/out/failsafe_flags",qos,[this](Flags::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive_event(*m,flags_,flags_stamp_,f::SourceSlot::Flags,info,f::flags_receive_event<Flags>);});
     ack_sub_=create_subscription<Ack>("/fmu/out/vehicle_command_ack",qos,[this](Ack::ConstSharedPtr m){
+      ++received_callbacks_;++receive_events_;
       const auto received=steady();
       runtime_->ack({m->timestamp,m->command,m->result,m->target_system,m->target_component,m->from_external},received);
       std::cout<<"{\"kind\":\"ack\",\"command\":"<<m->command<<",\"result\":"<<int(m->result)<<",\"timestamp\":"<<m->timestamp<<",\"target_system\":"<<int(m->target_system)<<",\"target_component\":"<<m->target_component<<",\"from_external\":"<<boolean(m->from_external)
@@ -140,7 +149,13 @@ class SystemNode final:public rclcpp::Node {
   void begin_cycle(double start){
     cycle_.begin(start);work_={};work_.started=start;
     pair_context_count_=0;pair_context_seconds_.fill(0);
+    source_cycle_callbacks_.fill(0);
   }
+  std::uint64_t received_callbacks()const{return received_callbacks_;}
+  std::uint64_t receive_events()const{return receive_events_;}
+  double receive_budget_seconds()const{return loop_period().count()/10.;}
+  void receive_pass_done(){++work_.receive_passes;}
+  void receive_stopped(const f::ReceivePassSchedule& schedule){receive_stop_reason_=schedule.stop_reason();}
   void callbacks_done(double now){
     cycle_.callbacks_done(now);work_.callbacks=now-work_.started;
   }
@@ -230,7 +245,8 @@ class SystemNode final:public rclcpp::Node {
     bool attitude_sent=!output.attitude.publish;
     if(output.attitude.publish){
       try{
-        pair_context_count_=0;pair_context_seconds_.fill(0);sampling_pair_=true;
+        pair_context_count_=0;pair_context_seconds_.fill(0);
+        sampling_pair_=true;
         const auto decision=f::attitude::publish_attitude_resampled<Mode,AttitudeTarget>(
           [this]{return boundary_context();},output.attitude,timestamp(),
           [this](const AttitudeTarget& target){
@@ -379,7 +395,7 @@ class SystemNode final:public rclcpp::Node {
  private:
   struct Work {
     double started{},callbacks{},ipc{},runtime{},snapshot{},graph{},boundary{},reporting{};
-    std::uint64_t snapshots{},graph_queries{},contexts{};
+    std::uint64_t snapshots{},graph_queries{},contexts{},receive_passes{};
   };
   struct GraphCounts {
     jikl_fc01_ground_link::Traffic traffic;
@@ -420,21 +436,47 @@ class SystemNode final:public rclcpp::Node {
   }
   void record_receipt(f::SourceSlot slot,std::uint64_t envelope,std::uint64_t sample,
       bool sampled,double received,const rclcpp::MessageInfo& info){
+    ++received_callbacks_;++source_callbacks_[std::size_t(slot)];++source_cycle_callbacks_[std::size_t(slot)];
     receipt_timing_[std::size_t(slot)]=f::observe_source_receipt(envelope,sample,sampled,
       timestamp(),received,info.get_rmw_message_info().received_timestamp);
+    const auto host=receipt_timing_[std::size_t(slot)].host_stamp;
+    if(!envelope||(sampled&&(!sample||sample>envelope))||
+       (envelope>host&&envelope-host>f::source_clock_skew_budget_us))++receive_events_;
   }
   template<class T>void receive(const T& msg,T& destination,f::Stamp& stamp,
       f::SourceSlot slot,const rclcpp::MessageInfo& info){
     const double received=steady();record_receipt(slot,msg.timestamp,0,false,received,info);
     const bool accepted=stamp.accept(msg.timestamp,received);
     receipt_accepted_[std::size_t(slot)]=accepted;
-    if(accepted)destination=msg;
+    if(accepted){destination=msg;++source_accepted_[std::size_t(slot)];}
+    else ++receive_events_;
   }
   template<class T>void receive_sampled(const T& msg,T& destination,f::Stamp& stamp,
       f::SourceSampleProgress& sample,f::SourceSlot slot,const rclcpp::MessageInfo& info){
     const double received=steady();
     record_receipt(slot,msg.timestamp,msg.timestamp_sample,true,received,info);
-    receipt_accepted_[std::size_t(slot)]=f::receive_sampled_source(msg,destination,stamp,sample,received);
+    const bool accepted=f::receive_sampled_source(msg,destination,stamp,sample,received);
+    receipt_accepted_[std::size_t(slot)]=accepted;
+    if(accepted)++source_accepted_[std::size_t(slot)];else ++receive_events_;
+  }
+  template<class T,class Event>void receive_event(const T& msg,T& destination,f::Stamp& stamp,
+      f::SourceSlot slot,const rclcpp::MessageInfo& info,Event event){
+    const auto previous=destination;receive(msg,destination,stamp,slot,info);
+    if(event(previous,destination))++receive_events_;
+  }
+  void receive_manual(const Manual& message){
+    ++received_callbacks_;const double now=steady();const auto host=timestamp();
+    const auto before=authority_telemetry_.facts(now,config_.attitude.flags_timeout,true,false,1,1,host);
+    authority_telemetry_.manual(message,now,host,config_.attitude.flags_timeout);
+    const auto after=authority_telemetry_.facts(now,config_.attitude.flags_timeout,true,false,1,1,host);
+    if(f::authority_receive_key(before)!=f::authority_receive_key(after))++receive_events_;
+  }
+  void receive_switches(const Switches& message){
+    ++received_callbacks_;const double now=steady();const auto host=timestamp();
+    const auto before=authority_telemetry_.facts(now,config_.attitude.flags_timeout,true,false,1,1,host);
+    authority_telemetry_.switches(message,now,config_.attitude.flags_timeout,host);
+    const auto after=authority_telemetry_.facts(now,config_.attitude.flags_timeout,true,false,1,1,host);
+    if(f::authority_receive_key(before)!=f::authority_receive_key(after))++receive_events_;
   }
   std::uint64_t timestamp(){
     const auto ns=get_clock()->now().nanoseconds();
@@ -759,6 +801,7 @@ class SystemNode final:public rclcpp::Node {
     out<<",\""<<field<<"\":{\"callbacks_s\":"<<number(value.callbacks)
       <<",\"ipc_s\":"<<number(value.ipc)<<",\"runtime_s\":"<<number(value.runtime)
       <<",\"snapshot_s\":"<<number(value.snapshot)<<",\"graph_s\":"<<number(value.graph)
+      <<",\"receive_passes\":"<<value.receive_passes
       <<",\"snapshot_calls\":"<<value.snapshots<<",\"graph_queries\":"<<value.graph_queries
       <<",\"boundary_s\":"<<number(value.boundary)<<",\"boundary_calls\":"<<value.contexts
       <<",\"reporting_s\":"<<number(value.reporting)<<"}";
@@ -783,6 +826,9 @@ class SystemNode final:public rclcpp::Node {
       <<",\"diagnostic_monotonic_s\":"<<number(now)
       <<",\"host_clock_anchor_error_s\":"<<age(clock_observation_.anchor_error)
       <<",\"host_clock_last_increment_error_s\":"<<age(clock_observation_.delta_error)
+      <<",\"receive_policy\":\"BOUNDED_SINGLE_THREAD_PASSES_V1\",\"receive_budget_s\":"<<number(receive_budget_seconds())
+      <<",\"receive_stop_reason\":"<<f::quote(receive_stop_reason_)
+      <<",\"receive_callbacks_total\":"<<received_callbacks_<<",\"receive_events_total\":"<<receive_events_
       <<",\"host_clock_event_count\":"<<clock_event_count_
       <<",\"host_clock_last_event\":"<<f::quote(f::host_clock_change_name(last_clock_event_.change))
       <<",\"host_clock_last_event_us\":"<<last_clock_event_stamp_
@@ -800,6 +846,8 @@ class SystemNode final:public rclcpp::Node {
       const auto& item=sources[i];
       out<<f::quote(f::source_slot_name(f::SourceSlot(i)))<<":{\"envelope_us\":"<<stamp.value
         <<",\"sample_us\":"<<samples[i]<<",\"timeout_s\":"<<number(timeouts[i])
+        <<",\"callbacks_total\":"<<source_callbacks_[i]<<",\"accepted_total\":"<<source_accepted_[i]
+        <<",\"callbacks_this_cycle\":"<<source_cycle_callbacks_[i]
         <<",\"envelope_age_s\":"<<age(item.envelope_age)<<",\"sample_age_s\":"<<age(item.sample_age)
         <<",\"receipt_age_s\":"<<age(item.receipt_age)<<",\"envelope_sample_gap_s\":"<<age(item.envelope_sample_gap)
         <<",\"source_reason\":"<<f::quote(f::source_time_reason_name(item.source_reason))
@@ -986,6 +1034,9 @@ class SystemNode final:public rclcpp::Node {
   double source_observed_steady_{};std::uint64_t source_observed_host_{};
   std::array<f::SourceReceiptTiming,std::size_t(f::SourceSlot::Count)> receipt_timing_;
   std::array<bool,std::size_t(f::SourceSlot::Count)> receipt_accepted_{};
+  std::array<std::uint64_t,std::size_t(f::SourceSlot::Count)> source_callbacks_{},source_accepted_{},source_cycle_callbacks_{};
+  std::uint64_t received_callbacks_{},receive_events_{};
+  std::string receive_stop_reason_;
   f::CurrentControlCycle cycle_;Work work_,completed_work_;
   bool sampling_pair_{};std::size_t pair_context_count_{};
   std::array<double,3> pair_context_seconds_{};double last_timing_warning_{-1},last_defer_report_{-1};
@@ -1005,13 +1056,20 @@ int main(int argc,char** argv){
   int code=0;std::unique_ptr<f::AsyncLog> logs;
   try{logs=std::make_unique<f::AsyncLog>();rclcpp::init(argc,argv);std::signal(SIGINT,stop_handler);std::signal(SIGTERM,stop_handler);
     auto node=std::make_shared<SystemNode>();
-    // Keep one executor and the original single-threaded callback/tick order.
+    // One executor/thread; complete ready passes may catch up within a small
+    // cooperative budget. A discrete event ends extra passes before tick(),
+    // preserving event visibility instead of overwriting it with a later sample.
     rclcpp::executors::SingleThreadedExecutor executor;executor.add_node(node);
     while(rclcpp::ok()){
       const auto deadline=std::chrono::steady_clock::now()+node->loop_period();
       const double start=steady();
       node->begin_cycle(start);
-      executor.spin_some();
+      f::ReceivePassSchedule receive;
+      receive.begin(start,node->receive_budget_seconds(),node->received_callbacks(),node->receive_events());
+      while(receive.next_pass(steady(),node->received_callbacks(),node->receive_events())){
+        executor.spin_some();node->receive_pass_done();
+      }
+      node->receive_stopped(receive);
       const double callbacks_done=steady();
       node->callbacks_done(callbacks_done);
       const bool running=node->tick();
