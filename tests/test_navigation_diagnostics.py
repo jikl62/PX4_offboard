@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import launcher
 import navigation
+import navigation_service
 import standby
 
 
@@ -23,6 +24,73 @@ STATE = dict(kind='state', phase='HEIGHT_HOLD', reason='last native feedback',
 
 
 class NavigationDiagnosticsTests(unittest.TestCase):
+    def test_closed_native_action_gate_labels_preparation_as_diagnostic(self):
+        for closed in ('flight_actions_enabled', 'takeoff_enabled'):
+            with self.subTest(closed=closed):
+                state=dict(STATE,phase='RC_READY_WAIT_ARM',armed=False,
+                           reason='RC_READY_WAIT_CH5_MANUAL_ARM',flight_enabled=False,
+                           arm_enabled=False,flight_actions_enabled=True,takeoff_enabled=True,
+                           rc_navigation_enabled=True)
+                state[closed]=False
+                row=dict(status='CONNECTED',reason='transport okay',supervisor_pid=10,
+                         updated_unix=1000,state=state,state_age_seconds=.1,feedback_current=True,
+                         flight_actions_enabled=True,rc_navigation_enabled=True)
+                described=navigation_service.describe_row(row)
+                self.assertEqual(described['status'],'DIAGNOSTIC')
+                self.assertIs(described['state'],state)
+                self.assertEqual(state['phase'],'RC_READY_WAIT_ARM')
+                self.assertEqual(state['reason'],'RC_READY_WAIT_CH5_MANUAL_ARM')
+                # The view also protects against a previously written READY
+                # label and optimistic supervisor role metadata.
+                for displayed in (described,dict(row,status='READY_WAIT_ARM')):
+                    view=navigation.render_status(displayed,dict(ActiveState='active',MainPID='10'),now=1000)
+                    self.assertIn('[DIAGNOSTIC]',view)
+                    self.assertIn(closed+'=false',view)
+                    self.assertIn('内部阶段：RC_READY_WAIT_ARM',view)
+                    self.assertIn('禁止起飞和导航',view)
+                    self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_program_arm_disabled_does_not_disable_valid_manual_rc_guidance(self):
+        state=dict(STATE,phase='RC_READY_WAIT_ARM',armed=False,
+                   reason='RC_READY_WAIT_CH5_MANUAL_ARM',flight_enabled=False,
+                   arm_enabled=False,flight_actions_enabled=True,takeoff_enabled=True,
+                   rc_navigation_enabled=True)
+        row=dict(status='CONNECTED',reason='transport okay',supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=True)
+        described=navigation_service.describe_row(row)
+        self.assertEqual(described['status'],'READY_WAIT_ARM')
+        view=navigation.render_status(described,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('已准备：CH5 手动解锁',view)
+        self.assertIn('arm_enabled=false（程序解锁）',view)
+        self.assertNotIn('[DIAGNOSTIC]',view)
+
+    def test_unknown_native_gates_cannot_prompt_manual_arming(self):
+        state=dict(STATE,phase='RC_READY_WAIT_ARM',armed=False)
+        row=dict(status='READY_WAIT_ARM',reason='ready',supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=True,
+                 flight_actions_enabled=True,rc_navigation_enabled=True)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('flight_actions_enabled=未知',view)
+        self.assertIn('尚未确认飞行动作许可',view)
+        self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_diagnostic_gates_do_not_hide_fault_or_revive_historical_feedback(self):
+        state=dict(STATE,phase='SAFETY',reason='CONTROL_LOOP_STALL',
+                   flight_actions_enabled=False,takeoff_enabled=False)
+        row=dict(status='CONNECTED',reason='transport okay',supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=True)
+        fault=navigation_service.describe_row(row)
+        self.assertEqual(fault['status'],'FAULT')
+        self.assertIn('[FAULT]',navigation.render_status(fault,dict(ActiveState='active',MainPID='10'),now=1000))
+        state['phase']='RC_READY_WAIT_ARM'
+        historical=dict(row,status='WAITING',reason='native disconnected',feedback_current=False)
+        self.assertEqual(navigation_service.describe_row(historical)['status'],'WAITING')
+        view=navigation.render_status(historical,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('[WAITING]',view)
+        self.assertIn('最近动作门（历史）',view)
+        self.assertNotIn('[DIAGNOSTIC]',view)
+        self.assertNotIn('已准备：CH5 手动解锁',view)
+
     def test_explicit_unconfirmed_liftoff_never_displays_height_hold_as_ready(self):
         state=dict(STATE,takeoff_stage='LIFTOFF_UNCONFIRMED',liftoff_confirmed=False,
                    target_height_settled=False,navigation_allowed=False,

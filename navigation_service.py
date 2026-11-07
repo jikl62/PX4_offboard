@@ -12,6 +12,7 @@ import threading
 
 from fc01_control import ControlError, DEFAULT_TAKEOFF_HEIGHT_M, runtime_profile
 from launcher import PROJECT, private_dir, verify_binary
+from navigation_status import preparation_diagnostic_reason
 import standby
 
 ENTRY = Path(__file__).resolve().parent
@@ -68,6 +69,10 @@ def describe_row(row):
     if phase=='SAFETY':
         result.update(status='FAULT',reason=reason)
     elif row.get('status')=='CONNECTED':
+        diagnostic=preparation_diagnostic_reason(state)
+        if diagnostic:
+            result.update(status='DIAGNOSTIC',reason=diagnostic)
+            return result
         names={'RC_PRESTREAM':'PRESTREAM','RC_READY_WAIT_ARM':'READY_WAIT_ARM',
                'RC_ARMED_WAIT_NAVIGATION':'WAIT_NAVIGATION','ARMED_GROUND':'ARMED_GROUND',
                'THRUST_RAMP':'THRUST_RAMP','ASCEND':'ASCEND','HEIGHT_HOLD':'HEIGHT_HOLD',

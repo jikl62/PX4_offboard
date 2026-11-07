@@ -254,6 +254,20 @@ class InstallTests(unittest.TestCase):
             self.assertTrue(all('-n' in x for x in changes))
 
 class BundleTests(unittest.TestCase):
+    def test_candidate_directory_and_development_experiment_exclusion(self):
+        b=importlib.import_module('build_navigation_bundle')
+        self.assertFalse(any(name.startswith('native/tests/ros_receive_ab/') for name in b.names(ROOT)))
+        with tempfile.TemporaryDirectory() as d:
+            folder=Path(d);candidate='FC01_OrangePi_Navigation_20261107_feedback'
+            script=b.build(folder/'candidate.sh',ROOT,directory_name=candidate)
+            env={**os.environ,'HOME':str(folder)};env.pop('FC01_NAVIGATION_INSTALL_DIR',None)
+            r=subprocess.run(['bash',str(script),'--install-only'],env=env,capture_output=True,text=True)
+            self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+            self.assertTrue((folder/candidate/'native/src/jikl_fc01_system/src/fc01_system_node.cpp').is_file())
+            self.assertFalse((folder/b.DEFAULT_DIRECTORY).exists())
+            for invalid in ('../live', 'live/path', "live'", ''):
+                with self.assertRaises(ValueError):b.build(folder/'bad.sh',ROOT,directory_name=invalid)
+
     def test_exact_self_extraction_repeat_and_conflict(self):
         b=importlib.import_module('build_navigation_bundle')
         with tempfile.TemporaryDirectory() as d:

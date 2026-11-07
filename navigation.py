@@ -12,6 +12,7 @@ import sys
 import time
 from datetime import datetime
 import zipfile
+from navigation_status import manual_rc_guidance_allowed, preparation_diagnostic_reason
 
 SERVICE='fc01-navigation.service'
 ENTRY=Path(__file__).resolve().parent
@@ -57,6 +58,9 @@ def render_status(row,info,now=None):
     if current and status=='HEIGHT_HOLD' and state.get('liftoff_confirmed') is False:
         status='LIFTOFF_UNCONFIRMED'
         reason='离地未确认：'+str(state.get('liftoff_unconfirmed_reason','反馈证据未满足'))
+    diagnostic=preparation_diagnostic_reason(state)
+    if current and diagnostic and status not in ('FAULT','STOPPING'):
+        status='DIAGNOSTIC';reason=diagnostic
     mode={15:'Stabilized',14:'Offboard',1:'Altitude'}.get(state.get('nav_state'),str(state.get('nav_state','未知（未收到 nav_state）')))
     armed=state.get('armed')
     armed_text=str(armed) if type(armed) is bool else '未知（未收到有效 armed）'
@@ -72,6 +76,11 @@ def render_status(row,info,now=None):
     else:
         lines.append('当前飞机状态未知：尚未收到飞机反馈；模式、armed 和相对高度均未知。')
     if state:
+        gate=lambda name: str(state[name]).lower() if type(state.get(name)) is bool else '未知'
+        gate_label='原生动作门' if current else '最近动作门（历史）'
+        lines.append(f"{gate_label}：flight_actions_enabled={gate('flight_actions_enabled')}  takeoff_enabled={gate('takeoff_enabled')}  arm_enabled={gate('arm_enabled')}（程序解锁）  flight_enabled={gate('flight_enabled')}（通用控制入口）")
+        if status=='DIAGNOSTIC':
+            lines.append(f"内部阶段：{state.get('phase','未知')}；原生原因：{state.get('reason','未知')}")
         lines.append(f"起飞平台：{state.get('rc_target_height','未知')} m  心跳预发送提交：{state.get('rc_prestream_commits',0)}  日志丢弃：{state.get('native_log_dropped',0)}")
         lines.append(f"导航档位：期望 {state.get('rc_navigation_mode_slot','未知')} / 观测 {state.get('rc_mode_slot','未知')}")
         if state.get('takeoff_stage'):
@@ -92,8 +101,11 @@ def render_status(row,info,now=None):
         lines.append('控制器：'+str(row['controller_exit_reason']))
     guidance={'READY_WAIT_ARM':'已准备：CH5 手动解锁，随后在 8 秒内将 CH6 拨入导航。',
               'WAIT_NAVIGATION':'等待真实解锁/导航证据；保持最低油门，按提示拨 CH6。',
+              'DIAGNOSTIC':'仅进行软件诊断；保持未解锁，不执行起飞或导航。',
               'FAULT':'任务已停止推进；按遥控器实际模式接管，接地上锁后复位 CH5/CH6。',
               'HEIGHT_HOLD':'正在定高；任务总时限 30 秒后进入原生降落流程。'}
+    if status in ('READY_WAIT_ARM','WAIT_NAVIGATION') and not manual_rc_guidance_allowed(state):
+        guidance[status]='尚未确认飞行动作许可；不据此解锁、起飞或进入导航。'
     lines.append(guidance.get(status,'起飞前：Stabilized、最低油门、CH5 未解锁、CH6 非导航、CH7 正常。')
                  if current else '请以飞控和遥控器的实际反馈确认飞机状态。')
     lines.append('窗口只显示状态。关闭窗口/Ctrl+C 不会停止控制服务。')
