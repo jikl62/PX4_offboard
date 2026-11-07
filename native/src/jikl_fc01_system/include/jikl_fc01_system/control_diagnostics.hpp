@@ -4,6 +4,33 @@
 #include <cstdint>
 
 namespace fc01 {
+// The publication budget begins before executor callbacks. A check must use a
+// newly sampled monotonic time AFTER its snapshot, so the snapshot's own work
+// cannot be omitted. Failure remains closed until the next cycle begins.
+class CurrentControlCycle {
+ public:
+  void begin(double now){
+    started_=observed_=now;callbacks_complete_=false;
+    valid_=std::isfinite(now)&&now>=0;
+  }
+  void callbacks_done(double now){
+    if(!valid_||callbacks_complete_||!std::isfinite(now)||now<started_){
+      valid_=false;return;
+    }
+    observed_=now;callbacks_complete_=true;
+  }
+  bool current(double now,double stall_limit){
+    if(!valid_||!callbacks_complete_||!std::isfinite(now)||
+       !std::isfinite(stall_limit)||stall_limit<=0||now<observed_||
+       now-started_>stall_limit){
+      valid_=false;return false;
+    }
+    observed_=now;return true;
+  }
+ private:
+  bool valid_{},callbacks_complete_{};
+  double started_{},observed_{};
+};
 // Observation of the last completed cycle; no timing metric grants authority.
 struct ControlTiming {
   bool valid{},period_valid{};

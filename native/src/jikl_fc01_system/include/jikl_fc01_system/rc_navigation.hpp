@@ -27,6 +27,11 @@ class RcNavigationStart {
   unsigned commits()const{return commits_;}
   bool manual_arm_proven()const{return manual_arm_proven_;}
   std::uint64_t manual_armed_time()const{return manual_armed_time_;}
+  // A latest arm-OFF sample is not proof that this attempt never observed
+  // arming intent. Keep that history even when health() resets preparation.
+  bool no_arm_intent_observed()const{return !arm_intent_observed_&&!manual_arm_proven_&&
+    !manual_armed_time_&&!arm_edge_&&!navigation_edge_&&!pending_armed_time_&&
+    arm_since_<0&&navigation_since_<0&&!navigation_offboard_observed_;}
   void note_commit(bool success,double now){
     if(!success){stream_first_=stream_last_=-1;commits_=0;return;}
     if(phase_==RcStartPhase::WaitGround||phase_==RcStartPhase::Blocked||phase_==RcStartPhase::Joined)return;
@@ -100,6 +105,7 @@ class RcNavigationStart {
   }
   template<class C,class F>bool step(const C& c,const F& s,double now,const std::string& health){
     if(phase_==RcStartPhase::Blocked||phase_==RcStartPhase::Joined)return false;
+    if(s.armed||s.rc_arm_switch==1)arm_intent_observed_=true;
     const auto block=[this](const std::string& why){phase_=RcStartPhase::Blocked;reason_=why;return false;};
     if(!std::isfinite(now)||(observed_at_>=0&&now<observed_at_))return block("RC_TIME_REGRESSION");
     observed_at_=now;
@@ -217,7 +223,8 @@ class RcNavigationStart {
     last_arm_switch_=s.rc_arm_switch;last_mode_slot_=s.rc_mode_slot;last_switch_stamp_=s.rc_switch_sample_stamp;
   }
   RcStartPhase phase_{RcStartPhase::WaitGround};std::string reason_{"RC_WAIT_SAFE_GROUND"};
-  bool anchor_{},manual_arm_proven_{},navigation_offboard_observed_{};Quaternion q0_{1,0,0,0};double z0_{};
+  bool anchor_{},manual_arm_proven_{},navigation_offboard_observed_{},arm_intent_observed_{};
+  Quaternion q0_{1,0,0,0};double z0_{};
   std::uint8_t z_reset_{},vz_reset_{},quat_reset_{},last_arm_switch_{},last_mode_slot_{};
   double arm_since_{-1},navigation_since_{-1},stream_first_{-1},stream_last_{-1},observed_at_{-1};unsigned commits_{};
   std::uint64_t disarmed_status_{},disarmed_armed_time_{},manual_armed_time_{},arm_edge_{},navigation_edge_{},last_switch_stamp_{};

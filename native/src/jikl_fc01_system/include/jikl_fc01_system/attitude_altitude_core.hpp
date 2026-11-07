@@ -59,6 +59,43 @@ class Core {
       RcNavigationStart::rc_live(s)&&s.rc_axes_safe&&s.rc_aux_switches_safe&&!s.rc_sticks_moving&&
       s.rc_arm_switch==3&&s.rc_mode_slot>0&&s.rc_mode_slot<=6&&s.rc_mode_slot!=c_.rc_navigation_mode_slot;
   }
+  // The adapter may defer an unarmed preparation only BEFORE either sink,
+  // after identifying a local/attitude age expiry (not clock discontinuity).
+  // This grants no output permission and never clears a Safety/fault latch.
+  bool defer_rc_preparation(const Feedback& s,double now,const std::string& reason){
+    if(!c_.rc_navigation_enabled||reason.empty()||
+       (phase_!=Phase::RcPrestream&&phase_!=Phase::RcWaitArm)||
+       (rc_start_.phase()!=RcStartPhase::Prestream&&rc_start_.phase()!=RcStartPhase::WaitArm)||
+       !rc_start_.no_arm_intent_observed()||!rc_start_.anchor_valid()||!z_set_||
+       !std::isfinite(now)||now<0||now<rc_observed_at_||rc_joined_||flight_started_||
+       restart_required_||fault_class_!=FaultClass::None||authority_.takeover_latched||
+       arm_confirmed_||arm_cancel_pending_||arm_command_committed_||
+       disarm_in_flight_||disarm_command_committed_||disarm_outcome_uncertain_||
+       offboard_command_committed_||release_command_committed_||offboard_observed_||
+       px4_land_committed_||operator_release_requested_)return false;
+    // The adapter separately proves recent reception and advancing raw
+    // samples; only their source-age expiry may bypass the aggregate result
+    // here. All other feedback and consent remain required.
+    if(s.time_regressed||!s.source_clock_validated||!s.source_host_stamp||!s.exclusive||
+       !s.status_fresh||!s.land_fresh||!s.failsafe_fresh||s.failsafe||s.calibration||s.hil||
+       s.armed||s.offboard||!s.landed||!s.at_rest||!s.stabilized_selected||
+       s.kill||s.operator_takeover||!RcNavigationStart::rc_live(s)||
+       !s.rc_axes_safe||!s.rc_aux_switches_safe||s.rc_sticks_moving||
+       s.rc_arm_switch!=3||s.rc_mode_slot==0||s.rc_mode_slot>6||
+       s.rc_mode_slot==c_.rc_navigation_mode_slot||!s.battery_ready||!s.preflight||
+       !s.z_valid||!s.vz_valid||!std::isfinite(s.z)||!std::isfinite(s.vz)||
+       !std::isfinite(s.stationary_seconds)||s.stationary_seconds<c_.ground_seconds||
+       std::abs(s.vz)>c_.ground_vz_tolerance||std::abs(z0_-s.z)>c_.height_tolerance||
+       s.z_reset!=z_reset_||s.vz_reset!=vz_reset_||
+       s.quat_reset!=reference_.reset_counter())return false;
+    const auto q=normalized(s.q);
+    if(!q||std::acos(std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.))*
+       180/3.141592653589793>c_.max_tilt_deg)return false;
+    rc_start_=RcNavigationStart{};rc_operator_live_=false;rc_observed_at_=now;
+    reference_.clear();z_set_=false;authority_={};last_=now;
+    enter(Phase::Idle,now);reason_=event_=reason;
+    return true;
+  }
   bool flight_started() const{return flight_started_;}
   // flight_started() denotes mission custody, beginning with the Arm request.
   // These observations distinguish that custody from measured liftoff and the

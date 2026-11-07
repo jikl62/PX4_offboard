@@ -155,6 +155,17 @@ class Runtime {
     attitude_sink_commit_required_=true;}
   void confirm_rc_output(bool allowed,double now){attitude_core_.note_rc_publication(allowed,now);}
   bool rc_restart_allowed(const Snapshot& s)const{return attitude_core_.rc_restart_allowed(attitude_snapshot(s));}
+  bool defer_rc_preparation(const Snapshot& s,double now,const std::string& reason){
+    if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled||
+       shutdown_latched_||maintenance_||ground_||s.publication_fault_latched||s.time_regressed||
+       s.attitude_output_active||s.offboard_heartbeat_active)return false;
+    // A prior command is outside this deliberately narrow no-arm retry path,
+    // even when its transaction is terminal. Preserve every wire watermark.
+    for(const auto& p:pending_)if(p.requested)return false;
+    if(!attitude_core_.defer_rc_preparation(attitude_snapshot(s),now,reason))return false;
+    // This bit describes the current plan, not evidence that a sink ran.
+    last_attitude_output_active_=false;message_=reason;return true;
+  }
   bool reprepare_rc(const Snapshot& s,double now){
     if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled||
        shutdown_latched_||maintenance_||ground_||!std::isfinite(now)||now<0||

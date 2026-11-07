@@ -17,6 +17,10 @@ namespace rclcpp {
 struct Parameter {bool as_bool() const{return false;}};
 struct Time {std::int64_t nanoseconds() const{return 1000000000;}};
 struct Clock {Time now() const{return {};}};
+struct MessageInfo {
+  struct Rmw {std::int64_t received_timestamp{};};
+  const Rmw& get_rmw_message_info() const{static const Rmw value;return value;}
+};
 struct QoS {
   explicit QoS(std::size_t){}
   QoS keep_last(int) const{return *this;}
@@ -45,6 +49,13 @@ inline void init(int,char**){}
 inline void shutdown(){}
 inline bool ok(){return false;}
 template<class T>void spin_some(const T&){}
+namespace executors {
+struct SingleThreadedExecutor {
+  template<class T>void add_node(const T&){}
+  template<class T>void remove_node(const T&){}
+  void spin_some(){}
+};
+}
 }
 '''
 MESSAGES={
