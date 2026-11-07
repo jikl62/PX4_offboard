@@ -6,6 +6,9 @@
 #include <iostream>
 #include <unistd.h>
 int main(){
+  // Exercise shutdown while an empty consumer is starting or entering wait.
+  // The host runner also bounds process completion, so a missed wake is a failure.
+  for(int i=0;i<100;++i){fc01::AsyncLog log;}
   int pipefd[2];assert(pipe(pipefd)==0);const int saved=dup(STDOUT_FILENO);assert(saved>=0);
   assert(fcntl(pipefd[1],F_SETFL,O_NONBLOCK)==0);
   char fill[4096]{};while(write(pipefd[1],fill,sizeof(fill))>0){}

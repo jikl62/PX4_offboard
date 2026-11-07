@@ -30,7 +30,10 @@ class AsyncLog final:private std::streambuf {
   }
   ~AsyncLog()override{
     sync();std::cout.rdbuf(cout_);std::cerr.rdbuf(cerr_);
-    deadline_.store(clock_ns()+100000000);ready_.notify_one();
+    // Publish the wait predicate under the consumer's mutex. An atomic store
+    // alone could race its predicate check and lose the shutdown notification.
+    {std::lock_guard<std::mutex> lock(mutex_);deadline_.store(clock_ns()+100000000);}
+    ready_.notify_one();
     if(worker_.joinable())worker_.join();
     fcntl(STDOUT_FILENO,F_SETFL,flags_);
     sigaction(SIGPIPE,&pipe_signal_,nullptr);
