@@ -15,10 +15,12 @@ def names(root):
     roots.extend(p for directory in ('native','tests','docs') for p in (root/directory).rglob('*')
                  if p.is_file() and '__pycache__' not in p.parts
                  # Opt-in localhost ROS experiments stay in the development
-                 # checkout. Preserve the extractor's existing 300-file bound.
+                 # checkout. Keep the extractor's bounded source payload.
                  and not p.is_relative_to(root/'native/tests/ros_receive_ab'))
     result=sorted(str(p.relative_to(root)) for p in roots)
-    if len(result)>300 or sum((root/p).stat().st_size for p in result)>4194304:
+    # Two explicit runtime mode candidates are shipped with the navigation
+    # bundle; retain headroom for future reviewed config metadata.
+    if len(result)>320 or sum((root/p).stat().st_size for p in result)>4194304:
         raise RuntimeError('Curated source payload exceeds extractor bounds')
     return result
 

@@ -1,5 +1,6 @@
 #include "jikl_fc01_system/receive_events.hpp"
 #include "jikl_fc01_system/receive_schedule.hpp"
+#include "jikl_fc01_system/discrete_event_latch.hpp"
 #include "authority_test_support.hpp"
 #include "vision_test_support.hpp"
 #include <array>
@@ -9,6 +10,7 @@
 #include <limits>
 
 namespace f=fc01;
+
 struct Status {
   std::uint64_t timestamp{1000000},armed_time{};
   std::uint8_t system_id{1},component_id{1},arming_state{1},latest_arming_reason{},nav_state{15},hil_state{};
@@ -34,6 +36,32 @@ struct Attitude {
   std::uint64_t timestamp{1000000},timestamp_sample{1000000};
   std::array<double,4> q{1,0,0,0};std::uint8_t quat_reset_counter{};
 };
+
+static void discrete_event_latch_keeps_first_bad_sample_until_step(){
+  f::DiscreteEventLatch<Attitude,4> latch;
+  f::attitude::Config config;config.max_tilt_deg=10.;
+  Attitude invalid{};invalid.q={0,0,0,0};
+  Attitude recovered{};recovered.timestamp=1050000;recovered.timestamp_sample=1050000;
+  // Model two callbacks from one spin_some: invalid quaternion first, then a
+  // valid sample. The predicate fires only for the first, and the queue keeps
+  // that payload until the control step consumes it.
+  Attitude live{};
+  assert(f::attitude_receive_event(live,invalid,config));
+  invalid.timestamp=live.timestamp;invalid.timestamp_sample=live.timestamp_sample;
+  assert(f::attitude_receive_event(live,invalid,config));
+  live=invalid;assert(!f::attitude_receive_event(live,recovered,config));
+  assert(latch.push(invalid));
+  // The live continuous cache may already contain the recovered sample, but
+  // the event payload consumed by the next Runtime step remains invalid.
+  assert(latch.push(recovered));
+  assert(latch.size()==2);
+  assert(latch.front()!=nullptr&&latch.front()->q[0]==0&&latch.front()->q[1]==0);
+  latch.pop();
+  assert(latch.front()!=nullptr&&latch.front()->timestamp==recovered.timestamp);
+  latch.pop();assert(latch.empty());
+  for(unsigned i=0;i<4;++i)assert(latch.push(invalid));
+  assert(!latch.push(recovered)&&latch.overflowed());
+}
 
 template<class Change>static void status_transition(Change change){
   Status before,after=before;change(after);
@@ -335,6 +363,7 @@ static void attitude_reset_invalid_and_real_tilt(){
 }
 
 int main(){
+  discrete_event_latch_keeps_first_bad_sample_until_step();
   status_and_ground_transitions();
   authority_events_do_not_compare_numeric_stick_motion();
   reset_invalid_and_continuous_estimates();

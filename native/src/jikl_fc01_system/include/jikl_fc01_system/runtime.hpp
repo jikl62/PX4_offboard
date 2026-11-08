@@ -8,6 +8,7 @@
 #include <array>
 #include <memory>
 #include <sstream>
+#include <string>
 #include <vector>
 
 namespace fc01 {
@@ -28,11 +29,23 @@ struct Stamp {
 };
 struct Config {
   std::string profile{"ground"};
+  // Provenance metadata from the selected candidate profile. These fields
+  // describe the launch; they never grant flight authority by themselves.
+  std::string runtime_mode{},entry_version{"unknown"},config_path{},config_source_path{};
   bool flight_enabled{};
   attitude::Config attitude;
   v::Config control=[](){v::Config c;c.height=1;c.max_height=5;c.max_radius=3;
     c.xy_speed=.3;c.z_speed=.3;c.climb_speed=.3;return c;}();
   void validate() const {
+    if(!runtime_mode.empty()&&runtime_mode!="diagnostic"&&runtime_mode!="flight-test")
+      throw std::invalid_argument("FC01_RUNTIME_MODE_INVALID");
+    if(runtime_mode=="diagnostic"&&
+       (flight_enabled||attitude.flight_actions_enabled||attitude.arm_enabled||
+        attitude.takeoff_enabled||attitude.rc_navigation_enabled||
+        attitude.bench_arm_only_enabled||attitude.visual.enabled||
+        attitude.parameters_confirmed||attitude.rc_takeover_confirmed||
+        attitude.autonomous_failsafe_confirmed))
+      throw std::invalid_argument("DIAGNOSTIC_ACTION_GATES_MUST_BE_CLOSED");
     control.validate();attitude.validate();
     if(attitude.rc_navigation_enabled&&profile!="attitude_altitude")
       throw std::invalid_argument("RC_NAVIGATION_REQUIRES_ATTITUDE_PROFILE");

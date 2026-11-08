@@ -21,8 +21,11 @@ SERVICE='fc01-navigation.service'
 OLD='fc01-standby.service'
 MARKER='# FC01_RC_NAVIGATION_MANUAL_ARM_20261028_V1'
 DESKTOP_MARKER='# FC01_NAVIGATION_READ_ONLY_VIEW_20261028_V1'
+MODES=('diagnostic','flight-test')
 
-def render_unit(user,home,entry,project):
+def render_unit(user,home,entry,project,mode='diagnostic',confirm=False):
+    if mode not in MODES:raise ValueError('运行模式必须为 diagnostic 或 flight-test')
+    if mode=='flight-test' and not confirm:raise ValueError('Flight Test 服务必须显式确认')
     if not re.fullmatch(r'[a-zA-Z_][a-zA-Z0-9_-]*\$?',user):raise ValueError('不支持此用户名')
     quote(entry)
     if not entry.is_absolute():raise ValueError('服务目录必须是绝对路径')
@@ -38,7 +41,7 @@ WorkingDirectory={str(entry).replace('%','%%')}
 Environment={quote('HOME='+str(home))}
 Environment={quote('FC01_PROJECT_ROOT='+str(project))}
 Environment=ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0 PYTHONUNBUFFERED=1
-ExecStart=/bin/bash {quote(entry/'navigation_boot.sh',executable=True)} run
+ExecStart=/bin/bash {quote(entry/'navigation_boot.sh',executable=True)} run --mode {mode}{' --confirm-flight-test' if mode=='flight-test' else ''}
 StandardInput=null
 StandardOutput=journal
 StandardError=journal
@@ -127,16 +130,18 @@ def boot(entry,home,project,action,*args):
     finally:
         for handler in log.handlers:handler.close()
 
-def prepare(entry,home,project):
+def prepare(entry,home,project,mode='diagnostic',confirm=False):
+    if mode not in MODES:raise ValueError('运行模式必须为 diagnostic 或 flight-test')
+    if mode=='flight-test' and not confirm:raise ValueError('Flight Test 必须显式确认')
     folder=home/'FC01_navigation';private_dir(folder)
     config=folder/'install-runtime.yaml'
-    boot(entry,home,project,'prepare-config','--file',config)
+    boot(entry,home,project,'prepare-config','--mode',mode,*(['--confirm-flight-test'] if mode=='flight-test' else []),'--file',config)
     key=source_key(entry,project);stage=staging_path(entry,key)
     print('正在离线编译 ARM64 原生控制器；单任务构建，首次需要等待。',flush=True)
     boot(entry,home,project,'build','--prefix',stage/'install','--build-dir',stage/'build')
-    boot(entry,home,project,'check-config','--file',config,'--prefix',stage/'install')
+    boot(entry,home,project,'check-config','--mode',mode,*(['--confirm-flight-test'] if mode=='flight-test' else []),'--file',config,'--prefix',stage/'install')
     print('编译和实际 YAML 检查通过；正在被动确认未解锁、接地、静止。',flush=True)
-    boot(entry,home,project,'probe','--file',folder/'probe.json')
+    boot(entry,home,project,'probe','--mode',mode,*(['--confirm-flight-test'] if mode=='flight-test' else []),'--file',folder/'probe.json')
     return stage/'install'
 
 def unit_info(name,run):
@@ -188,7 +193,7 @@ def ensure_ground(entry,home,project,force=False):
         boot(entry,home,project,'probe','--file',home/'FC01_navigation/probe.json')
     if not ground_permit_fresh(home):raise RuntimeError('地面授权已过期，未继续变更服务')
 
-def deploy(entry,home,project,prefix,*,user=None,units=Path('/etc/systemd/system'),run=subprocess.run,processes=None):
+def deploy(entry,home,project,prefix,*,user=None,units=Path('/etc/systemd/system'),run=subprocess.run,processes=None,mode='diagnostic',confirm=False):
     old,new=units/OLD,units/SERVICE
     info={name:unit_info(name,run) for name in (OLD,SERVICE)}
     managed_unit(old,OLD_MARKER,info[OLD]);managed_unit(new,MARKER,info[SERVICE]);check_desktop(home)
@@ -199,7 +204,7 @@ def deploy(entry,home,project,prefix,*,user=None,units=Path('/etc/systemd/system
     if link.exists() and not link.is_symlink():raise RuntimeError('保留非托管 install 路径')
     if link.is_symlink() and (link.resolve().parent.parent!=entry/'.build'):
         raise RuntimeError('保留指向其他项目的 install 链接')
-    unit=render_unit(user or pwd.getpwuid(os.getuid()).pw_name,home,entry,project)
+    unit=render_unit(user or pwd.getpwuid(os.getuid()).pw_name,home,entry,project,mode,confirm)
     prepared=home/'FC01_navigation/install-runtime.yaml';live=home/'FC01_navigation/runtime.yaml'
     config_changed=prepared.is_file() and (not live.is_file() or prepared.read_bytes()!=live.read_bytes())
     changed=not new.exists() or new.read_text()!=unit or not link.is_symlink() or link.resolve()!=prefix.resolve() or config_changed
@@ -226,13 +231,13 @@ def deploy(entry,home,project,prefix,*,user=None,units=Path('/etc/systemd/system
         run(['sudo','-n','/usr/bin/systemctl','enable','--now',SERVICE],check=True)
     print('导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。',flush=True)
 
-def install(entry,home):
+def install(entry,home,mode='diagnostic',confirm=False):
     if os.getuid()==0:raise RuntimeError('请用 orangepi 普通用户运行；安装服务时会请求 sudo')
     project=Path(os.environ.get('FC01_PROJECT_ROOT',str(home/PROJECT))).expanduser().resolve()
     lockdir=home/'.cache/fc01_navigation';private_dir(lockdir)
     with open(lockdir/'install.lock','a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-        prefix=prepare(entry,home,project);deploy(entry,home,project,prefix)
+        prefix=prepare(entry,home,project,mode,confirm);deploy(entry,home,project,prefix,mode=mode,confirm=confirm)
 
 def rollback_services(entry,home,project,units=Path('/etc/systemd/system'),run=subprocess.run):
     for name,marker in ((OLD,OLD_MARKER),(SERVICE,MARKER)):

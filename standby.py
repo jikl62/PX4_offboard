@@ -306,14 +306,18 @@ def monitor(channel, node, stopped, observe, health=lambda: None, *, diagnostics
     return state, state_at, failure
 
 
-def validate(root, agent, *, controller=None):
+def validate(root, agent, *, controller=None, config_path=None):
     """Validate SDK/configuration; pre-build preparation has no controller yet."""
     if platform.machine().lower() not in ('aarch64', 'arm64'):
         raise ControlError('仅供 ARM64 香橙派安装/运行')
     if controller is not None:
         verify_binary(controller)
     import yaml
-    with open(root/'config/attitude_altitude.yaml', encoding='utf8') as f:
+    # Navigation callers pass a bundle-owned candidate config.  The project
+    # root is retained for SDK discovery only and must not silently override
+    # the installed navigation policy.
+    selected = Path(config_path) if config_path is not None else root/'config/attitude_altitude.yaml'
+    with open(selected, encoding='utf8') as f:
         config = standby_config(yaml.safe_load(f))
     if not agent.is_file() or not os.access(agent, os.X_OK):
         raise ControlError('缺少离线 Agent: '+str(agent))
@@ -328,7 +332,7 @@ def validate(root, agent, *, controller=None):
 
 
 def supervise(root, agent_binary, folder, stopped, *, controller=None, config_factory=None,
-              status_metadata=None, row_formatter=None):
+              status_metadata=None, row_formatter=None, config_path=None):
     import yaml
     private_dir(folder)
     cache = Path.home()/'.cache/fc01_operator'
@@ -377,8 +381,9 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 except BlockingIOError as exc:
                     raise ControlError('旧入口正在运行；保留它，等待其退出') from exc
-                binary, existing = preflight(root, agent_binary, '/dev/ttyS2',
-                                             **({'controller':controller} if controller is not None else {}))
+                preflight_options={'controller':controller} if controller is not None else {}
+                if config_path is not None:preflight_options['config_path']=config_path
+                binary, existing = preflight(root, agent_binary, '/dev/ttyS2', **preflight_options)
                 config = config_factory(root, agent_binary) if config_factory else validate(root, agent_binary, controller=binary)
                 with open(folder/'runtime.yaml', 'w', encoding='utf8') as f:
                     yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False)

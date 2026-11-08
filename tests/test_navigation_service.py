@@ -68,6 +68,45 @@ class NavigationServiceTests(unittest.TestCase):
         for name in ('aa_hover_thrust','aa_takeoff_reserve_thrust','aa_max_tilt_deg','aa_feedback_rate_tolerance_mps','aa_feedback_dwell_seconds'):
             self.assertEqual(result[name],base['fc01_system']['ros__parameters'][name])
 
+    def test_diagnostic_mode_closes_every_action_authority_and_visual_gate(self):
+        m=self.api();base=yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text())
+        p=m.diagnostic_profile(base)['fc01_system']['ros__parameters']
+        for key in ('flight_enabled','flight_actions_enabled','arm_enabled','takeoff_enabled',
+                    'flight_parameters_confirmed','rc_navigation_enabled','rc_takeover_confirmed',
+                    'autonomous_failsafe_confirmed','bench_arm_only_enabled','visual_navigation_enabled'):
+            self.assertIs(p[key],False,key)
+        self.assertEqual(p['rc_target_height'],1.5)
+
+    def test_shipped_mode_candidates_start_with_closed_gates(self):
+        for name in ('diagnostic.yaml','flight_test.yaml'):
+            with self.subTest(name=name):
+                p=yaml.safe_load((ROOT/'native/config'/name).read_text())['fc01_system']['ros__parameters']
+                self.assertFalse(p['flight_actions_enabled'])
+                self.assertFalse(p['arm_enabled'])
+                self.assertFalse(p['takeoff_enabled'])
+                self.assertFalse(p['rc_navigation_enabled'])
+                self.assertFalse(p['visual_navigation_enabled'])
+                self.assertEqual(p['rc_target_height'],1.5)
+
+    def test_load_profile_uses_bundle_candidate_and_writes_mode_metadata(self):
+        m=self.api();base=yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text());seen={}
+        def validate(root,agent,**kwargs):
+            seen.update(kwargs);return base
+        with tempfile.TemporaryDirectory() as d,patch.object(m.standby,'validate',side_effect=validate):
+            entry=Path(d);out=entry/'runtime.yaml'
+            p=m.load_profile(entry,entry/'agent',entry,m.DIAGNOSTIC,config_path=out)
+            params=p['fc01_system']['ros__parameters']
+            self.assertEqual(seen['config_path'],entry/'native/config/diagnostic.yaml')
+            self.assertEqual(params['fc01_runtime_mode'],'diagnostic')
+            self.assertEqual(Path(params['fc01_config_path']),out.resolve())
+            self.assertEqual(Path(params['fc01_config_source_path']),seen['config_path'].resolve())
+
+    def test_flight_test_requires_explicit_confirmation(self):
+        m=self.api()
+        with self.assertRaises(SystemExit) as error:
+            m.main(['run','--mode','flight-test'])
+        self.assertEqual(error.exception.code,2)
+
     def test_mode_slot_is_configurable_and_rejects_invalid_values(self):
         m=self.api();base=yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text())
         for slot in range(1,7):

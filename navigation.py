@@ -146,12 +146,17 @@ def report(home):
 def main(argv=None):
     parser=argparse.ArgumentParser(description='FC01 手动解锁、遥控触发导航定高')
     parser.add_argument('action',nargs='?',default='install',choices=('install','status','monitor','logs','report','start','stop','land','disable','rollback'))
+    parser.add_argument('--mode',choices=('diagnostic','flight-test'),default='diagnostic')
+    parser.add_argument('--confirm-flight-test',action='store_true')
     args=parser.parse_args(argv);os.umask(0o077)
+    if args.mode=='flight-test' and not args.confirm_flight_test:
+        parser.error('Flight Test 必须同时提供 --confirm-flight-test')
     home=Path(pwd.getpwuid(os.getuid()).pw_dir)
     try:
         if args.action in ('install','rollback'):
             from navigation_install import install,rollback
-            (install if args.action=='install' else rollback)(ENTRY,home)
+            if args.action=='install':install(ENTRY,home,args.mode,args.confirm_flight_test)
+            else:rollback(ENTRY,home)
             if args.action=='install' and sys.stdin.isatty():monitor(home)
         elif args.action=='monitor':monitor(home)
         elif args.action=='status':print(render_status(snapshot(home),service_info()))

@@ -553,15 +553,20 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
         display.close()
 
 
-def preflight(root, agent_binary, device, *, controller=None):
+def preflight(root, agent_binary, device, *, controller=None, config_path=None):
     if platform.machine().lower() not in ('aarch64', 'arm64'):
         raise ControlError('本入口只在实际 ARM64 香橙派上运行；本机架构='+platform.machine())
     if os.environ.get('ROS_DOMAIN_ID', '0') != '0' or os.environ.get('ROS_LOCALHOST_ONLY', '0') != '0':
         raise ControlError('当前固定使用 ROS_DOMAIN_ID=0、ROS_LOCALHOST_ONLY=0')
     node = controller if controller is not None else root/'install_r632/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node'
     verify_binary(node)
-    if not (root/'config/attitude_altitude.yaml').is_file():
-        raise ControlError('缺少原配置 attitude_altitude.yaml')
+    # The navigation bundle may be installed beside an older SDK checkout.
+    # Callers can provide the bundle-owned candidate config; the project root
+    # remains an SDK/runtime dependency and is never used as a source of
+    # navigation policy in that path.
+    selected_config = Path(config_path) if config_path is not None else root/'config/attitude_altitude.yaml'
+    if not selected_config.is_file():
+        raise ControlError('缺少原配置 attitude_altitude.yaml: '+str(selected_config))
     if not Path(device).exists() or not stat.S_ISCHR(Path(device).stat().st_mode) or not os.access(device, os.R_OK | os.W_OK):
         raise ControlError('串口不存在/不可读写: '+device)
     processes = process_list()
@@ -627,6 +632,12 @@ def main(argv=None):
             config = runtime_profile(yaml.safe_load(f), args.flight)
         params = config['fc01_system']['ros__parameters']
         config_path = folder/'runtime.yaml'
+        # Keep the standalone legacy console compatible with native launch
+        # provenance checks. Navigation service mode selection is separate;
+        # this path remains an explicitly interactive --flight session.
+        params.update(fc01_runtime_mode='flight-test' if args.flight else 'diagnostic',
+                      fc01_entry_version='launcher-legacy', fc01_config_path=str(config_path.resolve()),
+                      fc01_config_source_path=str((root/'config/attitude_altitude.yaml').resolve()))
         with open(config_path, 'x', encoding='utf8') as f:
             yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False)
         say('会话配置：20 Hz；UART 115200；定高上限 %.1f m；最长 %.1f s；倾角上限 %.1f°。' %

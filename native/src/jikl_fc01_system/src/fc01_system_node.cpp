@@ -13,6 +13,7 @@
 #include "jikl_fc01_system/vision_ros_adapter.hpp"
 #include "jikl_fc01_system/control_diagnostics.hpp"
 #include "jikl_fc01_system/receive_schedule.hpp"
+#include "jikl_fc01_system/discrete_event_latch.hpp"
 #include "jikl_fc01_system/receive_events.hpp"
 #include <jikl_fc01_system/msg/vision_state.hpp>
 #include <jikl_fc01_system/msg/navigation_command.hpp>
@@ -101,14 +102,14 @@ class SystemNode final:public rclcpp::Node {
     }
     if(config.profile=="attitude_altitude"){
       attitude_sub_=create_subscription<Attitude>("/fmu/out/vehicle_attitude",qos,[this](Attitude::ConstSharedPtr m,const rclcpp::MessageInfo& info){const auto previous=attitude_;receive_sampled(*m,attitude_,attitude_stamp_,attitude_sample_,f::SourceSlot::Attitude,info);
-        if(f::attitude_receive_event(previous,attitude_,config_.attitude))++receive_events_;});
+        if(f::attitude_receive_event(previous,*m,config_.attitude)){latch_event(attitude_events_,*m);++receive_events_;}});
       manual_sub_=create_subscription<Manual>("/fmu/out/manual_control_setpoint",qos,[this](Manual::ConstSharedPtr m){receive_manual(*m);});
       switches_sub_=create_subscription<Switches>("/fmu/out/manual_control_switches",qos,[this](Switches::ConstSharedPtr m){receive_switches(*m);});
     }
     local_sub_=create_subscription<Local>("/fmu/out/vehicle_local_position",qos,[this](Local::ConstSharedPtr m,const rclcpp::MessageInfo& info){const auto previous=local_;receive_sampled(*m,local_,local_stamp_,local_sample_,f::SourceSlot::Local,info);
       const auto& core=runtime_->attitude_core();
-      if(f::local_receive_event(previous,local_,config_.attitude)||
-         core.local_requires_control_step(local_.timestamp_sample,local_.z,local_.vz,local_.z_deriv))++receive_events_;});
+      if(f::local_receive_event(previous,*m,config_.attitude)||
+         core.local_requires_control_step(m->timestamp_sample,m->z,m->vz,m->z_deriv)){latch_event(local_events_,*m);++receive_events_;}});
     status_sub_=create_subscription<Status>("/fmu/out/vehicle_status_v1",qos,[this](Status::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive_event(*m,status_,status_stamp_,f::SourceSlot::Status,info,f::status_receive_event<Status>);});
     land_sub_=create_subscription<Land>("/fmu/out/vehicle_land_detected",qos,[this](Land::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive_event(*m,land_,land_stamp_,f::SourceSlot::Land,info,f::land_receive_event<Land>);});
     battery_sub_=create_subscription<Battery>("/fmu/out/battery_status",qos,[this](Battery::ConstSharedPtr m,const rclcpp::MessageInfo& info){
@@ -143,7 +144,22 @@ class SystemNode final:public rclcpp::Node {
       if(!csv_)throw std::runtime_error("cannot open CSV log");
       csv_<<"steady_s,phase,nav_state,armed,landed,xy_valid,z_valid,vxy_valid,vz_valid,heading_good,local_age_s,x_ned,y_ned,z_ned,vx_ned,vy_ned,vz_ned,ax_ned,ay_ned,az_ned,relative_height_m,reason,aa_healthy,aa_yaw_reference,aa_thrust_z,aa_height_target,aa_velocity_target,aa_saturated,aa_slew_limited,aa_z_deriv_ned,aa_feedback_checked,aa_feedback_suspect,aa_feedback_rate_error_mps,aa_feedback_position_rate_error_mps,aa_feedback_disagreement_s,aa_feedback_reason,aa_vertical_closed_loop,aa_takeoff_thrust_limited,aa_p_thrust,aa_i_thrust,aa_raw_thrust,aa_thrust_ceiling\n";
     }
-    std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)<<",\"flight_enabled\":"<<boolean(config.flight_enabled)<<",\"automatic_arm\":false,\"rc_navigation_policy\":\"RC_NAVIGATION_MANUAL_ARM_V1\",\"takeoff_policy\":\"NAV_TAKEOFF_EVIDENCE_V2_20261103\",\"vertical_control_policy\":\"R632_SCHEDULED_TAKEOFF_CEILING_V1\",\"socket\":"<<f::quote(socket)<<"}"<<std::endl;
+    std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)
+      <<",\"runtime_mode\":"<<f::quote(config.runtime_mode.empty()?"unspecified":config.runtime_mode)
+      <<",\"entry_version\":"<<f::quote(config.entry_version)
+      <<",\"config_path\":"<<f::quote(config.config_path)
+      <<",\"config_source_path\":"<<f::quote(config.config_source_path)
+      <<",\"flight_enabled\":"<<boolean(config.flight_enabled)
+      <<",\"flight_actions_enabled\":"<<boolean(config.attitude.flight_actions_enabled)
+      <<",\"arm_enabled\":"<<boolean(config.attitude.arm_enabled)
+      <<",\"takeoff_enabled\":"<<boolean(config.attitude.takeoff_enabled)
+      <<",\"rc_navigation_enabled\":"<<boolean(config.attitude.rc_navigation_enabled)
+      <<",\"visual_navigation_enabled\":"<<boolean(config.attitude.visual.enabled)
+      <<",\"aa_hover_thrust\":"<<number(config.attitude.vertical.hover)
+      <<",\"aa_takeoff_reserve_thrust\":"<<number(config.attitude.takeoff_reserve_thrust)
+      <<",\"aa_thrust_max\":"<<number(config.attitude.vertical.maximum)
+      <<",\"rc_target_height\":"<<number(config.attitude.rc_target_height)
+      <<",\"automatic_arm\":false,\"rc_navigation_policy\":\"RC_NAVIGATION_MANUAL_ARM_V1\",\"takeoff_policy\":\"NAV_TAKEOFF_EVIDENCE_V2_20261103\",\"vertical_control_policy\":\"R632_SCHEDULED_TAKEOFF_CEILING_V1\",\"socket\":"<<f::quote(socket)<<"}"<<std::endl;
   }
   std::chrono::duration<double> loop_period() const{return std::chrono::duration<double>(1./config_.attitude.loop_hz);}
   void begin_cycle(double start){
@@ -171,6 +187,13 @@ class SystemNode final:public rclcpp::Node {
   }
   bool tick(){
     const double now=steady();
+    // Apply the first queued observation from every source before taking the
+    // control snapshot. This is the R2 event boundary: a bad sample received
+    // earlier in the same spin_some cannot be replaced by a later healthy
+    // sample. The original live caches are restored after this Runtime::step;
+    // the queued observation is then removed, so the next tick can consume a
+    // subsequent event. Queue overflow remains fail-closed for this process.
+    begin_latched_events();
     publication_audit_.begin(now);
     const std::string phase_before=runtime_->phase_name();
     auto s=snapshot(now);
@@ -373,7 +396,9 @@ class SystemNode final:public rclcpp::Node {
       std::cout<<"{\"kind\":\"rc_safe_reprepare\",\"reason\":\"NEW_DISARMED_GROUND_AND_CONTROLS_RESET\"}"<<std::endl;
     }
     if(stopping_){
-      if(s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed&&!runtime_->active())return false;
+      if(s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed&&!runtime_->active()){
+        end_latched_events();return false;
+      }
       if(now-stop_since_>=60){
         // A healthy, still-armed PX4 Offboard powered-ground recovery must
         // NEVER lose setpoint custody merely because the shutdown timer fired.
@@ -384,10 +409,11 @@ class SystemNode final:public rclcpp::Node {
             std::cerr<<"Shutdown wait exceeded 60s: armed Offboard still active; continuing controlled outputs; operator intervention required\n";}
         }else{
           std::cerr<<"Shutdown timed out: PX4/operator must complete recovery; no re-arm or forced disarm\n";
-          return false;
+          end_latched_events();return false;
         }
       }
     }
+    end_latched_events();
     return true;
   }
  private:
@@ -457,24 +483,77 @@ class SystemNode final:public rclcpp::Node {
     receipt_accepted_[std::size_t(slot)]=accepted;
     if(accepted)++source_accepted_[std::size_t(slot)];else ++receive_events_;
   }
+  template<class T>void latch_event(f::DiscreteEventLatch<T>& latch,const T& value){
+    if(!latch.push(value)) receive_event_overflow_=true;
+  }
+  void latch_event_for_slot(f::SourceSlot slot,const Status& value){
+    if(slot==f::SourceSlot::Status)latch_event(status_events_,value);
+  }
+  void latch_event_for_slot(f::SourceSlot slot,const Land& value){
+    if(slot==f::SourceSlot::Land)latch_event(land_events_,value);
+  }
+  void latch_event_for_slot(f::SourceSlot slot,const Battery& value){
+    if(slot==f::SourceSlot::Battery)latch_event(battery_events_,value);
+  }
+  void latch_event_for_slot(f::SourceSlot slot,const Flags& value){
+    if(slot==f::SourceSlot::Flags)latch_event(flags_events_,value);
+  }
+  void begin_latched_events(){
+    // At most one observation per source is presented to this tick. The
+    // callback cache remains the newest continuous sample; temporarily
+    // substituting the queued payload makes the existing Runtime health and
+    // transition checks see the discrete event before any output is planned.
+    // This is an observation boundary, not an acknowledgement or a fault
+    // clear: Core's own safety/fault state remains authoritative.
+    if(latched_events_active_)return;
+    if(const auto* value=status_events_.front()){latched_status_original_=status_;status_=*value;status_event_active_=true;}
+    if(const auto* value=land_events_.front()){latched_land_original_=land_;land_=*value;land_event_active_=true;}
+    if(const auto* value=battery_events_.front()){latched_battery_original_=battery_;battery_=*value;battery_event_active_=true;}
+    if(const auto* value=flags_events_.front()){latched_flags_original_=flags_;flags_=*value;flags_event_active_=true;}
+    if(const auto* value=local_events_.front()){latched_local_original_=local_;local_=*value;local_event_active_=true;}
+    if(const auto* value=attitude_events_.front()){latched_attitude_original_=attitude_;attitude_=*value;attitude_event_active_=true;}
+    if(const auto* value=authority_events_.front()){latched_authority_facts_=*value;authority_event_active_=true;}
+    latched_events_active_=status_event_active_||land_event_active_||battery_event_active_||flags_event_active_||local_event_active_||attitude_event_active_;
+    latched_events_active_=latched_events_active_||authority_event_active_;
+  }
+  void end_latched_events(){
+    // A queue entry is acknowledged only after Runtime::step and all final
+    // sink checks for this tick have completed. Restore the newest continuous
+    // cache first, then consume exactly the observation presented above. If a
+    // later callback supplied a healthy sample, it is now available to the
+    // next tick; it never erased the earlier safety event in this tick.
+    if(!latched_events_active_)return;
+    if(status_event_active_){status_=latched_status_original_;status_events_.pop();}
+    if(land_event_active_){land_=latched_land_original_;land_events_.pop();}
+    if(battery_event_active_){battery_=latched_battery_original_;battery_events_.pop();}
+    if(flags_event_active_){flags_=latched_flags_original_;flags_events_.pop();}
+    if(local_event_active_){local_=latched_local_original_;local_events_.pop();}
+    if(attitude_event_active_){attitude_=latched_attitude_original_;attitude_events_.pop();}
+    if(authority_event_active_)authority_events_.pop();
+    status_event_active_=land_event_active_=battery_event_active_=flags_event_active_=local_event_active_=attitude_event_active_=authority_event_active_=false;
+    latched_events_active_=false;
+  }
   template<class T,class Event>void receive_event(const T& msg,T& destination,f::Stamp& stamp,
       f::SourceSlot slot,const rclcpp::MessageInfo& info,Event event){
     const auto previous=destination;receive(msg,destination,stamp,slot,info);
-    if(event(previous,destination))++receive_events_;
+    if(event(previous,msg)){
+      latch_event_for_slot(slot,msg);
+      ++receive_events_;
+    }
   }
   void receive_manual(const Manual& message){
     ++received_callbacks_;const double now=steady();const auto host=timestamp();
     const auto before=authority_telemetry_.facts(now,config_.attitude.flags_timeout,true,false,1,1,host);
     authority_telemetry_.manual(message,now,host,config_.attitude.flags_timeout);
     const auto after=authority_telemetry_.facts(now,config_.attitude.flags_timeout,true,false,1,1,host);
-    if(f::authority_receive_key(before)!=f::authority_receive_key(after))++receive_events_;
+    if(f::authority_receive_key(before)!=f::authority_receive_key(after)){latch_event(authority_events_,after);++receive_events_;}
   }
   void receive_switches(const Switches& message){
     ++received_callbacks_;const double now=steady();const auto host=timestamp();
     const auto before=authority_telemetry_.facts(now,config_.attitude.flags_timeout,true,false,1,1,host);
     authority_telemetry_.switches(message,now,config_.attitude.flags_timeout,host);
     const auto after=authority_telemetry_.facts(now,config_.attitude.flags_timeout,true,false,1,1,host);
-    if(f::authority_receive_key(before)!=f::authority_receive_key(after))++receive_events_;
+    if(f::authority_receive_key(before)!=f::authority_receive_key(after)){latch_event(authority_events_,after);++receive_events_;}
   }
   std::uint64_t timestamp(){
     const auto ns=get_clock()->now().nanoseconds();
@@ -584,6 +663,7 @@ class SystemNode final:public rclcpp::Node {
     const auto graph=query_graph();now=steady();const auto host_stamp=timestamp();
     source_observed_steady_=now;source_observed_host_=host_stamp;
     f::Snapshot s;s.status_fresh=status_stamp_.fresh(now,config_.attitude.status_timeout);s.land_fresh=land_stamp_.fresh(now,config_.attitude.land_timeout);s.local_fresh=local_stamp_.fresh(now,config_.attitude.local_timeout);
+    if(receive_event_overflow_)s.time_regressed=true;
     s.arming_state_known=status_.arming_state==Status::ARMING_STATE_ARMED||
       status_.arming_state==Status::ARMING_STATE_DISARMED;
     s.status_fresh=s.status_fresh&&s.arming_state_known;
@@ -635,9 +715,10 @@ class SystemNode final:public rclcpp::Node {
         std::isfinite(local_.x)&&std::isfinite(local_.y);
       a.vxy_valid=local_.v_xy_valid&&std::isfinite(local_.vx)&&std::isfinite(local_.vy);
       a.land_selectable=(status_.can_set_nav_states_mask&(1U<<Status::NAVIGATION_STATE_AUTO_LAND))!=0;
-      const auto authority=authority_telemetry_.facts(now,config_.attitude.flags_timeout,
-        a.failsafe_fresh,flags_.manual_control_signal_lost,
-        graph.manual,graph.switches,host_stamp);
+      const auto authority=authority_event_active_?latched_authority_facts_:
+        authority_telemetry_.facts(now,config_.attitude.flags_timeout,
+          a.failsafe_fresh,flags_.manual_control_signal_lost,
+          graph.manual,graph.switches,host_stamp);
       a.rc_link_ready=authority.rc_link_ready;a.rc_switches_ready=authority.rc_switches_ready;
       a.rc_source_clock_valid=authority.rc_source_clock_valid;a.rc_switch_clock_valid=authority.rc_switch_clock_valid;
       a.rc_source_seen=authority.manual_seen;a.rc_source_valid=authority.manual_valid;
@@ -1017,6 +1098,20 @@ class SystemNode final:public rclcpp::Node {
   std::array<bool,std::size_t(f::SourceSlot::Count)> receipt_accepted_{};
   std::array<std::uint64_t,std::size_t(f::SourceSlot::Count)> source_callbacks_{},source_accepted_{},source_cycle_callbacks_{};
   std::uint64_t received_callbacks_{},receive_events_{};
+  f::DiscreteEventLatch<Status> status_events_;
+  f::DiscreteEventLatch<Land> land_events_;
+  f::DiscreteEventLatch<Battery> battery_events_;
+  f::DiscreteEventLatch<Flags> flags_events_;
+  f::DiscreteEventLatch<Local> local_events_;
+  f::DiscreteEventLatch<Attitude> attitude_events_;
+  f::DiscreteEventLatch<f::AuthorityTelemetry::Facts> authority_events_;
+  Status latched_status_original_{}; Land latched_land_original_{};
+  Battery latched_battery_original_{}; Flags latched_flags_original_{};
+  Local latched_local_original_{}; Attitude latched_attitude_original_{};
+  f::AuthorityTelemetry::Facts latched_authority_facts_{};
+  bool latched_events_active_{}, status_event_active_{}, land_event_active_{},
+    battery_event_active_{}, flags_event_active_{}, local_event_active_{}, attitude_event_active_{}, authority_event_active_{};
+  bool receive_event_overflow_{};
   std::string receive_stop_reason_;
   f::CurrentControlCycle cycle_;Work work_,completed_work_;
   bool sampling_pair_{};std::size_t pair_context_count_{};

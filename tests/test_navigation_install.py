@@ -83,6 +83,15 @@ class InstallTests(unittest.TestCase):
         self.assertIn('Terminal=true',desktop);self.assertIn(' monitor',desktop)
         self.assertIn('10%%',desktop);self.assertNotIn('takeoff',desktop)
         with self.assertRaises(ValueError):m.render_desktop(Path('/tmp/bad\nExec=x'))
+
+    def test_service_defaults_to_diagnostic_and_flight_test_is_explicit(self):
+        m=self.module();entry=Path('/opt/fc01-nav');home=Path('/home/orangepi')
+        diagnostic=m.render_unit('orangepi',home,entry,Path('/tmp/native'))
+        self.assertIn('run --mode diagnostic',diagnostic)
+        self.assertNotIn('--confirm-flight-test',diagnostic)
+        with self.assertRaises(ValueError):m.render_unit('orangepi',home,entry,Path('/tmp/native'),'flight-test')
+        flight=m.render_unit('orangepi',home,entry,Path('/tmp/native'),'flight-test',True)
+        self.assertIn('run --mode flight-test --confirm-flight-test',flight)
     def test_build_is_offline_single_job_and_staged(self):
         m=self.module();commands=[]
         with patch.object(m.shutil,'which',return_value='/usr/bin/tool'):
