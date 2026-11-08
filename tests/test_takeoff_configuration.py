@@ -35,6 +35,9 @@ class TakeoffConfigurationTests(unittest.TestCase):
             with self.assertRaises(navigation_service.ControlError):
                 navigation_service.check_controller(entry)
             binary.write_bytes(old+b'NAV_TAKEOFF_EVIDENCE_V2_20261103')
+            with self.assertRaises(navigation_service.ControlError):
+                navigation_service.check_controller(entry)
+            binary.write_bytes(old+navigation_service.TAKEOFF_MARKER+navigation_service.SAFETY_MARKER)
             self.assertEqual(navigation_service.check_controller(entry),binary)
 
     def test_missing_settings_and_explicit_settings_share_platform_default(self):

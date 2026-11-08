@@ -3,6 +3,7 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 using namespace authority_test;
 static void need(bool ok,const char* why){if(!ok)throw std::runtime_error(why);}
 static f::Config rc_config(std::int64_t slot=6){
@@ -25,12 +26,13 @@ struct RcTarget {
 struct Flight {
   f::Config c;f::Runtime r;f::Snapshot s{sample()};
   double t{};f::Output o;unsigned published{},arm_commands{},mode_commands{},target_commits{},heartbeat_commits{};
-  explicit Flight(std::int64_t slot=6):c(rc_config(slot)),r(c){
+  explicit Flight(std::int64_t slot=6):Flight(rc_config(slot)){}
+  explicit Flight(f::Config candidate):c(std::move(candidate)),r(c){
     s.nav_state=15;s.attitude.source_clock_validated=true;
     s.attitude.rc_link_ready=s.attitude.rc_switches_ready=true;
     s.attitude.rc_source_clock_valid=s.attitude.rc_switch_clock_valid=true;
     s.attitude.rc_source_selected=s.attitude.rc_axes_safe=s.attitude.rc_aux_switches_safe=true;
-    s.attitude.rc_mode_slot=slot==1?6:1;s.attitude.rc_arm_switch=s.attitude.rc_kill_switch=3;
+    s.attitude.rc_mode_slot=c.attitude.rc_navigation_mode_slot==1?6:1;s.attitude.rc_arm_switch=s.attitude.rc_kill_switch=3;
     s.attitude.rc_switch_sample_stamp=1000;
     s.attitude.local_stamp=s.attitude.vertical_sample_stamp=1000;
     s.attitude.z_deriv=s.attitude.vz=0;
@@ -489,6 +491,125 @@ static void full_height_hold_land_and_safe_reset(){
     "independent new disarmed ground evidence completes the second physical landing");
   need(q.arm_commands==0&&q.mode_commands==0,"full flight never emits automatic Arm or Offboard entry");
 }
+// Values in the selected Flight Test runtime profile. Unlike the historical
+// .5 m fixtures above, this keeps the deployed ramp, PID, limits and guards.
+static f::Config production_no_vision_rc_config(){
+  auto c=config();c.runtime_mode="flight-test";c.flight_enabled=false;
+  auto& p=c.attitude;
+  p.flight_actions_enabled=true;p.arm_enabled=false;p.takeoff_enabled=true;
+  p.parameters_confirmed=true;p.rc_navigation_enabled=true;
+  p.rc_takeover_confirmed=true;p.autonomous_failsafe_confirmed=false;
+  p.rc_navigation_mode_slot=1;p.rc_target_height=1.5;p.max_flight_seconds=30;
+  p.max_tilt_deg=10;p.land_sample_max_gap=1.25;
+  p.vertical={.50,.12,.80,.40,.50,.15,.03,.08,5.,.30,.20,.25};
+  p.takeoff_reserve_thrust=.04;
+  p.ramp_seconds=2.;p.settle_seconds=2.;p.landing_seconds=3.;
+  p.height_tolerance=.15;p.speed_tolerance=.15;p.ascent_timeout=10.;p.descent_timeout=10.;
+  p.saturation_seconds=1.5;p.armed_dwell_seconds=1.;p.liftoff_dwell_seconds=.20;
+  p.liftoff_height_m=.12;p.liftoff_speed_mps=.08;p.touchdown_dwell_seconds=.30;
+  p.height_lower_margin_m=.25;p.z_jump_limit_m=.45;p.vz_jump_limit_mps=1.5;
+  p.feedback_guard.enabled=true;p.feedback_guard.rate_tolerance_mps=.20;p.feedback_guard.dwell_seconds=.50;
+  c.validate();return c;
+}
+
+static void production_no_vision_rc_1p5m_lifecycle_uses_vertical_only(){
+  auto c=production_no_vision_rc_config();
+  bool rejected=false;auto invalid=c;invalid.flight_enabled=true;
+  try{invalid.validate();}catch(const std::invalid_argument&){rejected=true;}
+  need(rejected,"attitude altitude rejects the unrelated legacy flight gate");
+  for(int gate=0;gate<4;++gate){
+    auto disabled=c;auto& p=disabled.attitude;
+    if(gate==0)p.flight_actions_enabled=false;
+    if(gate==1)p.takeoff_enabled=false;
+    if(gate==2)p.parameters_confirmed=false;
+    if(gate==3)p.rc_takeover_confirmed=false;
+    rejected=false;try{disabled.validate();}catch(const std::invalid_argument&){rejected=true;}
+    need(rejected,"each independent RC flight permission remains mandatory");
+  }
+
+  Flight q(c);
+  // Observed diagnostic condition: horizontal position and heading are
+  // unavailable, while the independent attitude and vertical estimates work.
+  q.s.feedback.valid=false;q.s.feedback.heading_ok=false;
+  q.s.attitude.xy_valid=q.s.attitude.vxy_valid=false;
+  q.s.attitude.z_valid=q.s.attitude.vz_valid=true;
+  q.join();
+  const double reference=q.r.attitude_core().reference_z();
+  for(int i=0;i<25;++i)q.tick();
+  need(q.r.attitude_core().phase()==a::Phase::ThrustRamp,
+    "production RC route reaches thrust ramp without XY or heading validity");
+  need(!q.r.pending(400).requested&&!q.r.pending(176).requested&&
+       q.arm_commands==0&&q.mode_commands==0,"RC route retains manual Arm and Offboard ownership");
+
+  // Time and requested thrust alone must not certify liftoff. Holding the
+  // ground sample also verifies that the bounded reserve can reach .54.
+  for(int i=0;i<85;++i)q.tick();
+  need(q.r.attitude_core().phase()==a::Phase::ThrustRamp&&
+       std::abs(q.o.attitude.thrust[2]+.54)<1e-9&&!q.r.attitude_core().liftoff_confirmed(),
+    "production ramp reaches hover plus reserve without inventing liftoff");
+  q.s.feedback.landed=false;q.s.at_rest=false;
+  double height=0.;
+  for(int i=0;i<50&&q.r.attitude_core().phase()==a::Phase::ThrustRamp;++i){
+    height+=.005;q.s.attitude.z=reference-height;
+    q.s.attitude.vz=q.s.attitude.z_deriv=-.10;q.tick();
+  }
+  need(q.r.attitude_core().liftoff_confirmed()&&q.r.attitude_core().phase()==a::Phase::Ascend,
+    (std::string("independent land detector and z/vz evidence confirm liftoff: ")+q.r.attitude_core().reason()).c_str());
+
+  // Simulated measured NED climb, not a physical flight simulation: all
+  // source stamps advance and z_deriv stays consistent with vertical motion.
+  for(int i=0;i<190&&q.r.attitude_core().phase()!=a::Phase::HeightHold;++i){
+    height=std::min(1.5,height+.015);q.s.attitude.z=reference-height;
+    q.s.attitude.vz=height<1.5?-.30:0.;q.s.attitude.z_deriv=q.s.attitude.vz;q.tick();
+  }
+  need(q.r.attitude_core().phase()==a::Phase::HeightHold&&
+       q.r.attitude_core().target_height_settled()&&q.r.attitude_core().reference_z()==reference&&
+       std::abs(q.o.attitude.target_height-1.5)<1e-9,
+    "vertical-only feedback settles at the original reference plus 1.5 m");
+  need(q.o.attitude.vertical_closed_loop&&q.o.attitude.thrust_ceiling==.80&&
+       !q.o.attitude.visual_motion,"height hold uses the global thrust envelope and no vision");
+  for(int event=0;event<5;++event){
+    auto context=q.r.publication_context(q.s,q.t,true,true);
+    if(event==0)context.feedback.kill=true;
+    if(event==1)context.feedback.rc_link_ready=false;
+    if(event==2)context.feedback.z_valid=false;
+    if(event==3)context.feedback.q={0,0,0,0};
+    if(event==4)context.feedback.offboard_signal_lost=true;
+    need(!a::attitude_publication_policy(context,q.o.attitude).allowed,
+      "Kill RC loss invalid vertical attitude and Offboard loss veto the final sink");
+  }
+
+  need(q.r.request("LAND",{},q.s,q.t).accepted,"manual landing remains available");
+  bool descent_seen=false,disarm_seen=false;
+  for(int i=0;i<260&&q.r.attitude_core().phase()!=a::Phase::SafeDisarmed;++i){
+    height=std::max(0.,height-.01);q.s.attitude.z=reference-height;
+    q.s.attitude.vz=q.s.attitude.z_deriv=height>0?.20:0.;
+    if(height<=0.){q.s.feedback.landed=true;q.s.at_rest=true;}
+    q.tick();descent_seen=descent_seen||q.r.attitude_core().phase()==a::Phase::Descent;
+    if(q.o.attitude.command==a::Command::Disarm){
+      need(a::disarm_publication_policy(q.r.publication_context(q.s,q.t,true,true)).allowed,
+        "new touchdown evidence authorizes guarded disarm");
+      q.r.confirm_attitude_command_publication(a::Command::Disarm,true,q.s.status_stamp+1,q.s,q.t);
+      q.r.ack({q.r.pending(400).baseline+1,400,0,1,191,false},q.t+.001);
+      q.s.feedback.armed=false;disarm_seen=true;
+    }
+  }
+  need(descent_seen&&disarm_seen&&q.r.attitude_core().phase()==a::Phase::SafeDisarmed,
+    "production 1.5 m mission confirms descent touchdown and actual disarmed status");
+  // The operator now confirms the PX4 mode release on the ground.  Feeding
+  // that fresh Stabilized status before the first SafeDisarmed follow-up tick
+  // exercises the normal external-release path and must leave the core in
+  // Idle without issuing a redundant 176 transaction.
+  q.s.feedback.offboard=false;q.s.nav_state=15;q.s.attitude.rc_mode_slot=6;
+  q.s.attitude.rc_arm_switch=3;q.s.stationary_seconds=3;q.tick();
+  need(q.r.attitude_core().phase()==a::Phase::Idle&&
+       !q.o.attitude.publish&&!a::nonzero(q.o.attitude.thrust),
+    "fresh disarmed Stabilized status completes the release to Idle");
+  need(q.arm_commands==0&&q.mode_commands==0&&q.target_commits==q.heartbeat_commits,
+    "full no-vision lifecycle retains paired sinks and no automatic Arm or Offboard entry");
+  std::cout<<"RC_PRODUCTION_NO_VISION_1P5M_VERTICAL_ONLY_FLIGHT_ENABLED_FALSE_PASS\n";
+}
+
 int main(int argc,char** argv){
   if(argc==2){
     if(std::string(argv[1])=="delay")delayed_arm_evidence_keeps_continuous_zero_commits();
@@ -496,6 +617,7 @@ int main(int argc,char** argv){
     else if(std::string(argv[1])=="timeout")missing_arm_evidence_has_an_unrenewable_deadline();
     else if(std::string(argv[1])=="navigation")delayed_navigation_evidence_keeps_continuous_zero_commits();
     else if(std::string(argv[1])=="late_arm")late_complementary_arm_evidence_cannot_revive_expired_attempt();
+    else if(std::string(argv[1])=="production_1p5m")production_no_vision_rc_1p5m_lifecycle_uses_vertical_only();
     else throw std::runtime_error("unknown regression selector");
     return 0;
   }
@@ -509,5 +631,6 @@ int main(int argc,char** argv){
   arm_and_navigation_faults_latch();reference_is_disarmed_only();final_boundary_and_interface_reject_bypasses();
   exits_and_faults_preserve_existing_policy();
   full_height_hold_land_and_safe_reset();
+  production_no_vision_rc_1p5m_lifecycle_uses_vertical_only();
   std::cout<<"RC_NAVIGATION_CONTRACT_PASS\n";
 }

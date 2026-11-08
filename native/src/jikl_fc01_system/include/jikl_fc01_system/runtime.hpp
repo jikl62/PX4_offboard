@@ -151,6 +151,12 @@ class Runtime {
     shutdown_latched_=true;request("LAND",{},s,now);
   }
   void abort_attitude(const std::string& reason){attitude_core_.block(reason);message_=reason;}
+  void begin_attitude_safety_observation(){queued_safety_wait_=false;attitude_core_.begin_safety_observation();}
+  void observe_attitude_safety_event(const attitude::Feedback& feedback,
+      attitude::Core::SafetyEvent source,double now){
+    if(config_.profile!="attitude_altitude")return;
+    queued_safety_wait_=attitude_core_.observe_safety_event(feedback,source,now)||queued_safety_wait_;message_=attitude_core_.reason();
+  }
   bool visual_output_current(const Snapshot& s,double now)const{return attitude_core_.visual_current(attitude_snapshot(s),now);}
   void request_visual_land(const Snapshot& s,double now,const std::string& reason){
     attitude_core_.visual_land(attitude_snapshot(s),now,reason);message_=attitude_core_.reason();
@@ -544,6 +550,7 @@ class Runtime {
   }
   Output step(const Snapshot& s,double now){
     Output out;
+    if(queued_safety_wait_){queued_safety_wait_=false;return out;}
     if(ground_&&!ground_->finished()){
       if(s.time_regressed||!s.status_fresh||!s.land_fresh){
         ground_->abort(s.time_regressed?"TIME_REGRESSION_RESTART_ON_GROUND":!s.status_fresh?"STATUS_STALE":"LAND_STALE");
@@ -817,7 +824,7 @@ class Runtime {
   Config config_;v::Core core_;attitude::Core attitude_core_;std::unique_ptr<g::Core> ground_;
   double last_ping_{-1},velocity_until_{-1},ground_origin_{},recover_started_{};
   bool recover_land_{},maintenance_{},shutdown_latched_{};
-  bool last_attitude_output_active_{},attitude_sink_commit_required_{};
+  bool last_attitude_output_active_{},attitude_sink_commit_required_{},queued_safety_wait_{};
   int recover_nav_{};
   std::array<Pending,3> pending_{};
   unsigned command400_commits_{},command176_commits_{};

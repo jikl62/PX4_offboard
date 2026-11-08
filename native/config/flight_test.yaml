@@ -19,7 +19,7 @@ fc01_system:
     autonomous_failsafe_confirmed: false
     visual_navigation_enabled: false
     fc01_runtime_mode: flight-test
-    fc01_entry_version: "20261108.1"
+    fc01_entry_version: "20261108.2"
     control_loop_hz: 20.0
     # Initial platform above the current task's ground anchor; NED height=z0-z.
     rc_target_height: 1.5

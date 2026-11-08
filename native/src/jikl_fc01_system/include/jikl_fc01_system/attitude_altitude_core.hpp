@@ -515,6 +515,76 @@ class Core {
     }
   }
   void block(const std::string& reason){fault(reason);}
+  void begin_safety_observation(){queued_vertical_suspect_=false;}
+  enum class SafetyEvent {Attitude,Vertical,Status,Failsafe,Authority,Battery,Land};
+  // Scan queued payloads before planning output. A healthy observation cannot
+  // advance a phase or clear a fault. Unjoined RC preparation retains its
+  // existing wait/reset policy; once arm intent exists, that policy blocks.
+  bool observe_safety_event(const Feedback& s,SafetyEvent source,double now){
+    if(phase_==Phase::Safety)return true;
+    const auto reject=[&](const std::string& why){
+      if(c_.rc_navigation_enabled&&!rc_joined_)rc_startup(s,now,why);
+      else fault(why);
+      return true;
+    };
+    const bool estimator_active=flight_started_||s.armed;
+    if(source==SafetyEvent::Attitude){
+      if(!normalized(s.q))return reject("ATTITUDE_STALE_OR_INVALID");
+      if(estimator_active&&reference_.ready()&&s.quat_reset!=reference_.reset_counter())
+        return reject("ACTIVE_QUATERNION_RESET");
+    }else if(source==SafetyEvent::Vertical){
+      if(!s.z_valid||!s.vz_valid)return reject("Z_VZ_STALE_OR_INVALID");
+      if(!std::isfinite(s.z)||!std::isfinite(s.vz)||
+         (c_.feedback_guard.enabled&&!std::isfinite(s.z_deriv)))return reject("NONFINITE_VERTICAL_TELEMETRY");
+      if(estimator_active&&z_set_&&(s.z_reset!=z_reset_||s.vz_reset!=vz_reset_))
+        return reject("ACTIVE_VERTICAL_ESTIMATOR_RESET");
+      if(estimator_active&&last_sample_set_&&
+         (std::abs(s.z-last_sample_z_)>c_.z_jump_limit_m||
+          std::abs(s.vz-last_sample_vz_)>c_.vz_jump_limit_mps))
+        return reject("UNEXPLAINED_Z_VZ_ESTIMATOR_JUMP");
+      if(flight_started_&&(z0_-s.z>c_.vertical.max_height||
+          z0_-s.z<-(bench_arm_only_active_?c_.bench_ground_down_tolerance_m:c_.height_lower_margin_m)||
+          std::abs(s.vz)>c_.vertical.max_climb+c_.vertical.max_descent+2*c_.vz_jump_limit_mps))
+        return reject("HEIGHT_OR_SPEED_ENVELOPE_EXCEEDED");
+      if(c_.feedback_guard.enabled&&flight_started_&&!bench_arm_only_active_&&
+         s.armed&&phase_>=Phase::ThrustRamp&&phase_<=Phase::RequestDisarm){
+        const auto& evidence=feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c_.local_timeout);
+        queued_vertical_suspect_=queued_vertical_suspect_||evidence.suspect;
+        if(!evidence.healthy)return reject(evidence.reason);
+      }
+    }else if(source==SafetyEvent::Battery){
+      if(!s.battery_ready)return reject("BATTERY_NOT_READY");
+    }else if(source==SafetyEvent::Land){
+      if((phase_==Phase::Landed||phase_==Phase::RequestDisarm||phase_==Phase::SafeDisarmed||
+          phase_==Phase::ReleaseOffboard)&&(!s.landed||(!s.at_rest&&!bench_arm_only_active_))){
+        ground_confirmed_=false;clear_land_dwell();return true;
+      }
+      if(c_.rc_navigation_enabled&&!rc_joined_&&(!s.landed||
+          (!s.at_rest&&!s.armed&&s.rc_arm_switch!=1&&rc_start_.no_arm_intent_observed())))
+        return reject("RC_PRESTREAM_GROUND_CHANGED");
+    }else if(source==SafetyEvent::Status||source==SafetyEvent::Failsafe||source==SafetyEvent::Authority){
+      if(c_.rc_navigation_enabled&&!rc_joined_){
+        if(s.kill||s.failsafe||s.calibration||s.hil||!s.preflight||!s.battery_ready||
+           !RcNavigationStart::rc_live(s)||!s.rc_axes_safe||s.rc_sticks_moving||!s.rc_aux_switches_safe)
+          return reject("RC_QUEUED_SAFETY_CONDITION");
+      }
+      if(const auto cause=takeover_cause(s)){
+        if(s.offboard&&s.armed&&!s.kill&&!s.failsafe&&s.status_fresh&&
+           std::string(cause)=="EXPLICIT_OPERATOR_INTERVENTION"){
+          const auto why=request_operator_takeover(s,now);if(!why.empty())fault(why);
+          return phase_==Phase::Safety;
+        }else release_to_operator(cause);
+        return true;
+      }
+      if(source==SafetyEvent::Status&&!s.status_fresh)return reject("DDS_STATUS_LAND_OR_FAILSAFE_STALE");
+      if(source==SafetyEvent::Status&&flight_started_&&!bench_arm_only_active_&&
+         phase_>=Phase::ArmedGround&&phase_!=Phase::RequestDisarm&&phase_!=Phase::ReleaseOffboard&&!s.armed)
+        return reject("UNEXPECTED_DISARM_ACTIVE_FLIGHT");
+      if(source==SafetyEvent::Status&&(s.calibration||s.hil))return reject("CALIBRATION_OR_HIL_ACTIVE");
+      if(source==SafetyEvent::Status&&flight_started_&&!s.battery_ready)return reject("BATTERY_NOT_READY");
+    }
+    return false;
+  }
   Output step(const Feedback& s,double now,Transaction mode,Transaction arm,Transaction px4_land={}){
     Output out;
     if(phase_==Phase::Safety){observe_external_terminal(s,now);return out;}
@@ -599,7 +669,7 @@ class Core {
       const auto& evidence=feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c_.local_timeout);
       // A short disagreement cannot wind up the speed integrator. The P
       // response, braking and physical slew limits remain the existing ones.
-      vertical_->freeze_integral(evidence.suspect);
+      vertical_->freeze_integral(evidence.suspect||queued_vertical_suspect_);
       if(!evidence.healthy){
         fault_class_=FaultClass::UnknownAirborne;fault(evidence.reason);return {};
       }
@@ -1338,9 +1408,9 @@ class Core {
     fault_land_baseline_=std::max(fault_land_baseline_,last_land_stamp_);
     clear_land_dwell();land_dwell_blocked_stamp_=fault_land_baseline_;
   }
-  Output rc_startup(const Feedback& s,double now){
+  Output rc_startup(const Feedback& s,double now,const std::string& queued_reason={}){
     Output out;last_status_stamp_=s.status_stamp;last_land_stamp_=s.land_stamp;
-    const bool publish=rc_start_.step(c_,s,now,health(s));
+    const bool publish=rc_start_.step(c_,s,now,queued_reason.empty()?health(s):queued_reason);
     reason_=rc_start_.reason();
     if(rc_start_.phase()==RcStartPhase::Blocked){fault(reason_,!rc_preparation_retry_reason(reason_));return out;}
     z_set_=rc_start_.anchor_valid();
@@ -1370,7 +1440,7 @@ class Core {
   Config c_;Phase phase_{Phase::Idle};AttitudeReference reference_;
   vision::Controller visual_;vision::Result visual_result_;
   double visual_plan_at_{-1},committed_yaw_{};bool committed_yaw_set_{};
-  VerticalFeedbackGuard feedback_guard_;
+  VerticalFeedbackGuard feedback_guard_;bool queued_vertical_suspect_{};
   std::unique_ptr<VerticalController> vertical_;
   bool interactive_{},flight_started_{},bench_arm_only_active_{},ground_abort_{},z_set_{},command_sent_{};
   bool arm_cancel_pending_{},arm_command_committed_{};

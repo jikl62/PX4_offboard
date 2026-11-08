@@ -145,6 +145,7 @@ class SystemNode final:public rclcpp::Node {
       csv_<<"steady_s,phase,nav_state,armed,landed,xy_valid,z_valid,vxy_valid,vz_valid,heading_good,local_age_s,x_ned,y_ned,z_ned,vx_ned,vy_ned,vz_ned,ax_ned,ay_ned,az_ned,relative_height_m,reason,aa_healthy,aa_yaw_reference,aa_thrust_z,aa_height_target,aa_velocity_target,aa_saturated,aa_slew_limited,aa_z_deriv_ned,aa_feedback_checked,aa_feedback_suspect,aa_feedback_rate_error_mps,aa_feedback_position_rate_error_mps,aa_feedback_disagreement_s,aa_feedback_reason,aa_vertical_closed_loop,aa_takeoff_thrust_limited,aa_p_thrust,aa_i_thrust,aa_raw_thrust,aa_thrust_ceiling\n";
     }
     std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)
+      <<",\"controller_build\":\"R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108\""
       <<",\"runtime_mode\":"<<f::quote(config.runtime_mode.empty()?"unspecified":config.runtime_mode)
       <<",\"entry_version\":"<<f::quote(config.entry_version)
       <<",\"config_path\":"<<f::quote(config.config_path)
@@ -187,16 +188,12 @@ class SystemNode final:public rclcpp::Node {
   }
   bool tick(){
     const double now=steady();
-    // Apply the first queued observation from every source before taking the
-    // control snapshot. This is the R2 event boundary: a bad sample received
-    // earlier in the same spin_some cannot be replaced by a later healthy
-    // sample. The original live caches are restored after this Runtime::step;
-    // the queued observation is then removed, so the next tick can consume a
-    // subsequent event. Queue overflow remains fail-closed for this process.
-    begin_latched_events();
+    // The continuous snapshot stays newest. Every discrete safety payload
+    // is checked separately before planning, then acknowledged after sinks.
     publication_audit_.begin(now);
     const std::string phase_before=runtime_->phase_name();
     auto s=snapshot(now);
+    observe_pending_safety(s,now);
     bool resting=s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed&&s.at_rest;
     if(config_.profile=="attitude_altitude"){
       resting=resting&&s.local_fresh&&local_.z_valid&&local_.v_z_valid&&std::isfinite(local_.z)&&std::isfinite(local_.vz)&&std::abs(local_.vz)<=config_.attitude.ground_vz_tolerance;
@@ -486,6 +483,59 @@ class SystemNode final:public rclcpp::Node {
   template<class T>void latch_event(f::DiscreteEventLatch<T>& latch,const T& value){
     if(!latch.push(value)) receive_event_overflow_=true;
   }
+  void observe_pending_safety(const f::Snapshot& snapshot,double now){
+    if(config_.profile!="attitude_altitude")return;
+    using Event=f::attitude::Core::SafetyEvent;
+    runtime_->begin_attitude_safety_observation();
+    const auto base=runtime_->publication_context(snapshot,now,true,true).feedback;
+    const auto observe=[this,now](const auto& sample,Event kind){
+      runtime_->observe_attitude_safety_event(sample,kind,now);
+    };
+    // Check every payload, including an unsafe event behind a benign head.
+    // This bounded scan performs no DDS query, output or receive wait.
+    attitude_events_.for_each([&](const auto& value){auto sample=base;
+      for(std::size_t i=0;i<4;++i)sample.q[i]=value.q[i];
+      sample.quat_reset=value.quat_reset_counter;observe(sample,Event::Attitude);});
+    local_events_.for_each([&](const auto& value){auto sample=base;
+      sample.z=value.z;sample.vz=value.vz;sample.z_deriv=value.z_deriv;
+      sample.z_valid=value.z_valid;sample.vz_valid=value.v_z_valid;
+      sample.z_reset=value.z_reset_counter;sample.vz_reset=value.vz_reset_counter;
+      sample.local_stamp=value.timestamp;sample.vertical_sample_stamp=value.timestamp_sample;
+      observe(sample,Event::Vertical);});
+    status_events_.for_each([&](const auto& value){auto sample=base;
+      sample.status_stamp=value.timestamp;
+      sample.status_fresh=base.status_fresh&&(value.arming_state==Status::ARMING_STATE_ARMED||
+        value.arming_state==Status::ARMING_STATE_DISARMED);sample.armed=value.arming_state==Status::ARMING_STATE_ARMED;
+      sample.offboard=value.nav_state==Status::NAVIGATION_STATE_OFFBOARD;sample.failsafe=value.failsafe;
+      sample.kill=base.kill||value.nav_state==Status::NAVIGATION_STATE_TERMINATION;
+      sample.operator_takeover=value.failsafe_and_user_took_over;
+      sample.calibration=value.calibration_enabled||value.rc_calibration_in_progress;
+      sample.hil=value.hil_state!=Status::HIL_STATE_OFF;sample.preflight=value.pre_flight_checks_pass;
+      sample.battery_ready=base.battery_ready&&value.power_input_valid;observe(sample,Event::Status);});
+    battery_events_.for_each([&](const auto& value){auto sample=base;
+      sample.battery_voltage=value.voltage_v;
+      sample.battery_ready=value.connected&&value.warning==0&&std::isfinite(value.voltage_v)&&
+        value.voltage_v>0&&snapshot.power_valid;observe(sample,Event::Battery);});
+    land_events_.for_each([&](const auto& value){auto sample=base;
+      sample.landed=value.landed;sample.at_rest=value.at_rest;observe(sample,Event::Land);});
+    flags_events_.for_each([&](const auto& value){auto sample=base;
+      sample.kill=base.kill||value.fd_critical_failure;
+      sample.offboard_signal_lost=value.offboard_control_signal_lost;
+      if(value.manual_control_signal_lost)sample.rc_link_ready=false;
+      observe(sample,Event::Failsafe);});
+    authority_events_.for_each([&](const auto& value){auto sample=base;
+      sample.kill=base.kill||value.kill;sample.rc_link_ready=value.rc_link_ready;
+      sample.rc_switches_ready=value.rc_switches_ready;
+      sample.rc_sticks_moving=value.sticks_moving;sample.rc_axes_safe=value.rc_axes_safe;
+      sample.rc_source_clock_valid=value.rc_source_clock_valid;sample.rc_switch_clock_valid=value.rc_switch_clock_valid;
+      sample.rc_source_seen=value.manual_seen;sample.rc_source_valid=value.manual_valid;
+      sample.rc_source_selected=value.rc_source_selected;sample.rc_data_source=value.data_source;
+      sample.rc_switches_seen=value.switches_seen;sample.rc_switches_fresh=value.switches_fresh;
+      sample.rc_mode_slot=value.mode_slot;sample.rc_arm_switch=value.arm_switch;sample.rc_kill_switch=value.kill_switch;
+      sample.rc_aux_switches_safe=value.rc_aux_switches_safe;sample.rc_throttle=value.rc_throttle;
+      sample.rc_switch_sample_stamp=value.switch_sample_stamp;sample.operator_switch_generation=value.switch_generation;
+      observe(sample,Event::Authority);});
+  }
   void latch_event_for_slot(f::SourceSlot slot,const Status& value){
     if(slot==f::SourceSlot::Status)latch_event(status_events_,value);
   }
@@ -498,40 +548,13 @@ class SystemNode final:public rclcpp::Node {
   void latch_event_for_slot(f::SourceSlot slot,const Flags& value){
     if(slot==f::SourceSlot::Flags)latch_event(flags_events_,value);
   }
-  void begin_latched_events(){
-    // At most one observation per source is presented to this tick. The
-    // callback cache remains the newest continuous sample; temporarily
-    // substituting the queued payload makes the existing Runtime health and
-    // transition checks see the discrete event before any output is planned.
-    // This is an observation boundary, not an acknowledgement or a fault
-    // clear: Core's own safety/fault state remains authoritative.
-    if(latched_events_active_)return;
-    if(const auto* value=status_events_.front()){latched_status_original_=status_;status_=*value;status_event_active_=true;}
-    if(const auto* value=land_events_.front()){latched_land_original_=land_;land_=*value;land_event_active_=true;}
-    if(const auto* value=battery_events_.front()){latched_battery_original_=battery_;battery_=*value;battery_event_active_=true;}
-    if(const auto* value=flags_events_.front()){latched_flags_original_=flags_;flags_=*value;flags_event_active_=true;}
-    if(const auto* value=local_events_.front()){latched_local_original_=local_;local_=*value;local_event_active_=true;}
-    if(const auto* value=attitude_events_.front()){latched_attitude_original_=attitude_;attitude_=*value;attitude_event_active_=true;}
-    if(const auto* value=authority_events_.front()){latched_authority_facts_=*value;authority_event_active_=true;}
-    latched_events_active_=status_event_active_||land_event_active_||battery_event_active_||flags_event_active_||local_event_active_||attitude_event_active_;
-    latched_events_active_=latched_events_active_||authority_event_active_;
-  }
   void end_latched_events(){
-    // A queue entry is acknowledged only after Runtime::step and all final
-    // sink checks for this tick have completed. Restore the newest continuous
-    // cache first, then consume exactly the observation presented above. If a
-    // later callback supplied a healthy sample, it is now available to the
-    // next tick; it never erased the earlier safety event in this tick.
-    if(!latched_events_active_)return;
-    if(status_event_active_){status_=latched_status_original_;status_events_.pop();}
-    if(land_event_active_){land_=latched_land_original_;land_events_.pop();}
-    if(battery_event_active_){battery_=latched_battery_original_;battery_events_.pop();}
-    if(flags_event_active_){flags_=latched_flags_original_;flags_events_.pop();}
-    if(local_event_active_){local_=latched_local_original_;local_events_.pop();}
-    if(attitude_event_active_){attitude_=latched_attitude_original_;attitude_events_.pop();}
-    if(authority_event_active_)authority_events_.pop();
-    status_event_active_=land_event_active_=battery_event_active_=flags_event_active_=local_event_active_=attitude_event_active_=authority_event_active_=false;
-    latched_events_active_=false;
+    // Acknowledge only after the full control/publication boundary. Overflow
+    // remains sticky; a healthy later payload cannot clear an observed fault.
+    status_events_.acknowledge_all();land_events_.acknowledge_all();
+    battery_events_.acknowledge_all();flags_events_.acknowledge_all();
+    local_events_.acknowledge_all();attitude_events_.acknowledge_all();
+    authority_events_.acknowledge_all();
   }
   template<class T,class Event>void receive_event(const T& msg,T& destination,f::Stamp& stamp,
       f::SourceSlot slot,const rclcpp::MessageInfo& info,Event event){
@@ -663,14 +686,15 @@ class SystemNode final:public rclcpp::Node {
     const auto graph=query_graph();now=steady();const auto host_stamp=timestamp();
     source_observed_steady_=now;source_observed_host_=host_stamp;
     f::Snapshot s;s.status_fresh=status_stamp_.fresh(now,config_.attitude.status_timeout);s.land_fresh=land_stamp_.fresh(now,config_.attitude.land_timeout);s.local_fresh=local_stamp_.fresh(now,config_.attitude.local_timeout);
-    if(receive_event_overflow_)s.time_regressed=true;
     s.arming_state_known=status_.arming_state==Status::ARMING_STATE_ARMED||
       status_.arming_state==Status::ARMING_STATE_DISARMED;
     s.status_fresh=s.status_fresh&&s.arming_state_known;
     s.attitude_output_active=s.offboard_heartbeat_active=last_attitude_output_.publish;
     s.publication_fault_latched=boundary_fault_latched_;
     s.battery_fresh=battery_stamp_.fresh(now,1.);s.manual_fresh=flags_stamp_.fresh(now,config_.attitude.flags_timeout);
-    s.time_regressed=status_stamp_.regressed||land_stamp_.regressed||local_stamp_.regressed||battery_stamp_.regressed||flags_stamp_.regressed||clock_regressed_||attitude_stamp_.regressed||local_sample_.regressed||attitude_sample_.regressed;
+    // A lost discrete observation is a sticky transport fault. Include it in
+    // the final assignment so normal source clocks cannot overwrite it.
+    s.time_regressed=receive_event_overflow_||status_stamp_.regressed||land_stamp_.regressed||local_stamp_.regressed||battery_stamp_.regressed||flags_stamp_.regressed||clock_regressed_||attitude_stamp_.regressed||local_sample_.regressed||attitude_sample_.regressed;
     s.status_stamp=status_stamp_.value;s.land_stamp=land_stamp_.value;s.system=status_.system_id;s.component=status_.component_id;
     s.armed_time=status_.armed_time;s.latest_arming_reason=status_.latest_arming_reason;
     s.at_rest=land_.at_rest;s.calibration=status_.calibration_enabled||status_.rc_calibration_in_progress;s.hil=status_.hil_state!=Status::HIL_STATE_OFF;
@@ -715,8 +739,7 @@ class SystemNode final:public rclcpp::Node {
         std::isfinite(local_.x)&&std::isfinite(local_.y);
       a.vxy_valid=local_.v_xy_valid&&std::isfinite(local_.vx)&&std::isfinite(local_.vy);
       a.land_selectable=(status_.can_set_nav_states_mask&(1U<<Status::NAVIGATION_STATE_AUTO_LAND))!=0;
-      const auto authority=authority_event_active_?latched_authority_facts_:
-        authority_telemetry_.facts(now,config_.attitude.flags_timeout,
+      const auto authority=authority_telemetry_.facts(now,config_.attitude.flags_timeout,
           a.failsafe_fresh,flags_.manual_control_signal_lost,
           graph.manual,graph.switches,host_stamp);
       a.rc_link_ready=authority.rc_link_ready;a.rc_switches_ready=authority.rc_switches_ready;
@@ -1105,12 +1128,6 @@ class SystemNode final:public rclcpp::Node {
   f::DiscreteEventLatch<Local> local_events_;
   f::DiscreteEventLatch<Attitude> attitude_events_;
   f::DiscreteEventLatch<f::AuthorityTelemetry::Facts> authority_events_;
-  Status latched_status_original_{}; Land latched_land_original_{};
-  Battery latched_battery_original_{}; Flags latched_flags_original_{};
-  Local latched_local_original_{}; Attitude latched_attitude_original_{};
-  f::AuthorityTelemetry::Facts latched_authority_facts_{};
-  bool latched_events_active_{}, status_event_active_{}, land_event_active_{},
-    battery_event_active_{}, flags_event_active_{}, local_event_active_{}, attitude_event_active_{}, authority_event_active_{};
   bool receive_event_overflow_{};
   std::string receive_stop_reason_;
   f::CurrentControlCycle cycle_;Work work_,completed_work_;
