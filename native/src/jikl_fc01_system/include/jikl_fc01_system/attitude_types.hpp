@@ -202,17 +202,6 @@ struct ArmedGroundFaultEvidence {
   std::uint64_t status_stamp{},land_stamp{},local_stamp{};
   double downward_height_limit{}; // populated for bench faults only
 };
-// Immutable triggering-sample audit. This has no effect on the flight state machine.
-// In particular it does not adjust the tilt threshold, attitude setpoint,
-// motor output or Offboard heartbeat decision.
-struct TiltFaultEvidence {
-  bool valid{};
-  double measured_tilt_deg{},limit_deg{},height{},up_speed{};
-  Quaternion actual_q{1,0,0,0},requested_q{1,0,0,0};
-  bool armed{},landed{},offboard{};
-  std::uint8_t quat_reset{};
-  std::uint64_t status_stamp{},land_stamp{},local_stamp{};
-};
 struct AuthorityGroundEvidence {
   bool valid{};std::uint32_t failed_mask{};
   double stationary_seconds{},vz{};

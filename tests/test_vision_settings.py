@@ -106,7 +106,8 @@ class VisionConfigExportTests(unittest.TestCase):
                 self.assertIs(p['visual_navigation_enabled'],enabled)
                 self.assertFalse(p['arm_enabled'])
                 self.assertEqual(p['rc_navigation_mode_slot'],1)
-                self.assertEqual(p['aa_hover_thrust'],.475)
+                self.assertEqual(p['aa_hover_thrust'],.50)
+                self.assertEqual(p['aa_thrust_max'],.80)
         self.assertEqual((ROOT/'vision_settings.json').read_bytes(),settings_before)
 
 

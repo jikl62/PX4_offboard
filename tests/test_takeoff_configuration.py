@@ -15,6 +15,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class TakeoffConfigurationTests(unittest.TestCase):
+    def test_attitude_altitude_defaults_load_new_thrust_parameters(self):
+        """The shipped YAML is the source consumed by profile generation."""
+        params = yaml.safe_load((ROOT/'native/config/attitude_altitude.yaml').read_text())[
+            'fc01_system']['ros__parameters']
+        self.assertEqual(params['aa_hover_thrust'], .50)
+        self.assertEqual(params['aa_takeoff_reserve_thrust'], .04)
+        self.assertEqual(params['aa_thrust_min'], .12)
+        self.assertEqual(params['aa_thrust_max'], .80)
+        self.assertEqual(params['aa_thrust_slew'], .40)
+
     def test_old_manual_navigation_binary_cannot_pass_new_takeoff_release_check(self):
         with tempfile.TemporaryDirectory() as folder, patch.object(launcher.platform,'machine',return_value='aarch64'):
             entry=Path(folder);binary=entry/'install/lib/jikl_fc01_system/fc01_system_node'
@@ -63,7 +73,8 @@ class TakeoffConfigurationTests(unittest.TestCase):
                 self.assertEqual(p['rc_target_height'], 1.5)
                 self.assertEqual(p['rc_navigation_mode_slot'], 1)
                 self.assertIs(p['visual_navigation_enabled'], enabled)
-                self.assertEqual(p['aa_hover_thrust'], .475)
+                self.assertEqual(p['aa_hover_thrust'], .50)
+                self.assertEqual(p['aa_thrust_max'], .80)
                 self.assertEqual(p['aa_takeoff_reserve_thrust'], .04)
                 self.assertEqual(p['aa_local_timeout'], .5)
                 self.assertEqual(p['aa_feedback_rate_tolerance_mps'], .2)

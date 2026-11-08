@@ -29,7 +29,7 @@ static void preaccumulated_ground_rest_does_not_wait_twice(){
 }
 static void fatal_faults_cannot_be_cleared_by_ground_controls(){
   for(const char* reason:{"ACTIVE_VERTICAL_ESTIMATOR_RESET","TELEMETRY_TIME_REGRESSION",
-      "ROS_ADAPTER_CONTROL_LOOP_STALL","EXCESS_TILT","PERSISTENT_THRUST_SATURATION",
+      "ROS_ADAPTER_CONTROL_LOOP_STALL","PERSISTENT_THRUST_SATURATION",
       "RC_ARMED_ESTIMATOR_RESET","PUBLISHER_OR_TELEMETRY_CONFLICT"}){
     a::Core core(rc_admission_config());core.block(reason);
     require_rc(!core.rc_restart_allowed(safe_rc_feedback()),

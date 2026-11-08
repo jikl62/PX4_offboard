@@ -84,7 +84,7 @@ python3 vision_replay.py tests/fixtures/vision/follow_land.jsonl
 python3 -m unittest tests.test_vision_replay -v
 ```
 
-`--config PATH` 可选择另一份 `fc01_system.ros__parameters` YAML。默认直接读取 `native/config/attitude_altitude.yaml`；从实际 `attitude_ros_parameters.hpp` 导出 ROS 参数→C++ 成员映射，再将 YAML 值送入真实 `Config::validate()`。因此原 hover=0.475、height_gain=0.50、velocity_gain=0.15、integral_gain=0.03 等参数进入真实控制器，工具没有替换一套简化 PID。模拟会在当前进程中启用 RC 路由及参数确认、关闭自动 Arm/bench/autonomous 权限，固定导航档位 1，起飞平台读取当前 `rc_target_height`（默认 1.5 m）；不写回 YAML 或改变系统配置。
+`--config PATH` 可选择另一份 `fc01_system.ros__parameters` YAML。默认直接读取 `native/config/attitude_altitude.yaml`；从实际 `attitude_ros_parameters.hpp` 导出 ROS 参数→C++ 成员映射，再将 YAML 值送入真实 `Config::validate()`。因此当前 hover=0.50、reserve=0.04、thrust_max=0.80、height_gain=0.50、velocity_gain=0.15、integral_gain=0.03 等参数进入真实控制器，工具没有替换一套简化 PID。模拟会在当前进程中启用 RC 路由及参数确认、关闭自动 Arm/bench/autonomous 权限，固定导航档位 1，起飞平台读取当前 `rc_target_height`（默认 1.5 m）；不写回 YAML 或改变系统配置。
 
 启动时，`VisionFlight` 先模拟合法新鲜 RC/预流、真实双 sink 提交、手动解锁开关与 PX4 armed 证据、导航开关与 PX4 Offboard 证据，再走原 ground dwell/ramp/liftoff/ascent/settle。它不会调用 Core 的阶段跳转或注入权限。输出中的 `arm_commands`、`mode_commands` 应始终为零。
 

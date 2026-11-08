@@ -1,4 +1,5 @@
-// Reuse existing independent fake-PX4 runtime fixture. No hardware required.
+// Valid measured tilt is ordinary feedback. It must not stop the autonomous
+// takeoff stream; invalid attitude data still follows the existing health path.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type"
 #define main p0_attitude_runtime_fixture_main_not_called
@@ -8,6 +9,7 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+
 int main(){
   f::Runtime r(cfg(true));
   auto s=sample();
@@ -21,27 +23,23 @@ int main(){
   s.feedback.armed=true;
   o=tick(r,s,t+=.05);
   assert(r.attitude_core().phase()==a::Phase::ArmedGround);
-  assert(!r.attitude_core().tilt_fault_evidence().valid);
-  s.attitude.q={std::cos(20.2*3.14159265358979323846/360.),
-    std::sin(20.2*3.14159265358979323846/360.),0,0};
-  const auto status_at_fault=s.status_stamp+50000;
-  const auto land_at_fault=s.land_stamp+50000;
-  const auto local_at_fault=s.attitude.local_stamp+50000;
+
+  // Both the previous 20.2 degree sample and a 90 degree valid quaternion
+  // continue through Core and keep the feedback heartbeat alive. This is a
+  // software-policy test only; it does not authorize those poses for flight.
+  for(double degrees:{20.2,90.0}){
+    const double half=degrees*3.14159265358979323846/360.;
+    s.attitude.q={std::cos(half),std::sin(half),0,0};
+    o=tick(r,s,t+=.05);
+    assert(o.attitude.publish);
+    assert(r.attitude_core().phase()!=a::Phase::Safety);
+  }
+
+  // Invalid quaternion data remains an independent safety condition.
+  s.attitude.q={NAN,0,0,0};
   o=tick(r,s,t+=.05);
   assert(!o.attitude.publish);
   assert(r.attitude_core().phase()==a::Phase::Safety);
-  assert(r.attitude_core().reason()=="EXCESS_TILT");
-  auto evidence=r.attitude_core().tilt_fault_evidence();
-  assert(evidence.valid);
-  assert(std::abs(evidence.measured_tilt_deg-20.2)<1e-8);
-  assert(std::abs(evidence.limit_deg-cfg(true).attitude.max_tilt_deg)<1e-8);
-  assert(evidence.armed&&evidence.offboard);
-  assert(evidence.status_stamp==status_at_fault&&evidence.land_stamp==land_at_fault&&evidence.local_stamp==local_at_fault);
-  assert(std::abs(evidence.actual_q[1]-s.attitude.q[1])<1e-12);
-  const auto stored=evidence;
-  s.attitude.q={1,0,0,0};
-  tick(r,s,t+=.05);
-  evidence=r.attitude_core().tilt_fault_evidence();
-  assert(evidence.valid&&evidence.actual_q==stored.actual_q);
-  std::cout<<"FC01_P0_TILT_TRIGGER_SNAPSHOT_PASS\n";
+  assert(r.attitude_core().reason()=="ATTITUDE_STALE_OR_INVALID");
+  std::cout<<"FC01_NORMAL_TILT_AND_INVALID_ATTITUDE_PASS\n";
 }

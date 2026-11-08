@@ -42,7 +42,7 @@ class VisionReplay(unittest.TestCase):
         moving = [r for r in rows if r['active']]
         self.assertGreater(max(r['target_height'] for r in moving), 1.55)
         self.assertGreater(max(-r['thrust'][2] for r in moving), min(-r['thrust'][2] for r in moving) + .005)
-        self.assertAlmostEqual(rows[0]['baseline_hover_thrust'], .475)
+        self.assertAlmostEqual(rows[0]['baseline_hover_thrust'], .50)
         self.assertAlmostEqual(rows[0]['baseline_height_gain'], .5)
 
     def test_missing_state_waits_without_fabricating_valid_zero(self):

@@ -14,7 +14,7 @@ static void require_guard(bool ok,const char* message){
 }
 static f::Config guard_config(){
   auto c=cfg(true);auto& p=c.attitude;
-  p.vertical.hover=.475;p.vertical.minimum=.12;p.vertical.maximum=.75;p.vertical.slew=.4;
+  p.vertical.hover=.50;p.vertical.minimum=.12;p.vertical.maximum=.80;p.vertical.slew=.4;
   p.vertical.height_gain=.5;p.vertical.velocity_gain=.15;p.vertical.integral_gain=.03;
   p.vertical.integral_limit=.08;p.vertical.max_climb=.3;p.vertical.max_descent=.2;
   p.armed_dwell_seconds=1.;p.liftoff_dwell_seconds=.2;

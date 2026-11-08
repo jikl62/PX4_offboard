@@ -9,7 +9,7 @@ static void early_height_cannot_accelerate_scheduled_ramp(bool jitter){
     // An internally consistent estimate can move before the actual detector
     // confirms liftoff. It may engage braking but cannot speed up the ramp.
     q.observe(.10*age,.10);q.advance(dt);
-    const double demand=.475*std::min(1.,age/2.)+.04*std::clamp((age-2.)/2.,0.,1.);
+    const double demand=.50*std::min(1.,age/2.)+.04*std::clamp((age-2.)/2.,0.,1.);
     require_guard(q.o.attitude.publish,"temporary takeoff ceiling must not trigger persistent saturation Safety");
     require_guard(q.r.attitude_core().phase()==a::Phase::ThrustRamp,"height alone cannot certify liftoff");
     require_guard(q.thrust()<=demand+1e-9,"early height feedback must not outrun scheduled ramp demand");

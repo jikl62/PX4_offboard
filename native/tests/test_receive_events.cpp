@@ -323,8 +323,10 @@ static void attitude_reset_invalid_and_real_tilt(){
   after=before;after.q={std::cos(5.*radians/2),std::sin(5.*radians/2),0,0};
   assert(!f::attitude_receive_event(before,after,config));
   after.q={std::cos(15.*radians/2),std::sin(15.*radians/2),0,0};
-  assert(f::attitude_receive_event(before,after,config));
-  // Ordinary yaw evolution changes neither reset identity nor tilt validity.
+  assert(!f::attitude_receive_event(before,after,config));
+  after.q={std::cos(90.*radians/2),std::sin(90.*radians/2),0,0};
+  assert(!f::attitude_receive_event(before,after,config));
+  // Ordinary yaw evolution and steep valid poses are continuous feedback.
   for(unsigned i=0;i<10;++i){
     after=before;after.timestamp+=50000;after.timestamp_sample+=50000;
     const double half_yaw=double(i)*radians/2.;after.q={std::cos(half_yaw),0,0,std::sin(half_yaw)};

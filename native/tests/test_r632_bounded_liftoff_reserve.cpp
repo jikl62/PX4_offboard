@@ -7,7 +7,7 @@
 #pragma GCC diagnostic pop
 
 static f::Config r63_config(){
-  auto c=cfg(true);c.attitude.vertical.hover=.475;
+  auto c=cfg(true);c.attitude.vertical.hover=.50;
   c.attitude.bench_arm_only_enabled=false;c.validate();return c;
 }
 static void bounded_reserve_is_opt_in_and_only_after_hover(){
@@ -38,15 +38,15 @@ static void bounded_reserve_is_opt_in_and_only_after_hover(){
     assert(r.attitude_core().phase()==a::Phase::ThrustRamp);
     assert(o.attitude.publish&&o.attitude.command==a::Command::None);
     const double mag=-o.attitude.thrust[2];
-    assert(mag>=0&&mag<=.51500001);
+    assert(mag>=0&&mag<=.54000001);
     assert(std::abs(mag-prior)<=.4*.05+1e-6); // original slew bound preserved
     if(i<39)early_max=std::max(early_max,mag);
     if(i>90)late_max=std::max(late_max,mag);
-    if(mag>.475001)saw_after_hover=true;
+    if(mag>.500001)saw_after_hover=true;
     prior=mag;
   }
-  assert(early_max<=.4750001);
-  assert(saw_after_hover && late_max>.514);
+  assert(early_max<=.5000001);
+  assert(saw_after_hover && late_max>.539);
   // Explicitly: no detector/height evidence => no ascent despite thrust reserve.
   assert(s.feedback.landed&&r.attitude_core().phase()==a::Phase::ThrustRamp);
   std::cout<<"R632_BOUNDED_RESERVE_WITHOUT_FALSE_LIFTOFF_PASS\n";
@@ -69,7 +69,7 @@ static void bounded_reserve_no_liftoff_still_recovers(){
     auto p=r.attitude_core().phase();
     saw_ramp |= p==a::Phase::ThrustRamp;
     assert(p!=a::Phase::Ascend && p!=a::Phase::HeightHold);
-    assert(o.attitude.thrust[2]<=0 && o.attitude.thrust[2]>=-.515001);
+    assert(o.attitude.thrust[2]<=0 && o.attitude.thrust[2]>=-.540001);
     if(p==a::Phase::PoweredGround){
       recovered=true;
       assert(o.attitude.publish);

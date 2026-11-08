@@ -106,13 +106,13 @@ class NavigationDiagnosticsTests(unittest.TestCase):
     def test_view_distinguishes_local_thrust_commit_from_px4_adoption(self):
         state=dict(STATE,takeoff_stage='TARGET_SETTLED',liftoff_confirmed=True,
                    target_height_settled=True,navigation_allowed=True,
-                   target_local_commits=25,last_target_local_thrust_z=-.475,
+                   target_local_commits=25,last_target_local_thrust_z=-.50,
                    px4_thrust_adoption='UNOBSERVED')
         row=dict(status='HEIGHT_HOLD',reason='hold',supervisor_pid=10,updated_unix=1000,
                  state=state,state_age_seconds=.1,feedback_current=True)
         view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
         self.assertIn('本地推力',view)
-        self.assertIn('-0.475',view)
+        self.assertIn('-0.5',view)
         self.assertIn('PX4 采用尚未取证',view)
 
     def peer(self, *, tail=b'', exit_code=0, exit_signal=None, silent_seconds=.08,

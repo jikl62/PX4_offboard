@@ -41,7 +41,7 @@ static PlantResult simulate(double hover,double target,double lag,double detecto
     r.phase=q.r.attitude_core().phase();r.reason=q.r.attitude_core().reason();
     require_guard(q.o.attitude.command!=a::Command::Arm,"plant must never request a second Arm");
     if(q.o.attitude.publish){
-      require_guard(std::isfinite(command)&&command>=0&&command<=.75+1e-9,"finite bounded thrust in plant");
+      require_guard(std::isfinite(command)&&command>=0&&command<=.80+1e-9,"finite bounded thrust in plant");
       require_guard(std::abs(command-prior)<=.4*dt+1e-9,"no handover thrust discontinuity in plant");
     }
     if(r.phase==a::Phase::HeightHold){
@@ -69,7 +69,7 @@ int main(int argc,char** argv){
       // Acceptance covers the configured hover and the higher lift demand
       // that motivated reserve retention. Lower-hover mismatch is measured
       // separately and remains an explicit tuning limitation in the report.
-      if(!measure&&hover<.475)continue;
+      if(!measure&&hover<.500)continue;
       const auto r=simulate(hover,target,lag,phase);row(r);
       if(!measure){
         require_guard(r.phase==a::Phase::HeightHold&&r.hold_time>0,"feasible plant must reach actual HeightHold");
@@ -79,7 +79,7 @@ int main(int argc,char** argv){
       }
     }
   const std::array<double,2> jitter_hovers=measure?std::array<double,2>{.419,.510}:
-                                                 std::array<double,2>{.475,.510};
+                                                 std::array<double,2>{.500,.510};
   for(double hover:jitter_hovers){
     const auto r=simulate(hover,.5,.20,.4,true);row(r);
     if(!measure)require_guard(r.phase==a::Phase::HeightHold&&std::abs(r.final_height-.5)<.08,
@@ -94,7 +94,7 @@ int main(int argc,char** argv){
       "underpowered launch must enter the existing ground recovery");
     require_guard(impossible.last_thrust<.001,"underpowered ground attempt eventually removes commanded power");
   }
-  const auto missing=simulate(measure?.456:.475,.5,.20,.4,false,true);row(missing);
+  const auto missing=simulate(measure?.456:.500,.5,.20,.4,false,true);row(missing);
   if(!measure){
     require_guard(missing.hold_time<0,"stuck detector cannot authorize HeightHold");
     require_guard(missing.peak<.7,"stuck detector cannot cause runaway ramp");

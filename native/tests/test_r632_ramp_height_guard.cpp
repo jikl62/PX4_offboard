@@ -60,10 +60,10 @@ static void ground_thrust_reaches_bounded_reserve(){
   for(int i=0;i<90;++i){
     q.advance();require_guard(q.thrust()>=prior-1e-9,"ground ramp stays monotonic");
     require_guard(q.thrust()-prior<=.4*.05+1e-9,"ground ramp remains slew bounded");
-    require_guard(q.thrust()<=.515+1e-9,"ground thrust retains reviewed reserve ceiling");
+    require_guard(q.thrust()<=.54+1e-9,"ground thrust retains reviewed reserve ceiling");
     prior=q.thrust();
   }
-  require_guard(q.thrust()>.5149,"guard cannot prevent reaching lift reserve on the ground");
+  require_guard(q.thrust()>.5399,"guard cannot prevent reaching lift reserve on the ground");
   require_guard(q.r.attitude_core().phase()==a::Phase::ThrustRamp,"no false liftoff on thrust alone");
 }
 static void feedback_retains_lift_reserve_but_allows_braking(){
@@ -71,9 +71,9 @@ static void feedback_retains_lift_reserve_but_allows_braking(){
   climb.s.feedback.landed=false;climb.s.at_rest=false;
   for(int i=0;i<8;++i){climb.observe(.13+.005*i,.10);climb.advance();}
   require_guard(climb.o.attitude.velocity_target>.10,"positive speed error in this scenario");
-  require_guard(climb.thrust()>.515,"feedback may add correction to established lift trim, not fall back to 0.475");
+  require_guard(climb.thrust()>.54,"feedback may add correction to established lift trim, not fall back to 0.50");
   GuardFlight brake;brake.ground_ramp();brake.observe(.13,.5);brake.advance();
-  require_guard(brake.thrust()<.515,"retained lift trim must never become a minimum-thrust floor");
+  require_guard(brake.thrust()<.54,"retained lift trim must never become a minimum-thrust floor");
 }
 static void estimator_faults_and_takeover_remain_latched(){
   for(int kind=0;kind<7;++kind){

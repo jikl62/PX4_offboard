@@ -61,6 +61,13 @@ template<class M>bool attitude_receive_event(const M& a,const M& b,const attitud
   if(a.quat_reset_counter!=b.quat_reset_counter)return true;
   const attitude::Quaternion q{b.q[0],b.q[1],b.q[2],b.q[3]};
   const auto diagnostic=attitude::attitude_diagnostics(q,{1,0,0,0});
-  return !diagnostic.valid||(c.max_tilt_deg>0&&diagnostic.tilt_deg>c.max_tilt_deg);
+  // A valid measured attitude is ordinary feedback, even when it is outside
+  // the historical navigation envelope.  Do not stop the receive drain for
+  // it: the autonomous controller must continue consuming status, estimator
+  // and authority events.  Invalid quaternion data remains an event so the
+  // existing independent health checks see it before a later sample replaces
+  // it.  The configuration argument is retained for the shared predicate API.
+  (void)c;
+  return !diagnostic.valid;
 }
 }

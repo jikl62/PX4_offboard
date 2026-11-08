@@ -44,10 +44,10 @@ fc01_system:
     aa_feedback_rate_tolerance_mps: 0.20
     aa_feedback_dwell_seconds: 0.50
     # Airframe dynamics remain deliberately UNSET; R5 candidate values are archived.
-    aa_hover_thrust: 0.475 # R6.3 candidate from historical FC01 ULog; NOT flight-calibrated
-    aa_takeoff_reserve_thrust: 0.04 # OFFLINE candidate only: max pre-liftoff thrust 0.515, NOT flight-approved
+    aa_hover_thrust: 0.50 # R6.3 candidate from historical FC01 ULog; NOT flight-calibrated
+    aa_takeoff_reserve_thrust: 0.04 # OFFLINE candidate only: max pre-liftoff thrust 0.54, NOT flight-approved
     aa_thrust_min: 0.12 # UNKNOWN: actual airframe calibration required
-    aa_thrust_max: 0.75 # UNKNOWN: actual airframe calibration required
+    aa_thrust_max: 0.80 # UNKNOWN: actual airframe calibration required
     aa_thrust_slew: 0.40 # UNKNOWN: actual airframe calibration required
     aa_height_gain: 0.50 # UNKNOWN: actual airframe calibration required
     aa_velocity_gain: 0.15 # UNKNOWN: actual airframe calibration required

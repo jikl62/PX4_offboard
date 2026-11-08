@@ -119,6 +119,8 @@ class RcNavigationStart {
     if(why.empty()&&(!s.battery_ready||!s.preflight))why="BATTERY_PREFLIGHT_REQUIRED";
     const auto q=normalized(s.q);
     if(why.empty()&&q){const double tilt=std::acos(std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.))*180/3.141592653589793;
+      // Manual RC ground admission remains independently guarded; this is not
+      // the autonomous measured-attitude takeoff path.
       if(tilt>c.max_tilt_deg)why="RC_GROUND_TILT_EXCEEDED";}
     if(!why.empty()){
       if(intent||s.armed)return block(why);

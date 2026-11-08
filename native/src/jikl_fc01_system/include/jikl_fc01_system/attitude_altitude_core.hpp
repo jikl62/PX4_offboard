@@ -206,7 +206,6 @@ class Core {
     return false;
   }
   const ArmedGroundFaultEvidence& armed_ground_fault_evidence() const{return armed_ground_fault_evidence_;}
-  const TiltFaultEvidence& tilt_fault_evidence() const{return tilt_fault_evidence_;}
   const AuthorityGroundEvidence& authority_ground_evidence() const{return authority_ground_evidence_;}
   std::uint32_t authority_ground_failed_mask(const Feedback& s) const{
     return (s.armed?1U:0U)|(!s.landed?2U:0U)|(!s.at_rest?4U:0U)|
@@ -379,7 +378,7 @@ class Core {
     px4_land_mode_observed_=recovery_progress_observed_=external_ground_disarmed_confirmed_=false;
     recovery_last_local_stamp_=0;
     fault_class_=FaultClass::None;last_sample_set_=false;operator_release_requested_=false;
-    armed_ground_fault_evidence_={};tilt_fault_evidence_={};clear_disarmed_prep();
+    armed_ground_fault_evidence_={};clear_disarmed_prep();
     command_sent_=false;last_=now;event_="LOCAL_YAW_REFERENCE_CAPTURED";
     enter(Phase::SelfCheck,now);return {};
   }
@@ -678,17 +677,11 @@ class Core {
         if(bench_arm_only_active_)capture_bench_ground_fault(s);
         fault_class_=FaultClass::UnknownAirborne;fault("HEIGHT_OR_SPEED_ENVELOPE_EXCEEDED");return {};
       }
-      const auto q=normalized(s.q);
-      const double cosine=std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.);
-      const double tilt_deg=std::acos(cosine)*180/3.14159265358979323846;
-      if(tilt_deg>c_.max_tilt_deg){
-        // Capture the SAME sample that caused the fault; a later ROS read
-        // may describe post-failsafe tilt or estimator changes instead.
-        tilt_fault_evidence_={true,tilt_deg,c_.max_tilt_deg,out.height,out.speed,
-          *q,out.q,s.armed,s.landed,s.offboard,s.quat_reset,
-          s.status_stamp,s.land_stamp,s.local_stamp};
-        fault("EXCESS_TILT");return {};
-      }
+      // A valid measured attitude is feedback, not an autonomous takeoff
+      // admission fault.  Invalid/NaN quaternions are rejected by health()
+      // and the final publication boundary; estimator resets remain guarded
+      // above.  Do not convert a real but steep pose into a Safety fault:
+      // this path used to stop the receive stream and could starve feedback.
     }
     if(recovery_deadline_>=0&&s.armed&&!verified_ground(s)&&now>=recovery_deadline_){
       // Timeout is not evidence of landing or an actual PX4 takeover. All
@@ -1387,7 +1380,6 @@ class Core {
        ground_release_pending_{};
   FaultClass fault_class_{FaultClass::None};
   ArmedGroundFaultEvidence armed_ground_fault_evidence_{};
-  TiltFaultEvidence tilt_fault_evidence_{};
   AuthorityGroundEvidence authority_ground_evidence_{};
   bool external_bench_disarm_pending_{};
   bool bench_disarm_proven_{},bench_disarmed_seen_{};

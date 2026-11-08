@@ -329,7 +329,6 @@ class SystemNode final:public rclcpp::Node {
     }
     if(config_.profile=="attitude_altitude"&&previous_heartbeat_committed&&
        !last_attitude_output_.publish){
-      const auto evidence=runtime_->attitude_core().tilt_fault_evidence();
       const auto& fb=s.attitude;
       const auto att=f::attitude::attitude_diagnostics(fb.q,previous_attitude_output.q);
       // PREVIOUS committed target vs CURRENT observed pose. Never claim that
@@ -357,7 +356,6 @@ class SystemNode final:public rclcpp::Node {
         <<",\"attitude_pitch_deg\":"<<number(att.pitch_deg,att.valid)
         <<",\"attitude_tilt_deg\":"<<number(att.tilt_deg,att.valid)
         <<",\"attitude_error_deg\":"<<number(att.error_deg,att.valid)
-        <<",\"tilt_fault_trigger_sample_available\":"<<boolean(evidence.valid)
         <<",\"local_target_this_tick\":"<<boolean(publication_audit_.target_this_tick)
         <<",\"local_heartbeat_this_tick\":"<<boolean(publication_audit_.mode_this_tick)
         <<"}"<<std::endl;
@@ -699,8 +697,6 @@ class SystemNode final:public rclcpp::Node {
     const auto fb=runtime_->publication_context(s,now,false,true).feedback;
     const auto& p=runtime_->pending(400);
     const auto& ag=core.armed_ground_fault_evidence();
-    const auto& tilt=core.tilt_fault_evidence();
-    const auto tilt_att=f::attitude::attitude_diagnostics(tilt.actual_q,tilt.requested_q);
     std::cout<<"{\"kind\":\"phase_event\",\"monotonic_s\":"<<number(now)
       <<",\"phase_before\":"<<f::quote(before)<<",\"phase_after\":"<<f::quote(runtime_->phase_name())
       <<",\"reason\":"<<f::quote(core.reason())<<progress_fields()<<vertical_feedback_fields()<<vertical_control_fields(planned,true)<<",\"ownership\":"<<f::quote(core.recovery_responsibility(fb))
@@ -718,21 +714,6 @@ class SystemNode final:public rclcpp::Node {
       <<",\"land_fresh\":"<<boolean(s.land_fresh)<<",\"failsafe_fresh\":"<<boolean(s.attitude.failsafe_fresh)
       <<",\"z_valid\":"<<boolean(s.attitude.z_valid)<<",\"vz_valid\":"<<boolean(s.attitude.vz_valid)
       <<",\"fault_class\":"<<f::quote(f::attitude::name(core.fault_class()))
-      <<",\"tilt_fault_trigger_valid\":"<<boolean(tilt.valid)
-      <<",\"tilt_fault_trigger_deg\":"<<number(tilt.measured_tilt_deg,tilt.valid)
-      <<",\"tilt_fault_trigger_limit_deg\":"<<number(tilt.limit_deg,tilt.valid)
-      <<",\"tilt_fault_trigger_roll_deg\":"<<number(tilt_att.roll_deg,tilt.valid&&tilt_att.valid)
-      <<",\"tilt_fault_trigger_pitch_deg\":"<<number(tilt_att.pitch_deg,tilt.valid&&tilt_att.valid)
-      <<",\"tilt_fault_trigger_error_deg\":"<<number(tilt_att.error_deg,tilt.valid&&tilt_att.valid)
-      <<",\"tilt_fault_trigger_height\":"<<number(tilt.height,tilt.valid)
-      <<",\"tilt_fault_trigger_up_speed\":"<<number(tilt.up_speed,tilt.valid)
-      <<",\"tilt_fault_trigger_armed\":"<<boolean(tilt.armed)
-      <<",\"tilt_fault_trigger_landed\":"<<boolean(tilt.landed)
-      <<",\"tilt_fault_trigger_offboard\":"<<boolean(tilt.offboard)
-      <<",\"tilt_fault_trigger_quat_reset\":"<<int(tilt.quat_reset)
-      <<",\"tilt_fault_trigger_status_stamp\":"<<tilt.status_stamp
-      <<",\"tilt_fault_trigger_land_stamp\":"<<tilt.land_stamp
-      <<",\"tilt_fault_trigger_local_stamp\":"<<tilt.local_stamp
       <<",\"armed_ground_evidence_valid\":"<<boolean(ag.valid)
       <<",\"armed_ground_failed_mask\":"<<ag.failed_mask
       <<",\"armed_ground_sample_armed\":"<<boolean(ag.armed)
