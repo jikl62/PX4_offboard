@@ -127,15 +127,149 @@ class StandbyTests(unittest.TestCase):
         self.assertTrue(all(config['fc01_system']['ros__parameters'][x] is False for x in ACTION_FLAGS))
         self.assertTrue(config['fc01_system']['ros__parameters']['aa_vertical_feedback_guard_enabled'])
 
-    def test_agent_loss_stops_native_before_recovery_attempt(self):
+    def test_agent_loss_recovers_transport_without_stopping_or_commanding_native(self):
         m = self.module()
         a, node, trace = self.peer()
-        start = time.monotonic()
-        health = lambda: 'Agent exited' if time.monotonic()-start > .1 else None
-        state, at, error = m.monitor(m.Channel(a), node, threading.Event(), lambda _: None, health)
-        self.assertEqual(error, 'Agent exited')
-        self.assertEqual(node.returncode, 0)
-        self.assertIn('STOPPED', trace.read_text())
+        stopped = threading.Event()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            binary = root/'MicroXRCEAgent'
+            binary.write_text('#!/bin/sh\nexec sleep 30\n'); binary.chmod(0o700)
+            first = subprocess.Popen([str(binary)])
+            transport = m.AgentTransport(binary, first, None, root, lambda *_: None)
+            self.addCleanup(transport.close)
+            timer = threading.Timer(1.5, stopped.set)
+            timer.start(); self.addCleanup(timer.cancel)
+            first.terminate(); first.wait(timeout=3)
+            rows = []
+            with patch.object(m, 'process_list', return_value=[]), \
+                 patch.object(m, 'uart_owners', return_value=set()):
+                transport.start()
+                def observe(row):
+                    rows.append({**row, **transport.snapshot()})
+                state, _, error = m.monitor(m.Channel(a), node, stopped, observe)
+                replacement = transport.close()
+            self.assertIsNotNone(replacement)
+            self.assertIsNone(replacement.poll())
+            replacement.terminate(); replacement.wait(timeout=3)
+            self.assertIsNone(error)
+            self.assertEqual(node.returncode, 0)
+            self.assertTrue(any(r.get('agent_restart_count') == 1 and r['status'] == 'CONNECTED' for r in rows))
+            self.assertEqual(transport.restarts, 1)
+            self.assertEqual(trace.read_text().splitlines()[-1], 'STOPPED')
+            self.assertEqual([line.split()[1] for line in trace.read_text().splitlines()[:-1]], ['STATUS'])
+
+    def test_transport_unknown_uart_owner_is_retained_with_backoff(self):
+        m = self.module()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            transport = m.AgentTransport(root/'MicroXRCEAgent', None, None, root, lambda *_: None)
+            with patch.object(m, 'process_list', return_value=[]), \
+                 patch.object(m, 'uart_owners', return_value={98765}) as owners, \
+                 patch.object(m.subprocess, 'Popen') as launch:
+                transport.step(0); transport.step(.5); transport.step(1); transport.step(2); transport.step(3)
+            self.assertEqual(owners.call_count, 3)
+            self.assertFalse(launch.called)
+            self.assertEqual(transport.next_check, 7)
+            self.assertEqual(transport.snapshot()['agent_transport_status'], 'RECOVERING')
+            self.assertIn('未知程序', transport.snapshot()['agent_transport_reason'])
+
+    def test_transport_reuses_one_matching_agent_and_never_spawns_duplicate(self):
+        m = self.module()
+        from launcher import Process
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            existing = Process(98765, os.getuid(), ('/opt/MicroXRCEAgent', 'serial', '-D', '/dev/ttyS2', '-b', '115200'))
+            transport = m.AgentTransport(root/'MicroXRCEAgent', None, None, root, lambda *_: None)
+            with patch.object(m, 'process_list', return_value=[existing]), \
+                 patch.object(m, 'uart_owners', return_value={existing.pid}), \
+                 patch.object(m.subprocess, 'Popen') as launch:
+                transport.step(0)
+            self.assertEqual(transport.snapshot()['agent_pid'], existing.pid)
+            self.assertFalse(transport.snapshot()['agent_owned'])
+            self.assertFalse(launch.called)
+            self.assertIsNone(transport.close())
+
+    def test_orphan_wait_only_restores_transport_until_original_native_exits(self):
+        m = self.module()
+        from launcher import Process
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            binary = root/'MicroXRCEAgent'
+            binary.write_text('#!/bin/sh\nexec sleep 30\n'); binary.chmod(0o700)
+            orphan = Process(98765, os.getuid(), ('/opt/fc01_system_node',))
+            live = [orphan]
+            rows, launches = [], []
+            real_popen = subprocess.Popen
+            class DoneAfterTransport(threading.Event):
+                def wait(self, timeout=None):
+                    deadline = time.monotonic()+2
+                    while not launches and time.monotonic()<deadline:
+                        time.sleep(.01)
+                    live.clear()
+                    return False
+            def spawn(argv, **kwargs):
+                self.assertEqual(argv[0], str(binary), 'must never start another native while old native is alive')
+                process = real_popen(argv, **kwargs)
+                launches.append(process)
+                return process
+            with patch.object(m, 'process_list', side_effect=lambda: list(live)), \
+                 patch.object(m, 'uart_owners', return_value=set()), \
+                 patch.object(m.subprocess, 'Popen', side_effect=spawn):
+                self.assertTrue(m.wait_for_previous_controller(binary, root, DoneAfterTransport(), rows.append, lambda *_: None))
+            self.assertEqual(len(launches), 1)
+            self.assertTrue(any(r.get('previous_controller_pids') == [orphan.pid] for r in rows))
+            self.assertIsNone(launches[0].poll(), 'Agent must survive while native safely finishes')
+            launches[0].terminate(); launches[0].wait(timeout=3)
+
+    def test_child_exit_zero_without_user_stop_is_recorded_and_retried(self):
+        m = self.module()
+        from launcher import Process
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d)
+            binary = home/'native_fixture'
+            binary.write_text('#!/usr/bin/env python3\nimport signal,time\nsignal.signal(signal.SIGTERM,lambda *_:None)\ntime.sleep(.15)\n')
+            binary.chmod(0o700)
+            a, b = socket.socketpair()
+            b.shutdown(socket.SHUT_WR)
+            self.addCleanup(a.close); self.addCleanup(b.close)
+            existing = Process(os.getpid(), os.getuid(), ('fixture-agent',))
+            class StopOnRetry(threading.Event):
+                def wait(self, timeout=None):
+                    if timeout == 5:
+                        self.set()
+                        return True
+                    return super().wait(timeout)
+            real_read = Path.read_bytes
+            def proc_bytes(path):
+                if path == Path('/proc', str(existing.pid), 'cmdline'):
+                    return b'fixture-agent\0'
+                return real_read(path)
+            def connect(*_):
+                time.sleep(.1)  # Let this fixture install its explicit SIGTERM handler.
+                return m.Channel(a)
+            with patch.object(Path, 'home', return_value=home), \
+                 patch.object(m, 'process_list', return_value=[]), \
+                 patch.object(m, 'preflight', return_value=(binary, existing)) as check, \
+                 patch.object(m, 'validate', return_value={}), \
+                 patch.object(Path, 'read_bytes', new=proc_bytes), \
+                 patch.object(m, 'connect_controller', side_effect=connect):
+                m.supervise(home/'project', home/'agent', home/'state', StopOnRetry())
+            final = json.loads((home/'state/status.json').read_text())
+            self.assertEqual(final['controller_returncode'], 0)
+            self.assertEqual(check.call_count, 1)
+            self.assertIn('原生控制器退出，code=0', (home/'state/standby.log').read_text())
+            self.assertEqual(final['status'], 'STOPPED')
+
+    def test_unknown_existing_socket_is_preserved_on_connect_failure(self):
+        m = self.module()
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d)/'control.sock'
+            path.write_text('unknown previous owner')
+            with self.assertRaises(m.ControlError):
+                m.connect_controller(path, Mock(poll=lambda: None), timeout=.01)
+            self.assertEqual(path.read_text(), 'unknown previous owner')
 
     def test_missing_device_retries_after_30_seconds_without_new_session_folders(self):
         m = self.module()

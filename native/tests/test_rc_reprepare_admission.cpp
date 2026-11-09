@@ -48,7 +48,7 @@ struct RetryFixture {
     for(int i=0;i<60;++i)advance();
     require_rc(core.phase()==a::Phase::Safety&&core.reason()=="RC_MANUAL_ARM_EVIDENCE_TIMEOUT",
       "missing complementary armed status reaches the actual bounded preparation timeout");
-    s.rc_arm_switch=3;
+    s.rc_arm_switch=3;advance();
   }
   void advance(){
     now+=.05;s.status_stamp+=50000;s.land_stamp+=50000;s.local_stamp+=50000;

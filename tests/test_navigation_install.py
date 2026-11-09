@@ -74,6 +74,10 @@ class InstallTests(unittest.TestCase):
         self.assertEqual(p['Service']['KillMode'],'process')
         self.assertEqual(p['Service']['TimeoutStopSec'],'infinity')
         self.assertEqual(p['Service']['SendSIGKILL'],'no')
+        self.assertEqual(p['Service']['Restart'],'on-failure')
+        self.assertEqual(p['Service']['RestartSec'],'30s')
+        self.assertEqual(p['Unit']['StartLimitIntervalSec'],'120s')
+        self.assertEqual(p['Unit']['StartLimitBurst'],'5')
         self.assertIn('10%% $$x',p['Service']['ExecStart'])
         with tempfile.TemporaryDirectory() as d:
             unit=Path(d)/m.SERVICE;unit.write_text(text)

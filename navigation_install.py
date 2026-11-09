@@ -33,7 +33,8 @@ def render_unit(user,home,entry,project,mode='diagnostic',confirm=False):
 [Unit]
 Description=FC01 manual RC navigation controller
 After=local-fs.target
-StartLimitIntervalSec=0
+StartLimitIntervalSec=120s
+StartLimitBurst=5
 [Service]
 Type=simple
 User={user}

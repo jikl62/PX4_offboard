@@ -20,10 +20,13 @@ if not re.fullmatch(r'[0-9a-f]{40}', str(release.get('source_commit', ''))):
     raise SystemExit('FC01_FRESH_BUILD_REFUSED: missing/invalid source_commit')
 files = release.get('source_sha256')
 required = ('navigation_build_fresh.sh', 'navigation_boot.sh', 'navigation_install.py',
+    'navigation_restore.py', 'navigation_service.py', 'standby.py',
+    'native/config/flight_test.yaml', 'native/config/diagnostic.yaml',
     'native/src/jikl_fc01_system/CMakeLists.txt',
     'native/src/jikl_fc01_system/src/fc01_system_node.cpp',
     'native/src/jikl_fc01_system/src/fc01_config_check.cpp',
     'native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp',
+    'native/src/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp',
     'native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp',
     'native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp')
 if not isinstance(files, dict) or any(name not in files for name in required):
@@ -65,7 +68,7 @@ evidence = {'source_commit': release['source_commit'], 'host_architecture': plat
     'release_manifest_sha256': hashlib.sha256(release_path.read_bytes()).hexdigest(),
     'entry': str(root), 'sdk_root': str(sdk), 'build_dir': str(root/'.build/arm64-final'),
     'controller_executed': False, 'agent_or_service_started': False, 'binaries': {}}
-marker = b'R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108'
+marker = b'FC01_SAFE_LIFECYCLE_V1_20261109'
 for name in ('fc01_system_node', 'fc01_config_check'):
     binary = root/'install/lib/jikl_fc01_system'/name
     data = binary.read_bytes()

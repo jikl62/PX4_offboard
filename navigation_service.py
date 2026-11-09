@@ -20,7 +20,8 @@ ENTRY = Path(__file__).resolve().parent
 MARKER = b'RC_NAVIGATION_MANUAL_ARM_V1'
 TAKEOFF_MARKER = b'NAV_TAKEOFF_EVIDENCE_V2_20261103'
 SAFETY_MARKER = b'R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108'
-ENTRY_VERSION = '20261108.2'
+LIFECYCLE_MARKER = b'FC01_SAFE_LIFECYCLE_V1_20261109'
+ENTRY_VERSION = '20261109.1'
 DIAGNOSTIC = 'diagnostic'
 FLIGHT_TEST = 'flight-test'
 MODES = (DIAGNOSTIC, FLIGHT_TEST)
@@ -82,6 +83,8 @@ def check_controller(entry=ENTRY,prefix=None):
         raise ControlError('可执行程序缺少本版起飞证据标识，请重新构建；保留原服务')
     if SAFETY_MARKER not in binary.read_bytes():
         raise ControlError('可执行程序缺少本版离散安全事件标识，请重新构建；保留原服务')
+    if LIFECYCLE_MARKER not in binary.read_bytes():
+        raise ControlError('可执行程序缺少本版安全生命周期标识，请全新构建；保留原服务')
     return binary
 
 def load_profile(root,agent,entry=ENTRY,mode=FLIGHT_TEST,*,config_path=None):

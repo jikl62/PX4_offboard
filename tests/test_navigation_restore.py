@@ -35,7 +35,7 @@ class RestoreTests(unittest.TestCase):
             return types.SimpleNamespace(stdout='')
         return m, home, entry, units, binary, agent, calls, info, run
 
-    def test_configure_reuses_existing_binary_and_agent_without_start_or_enable(self):
+    def test_configure_enables_boot_standby_without_starting_controller_or_agent(self):
         with tempfile.TemporaryDirectory() as temp:
             m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)
             old = m.render_unit('orangepi', home, home/'old', home/'sdk')
@@ -51,10 +51,13 @@ class RestoreTests(unittest.TestCase):
             installed = (units/m.SERVICE).read_text()
             self.assertIn(str(entry/'navigation_boot.sh'), installed)
             self.assertIn('run --mode flight-test --confirm-flight-test', installed)
-            self.assertIn('Restart=no', installed)
+            self.assertIn('Restart=on-failure', installed)
+            self.assertIn('StartLimitIntervalSec=120s', installed)
+            self.assertIn('StartLimitBurst=5', installed)
             self.assertEqual((backup/m.SERVICE).read_text(), old)
             self.assertEqual(binary.read_bytes(), b'controller-test')
-            self.assertFalse(any(x in ('start','stop','kill','enable','disable','build') for a in calls for x in a))
+            self.assertIn(['sudo','-n','/usr/bin/systemctl','enable',m.SERVICE], calls)
+            self.assertFalse(any(x in ('start','stop','kill','disable','build','--now') for a in calls for x in a))
             auth = calls.index(['sudo','-v'])
             probe = next(i for i, a in enumerate(calls) if a[:2] == ['BOOT','probe'])
             install = next(i for i, a in enumerate(calls) if '/usr/bin/install' in a)
@@ -62,6 +65,8 @@ class RestoreTests(unittest.TestCase):
             self.assertLess(probe, install)
             manifest=json.loads((backup/'manifest.json').read_text())
             self.assertEqual(manifest['agent_pid'], 31)
+            self.assertEqual(manifest['boot_policy'], 'enable')
+            self.assertEqual(manifest['original_unit_file_state'], 'disabled')
             self.assertEqual(manifest['controller_sha256'], hashlib.sha256(binary.read_bytes()).hexdigest())
 
     def test_missing_ground_evidence_leaves_unit_unchanged(self):
@@ -125,7 +130,7 @@ class RestoreTests(unittest.TestCase):
             self.assertEqual((units/m.SERVICE).read_text(),original)
             self.assertFalse(any(x in ('start','enable','kill') for a in calls for x in a))
 
-    def test_configure_disables_previously_enabled_unit_without_stopping(self):
+    def test_configure_never_disables_previously_enabled_unit(self):
         with tempfile.TemporaryDirectory() as temp:
             m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)
             info = {**info, 'UnitFileState':'enabled'}
@@ -136,8 +141,58 @@ class RestoreTests(unittest.TestCase):
                  patch.object(m, 'boot'), \
                  patch('navigation_install.ground_permit_fresh', return_value=True):
                 m.configure(entry, home, home/'sdk', units=units, run=run)
-            self.assertIn(['sudo','-n','/usr/bin/systemctl','disable',m.SERVICE], calls)
-            self.assertFalse(any('disable' in a and '--now' in a for a in calls))
+            self.assertIn(['sudo','-n','/usr/bin/systemctl','enable',m.SERVICE], calls)
+            self.assertFalse(any(x in ('disable', '--now', 'start', 'stop') for a in calls for x in a))
+
+    def test_preserve_policy_leaves_persistent_enablement_untouched(self):
+        for state in ('enabled', 'disabled', 'enabled-runtime'):
+            with self.subTest(state=state), tempfile.TemporaryDirectory() as temp:
+                m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)
+                info = {**info, 'UnitFileState':state}
+                with patch.object(m, 'stopped_services', return_value={m.SERVICE:info}), \
+                     patch.object(m, 'unit_info', return_value=info), \
+                     patch.object(m, 'existing_agent', return_value=(binary, agent)), \
+                     patch.object(m, 'boot'), \
+                     patch('navigation_install.ground_permit_fresh', return_value=True):
+                    m.configure(entry, home, home/'sdk', boot_policy='preserve', units=units, run=run)
+                self.assertFalse(any(x in ('disable', 'enable', '--now', 'start', 'stop') for a in calls for x in a))
+
+    def test_rollback_restores_original_boot_policy_without_starting(self):
+        for state, action in (('enabled','enable'), ('disabled','disable'), ('enabled-runtime','enable')):
+            with self.subTest(state=state), tempfile.TemporaryDirectory() as temp:
+                m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)
+                original=m.render_unit('orangepi',home,home/'old',home/'sdk')
+                current=m.render_unit('orangepi',home,entry,home/'sdk','flight-test',True)
+                (units/m.SERVICE).write_text(current)
+                backup=home/'FC01_navigation/service-backups/one';backup.mkdir(parents=True)
+                (backup/m.SERVICE).write_text(original)
+                (backup/'manifest.json').write_text(json.dumps({'service':m.SERVICE,'original_present':True,
+                    'unit_sha256':hashlib.sha256(current.encode()).hexdigest(),
+                    'original_sha256':hashlib.sha256(original.encode()).hexdigest(),
+                    'original_unit_file_state':state}))
+                with patch.object(m, 'stopped_services'), patch.object(m, 'unit_info', return_value=info), \
+                     patch.object(m, 'boot'), patch('navigation_install.ground_permit_fresh', return_value=True):
+                    m.rollback(entry,home,home/'sdk',backup,units=units,run=run)
+                self.assertTrue(any(action in a for a in calls))
+                self.assertFalse(any(x in ('--now', 'start', 'stop') for a in calls for x in a))
+                self.assertEqual((units/m.SERVICE).read_text(), original)
+
+    def test_rollback_without_original_unit_disables_before_removing_definition(self):
+        with tempfile.TemporaryDirectory() as temp:
+            m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)
+            current=m.render_unit('orangepi',home,entry,home/'sdk','flight-test',True)
+            (units/m.SERVICE).write_text(current)
+            backup=home/'FC01_navigation/service-backups/one';backup.mkdir(parents=True)
+            (backup/'manifest.json').write_text(json.dumps({'service':m.SERVICE,'original_present':False,
+                'unit_sha256':hashlib.sha256(current.encode()).hexdigest()}))
+            with patch.object(m, 'stopped_services'), patch.object(m, 'unit_info', return_value=info), \
+                 patch.object(m, 'boot'), patch('navigation_install.ground_permit_fresh', return_value=True):
+                m.rollback(entry,home,home/'sdk',backup,units=units,run=run)
+            disable=calls.index(['sudo','-n','/usr/bin/systemctl','disable',m.SERVICE])
+            remove=next(i for i,a in enumerate(calls) if '/usr/bin/rm' in a)
+            self.assertLess(disable, remove)
+            self.assertFalse((units/m.SERVICE).exists())
+            self.assertFalse(any(x in ('--now', 'start', 'stop') for a in calls for x in a))
 
 
 if __name__ == '__main__':

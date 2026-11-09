@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Configure the already-built navigation service; never start it or an Agent."""
+"""Deploy the built service with explicit boot policy; never start it or an Agent."""
 from __future__ import annotations
 
 import argparse
@@ -48,7 +48,9 @@ def existing_agent(entry, home, project):
     return binary, agent
 
 
-def configure(entry, home, project, *, units=UNIT_DIR, run=subprocess.run):
+def configure(entry, home, project, *, boot_policy='enable', units=UNIT_DIR, run=subprocess.run):
+    if boot_policy not in ('enable', 'preserve'):
+        raise ControlError('boot policy must be enable or preserve')
     info = stopped_services(units, run)
     path = units/SERVICE
     managed_unit(path, MARKER, info[SERVICE])
@@ -61,10 +63,10 @@ def configure(entry, home, project, *, units=UNIT_DIR, run=subprocess.run):
     boot(entry, home, project, 'check-config', '--mode', 'flight-test',
          '--confirm-flight-test', '--file', config, '--prefix', entry/'install')
     user = pwd.getpwuid(os.getuid()).pw_name
-    # The preparation command is manual. Do not enable at boot or retry a
-    # failed controller automatically; RC action remains a separate decision.
+    # Service availability is persistent; task/RC authorization is reacquired
+    # from fresh native feedback after every process start. Enabling the unit
+    # neither starts the service now nor authorizes an arm/takeoff action.
     unit = render_unit(user, home, entry, project, 'flight-test', True)
-    unit = unit.replace('Restart=on-failure', 'Restart=no')
     with tempfile.TemporaryDirectory(prefix='fc01_restore_unit_') as temp:
         staged = Path(temp)/SERVICE
         staged.write_text(unit)
@@ -92,6 +94,7 @@ def configure(entry, home, project, *, units=UNIT_DIR, run=subprocess.run):
             'service': SERVICE, 'original_present': present, 'entry': str(entry),
             'project': str(project), 'unit_sha256': hashlib.sha256(unit.encode()).hexdigest(),
             'original_unit_file_state': info[SERVICE].get('UnitFileState', ''),
+            'boot_policy': boot_policy,
             'original_sha256': hashlib.sha256(original).hexdigest() if present else None,
             'controller': str(binary.resolve()),
             'controller_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
@@ -99,17 +102,17 @@ def configure(entry, home, project, *, units=UNIT_DIR, run=subprocess.run):
         }, indent=2)+'\n')
         if not ground_permit_fresh(home):
             raise ControlError('接地证据已过期，未变更服务')
-        # A previously enabled unit must not turn the Flight Test profile on
-        # after reboot.  Disable only the inactive, package-owned unit; this
-        # does not stop a process and the original state is recorded below.
-        if info[SERVICE].get('UnitFileState') in ('enabled', 'enabled-runtime', 'linked', 'linked-runtime'):
-            run(['sudo', '-n', '/usr/bin/systemctl', 'disable', SERVICE], check=True)
-        # Does not enable, start, stop, kill, or replace any binary.
+        # Never silently remove existing persistent service enablement.
+        # Does not start, stop, kill, or replace any binary.
         run(['sudo', '-n', '/usr/bin/install', '-m', '0644', str(staged), str(path)], check=True)
         run(['sudo', '-n', '/usr/bin/systemctl', 'daemon-reload'], check=True)
+        if boot_policy == 'enable':
+            run(['sudo', '-n', '/usr/bin/systemctl', 'enable', SERVICE], check=True)
     print('FC01_NEW_SERVICE_CONFIGURED controller='+str(binary.resolve()), flush=True)
     print('FC01_EXISTING_AGENT_RETAINED pid='+str(agent.pid), flush=True)
-    print('FC01_SERVICE_NOT_STARTED boot_enabled=disabled original_enabled_state='+info[SERVICE].get('UnitFileState', '')+
+    effective_state = 'enabled' if boot_policy == 'enable' else info[SERVICE].get('UnitFileState', '')
+    print('FC01_SERVICE_NOT_STARTED boot_enabled='+effective_state+' boot_policy='+boot_policy+
+          ' original_enabled_state='+info[SERVICE].get('UnitFileState', '')+
           ' rollback='+str(backup), flush=True)
     return backup
 
@@ -142,8 +145,21 @@ def rollback(entry, home, project, backup, *, units=UNIT_DIR, run=subprocess.run
     if manifest.get('original_present') is True:
         run(['sudo', '-n', '/usr/bin/install', '-m', '0644', str(restored), str(path)], check=True)
     else:
+        # Remove WantedBy links while the installed unit still exists. A
+        # later disable can fail once rm has removed the unit definition.
+        run(['sudo', '-n', '/usr/bin/systemctl', 'disable', SERVICE], check=True)
         run(['sudo', '-n', '/usr/bin/rm', '--', str(path)], check=True)
     run(['sudo', '-n', '/usr/bin/systemctl', 'daemon-reload'], check=True)
+    # Restore persistent policy as well as unit bytes. No --now: rollback
+    # must not bring an old controller into service without operator action.
+    state = manifest.get('original_unit_file_state')
+    if state == 'enabled':
+        run(['sudo', '-n', '/usr/bin/systemctl', 'enable', SERVICE], check=True)
+    elif state == 'enabled-runtime':
+        run(['sudo', '-n', '/usr/bin/systemctl', 'disable', SERVICE], check=True)
+        run(['sudo', '-n', '/usr/bin/systemctl', 'enable', '--runtime', SERVICE], check=True)
+    elif state == 'disabled' and manifest.get('original_present') is True:
+        run(['sudo', '-n', '/usr/bin/systemctl', 'disable', SERVICE], check=True)
     print('FC01_SERVICE_ROLLED_BACK_NOT_STARTED; 原服务保持停止，需现场人工选择是否启动', flush=True)
 
 
@@ -153,6 +169,8 @@ def main(argv=None):
     parser.add_argument('--project-root', type=Path, required=True,
                         help='现有 ROS/px4_msgs SDK 根目录；不作为控制器或参数来源')
     parser.add_argument('--confirm-flight-test', action='store_true')
+    parser.add_argument('--boot-policy', choices=('enable', 'preserve'), default='enable',
+                        help='configure: enable persistent boot standby (default), or preserve current enablement')
     parser.add_argument('--backup', type=Path)
     args = parser.parse_args(argv)
     if os.getuid() == 0:
@@ -171,7 +189,7 @@ def main(argv=None):
         with open(home/'.cache/fc01_navigation/install.lock', 'a') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             if args.action == 'configure':
-                configure(ENTRY, home, project)
+                configure(ENTRY, home, project, boot_policy=args.boot_policy)
             else:
                 rollback(ENTRY, home, project, args.backup)
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:

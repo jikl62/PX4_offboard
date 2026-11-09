@@ -168,6 +168,8 @@ class Runtime {
   const v::Core& flight_core() const{return core_;}
   const Pending& pending(unsigned cmd) const{return pending_[index(cmd)];}
   const std::vector<Pending>& command400_history() const{return command400_history_;}
+  const std::string& last_rc_attempt_reason()const{return last_rc_attempt_reason_;}
+  std::uint64_t rc_attempts_completed()const{return rc_attempts_completed_;}
   // Enable in the production ROS adapter. Pure-core fixtures intentionally
   // retain their historical implicit publication model.
   void require_attitude_sink_commit(){if(config_.profile=="attitude_altitude")
@@ -192,13 +194,27 @@ class Runtime {
        s.attitude_output_active||s.offboard_heartbeat_active||!rc_restart_allowed(s))return false;
     // Rebuild only task state. Wire generations and ACK watermarks outlive
     // every RC attempt, including accepted/state-only Disarm transactions.
+    const auto ended_disarm_terminal=[&](const Pending& p){
+      return attitude_core_.rc_fault_recovery_ready()&&p.command400_kind==Command400Kind::Disarm&&
+        p.sent&&p.published&&!p.sink_denied&&s.arming_state_known&&
+        s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor})&&
+        s.land_stamp>std::max(p.land_at_wire,p.causal_floor);
+    };
     for(const auto& p:pending_){
       if(!p.requested)continue;
       const bool newer_status=s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor});
       const bool terminal=p.state_verified||(!p.ack_ambiguous&&p.rejected)||
         (p.command400_kind==Command400Kind::None&&p.accepted&&newer_status);
-      if(!terminal)return false; // Planned or timed-out alone is unresolved.
+      if(!terminal&&!ended_disarm_terminal(p))return false; // Timeout alone is unresolved.
     }
+    for(auto& p:pending_)if(p.requested&&!p.state_verified&&ended_disarm_terminal(p)){
+      // The ended task's independent NEW ground/disarmed dwell settles the
+      // physical outcome, without attributing a delayed 400 ACK to Disarm.
+      p.state_verified=true;p.verified_status_stamp=s.status_stamp;p.verified_at=now;
+      p.stage=CommandStage::StateOnlyTerminal;
+      p.ack_disposition="ENDED_TASK_GROUND_CONFIRMED_ACK_UNATTRIBUTED";
+    }
+    last_rc_attempt_reason_=attitude_core_.reason();++rc_attempts_completed_;
     attitude_core_=attitude::Core(config_.attitude);
     message_="RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET";
     return true;
@@ -550,7 +566,14 @@ class Runtime {
   }
   Output step(const Snapshot& s,double now){
     Output out;
-    if(queued_safety_wait_){queued_safety_wait_=false;return out;}
+    if(queued_safety_wait_){
+      queued_safety_wait_=false;
+      // A faulted task remains output-silent but still observes independent
+      // terminal/recovery evidence. Ordinary queued callbacks must not starve
+      // that read-only observer forever. The Core retains bad-event latches.
+      attitude_core_.observe_safety_terminal(attitude_snapshot(s),now);
+      last_attitude_output_active_=false;return out;
+    }
     if(ground_&&!ground_->finished()){
       if(s.time_regressed||!s.status_fresh||!s.land_fresh){
         ground_->abort(s.time_regressed?"TIME_REGRESSION_RESTART_ON_GROUND":!s.status_fresh?"STATUS_STALE":"LAND_STALE");
@@ -829,6 +852,7 @@ class Runtime {
   std::array<Pending,3> pending_{};
   unsigned command400_commits_{},command176_commits_{};
   std::vector<Pending> command400_history_;
+  std::uint64_t rc_attempts_completed_{};std::string last_rc_attempt_reason_;
   std::string message_{"IDLE_NO_AUTOMATIC_ARM"};
 };
 } // namespace fc01

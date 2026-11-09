@@ -25,9 +25,141 @@ import time
 from fc01_control import readiness_issues, runtime_profile
 from launcher import (Channel, ChannelError, ControlError, NodeStop, PROJECT, connect_controller,
                       finish_agent, make_socket_path, preflight, private_dir,
-                      verify_binary)
+                      verify_binary, choose_agent, process_list, uart_owners)
 
 RETRY_SECONDS = 30
+
+
+class AgentTransport:
+    """Recover UART transport only; never command or replace the live controller.
+
+    The launcher lock remains held by supervise. A separate UART lock protects
+    cooperating transport workers, and every restart checks actual UART owners.
+    The worker stays alive during a requested graceful native shutdown because
+    that shutdown may need fresh DDS evidence before it can safely finish.
+    """
+    def __init__(self, binary, owned, existing, cache, message):
+        self.binary, self.owned, self.existing = binary, owned, existing
+        self.cache, self.message = cache, message
+        self.closing = threading.Event()
+        self.guard = threading.Lock()
+        self.launch_guard = threading.Lock()
+        self.worker = None
+        self.next_check, self.backoff, self.restarts = 0., 1., 0
+        self.live_since = time.monotonic()
+        self.info = {}
+        self._report('CONNECTED' if owned is not None or existing is not None else 'RECOVERING', None)
+
+    def _report(self, status, reason):
+        pid = self.owned.pid if self.owned is not None else self.existing.pid if self.existing else None
+        info = dict(agent_pid=pid, agent_owned=self.owned is not None,
+                    agent_transport_status=status, agent_transport_reason=reason,
+                    agent_restart_count=self.restarts)
+        with self.guard:
+            previous = (self.info.get('agent_transport_status'), self.info.get('agent_transport_reason'))
+            self.info = info
+        if previous != (status, reason):
+            self.message('Agent transport %s: %s; PID=%s', status, reason or 'UART /dev/ttyS2 115200', pid)
+
+    def snapshot(self):
+        with self.guard:
+            return dict(self.info)
+
+    def alive(self):
+        if self.owned is not None:
+            return self.owned.poll() is None
+        if self.existing is None:
+            return False
+        try:
+            argv = tuple(x.decode(errors='replace') for x in
+                         Path('/proc', str(self.existing.pid), 'cmdline').read_bytes().split(b'\0') if x)
+            return argv == self.existing.argv
+        except OSError:
+            return False
+
+    def step(self, now=None):
+        now = time.monotonic() if now is None else now
+        if now < self.next_check or self.closing.is_set():
+            return
+        if self.alive():
+            if now-self.live_since >= 10:
+                self.backoff = 1.
+            self.next_check = now+1
+            return
+        old_code = self.owned.poll() if self.owned is not None else None
+        self.owned = self.existing = None
+        self._report('RECOVERING', 'Agent unavailable; native retained, exit='+str(old_code))
+        try:
+            fd = os.open(self.cache/'agent.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, 'w') as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                existing = choose_agent(process_list(), uart_owners('/dev/ttyS2'), '/dev/ttyS2', os.getuid())
+                with self.launch_guard:
+                    if self.closing.is_set():
+                        return
+                    if existing is not None:
+                        self.existing = existing
+                    else:
+                        if not self.binary.is_file() or not os.access(self.binary, os.X_OK):
+                            raise ControlError('缺少可执行 Agent: '+str(self.binary))
+                        self.owned = subprocess.Popen([str(self.binary), 'serial', '-D', '/dev/ttyS2',
+                                                       '-b', '115200', '-v', '0'],
+                                                      stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                                      stderr=subprocess.DEVNULL, start_new_session=True)
+                        self.restarts += 1
+            self.live_since = now
+            self.next_check = now+self.backoff
+            self.backoff = min(30., self.backoff*2)
+            self._report('CONNECTED', 'transport restored; controller safety state retained')
+        except (OSError, ControlError) as exc:
+            self._report('RECOVERING', str(exc)[:1000])
+            self.next_check = now+self.backoff
+            self.backoff = min(30., self.backoff*2)
+
+    def start(self):
+        def run():
+            while not self.closing.is_set():
+                try:
+                    self.step()
+                except Exception as exc:
+                    self._report('RECOVERING', 'transport check failed: '+str(exc)[:1000])
+                    self.next_check = time.monotonic()+30
+                self.closing.wait(.2)
+        self.worker = threading.Thread(target=run, daemon=True)
+        self.worker.start()
+
+    def close(self):
+        self.closing.set()
+        with self.launch_guard:
+            pass  # Finish a launch already admitted before the stop request.
+        if self.worker is not None:
+            self.worker.join(timeout=5)
+        # An in-flight ownership check cannot spawn after closing was set.
+        return self.owned
+
+
+def wait_for_previous_controller(agent_binary, cache, stopped, publish, message):
+    """Keep transport available while an orphan completes native safe shutdown."""
+    def controllers():
+        return [p.pid for p in process_list() if Path(p.argv[0]).name == 'fc01_system_node']
+    previous = controllers()
+    if not previous:
+        return not stopped.is_set()
+    transport = AgentTransport(agent_binary, None, None, cache, message)
+    transport.start()
+    try:
+        while previous and not stopped.is_set():
+            publish(dict(status='WAITING', reason='等待已有控制器安全退出；仅恢复 Agent 传输',
+                         previous_controller_pids=previous, feedback_current=False,
+                         **transport.snapshot()))
+            if stopped.wait(1):
+                break
+            previous = controllers()
+    finally:
+        retained = transport.close()
+        if retained is not None:
+            message('保留恢复的 Agent PID=%s；已有控制器的安全退出由原生程序确认', retained.pid)
+    return not stopped.is_set()
 
 
 def standby_config(base):
@@ -371,7 +503,7 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
 
     try:
         while not stopped.is_set():
-            node = agent = lock = pump = channel = ipc = native_log = None
+            node = agent = lock = pump = channel = ipc = native_log = transport = None
             state, state_at, existing = {}, -math.inf, None
             failure = None
             try:
@@ -381,6 +513,8 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 except BlockingIOError as exc:
                     raise ControlError('旧入口正在运行；保留它，等待其退出') from exc
+                if not wait_for_previous_controller(agent_binary, cache, stopped, publish, writer.message):
+                    break
                 preflight_options={'controller':controller} if controller is not None else {}
                 if config_path is not None:preflight_options['config_path']=config_path
                 binary, existing = preflight(root, agent_binary, '/dev/ttyS2', **preflight_options)
@@ -394,6 +528,8 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                                               '-b', '115200', '-v', '0'],
                                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                              stderr=subprocess.DEVNULL, start_new_session=True)
+                transport = AgentTransport(agent_binary, agent, existing, cache, writer.message)
+                transport.start()
                 # Open storage before the controller starts; the pump owns
                 # this attempt's handlers after it starts reading stdout.
                 native_log = rotating_logger(folder/'controller.log')
@@ -409,26 +545,14 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                 # storage cannot close a replacement controller's logger.
                 pump = LogPump(node.stdout, native_log)
                 publish(dict(status='WAITING', reason='控制器已启动，等待飞控反馈', controller_pid=node.pid,
-                             agent_pid=agent.pid if agent else existing.pid, agent_owned=agent is not None))
+                             **transport.snapshot()))
                 channel = connect_controller(ipc, node)
                 def observe(row):
-                    row.update(agent_pid=agent.pid if agent else existing.pid, agent_owned=agent is not None)
+                    row.update(transport.snapshot())
                     publish(row)
-                next_health_check = 0
-                def health():
-                    nonlocal next_health_check
-                    if time.monotonic() < next_health_check:
-                        return None
-                    next_health_check = time.monotonic()+1
-                    if agent is not None:
-                        return '自建 Agent 已退出' if agent.poll() is not None else None
-                    try:
-                        argv = tuple(x.decode(errors='replace') for x in
-                                     Path('/proc', str(existing.pid), 'cmdline').read_bytes().split(b'\0') if x)
-                        return None if argv == existing.argv else '复用的 Agent 已退出或进程已变化'
-                    except OSError:
-                        return '复用的 Agent 已退出'
-                state, state_at, failure = monitor(channel, node, stopped, observe, health,
+                # Agent loss is a transport failure. The same native process
+                # handles feedback loss and fresh recovery evidence itself.
+                state, state_at, failure = monitor(channel, node, stopped, observe,
                                                   diagnostics=diagnostics)
                 if state:
                     last_state, last_state_at, last_state_pid = state, state_at, node.pid
@@ -441,6 +565,8 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                     publish(dict(status='STOPPING', reason='等待原生控制器优雅退出', controller_pid=node.pid))
                     while node.poll() is None:
                         time.sleep(.1)
+                if transport is not None:
+                    agent = transport.close()
                 if channel is not None:
                     channel.sock.close()
                 if node is not None:

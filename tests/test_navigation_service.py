@@ -21,6 +21,19 @@ class NavigationServiceTests(unittest.TestCase):
         self.assertTrue((ROOT/'navigation_service.py').exists(),'navigation background controller missing')
         return importlib.import_module('navigation_service')
 
+    def test_old_binary_without_lifecycle_marker_is_not_accepted(self):
+        m = self.api()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            binary = root/'fc01_system_node'
+            markers = m.MARKER+m.TAKEOFF_MARKER+m.SAFETY_MARKER
+            binary.write_bytes(markers)
+            with patch.object(m, 'controller_path', return_value=binary), patch.object(m, 'verify_binary'):
+                with self.assertRaisesRegex(m.ControlError, '生命周期'):
+                    m.check_controller(root)
+                binary.write_bytes(markers+m.LIFECYCLE_MARKER)
+                self.assertEqual(m.check_controller(root), binary)
+
     def test_private_controller_does_not_require_the_sdk_controller_binary(self):
         import launcher
         import standby

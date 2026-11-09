@@ -610,6 +610,120 @@ static void production_no_vision_rc_1p5m_lifecycle_uses_vertical_only(){
   std::cout<<"RC_PRODUCTION_NO_VISION_1P5M_VERTICAL_ONLY_FLIGHT_ENABLED_FALSE_PASS\n";
 }
 
+static void ended_fault_needs_new_safe_ground_cycle(){
+  auto c=rc_config();c.attitude.feedback_guard.enabled=true;c.validate();Flight q(c);
+  q.join();for(int i=0;i<16;++i)q.tick();
+  q.s.attitude.z_deriv=-.6;
+  for(int i=0;i<16&&q.r.attitude_core().phase()!=a::Phase::Safety;++i){
+    q.s.attitude.z-=.03;q.tick();
+  }
+  need(q.r.attitude_core().phase()==a::Phase::Safety&&
+    q.r.attitude_core().reason()=="VERTICAL_VELOCITY_INCONSISTENT",
+    "real vertical disagreement faults the active RC task");
+  const auto generation=q.r.pending(400).generation;
+  const auto observe=[&]{
+    q.r.begin_attitude_safety_observation();
+    const auto fb=q.r.publication_context(q.s,q.t,true,true).feedback;
+    q.r.observe_attitude_safety_event(fb,a::Core::SafetyEvent::Vertical,q.t);
+    q.r.observe_attitude_safety_event(fb,a::Core::SafetyEvent::Authority,q.t);
+    q.tick();need(!q.o.attitude.publish&&!a::nonzero(q.o.attitude.thrust),
+      "fault recovery observation is output-silent");
+  };
+  q.s.attitude.z_deriv=0;q.s.attitude.z=2;
+  for(int i=0;i<50;++i){observe();need(!q.r.reprepare_rc(q.s,q.t),"still-armed fault cannot restart");}
+  q.s.feedback.armed=false;q.s.feedback.offboard=false;q.s.nav_state=15;
+  q.s.feedback.landed=q.s.at_rest=true;q.s.stationary_seconds=3;
+  q.s.attitude.rc_arm_switch=3;q.s.attitude.rc_mode_slot=1;
+  observe();need(!q.r.reprepare_rc(q.s,q.t),"one healthy ground sample cannot clear the old fault");
+  q.s.attitude.z_deriv=.6;
+  for(int i=0;i<45;++i){observe();need(!q.r.reprepare_rc(q.s,q.t),"original disagreement still blocks recovery");}
+  q.s.attitude.z_deriv=0;q.s.attitude.kill=true;
+  for(int i=0;i<45;++i){observe();need(!q.r.reprepare_rc(q.s,q.t),"held Kill forbids a new cycle");}
+  q.s.attitude.kill=false;
+  for(int i=0;i<43;++i)observe();
+  need(q.r.rc_restart_allowed(q.s),"new healthy multi-frame ground dwell admits ended fault recovery");
+  // A bad event followed by a healthy latest snapshot must invalidate the
+  // completed dwell before Runtime can reconstruct task state in this tick.
+  q.r.begin_attitude_safety_observation();auto bad=q.r.publication_context(q.s,q.t,true,true).feedback;
+  bad.q={0,0,0,0};q.r.observe_attitude_safety_event(bad,a::Core::SafetyEvent::Attitude,q.t);
+  const auto good=q.r.publication_context(q.s,q.t,true,true).feedback;
+  q.r.observe_attitude_safety_event(good,a::Core::SafetyEvent::Attitude,q.t);q.tick();
+  need(!q.r.reprepare_rc(q.s,q.t),"same-round healthy attitude cannot erase bad recovery evidence");
+  for(int i=0;i<43;++i)observe();
+  for(int invalid=0;invalid<9;++invalid){auto changed=q.s;
+    if(invalid==0)changed.arming_state_known=false;
+    if(invalid==1)changed.feedback.landed=false;
+    if(invalid==2)changed.attitude.kill=true;
+    if(invalid==3)changed.attitude.rc_switch_sample_stamp=1;
+    if(invalid==4)changed.attitude.z_deriv=.6;
+    if(invalid==5)changed.attitude.rc_axes_safe=false;
+    if(invalid==6)changed.attitude.rc_sticks_moving=true;
+    if(invalid==7)changed.attitude.rc_arm_switch=1;
+    if(invalid==8)changed.attitude.rc_mode_slot=6;
+    need(!q.r.reprepare_rc(changed,q.t),"current unsafe or old RC evidence cannot consume an earlier recovery dwell");
+  }
+  need(q.r.reprepare_rc(q.s,q.t),"ended measurement fault safely resets task state in the same process");
+  need(q.r.last_rc_attempt_reason()=="VERTICAL_VELOCITY_INCONSISTENT"&&q.r.rc_attempts_completed()==1,
+    "reprepare preserves historical reason and attempt sequence");
+  need(q.r.pending(400).generation==generation,"safe reprepare preserves command wire history");
+  q.warm();need(q.r.attitude_core().phase()==a::Phase::RcWaitArm,
+    "recovered service returns to the ordinary next-manual-arm readiness");
+  need(!q.r.attitude_core().flight_started()&&q.arm_commands==0&&q.mode_commands==0,
+    "recovery cannot automatically arm or start the next task");
+  q.s.attitude.rc_arm_switch=1;++q.s.attitude.operator_switch_generation;q.tick();
+  q.s.feedback.armed=true;q.s.armed_time=20;q.s.latest_arming_reason=2;q.s.at_rest=false;q.tick();
+  q.navigation();need(q.r.attitude_core().phase()==a::Phase::ArmedGround,
+    "new manual arm and new Offboard evidence can join a subsequent task");
+}
+static void cold_start_never_resumes_armed_or_unknown_flight(){
+  for(int condition=0;condition<4;++condition){Flight q;
+    if(condition==0){q.s.feedback.armed=true;q.s.feedback.offboard=true;q.s.nav_state=14;
+      q.s.attitude.rc_arm_switch=1;q.s.attitude.rc_mode_slot=6;}
+    if(condition==1)q.s.status_fresh=false;
+    if(condition==2)q.s.land_fresh=false;
+    if(condition==3)q.s.arming_state_known=false;
+    for(int i=0;i<60;++i){q.tick();need(!q.o.attitude.publish&&!a::nonzero(q.o.attitude.thrust)&&
+      !q.r.attitude_core().flight_started(),"cold start cannot continue armed or unknown custody");}
+    need(q.arm_commands==0&&q.mode_commands==0,"process restart creates no arm or Offboard command");
+  }
+}
+static void integrity_faults_stay_latched_after_safe_ground(){
+  for(const char* reason:{"TELEMETRY_TIME_REGRESSION","ROS_ADAPTER_CONTROL_LOOP_STALL",
+      "ATTITUDE_PUBLICATION_PARTIAL_PAIR","COMMAND_400_INTENT_MISMATCH",
+      "PUBLISHER_OR_TELEMETRY_CONFLICT"}){
+    Flight q;q.join();q.r.abort_attitude(reason);q.s.feedback.armed=false;
+    q.s.feedback.offboard=false;q.s.nav_state=15;q.s.at_rest=true;
+    q.s.attitude.rc_arm_switch=3;q.s.attitude.rc_mode_slot=1;
+    for(int i=0;i<60;++i){q.tick();need(!q.r.reprepare_rc(q.s,q.t),
+      "safe switches cannot clear unresolved execution integrity faults");}
+    q.r.abort_attitude("RC_MANUAL_ARM_EVIDENCE_TIMEOUT");
+    need(q.r.attitude_core().reason()==reason&&!q.r.reprepare_rc(q.s,q.t),
+      "a recoverable-looking later reason cannot replace the original fault");
+  }
+}
+static void fault_after_disarm_preserves_and_resolves_only_committed_history(){
+  for(bool committed:{false,true}){Flight q;q.join();q.s.at_rest=true;
+    need(q.r.request("LAND",{},q.s,q.t).accepted,"ground task can request its existing guarded finish");
+    bool planned=false;
+    for(int i=0;i<100&&!planned;++i){q.tick();planned=q.o.attitude.command==a::Command::Disarm;}
+    need(planned,"test reaches actual planned disarm");
+    if(committed)q.r.confirm_attitude_command_publication(a::Command::Disarm,true,
+      q.s.status_stamp+1,q.s,q.t);
+    const auto pending=q.r.pending(400);
+    q.r.abort_attitude("ATTITUDE_STALE_OR_INVALID");
+    q.s.feedback.armed=false;q.s.feedback.offboard=false;q.s.nav_state=15;
+    q.s.feedback.landed=q.s.at_rest=true;q.s.attitude.rc_arm_switch=3;q.s.attitude.rc_mode_slot=1;
+    for(int i=0;i<45;++i)q.tick();
+    need(q.r.rc_restart_allowed(q.s),"fresh safe ground qualifies ended task only");
+    need(q.r.reprepare_rc(q.s,q.t)==committed,
+      "independent ground proof settles committed Disarm but cannot erase an uncommitted plan");
+    need(q.r.pending(400).wire_stamp==pending.wire_stamp&&q.r.pending(400).generation==pending.generation,
+      "physical terminal observation preserves original wire stamp and generation");
+    if(committed)need(q.r.pending(400).state_verified&&!q.r.pending(400).accepted&&
+      q.r.pending(400).stage==f::CommandStage::StateOnlyTerminal,
+      "safe ground resolves physical outcome without inventing an accepted ACK");
+  }
+}
 int main(int argc,char** argv){
   if(argc==2){
     if(std::string(argv[1])=="delay")delayed_arm_evidence_keeps_continuous_zero_commits();
@@ -618,6 +732,12 @@ int main(int argc,char** argv){
     else if(std::string(argv[1])=="navigation")delayed_navigation_evidence_keeps_continuous_zero_commits();
     else if(std::string(argv[1])=="late_arm")late_complementary_arm_evidence_cannot_revive_expired_attempt();
     else if(std::string(argv[1])=="production_1p5m")production_no_vision_rc_1p5m_lifecycle_uses_vertical_only();
+    else if(std::string(argv[1])=="lifecycle"){
+      ended_fault_needs_new_safe_ground_cycle();cold_start_never_resumes_armed_or_unknown_flight();
+      integrity_faults_stay_latched_after_safe_ground();
+      fault_after_disarm_preserves_and_resolves_only_committed_history();
+      std::cout<<"RC_SAFE_LIFECYCLE_PASS\n";
+    }
     else throw std::runtime_error("unknown regression selector");
     return 0;
   }
@@ -631,6 +751,9 @@ int main(int argc,char** argv){
   arm_and_navigation_faults_latch();reference_is_disarmed_only();final_boundary_and_interface_reject_bypasses();
   exits_and_faults_preserve_existing_policy();
   full_height_hold_land_and_safe_reset();
+  ended_fault_needs_new_safe_ground_cycle();cold_start_never_resumes_armed_or_unknown_flight();
+  integrity_faults_stay_latched_after_safe_ground();
+  fault_after_disarm_preserves_and_resolves_only_committed_history();
   production_no_vision_rc_1p5m_lifecycle_uses_vertical_only();
   std::cout<<"RC_NAVIGATION_CONTRACT_PASS\n";
 }

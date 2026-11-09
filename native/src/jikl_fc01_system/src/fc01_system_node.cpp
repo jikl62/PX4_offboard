@@ -15,6 +15,7 @@
 #include "jikl_fc01_system/receive_schedule.hpp"
 #include "jikl_fc01_system/discrete_event_latch.hpp"
 #include "jikl_fc01_system/receive_events.hpp"
+#include "jikl_fc01_system/parent_lifetime.hpp"
 #include <jikl_fc01_system/msg/vision_state.hpp>
 #include <jikl_fc01_system/msg/navigation_command.hpp>
 #include <px4_msgs/msg/manual_control_setpoint.hpp>
@@ -145,7 +146,8 @@ class SystemNode final:public rclcpp::Node {
       csv_<<"steady_s,phase,nav_state,armed,landed,xy_valid,z_valid,vxy_valid,vz_valid,heading_good,local_age_s,x_ned,y_ned,z_ned,vx_ned,vy_ned,vz_ned,ax_ned,ay_ned,az_ned,relative_height_m,reason,aa_healthy,aa_yaw_reference,aa_thrust_z,aa_height_target,aa_velocity_target,aa_saturated,aa_slew_limited,aa_z_deriv_ned,aa_feedback_checked,aa_feedback_suspect,aa_feedback_rate_error_mps,aa_feedback_position_rate_error_mps,aa_feedback_disagreement_s,aa_feedback_reason,aa_vertical_closed_loop,aa_takeoff_thrust_limited,aa_p_thrust,aa_i_thrust,aa_raw_thrust,aa_thrust_ceiling\n";
     }
     std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)
-      <<",\"controller_build\":\"R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108\""
+      <<",\"controller_build\":\"FC01_SAFE_LIFECYCLE_V1_20261109\""
+      <<",\"safety_event_policy\":\"R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108\""
       <<",\"runtime_mode\":"<<f::quote(config.runtime_mode.empty()?"unspecified":config.runtime_mode)
       <<",\"entry_version\":"<<f::quote(config.entry_version)
       <<",\"config_path\":"<<f::quote(config.config_path)
@@ -390,7 +392,9 @@ class SystemNode final:public rclcpp::Node {
     if(now-printed_>=.5){printed_=now;auto line=state(s,now);server_->publish(line);std::cout<<line<<std::endl;write_csv(s,now);}
     work_.reporting=steady()-reporting_started;
     if(!stopping_&&runtime_->reprepare_rc(s,now)){
-      std::cout<<"{\"kind\":\"rc_safe_reprepare\",\"reason\":\"NEW_DISARMED_GROUND_AND_CONTROLS_RESET\"}"<<std::endl;
+      std::cout<<"{\"kind\":\"rc_safe_reprepare\",\"reason\":\"NEW_DISARMED_GROUND_AND_CONTROLS_RESET\""
+        <<",\"completed_attempt\":"<<runtime_->rc_attempts_completed()
+        <<",\"previous_reason\":"<<f::quote(runtime_->last_rc_attempt_reason())<<"}"<<std::endl;
     }
     if(stopping_){
       if(s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed&&!runtime_->active()){
@@ -1146,14 +1150,21 @@ class SystemNode final:public rclcpp::Node {
   rclcpp::Publisher<Command>::SharedPtr command_pub_;rclcpp::Publisher<Mode>::SharedPtr mode_pub_;rclcpp::Publisher<Target>::SharedPtr target_pub_;
 };
 int main(int argc,char** argv){
+  const auto supervisor_pid=getppid();
   int code=0;std::unique_ptr<f::AsyncLog> logs;
   try{logs=std::make_unique<f::AsyncLog>();rclcpp::init(argc,argv);std::signal(SIGINT,stop_handler);std::signal(SIGTERM,stop_handler);
+    bool supervisor_lost=!f::arm_parent_loss_signal(supervisor_pid,SIGTERM);
+    if(supervisor_lost)stop_requested=1;
     auto node=std::make_shared<SystemNode>();
     // One executor/thread; complete ready passes may catch up within a small
     // cooperative budget. A discrete event ends extra passes before tick(),
     // preserving event visibility instead of overwriting it with a later sample.
     rclcpp::executors::SingleThreadedExecutor executor;executor.add_node(node);
     while(rclcpp::ok()){
+      if(!supervisor_lost&&getppid()!=supervisor_pid){
+        supervisor_lost=true;stop_requested=1;
+        std::cerr<<"Supervisor exited: requesting existing graceful shutdown; no task restart or forced disarm\n";
+      }
       const auto deadline=std::chrono::steady_clock::now()+node->loop_period();
       const double start=steady();
       node->begin_cycle(start);
