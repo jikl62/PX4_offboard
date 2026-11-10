@@ -78,6 +78,9 @@ struct Snapshot {
   int battery_warning{},nav_state{4},system{1},component{1};
   double stationary_seconds{};
   bool attitude_output_active{},offboard_heartbeat_active{},publication_fault_latched{};
+  // Adapter supplies the completed current-cycle deadline check. Recovery
+  // observations cannot accrue through repeated overruns, even without sinks.
+  bool control_cycle_fresh{true};
 };
 struct Reply {bool accepted{};std::string message;};
 struct Output {v::Output flight{};attitude::Output attitude;bool send_ground{};};
@@ -151,6 +154,23 @@ class Runtime {
     shutdown_latched_=true;request("LAND",{},s,now);
   }
   void abort_attitude(const std::string& reason){attitude_core_.block(reason);message_=reason;}
+  bool abort_rc_preparation_timing(const std::string& reason,const Snapshot& s){
+    // The adapter calls this ONLY for a typed deadline refusal (no throwing
+    // sink), an exact-zero plan and no command. Unknown/nonzero partial pairs
+    // remain execution-integrity faults. Runtime independently checks scope.
+    if(reason!="ROS_ADAPTER_CONTROL_LOOP_STALL"&&
+       reason!="PUBLISHER_BOUNDARY_CONTROL_LOOP_STALL"&&
+       reason!="PARTIAL_OR_FAILED_SETPOINT_PUBLICATION_HEARTBEAT_FINAL_CONTEXT_CHANGED_CONTROL_LOOP_STALL")return false;
+    if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled||
+       shutdown_latched_||maintenance_||ground_||s.time_regressed||
+       !s.arming_state_known||!s.status_fresh||!s.land_fresh||s.feedback.armed||
+       s.feedback.offboard||!s.feedback.landed||!s.at_rest)return false;
+    for(const auto& p:pending_)if(p.requested)return false;
+    if(!attitude_core_.block_rc_preparation_timing(reason,attitude_snapshot(s)))return false;
+    rc_preparation_timing_fault_=true;last_rc_timing_observation_=-1;
+    last_attitude_output_active_=false;message_=reason;
+    return true;
+  }
   void begin_attitude_safety_observation(){queued_safety_wait_=false;attitude_core_.begin_safety_observation();}
   void observe_attitude_safety_event(const attitude::Feedback& feedback,
       attitude::Core::SafetyEvent source,double now){
@@ -188,9 +208,14 @@ class Runtime {
     last_attitude_output_active_=false;message_=reason;return true;
   }
   bool reprepare_rc(const Snapshot& s,double now){
+    // The end-of-cycle check includes reporting and final snapshot work.
+    // An early healthy observation must not survive an eventual overrun.
+    if(rc_preparation_timing_fault_&&!s.control_cycle_fresh)
+      attitude_core_.clear_rc_timing_recovery();
     if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled||
        shutdown_latched_||maintenance_||ground_||!std::isfinite(now)||now<0||
-       s.publication_fault_latched||s.time_regressed||last_attitude_output_active_||
+       (s.publication_fault_latched&&!rc_preparation_timing_fault_)||s.time_regressed||
+       !s.control_cycle_fresh||last_attitude_output_active_||
        s.attitude_output_active||s.offboard_heartbeat_active||!rc_restart_allowed(s))return false;
     // Rebuild only task state. Wire generations and ACK watermarks outlive
     // every RC attempt, including accepted/state-only Disarm transactions.
@@ -216,6 +241,8 @@ class Runtime {
     }
     last_rc_attempt_reason_=attitude_core_.reason();++rc_attempts_completed_;
     attitude_core_=attitude::Core(config_.attitude);
+    rc_preparation_timing_fault_=false;
+    last_rc_timing_observation_=-1;
     message_="RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET";
     return true;
   }
@@ -566,6 +593,16 @@ class Runtime {
   }
   Output step(const Snapshot& s,double now){
     Output out;
+    if(rc_preparation_timing_fault_){
+      if(!s.control_cycle_fresh||!std::isfinite(now)||
+         (last_rc_timing_observation_>=0&&(now<last_rc_timing_observation_||
+           now-last_rc_timing_observation_>config_.attitude.stall_seconds)))
+        attitude_core_.clear_rc_timing_recovery();
+      last_rc_timing_observation_=now;
+      if(!s.control_cycle_fresh){
+        last_attitude_output_active_=false;queued_safety_wait_=false;return out;
+      }
+    }
     if(queued_safety_wait_){
       queued_safety_wait_=false;
       // A faulted task remains output-silent but still observes independent
@@ -853,6 +890,8 @@ class Runtime {
   unsigned command400_commits_{},command176_commits_{};
   std::vector<Pending> command400_history_;
   std::uint64_t rc_attempts_completed_{};std::string last_rc_attempt_reason_;
+  bool rc_preparation_timing_fault_{};
+  double last_rc_timing_observation_{-1};
   std::string message_{"IDLE_NO_AUTOMATIC_ARM"};
 };
 } // namespace fc01

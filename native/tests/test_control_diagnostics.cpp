@@ -47,8 +47,50 @@ static void publication_context_includes_snapshot_duration(){
   }
 }
 
+static void publication_outcome_preserves_stage_and_commit_evidence(){
+  for(unsigned failing=1;failing<=3;++failing){
+    unsigned reads=0,targets=0,heartbeats=0;bool threw=false;
+    a::PublicationAttempt attempt;a::Output output;output.publish=true;
+    try{
+      const auto decision=a::publish_attitude_resampled<Mode,Target>([&]{
+        auto context=safe_context();context.control_fresh=++reads!=failing;return context;
+      },output,123,[&](const Target&){++targets;},[&](const Mode&){++heartbeats;},&attempt);
+      if(decision.allowed)throw std::logic_error("expired context cannot commit a pair");
+    }catch(const std::runtime_error&){threw=true;}
+    const auto expected=failing==1?a::PublicationStage::InitialContext:
+      failing==2?a::PublicationStage::BeforeTarget:a::PublicationStage::BeforeHeartbeat;
+    if(attempt.stage!=expected||attempt.decision.reason!=a::BoundaryReason::ControlStall||
+       attempt.target_committed!=(failing==3)||attempt.heartbeat_committed||attempt.sink_exception||
+       targets!=(failing==3?1U:0U)||heartbeats||threw!=(failing==3))
+      throw std::runtime_error("deadline classification must retain exact stage and sink evidence");
+  }
+  for(bool fail_heartbeat:{false,true}){
+    a::PublicationAttempt attempt;a::Output output;output.publish=true;bool threw=false;
+    try{
+      a::publish_attitude_resampled<Mode,Target>(safe_context,output,123,
+        [&](const Target&){if(!fail_heartbeat)throw std::runtime_error("target sink failure");},
+        [&](const Mode&){throw std::runtime_error("heartbeat sink failure");},&attempt);
+    }catch(const std::runtime_error&){threw=true;}
+    if(!threw||!attempt.sink_exception||attempt.decision.reason!=a::BoundaryReason::Allowed||
+       attempt.target_committed!=fail_heartbeat||attempt.heartbeat_committed)
+      throw std::runtime_error("sink exceptions must never look like recoverable deadline refusal");
+  }
+  // A graph/permission change after target is still a partial, hard refusal.
+  unsigned reads=0,targets=0,heartbeats=0;a::PublicationAttempt attempt;
+  a::Output output;output.publish=true;bool threw=false;
+  try{
+    a::publish_attitude_resampled<Mode,Target>([&]{
+      auto context=safe_context();context.feedback.exclusive=++reads!=3;return context;
+    },output,123,[&](const Target&){++targets;},[&](const Mode&){++heartbeats;},&attempt);
+  }catch(const std::runtime_error&){threw=true;}
+  if(!threw||targets!=1||heartbeats||attempt.decision.reason!=a::BoundaryReason::Conflict||
+     !attempt.target_committed||attempt.heartbeat_committed||attempt.sink_exception)
+    throw std::runtime_error("same-cycle ownership change must refuse the heartbeat");
+}
+
 int main(){
   publication_context_includes_snapshot_duration();
+  publication_outcome_preserves_stage_and_commit_evidence();
   fc01::CurrentControlCycle cycle;
   if(cycle.current(100.,.3))throw std::runtime_error("no current cycle before begin and callbacks");
   cycle.begin(100.);cycle.callbacks_done(100.29);

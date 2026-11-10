@@ -11,9 +11,17 @@ import tempfile
 ROOT=Path(__file__).resolve().parents[1]
 RCLCPP=r'''#pragma once
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 namespace rclcpp {
+struct Event {
+  using SharedPtr=std::shared_ptr<Event>;
+  bool value{};
+  bool set(){const bool before=value;value=true;return before;}
+  bool check() const{return value;}
+  bool check_and_clear(){const bool before=value;value=false;return before;}
+};
 struct Parameter {bool as_bool() const{return false;}};
 struct Time {std::int64_t nanoseconds() const{return 1000000000;}};
 struct Clock {Time now() const{return {};}};
@@ -42,8 +50,11 @@ class Node {
   template<class T,class Qos,class Callback>typename Subscription<T>::SharedPtr create_subscription(const std::string&,Qos,Callback){return std::make_shared<Subscription<T>>();}
   template<class T,class Qos>typename Publisher<T>::SharedPtr create_publisher(const std::string&,Qos){return std::make_shared<Publisher<T>>();}
   std::shared_ptr<Clock> get_clock(){return std::make_shared<Clock>();}
-  std::size_t count_publishers(const std::string&) const{return 1;}
-  std::size_t count_subscribers(const std::string&) const{return 1;}
+  Event::SharedPtr get_graph_event(){return graph_event;}
+  std::size_t count_publishers(const std::string& topic) const{return graph_count?graph_count(topic,true):1;}
+  std::size_t count_subscribers(const std::string& topic) const{return graph_count?graph_count(topic,false):1;}
+  Event::SharedPtr graph_event{std::make_shared<Event>()};
+  std::function<std::size_t(const std::string&,bool)> graph_count;
 };
 inline void init(int,char**){}
 inline void shutdown(){}

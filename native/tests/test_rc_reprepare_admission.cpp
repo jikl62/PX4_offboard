@@ -42,7 +42,7 @@ static void fatal_faults_cannot_be_cleared_by_ground_controls(){
 struct RetryFixture {
   a::Core core{rc_admission_config()};a::Feedback s{safe_rc_feedback()};double now{};
   RetryFixture(){
-    for(int i=0;i<40;++i)advance();
+    for(int i=0;i<50;++i)advance();
     require_rc(core.phase()==a::Phase::RcWaitArm,"actual committed prestream reaches readiness");
     s.rc_arm_switch=1;++s.operator_switch_generation;
     for(int i=0;i<60;++i)advance();

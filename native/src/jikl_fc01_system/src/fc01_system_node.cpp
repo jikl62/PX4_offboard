@@ -139,6 +139,7 @@ class SystemNode final:public rclcpp::Node {
     if(publishers.mode)mode_pub_=create_publisher<Mode>("/fmu/in/offboard_control_mode",10);
     if(publishers.trajectory)target_pub_=create_publisher<Target>("/fmu/in/trajectory_setpoint",10);
     if(publishers.attitude)attitude_pub_=create_publisher<AttitudeTarget>("/fmu/in/vehicle_attitude_setpoint",10);
+    graph_event_=get_graph_event();
     const auto logpath=declare_parameter<std::string>("csv_path","");
     if(!logpath.empty()){
       csv_.open(logpath,std::ios::app);
@@ -146,7 +147,8 @@ class SystemNode final:public rclcpp::Node {
       csv_<<"steady_s,phase,nav_state,armed,landed,xy_valid,z_valid,vxy_valid,vz_valid,heading_good,local_age_s,x_ned,y_ned,z_ned,vx_ned,vy_ned,vz_ned,ax_ned,ay_ned,az_ned,relative_height_m,reason,aa_healthy,aa_yaw_reference,aa_thrust_z,aa_height_target,aa_velocity_target,aa_saturated,aa_slew_limited,aa_z_deriv_ned,aa_feedback_checked,aa_feedback_suspect,aa_feedback_rate_error_mps,aa_feedback_position_rate_error_mps,aa_feedback_disagreement_s,aa_feedback_reason,aa_vertical_closed_loop,aa_takeoff_thrust_limited,aa_p_thrust,aa_i_thrust,aa_raw_thrust,aa_thrust_ceiling\n";
     }
     std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)
-      <<",\"controller_build\":\"FC01_SAFE_LIFECYCLE_V1_20261109\""
+      <<",\"controller_build\":\"FC01_REFERENCE_PUBLICATION_V1_20261110\""
+      <<",\"lifecycle_policy\":\"FC01_SAFE_LIFECYCLE_V1_20261109\""
       <<",\"safety_event_policy\":\"R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108\""
       <<",\"runtime_mode\":"<<f::quote(config.runtime_mode.empty()?"unspecified":config.runtime_mode)
       <<",\"entry_version\":"<<f::quote(config.entry_version)
@@ -167,6 +169,8 @@ class SystemNode final:public rclcpp::Node {
   std::chrono::duration<double> loop_period() const{return std::chrono::duration<double>(1./config_.attitude.loop_hz);}
   void begin_cycle(double start){
     cycle_.begin(start);work_={};work_.started=start;
+    ++cycle_id_;cycle_graph_ready_=cycle_graph_invalidated_=false;
+    pair_attempt_={};pair_samples_={};
     pair_context_count_=0;pair_context_seconds_.fill(0);
     source_cycle_callbacks_.fill(0);
   }
@@ -234,7 +238,10 @@ class SystemNode final:public rclcpp::Node {
       }
     }
     if(config_.profile=="attitude_altitude"&&!cycle_.current(steady(),config_.attitude.stall_seconds)){
-      runtime_->abort_attitude("ROS_ADAPTER_CONTROL_LOOP_STALL");output={};
+      if(runtime_->attitude_core().phase()!=f::attitude::Phase::Safety&&
+         !runtime_->abort_rc_preparation_timing("ROS_ADAPTER_CONTROL_LOOP_STALL",s))
+        runtime_->abort_attitude("ROS_ADAPTER_CONTROL_LOOP_STALL");
+      output={};
     }
     const auto previous_attitude_output=last_attitude_output_;
     const bool previous_heartbeat_committed=previous_attitude_output.publish;
@@ -274,7 +281,7 @@ class SystemNode final:public rclcpp::Node {
           [this](const AttitudeTarget& target){
             attitude_pub_->publish(target);publication_audit_.target_committed(steady(),target.thrust_body[2]);},
           [this](const Mode& mode){
-            mode_pub_->publish(mode);publication_audit_.mode_committed(steady());});
+            mode_pub_->publish(mode);publication_audit_.mode_committed(steady());},&pair_attempt_);
         sampling_pair_=false;
         if(decision.allowed){
           last_attitude_output_=output.attitude;attitude_sent=true;runtime_->confirm_rc_output(true,steady());
@@ -288,12 +295,14 @@ class SystemNode final:public rclcpp::Node {
             "FLIGHT_DETECTOR_CONTRADICTION_AT_FIRST_SINK":"INPUT_EXPIRED_AT_FIRST_SINK");
           publication_block_reason_="VISUAL_INPUT_RECOVERY_REQUESTED";output={};
         }else if(defer_unarmed_source_expiry(decision,output.attitude)){output={};}
-        else {refuse_publication("attitude",decision);output={};}
+        else {refuse_publication("attitude",decision,&attempted_attitude);output={};}
       }catch(const std::exception& e){
         sampling_pair_=false;
         publication_audit_.failed();attitude_sent=false;boundary_fault_latched_=true;
         publication_block_reason_=std::string("PARTIAL_OR_FAILED_SETPOINT_PUBLICATION_")+e.what();
-        runtime_->abort_attitude(publication_block_reason_);output={};report_publication_failure("attitude");
+        if(!abort_preparation_timing(publication_block_reason_,attempted_attitude))
+          runtime_->abort_attitude(publication_block_reason_);
+        output={};report_publication_failure("attitude");
       }catch(...){
         sampling_pair_=false;
         publication_audit_.failed();attitude_sent=false;boundary_fault_latched_=true;
@@ -391,7 +400,13 @@ class SystemNode final:public rclcpp::Node {
       write_phase_event(phase_before,s,attempted_attitude,now);
     if(now-printed_>=.5){printed_=now;auto line=state(s,now);server_->publish(line);std::cout<<line<<std::endl;write_csv(s,now);}
     work_.reporting=steady()-reporting_started;
-    if(!stopping_&&runtime_->reprepare_rc(s,now)){
+    // Reporting can take time. Recovery must use a freshly aged snapshot,
+    // not the original tick sample after logging has consumed its lifetime.
+    auto reprepare_snapshot=snapshot(steady());const double reprepare_now=steady();
+    reprepare_snapshot.stationary_seconds=rest_since_>=0?std::max(0.,reprepare_now-rest_since_):0;
+    reprepare_snapshot.control_cycle_fresh=cycle_.current(reprepare_now,config_.attitude.stall_seconds);
+    if(!stopping_&&runtime_->reprepare_rc(reprepare_snapshot,reprepare_now)){
+      boundary_fault_latched_=false;publication_block_reason_.clear();
       std::cout<<"{\"kind\":\"rc_safe_reprepare\",\"reason\":\"NEW_DISARMED_GROUND_AND_CONTROLS_RESET\""
         <<",\"completed_attempt\":"<<runtime_->rc_attempts_completed()
         <<",\"previous_reason\":"<<f::quote(runtime_->last_rc_attempt_reason())<<"}"<<std::endl;
@@ -427,6 +442,26 @@ class SystemNode final:public rclcpp::Node {
     f::attitude::OwnershipCounts ownership;
     std::size_t local{},attitude{},manual{},switches{},battery{},flags{},visual_state{},visual_command{};
   };
+  struct BoundarySample {
+    std::uint64_t cycle{},graph_generation{},graph_queries{},callbacks{},events{},status{},land{},local{},local_sample{},host{};
+    double observed{},height{};
+    f::attitude::Phase phase{f::attitude::Phase::Idle};
+    bool armed{},offboard{},landed{},at_rest{},control_fresh{},graph_valid{},reference_ready{};
+  };
+  GraphCounts current_graph(){
+    if(cycle_graph_invalidated_)return {};
+    if(!cycle_graph_ready_||(graph_event_&&graph_event_->check())){
+      // Clear BEFORE counting: a discovery change during the query invalidates
+      // the entire result. A pending change is cleared only with a full query.
+      if(graph_event_)graph_event_->check_and_clear();
+      cycle_graph_=query_graph();cycle_graph_ready_=true;++graph_generation_;
+    }
+    if(!graph_event_||graph_event_->check())cycle_graph_invalidated_=true;
+    // Stable discovery reuses this cycle's counts. A real discovery event
+    // triggers one refresh, including unrelated changes with identical counts.
+    // Further churn DURING that refresh refuses this cycle, never a wait loop.
+    return cycle_graph_invalidated_?GraphCounts{}:cycle_graph_;
+  }
   GraphCounts query_graph(){
     const double begin=steady();GraphCounts graph;
     const auto publishers=[this](const std::string& topic){++work_.graph_queries;return count_publishers(topic);};
@@ -603,18 +638,40 @@ class SystemNode final:public rclcpp::Node {
     s.stationary_seconds=rest_since_>=0?std::max(0.,now-rest_since_):0;
     auto context=runtime_->publication_context(s,now,server_->connected(),true,
       stop_requested||stopping_||boundary_fault_latched_);
+    if(cycle_graph_invalidated_)context.feedback.exclusive=false;
     context.control_fresh=cycle_.current(steady(),config_.attitude.stall_seconds);
     const double elapsed=steady()-begin;++work_.contexts;work_.boundary+=elapsed;
     if(sampling_pair_){
-      if(pair_context_count_<pair_context_seconds_.size())pair_context_seconds_[pair_context_count_]=elapsed;
+      if(pair_context_count_<pair_context_seconds_.size()){
+        pair_context_seconds_[pair_context_count_]=elapsed;
+        auto& sample=pair_samples_[pair_context_count_];
+        sample.graph_generation=graph_generation_;sample.graph_queries=work_.graph_queries;
+        sample.cycle=cycle_id_;sample.callbacks=received_callbacks_;sample.events=receive_events_;
+        sample.status=s.status_stamp;sample.land=s.land_stamp;sample.local=s.attitude.local_stamp;
+        sample.local_sample=s.attitude.vertical_sample_stamp;sample.host=s.attitude.source_host_stamp;
+        sample.observed=now;sample.phase=context.phase;sample.armed=s.feedback.armed;
+        sample.offboard=s.feedback.offboard;sample.landed=s.feedback.landed;sample.at_rest=s.at_rest;
+        sample.control_fresh=context.control_fresh;sample.graph_valid=!cycle_graph_invalidated_;
+        sample.reference_ready=context.reference_ready;sample.height=context.reference_z-s.attitude.z;
+      }
       ++pair_context_count_;
     }
     return context;
   }
-  void refuse_publication(const char* boundary,const f::attitude::Decision& decision){
+  bool abort_preparation_timing(const std::string& reason,const f::attitude::Output& planned){
+    if(pair_attempt_.decision.reason!=f::attitude::BoundaryReason::ControlStall||
+       pair_attempt_.sink_exception||planned.command!=f::attitude::Command::None||
+       f::attitude::nonzero(planned.thrust))return false;
+    const auto actual=snapshot(steady());
+    return runtime_->abort_rc_preparation_timing(reason,actual);
+  }
+  void refuse_publication(const char* boundary,const f::attitude::Decision& decision,
+      const f::attitude::Output* planned=nullptr){
     boundary_fault_latched_=true;
     publication_block_reason_=std::string("PUBLISHER_BOUNDARY_")+f::attitude::name(decision.reason);
-    runtime_->abort_attitude(publication_block_reason_);last_attitude_output_={};
+    if(!planned||!abort_preparation_timing(publication_block_reason_,*planned))
+      runtime_->abort_attitude(publication_block_reason_);
+    last_attitude_output_={};
     report_publication_failure(boundary);
   }
   bool defer_unarmed_source_expiry(const f::attitude::Decision& decision,
@@ -684,10 +741,10 @@ class SystemNode final:public rclcpp::Node {
   }
   f::Snapshot snapshot(double now){
     const double begin=steady();
-    // Sample age AFTER graph lookups, rather than letting graph latency make
-    // a stale receipt/source look current. No graph result is reused across
-    // snapshots: each of the three publication checks still observes counts.
-    const auto graph=query_graph();now=steady();const auto host_stamp=timestamp();
+    // SingleThreadedExecutor performs no callbacks during tick. Reuse only
+    // this cycle's graph counts while its discovery event stays unchanged;
+    // every snapshot still ages source/receipt/RC/clock evidence anew.
+    const auto graph=current_graph();now=steady();const auto host_stamp=timestamp();
     source_observed_steady_=now;source_observed_host_=host_stamp;
     f::Snapshot s;s.status_fresh=status_stamp_.fresh(now,config_.attitude.status_timeout);s.land_fresh=land_stamp_.fresh(now,config_.attitude.land_timeout);s.local_fresh=local_stamp_.fresh(now,config_.attitude.local_timeout);
     s.arming_state_known=status_.arming_state==Status::ARMING_STATE_ARMED||
@@ -695,6 +752,7 @@ class SystemNode final:public rclcpp::Node {
     s.status_fresh=s.status_fresh&&s.arming_state_known;
     s.attitude_output_active=s.offboard_heartbeat_active=last_attitude_output_.publish;
     s.publication_fault_latched=boundary_fault_latched_;
+    s.control_cycle_fresh=cycle_.current(now,config_.attitude.stall_seconds);
     s.battery_fresh=battery_stamp_.fresh(now,1.);s.manual_fresh=flags_stamp_.fresh(now,config_.attitude.flags_timeout);
     // A lost discrete observation is a sticky transport fault. Include it in
     // the final assignment so normal source clocks cannot overwrite it.
@@ -807,7 +865,7 @@ class SystemNode final:public rclcpp::Node {
     const auto& ag=core.armed_ground_fault_evidence();
     std::cout<<"{\"kind\":\"phase_event\",\"monotonic_s\":"<<number(now)
       <<",\"phase_before\":"<<f::quote(before)<<",\"phase_after\":"<<f::quote(runtime_->phase_name())
-      <<",\"reason\":"<<f::quote(core.reason())<<progress_fields()<<vertical_feedback_fields()<<vertical_control_fields(planned,true)<<",\"ownership\":"<<f::quote(core.recovery_responsibility(fb))
+      <<",\"reason\":"<<f::quote(core.reason())<<progress_fields()<<reference_fields(s)<<vertical_feedback_fields()<<vertical_control_fields(planned,true)<<",\"ownership\":"<<f::quote(core.recovery_responsibility(fb))
       <<",\"armed\":"<<boolean(s.feedback.armed)<<",\"nav_state\":"<<s.nav_state
       <<",\"status_stamp\":"<<s.status_stamp<<",\"land_stamp\":"<<s.land_stamp
       <<",\"local_stamp\":"<<s.attitude.local_stamp<<",\"landed\":"<<boolean(s.feedback.landed)
@@ -885,6 +943,22 @@ class SystemNode final:public rclcpp::Node {
       <<",\"liftoff_last_local_sample_stamp\":"<<e.last_local_stamp;
     return out.str();
   }
+  std::string reference_fields(const f::Snapshot& s)const{
+    const auto& core=runtime_->attitude_core();std::ostringstream out;
+    out<<",\"height_reference_z0\":"<<number(core.reference_z(),core.reference_ready())
+      <<",\"height_reference_z_reset\":"<<unsigned(core.reference_z_reset())
+      <<",\"height_reference_vz_reset\":"<<unsigned(core.reference_vz_reset())
+      <<",\"height_reference_quat_reset\":"<<unsigned(core.reference_quat_reset())
+      <<",\"height_sample_z\":"<<number(s.attitude.z,s.local_fresh&&s.attitude.z_valid)
+      <<",\"height_sample_z_reset\":"<<unsigned(s.attitude.z_reset)
+      <<",\"height_sample_vz_reset\":"<<unsigned(s.attitude.vz_reset)
+      <<",\"height_sample_quat_reset\":"<<unsigned(s.attitude.quat_reset)
+      <<",\"height_local_sample_stamp\":"<<s.attitude.vertical_sample_stamp
+      <<",\"rc_ground_reference_qualified\":"<<boolean(core.rc_ground_reference_qualified())
+      <<",\"rc_ground_reference_samples\":"<<core.rc_ground_reference_samples()
+      <<",\"rc_ground_reference_seconds\":"<<number(core.rc_ground_reference_seconds());
+    return out.str();
+  }
   std::string work_fields(const Work& value,const char* field="cycle_work")const{
     std::ostringstream out;
     out<<",\""<<field<<"\":{\"callbacks_s\":"<<number(value.callbacks)
@@ -955,10 +1029,36 @@ class SystemNode final:public rclcpp::Node {
       }
       out<<'}';
     }
-    out<<"},\"pair_context_calls\":"<<pair_context_count_<<",\"pair_context_seconds\":["
+    out<<"},\"control_cycle_id\":"<<cycle_id_
+      <<",\"graph_snapshot_cycle\":"<<(cycle_graph_ready_?cycle_id_:0)
+      <<",\"graph_snapshot_generation\":"<<graph_generation_
+      <<",\"graph_snapshot_invalidated\":"<<boolean(cycle_graph_invalidated_)
+      <<",\"publication_stage\":"<<f::quote(f::attitude::name(pair_attempt_.stage))
+      <<",\"publication_decision\":"<<f::quote(f::attitude::name(pair_attempt_.decision.reason))
+      <<",\"publication_target_committed\":"<<boolean(pair_attempt_.target_committed)
+      <<",\"publication_heartbeat_committed\":"<<boolean(pair_attempt_.heartbeat_committed)
+      <<",\"publication_sink_exception\":"<<boolean(pair_attempt_.sink_exception)
+      <<",\"pair_context_calls\":"<<pair_context_count_<<",\"pair_context_seconds\":["
       <<number(pair_context_seconds_[0],pair_context_count_>0)<<','
       <<number(pair_context_seconds_[1],pair_context_count_>1)<<','
-      <<number(pair_context_seconds_[2],pair_context_count_>2)<<']';
+      <<number(pair_context_seconds_[2],pair_context_count_>2)<<"],\"pair_context_snapshots\":[";
+    for(std::size_t i=0;i<std::min(pair_context_count_,pair_samples_.size());++i){
+      if(i)out<<',';
+      const auto& sample=pair_samples_[i];
+      out<<"{\"context_index\":"<<i+1<<",\"cycle_id\":"<<sample.cycle
+        <<",\"graph_generation\":"<<sample.graph_generation<<",\"graph_queries\":"<<sample.graph_queries
+        <<",\"monotonic_s\":"<<number(sample.observed)
+        <<",\"phase\":"<<f::quote(f::attitude::name(sample.phase))
+        <<",\"callback_watermark\":"<<sample.callbacks<<",\"event_watermark\":"<<sample.events
+        <<",\"status_stamp\":"<<sample.status<<",\"land_stamp\":"<<sample.land
+        <<",\"local_stamp\":"<<sample.local<<",\"local_sample_stamp\":"<<sample.local_sample
+        <<",\"host_stamp\":"<<sample.host<<",\"armed\":"<<boolean(sample.armed)
+        <<",\"offboard\":"<<boolean(sample.offboard)<<",\"landed\":"<<boolean(sample.landed)
+        <<",\"at_rest\":"<<boolean(sample.at_rest)<<",\"control_fresh\":"<<boolean(sample.control_fresh)
+        <<",\"graph_valid\":"<<boolean(sample.graph_valid)
+        <<",\"relative_height\":"<<number(sample.height,sample.reference_ready)<<'}';
+    }
+    out<<']';
     return out.str();
   }
   std::string feedback_timing_fields(const f::Snapshot& s,double now)const{
@@ -1002,7 +1102,7 @@ class SystemNode final:public rclcpp::Node {
       <<",\"visual_state_age_s\":"<<number(now-s.attitude.visual_input.state.received_at,s.attitude.visual_input.state.received_at>=0)
       <<",\"visual_command_age_s\":"<<number(now-s.attitude.visual_input.command.received_at,s.attitude.visual_input.command.received_at>=0)
       <<",\"rc_target_height\":"<<number(config_.attitude.rc_target_height)
-      <<progress_fields()<<feedback_timing_fields(s,now)
+      <<progress_fields()<<reference_fields(s)<<feedback_timing_fields(s,now)
       <<",\"rc_navigation_mode_slot\":"<<config_.attitude.rc_navigation_mode_slot
       <<",\"rc_prestream_commits\":"<<runtime_->attitude_core().rc_prestream_commits()
       <<",\"rc_manual_arm_proven\":"<<boolean(runtime_->attitude_core().rc_manual_arm_proven())
@@ -1135,6 +1235,11 @@ class SystemNode final:public rclcpp::Node {
   bool receive_event_overflow_{};
   std::string receive_stop_reason_;
   f::CurrentControlCycle cycle_;Work work_,completed_work_;
+  std::uint64_t cycle_id_{},graph_generation_{};
+  rclcpp::Event::SharedPtr graph_event_;
+  GraphCounts cycle_graph_{};bool cycle_graph_ready_{},cycle_graph_invalidated_{};
+  f::attitude::PublicationAttempt pair_attempt_;
+  std::array<BoundarySample,3> pair_samples_{};
   bool sampling_pair_{};std::size_t pair_context_count_{};
   std::array<double,3> pair_context_seconds_{};double last_timing_warning_{-1},last_defer_report_{-1};
   f::ControlTiming timing_;

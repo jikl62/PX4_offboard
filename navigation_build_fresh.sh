@@ -68,7 +68,7 @@ evidence = {'source_commit': release['source_commit'], 'host_architecture': plat
     'release_manifest_sha256': hashlib.sha256(release_path.read_bytes()).hexdigest(),
     'entry': str(root), 'sdk_root': str(sdk), 'build_dir': str(root/'.build/arm64-final'),
     'controller_executed': False, 'agent_or_service_started': False, 'binaries': {}}
-marker = b'FC01_SAFE_LIFECYCLE_V1_20261109'
+marker = b'FC01_REFERENCE_PUBLICATION_V1_20261110'
 for name in ('fc01_system_node', 'fc01_config_check'):
     binary = root/'install/lib/jikl_fc01_system'/name
     data = binary.read_bytes()

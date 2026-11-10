@@ -31,6 +31,9 @@ class NavigationServiceTests(unittest.TestCase):
             with patch.object(m, 'controller_path', return_value=binary), patch.object(m, 'verify_binary'):
                 with self.assertRaisesRegex(m.ControlError, '生命周期'):
                     m.check_controller(root)
+                binary.write_bytes(markers+b'FC01_SAFE_LIFECYCLE_V1_20261109')
+                with self.assertRaisesRegex(m.ControlError, '生命周期'):
+                    m.check_controller(root)
                 binary.write_bytes(markers+m.LIFECYCLE_MARKER)
                 self.assertEqual(m.check_controller(root), binary)
 

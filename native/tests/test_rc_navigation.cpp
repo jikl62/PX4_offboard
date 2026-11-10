@@ -6,6 +6,7 @@
 #include <utility>
 using namespace authority_test;
 static void need(bool ok,const char* why){if(!ok)throw std::runtime_error(why);}
+static f::Config production_no_vision_rc_config();
 static f::Config rc_config(std::int64_t slot=6){
   auto c=config();auto& p=c.attitude;
   p.rc_navigation_enabled=true;p.arm_enabled=false;p.rc_takeover_confirmed=true;
@@ -304,6 +305,7 @@ static void delayed_pre_ready_source_events_cannot_authorize(){
   const auto step=[&]{
     now+=.05;s.source_host_stamp=100000000+std::uint64_t(now*1e6);
     s.status_stamp=s.rc_switch_sample_stamp=s.source_host_stamp-500000;
+    s.local_stamp=s.vertical_sample_stamp=s.land_stamp=s.status_stamp;
     const bool output=start.step(fixture.c.attitude,s,now,"");
     if(output)start.note_commit(true,now);
   };
@@ -321,6 +323,7 @@ static void delayed_pre_ready_source_events_cannot_authorize(){
   const auto valid_step=[&]{
     now+=.05;s.source_host_stamp=100000000+std::uint64_t(now*1e6);
     s.status_stamp=s.rc_switch_sample_stamp=s.source_host_stamp-500000;
+    s.local_stamp=s.vertical_sample_stamp=s.land_stamp=s.status_stamp;
     if(valid.step(fixture.c.attitude,s,now,""))valid.note_commit(true,now);
   };
   for(int i=0;i<100;++i)valid_step();
@@ -378,6 +381,121 @@ static void reference_is_disarmed_only(){
   q.manual_arm();q.s.attitude.z=2.04;q.tick();
   need(q.r.attitude_core().reference_z()==before,"armed anchor never recaptures");
   q.navigation();need(q.r.attitude_core().reference_z()==before,"navigation keeps pre-arm anchor");
+}
+static void task_ground_reference_uses_fresh_disarmed_evidence(){
+  // Offsets are diagnostic EKF-frame scenarios, not a larger flight envelope.
+  for(double offset:{.09,.16}){
+    auto c=production_no_vision_rc_config();Flight q(c);
+    q.s.attitude.z=2-offset;q.tick();
+    need(q.r.attitude_core().phase()==a::Phase::RcPrestream&&q.o.attitude.publish&&
+      !a::nonzero(q.o.attitude.thrust)&&!q.r.attitude_core().rc_ground_reference_qualified()&&
+      !q.r.attitude_core().flight_started(),
+      "provisional PRESTREAM zero anchor is not a qualified task reference or flight admission");
+    q.warm();
+    need(q.r.attitude_core().rc_ground_reference_qualified()&&
+      q.r.attitude_core().phase()==a::Phase::RcWaitArm&&
+      std::abs(q.r.attitude_core().reference_z()-(2-offset))<1e-9,
+      "new task certifies current disarmed ground rather than an old EKF zero");
+    q.manual_arm();const double frozen=q.r.attitude_core().reference_z();q.navigation();
+    need(q.r.attitude_core().phase()==a::Phase::ArmedGround&&
+      q.r.attitude_core().reference_z()==frozen&&std::abs(q.o.attitude.height)<1e-9,
+      "static 0.09/0.16 frame offset joins only after its own complete ground proof");
+  }
+  Flight low_rate(production_no_vision_rc_config());
+  for(int i=1;i<=80;++i){
+    // PX4 local/raw samples at20Hz, independent status/detector at1Hz.
+    // This is within the deployed1.25s land sample gap, not repeated data.
+    if(i%20&&i>1){low_rate.s.status_stamp-=50000;low_rate.s.land_stamp-=50000;}
+    else if(i%20==0)low_rate.s.status_stamp=low_rate.s.land_stamp=1000+std::uint64_t(i-1)*50000;
+    low_rate.tick();
+  }
+  need(low_rate.r.attitude_core().phase()==a::Phase::RcWaitArm&&
+    low_rate.r.attitude_core().rc_ground_reference_qualified(),
+    "healthy1Hz status/land and20Hz local streams qualify without one-to-one callback pairing");
+  auto c=rc_config();c.attitude.feedback_guard.enabled=true;Flight drift(c);drift.warm();
+  for(int i=0;i<400;++i){drift.s.attitude.z-=.001;drift.s.attitude.z_deriv=-.02;drift.tick();}
+  need(drift.r.attitude_core().phase()==a::Phase::RcWaitArm&&
+    drift.r.attitude_core().rc_ground_reference_qualified()&&
+    std::abs(drift.r.attitude_core().reference_z()-drift.s.attitude.z)<1e-9,
+    "slow consistent ground drift refreshes a bounded current disarmed reference");
+  drift.s.attitude.z_deriv=0;drift.manual_arm();const double frozen=drift.r.attitude_core().reference_z();
+  drift.s.attitude.z-=.16;drift.tick();
+  need(drift.r.attitude_core().phase()==a::Phase::Safety&&
+    drift.r.attitude_core().reason()=="RC_ARMED_GROUND_REFERENCE_NOT_STABLE"&&
+    drift.r.attitude_core().reference_z()==frozen&&!drift.o.attitude.publish,
+    "arm intent freezes z0 even with a landed detector; later drift cannot be hidden by rebase");
+  const auto evidence=drift.r.attitude_core().armed_ground_fault_evidence();
+  need(evidence.valid&&evidence.failed_mask==8&&std::abs(evidence.height-.16)<1e-9&&
+    evidence.local_stamp==drift.s.attitude.local_stamp,
+    "RC admission captures the precise triggering height/source sample");
+  drift.s.attitude.z=frozen-.09;drift.tick();
+  need(drift.r.attitude_core().armed_ground_fault_evidence().local_stamp==evidence.local_stamp&&
+    std::abs(drift.r.attitude_core().armed_ground_fault_evidence().height-.16)<1e-9,
+    "fault display changes cannot replace the actual 0.16 trigger with a later 0.09 snapshot");
+  drift.s.feedback.armed=false;drift.s.feedback.offboard=false;drift.s.nav_state=15;
+  drift.s.at_rest=true;drift.s.attitude.rc_arm_switch=3;drift.s.attitude.rc_mode_slot=1;
+  ++drift.s.attitude.operator_switch_generation;
+  for(int i=0;i<25;++i){drift.tick();need(!drift.r.reprepare_rc(drift.s,drift.t),
+    "ended reference fault still requires a complete NEW healthy ground window");}
+  for(int i=0;i<30;++i)drift.tick();
+  need(drift.r.reprepare_rc(drift.s,drift.t),"ended RC ground-reference fault may safely reprepare");
+  need(!drift.r.attitude_core().reference_ready(),"old faulted task reference is discarded");
+  drift.warm();
+  need(drift.r.attitude_core().phase()==a::Phase::RcWaitArm&&
+    std::abs(drift.r.attitude_core().reference_z()-(frozen-.09))<1e-9,
+    "recovery builds next task's current reference without auto-arm or auto-launch");
+  std::cout<<"RC_GROUND_REFERENCE_OFFSETS_DRIFT_RECOVERY_PASS\n";
+}
+static void ground_reference_resets_and_timestamps_need_a_new_window(){
+  for(int kind=0;kind<8;++kind){
+    auto c=rc_config();c.attitude.feedback_guard.enabled=true;Flight q(c);q.warm();
+    if(kind==0){q.s.attitude.z_reset++;q.s.attitude.z+=.3;}
+    if(kind==1)q.s.attitude.vz_reset++;
+    if(kind==2)q.s.attitude.quat_reset++;
+    if(kind==3)q.s.attitude.vertical_sample_stamp=100;
+    if(kind==4)q.s.attitude.local_stamp=100;
+    if(kind==5){q.s.attitude.local_stamp-=50000;q.s.attitude.z+=.09;}
+    if(kind==6){q.s.attitude.vertical_sample_stamp-=50000;q.s.attitude.z+=.09;}
+    if(kind==7){q.s.attitude.local_stamp+=1000000;q.s.attitude.vertical_sample_stamp+=1000000;}
+    q.tick();
+    need(q.r.attitude_core().phase()==a::Phase::RcPrestream&&
+      !q.r.attitude_core().rc_ground_reference_qualified()&&!q.r.attitude_core().flight_started(),
+      "disarmed reset or timestamp discontinuity invalidates READY and starts a new proof");
+    for(int i=0;i<20;++i){q.tick();need(q.r.attitude_core().phase()!=a::Phase::RcWaitArm,
+      "a reset cannot inherit the preceding task/window's rest evidence");}
+    q.warm();need(q.r.attitude_core().phase()==a::Phase::RcWaitArm&&
+      q.r.attitude_core().reference_z()==q.s.attitude.z,
+      "stable new frame can certify its own disarmed reference");
+    q.manual_arm();const double frozen=q.r.attitude_core().reference_z();
+    q.s.attitude.z_reset++;q.s.attitude.z+=.3;q.tick();
+    need(q.r.attitude_core().phase()==a::Phase::Safety&&
+      q.r.attitude_core().reason()=="RC_ARMED_ESTIMATOR_RESET"&&q.r.attitude_core().reference_z()==frozen,
+      "armed frame reset is an explicit fault and never an in-flight rebase");
+  }
+  for(int kind=0;kind<8;++kind){
+    Flight q;
+    if(kind==0)q.s.feedback.landed=false;
+    if(kind==1)q.s.at_rest=false;
+    if(kind==2)q.s.feedback.armed=true;
+    if(kind==3)q.s.attitude.vz=.11;
+    if(kind==4)q.s.attitude.kill=true;
+    if(kind==5)q.s.local_fresh=false;
+    if(kind==6)q.s.attitude.z_valid=false;
+    if(kind==7)q.s.feedback.exclusive=false;
+    q.warm();need(!q.r.attitude_core().rc_ground_reference_qualified()&&
+      q.r.attitude_core().phase()!=a::Phase::RcWaitArm&&!q.r.attitude_core().flight_started(),
+      "airborne/unknown ground, stale/invalid estimate, Kill or authority conflict cannot certify z0");
+  }
+  // A recent receipt flag does not turn repeated source frames into dwell.
+  Flight cached;for(int i=0;i<100;++i){
+    cached.t+=.05;cached.s.attitude.source_host_stamp+=50000;
+    cached.o=cached.r.step(cached.s,cached.t);
+    if(cached.o.attitude.publish)cached.r.confirm_rc_output(true,cached.t);
+  }
+  need(!cached.r.attitude_core().rc_ground_reference_qualified()&&
+    cached.r.attitude_core().phase()!=a::Phase::RcWaitArm,
+    "cached source timestamps cannot manufacture a reference proof even with fresh flags");
+  std::cout<<"RC_GROUND_REFERENCE_RESET_TIMESTAMP_GUARDS_PASS\n";
 }
 static void final_boundary_and_interface_reject_bypasses(){
   Flight boot;
@@ -489,6 +607,14 @@ static void full_height_hold_land_and_safe_reset(){
   for(int i=0;i<10&&q.r.attitude_core().phase()!=a::Phase::SafeDisarmed;++i)q.tick();
   need(q.r.attitude_core().phase()==a::Phase::SafeDisarmed&&q.r.pending(400).state_verified,
     "independent new disarmed ground evidence completes the second physical landing");
+  q.s.feedback.offboard=false;q.s.nav_state=15;q.s.attitude.rc_mode_slot=1;
+  q.s.attitude.rc_arm_switch=3;q.s.at_rest=true;q.s.stationary_seconds=3;q.tick();
+  need(q.r.reprepare_rc(q.s,q.t)&&q.r.rc_attempts_completed()==2,
+    "two completed tasks independently reprepare in the same service without reset commands");
+  q.s.attitude.z=1.84;q.warm();
+  need(q.r.attitude_core().phase()==a::Phase::RcWaitArm&&
+    std::abs(q.r.attitude_core().reference_z()-1.84)<1e-9,
+    "third readiness builds a new reference and never inherits either preceding task origin");
   need(q.arm_commands==0&&q.mode_commands==0,"full flight never emits automatic Arm or Offboard entry");
 }
 // Values in the selected Flight Test runtime profile. Unlike the historical
@@ -732,6 +858,10 @@ int main(int argc,char** argv){
     else if(std::string(argv[1])=="navigation")delayed_navigation_evidence_keeps_continuous_zero_commits();
     else if(std::string(argv[1])=="late_arm")late_complementary_arm_evidence_cannot_revive_expired_attempt();
     else if(std::string(argv[1])=="production_1p5m")production_no_vision_rc_1p5m_lifecycle_uses_vertical_only();
+    else if(std::string(argv[1])=="ground_reference"){
+      task_ground_reference_uses_fresh_disarmed_evidence();
+      ground_reference_resets_and_timestamps_need_a_new_window();
+    }
     else if(std::string(argv[1])=="lifecycle"){
       ended_fault_needs_new_safe_ground_cycle();cold_start_never_resumes_armed_or_unknown_flight();
       integrity_faults_stay_latched_after_safe_ground();
@@ -749,6 +879,7 @@ int main(int argc,char** argv){
   delayed_pre_ready_source_events_cannot_authorize();
   valid_path_without_automatic_commands();status_switch_reordering();unavailable_evidence_never_launches();
   arm_and_navigation_faults_latch();reference_is_disarmed_only();final_boundary_and_interface_reject_bypasses();
+  task_ground_reference_uses_fresh_disarmed_evidence();ground_reference_resets_and_timestamps_need_a_new_window();
   exits_and_faults_preserve_existing_policy();
   full_height_hold_land_and_safe_reset();
   ended_fault_needs_new_safe_ground_cycle();cold_start_never_resumes_armed_or_unknown_flight();
@@ -756,4 +887,5 @@ int main(int argc,char** argv){
   fault_after_disarm_preserves_and_resolves_only_committed_history();
   production_no_vision_rc_1p5m_lifecycle_uses_vertical_only();
   std::cout<<"RC_NAVIGATION_CONTRACT_PASS\n";
+  return 0;
 }

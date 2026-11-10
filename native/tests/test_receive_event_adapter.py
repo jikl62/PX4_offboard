@@ -31,6 +31,34 @@ struct Fixture {
     assert(node.runtime_->attitude_core().phase()==fc01::attitude::Phase::Safety);}
 };
 int main(){
+  {Fixture f;f.node.begin_cycle(steady());f.node.callbacks_done(steady());
+   f.node.sampling_pair_=true;
+   const auto callbacks=f.node.received_callbacks();const auto events=f.node.receive_events();
+   f.node.boundary_context();const auto queries=f.node.work_.graph_queries;
+   assert(queries>0);f.node.boundary_context();f.node.boundary_context();
+   assert(f.node.work_.graph_queries==queries&&f.node.pair_context_count_==3);
+   assert(f.node.received_callbacks()==callbacks&&f.node.receive_events()==events);
+   for(const auto& sample:f.node.pair_samples_){
+     assert(sample.cycle==f.node.cycle_id_&&sample.callbacks==callbacks&&sample.events==events);
+     assert(sample.graph_valid);
+   }
+   f.node.graph_event_->set();const auto unchanged=f.node.current_graph();
+   assert(!f.node.cycle_graph_invalidated_&&unchanged.traffic.status_publishers==1);
+   assert(f.node.work_.graph_queries==2*queries); // Unrelated discovery rechecks counts safely.
+   f.node.graph_count=[&](const std::string& topic,bool publishers){
+     return publishers&&topic=="/fmu/in/offboard_control_mode"?2U:1U;};
+   f.node.graph_event_->set();const auto conflict=f.node.current_graph();
+   assert(conflict.ownership.mode_publishers==2);
+   assert(!fc01::attitude::owns_setpoints("attitude_altitude",conflict.ownership));
+   f.node.graph_count=[&](const std::string&,bool){f.node.graph_event_->set();return 1U;};
+   f.node.graph_event_->set();const auto invalid=f.node.current_graph();
+   assert(f.node.cycle_graph_invalidated_&&invalid.traffic.status_publishers==0);
+   const auto failed_queries=f.node.work_.graph_queries;f.node.current_graph();
+   assert(f.node.work_.graph_queries==failed_queries); // No retry loop on graph churn.
+   f.node.graph_count={};
+   f.node.begin_cycle(steady());f.node.callbacks_done(steady());
+   const auto fresh=f.node.current_graph();assert(!f.node.cycle_graph_invalidated_);
+   assert(fresh.traffic.status_publishers==1&&f.node.work_.graph_queries==queries);}
   {Fixture f;Attitude good{};good.q={1,0,0,0};
    for(unsigned i=0;i<33;++i)f.node.latch_event(f.node.attitude_events_,good);
    assert(f.node.receive_event_overflow_);assert(f.node.snapshot(f.now).time_regressed);}

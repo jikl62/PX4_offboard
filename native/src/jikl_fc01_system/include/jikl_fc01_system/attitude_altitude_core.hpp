@@ -38,6 +38,9 @@ class Core {
     if(!failure.empty())fault(failure);else reason_="VISUAL_RECOVERY_"+reason;
   }
   unsigned rc_prestream_commits()const{return rc_start_.commits();}
+  bool rc_ground_reference_qualified()const{return rc_start_.ground_reference_qualified();}
+  unsigned rc_ground_reference_samples()const{return rc_start_.ground_reference_samples();}
+  double rc_ground_reference_seconds()const{return rc_start_.ground_reference_seconds();}
   bool rc_manual_arm_proven()const{return rc_start_.manual_arm_proven();}
   std::uint64_t rc_manual_armed_time()const{return rc_start_.manual_armed_time();}
   bool rc_arm_evidence_pending(const Feedback& s,double now)const{
@@ -523,6 +526,14 @@ class Core {
     }
   }
   void block(const std::string& reason){fault(reason);}
+  bool block_rc_preparation_timing(const std::string& reason,const Feedback& s){
+    if((phase_!=Phase::RcPrestream&&phase_!=Phase::RcWaitArm)||
+       !c_.rc_navigation_enabled||!rc_start_.no_arm_intent_observed()||
+       rc_joined_||flight_started_||restart_required_||fault_class_!=FaultClass::None||
+       authority_.takeover_latched||s.armed||s.offboard)return false;
+    fault(reason);rc_fault_recoverable_=true;return true;
+  }
+  void clear_rc_timing_recovery(){clear_rc_recovery();}
   void begin_safety_observation(){queued_vertical_suspect_=false;recovery_event_blocked_=false;}
   enum class SafetyEvent {Attitude,Vertical,Status,Failsafe,Authority,Battery,Land};
   // Scan queued payloads before planning output. A healthy observation cannot
@@ -1245,6 +1256,7 @@ class Core {
       reason=="DDS_SOURCE_CLOCK_UNSYNCHRONIZED_OR_STALE"||reason=="PX4_FAILSAFE"||
       reason=="BATTERY_NOT_READY"||reason=="ACTIVE_QUATERNION_RESET"||
       reason=="ACTIVE_VERTICAL_ESTIMATOR_RESET"||reason=="RC_ARMED_ESTIMATOR_RESET"||
+      reason=="RC_ARMED_GROUND_REFERENCE_NOT_STABLE"||
       reason=="UNEXPLAINED_Z_VZ_ESTIMATOR_JUMP"||reason=="VERTICAL_FEEDBACK_INPUT_INVALID"||
       reason=="VERTICAL_FEEDBACK_SAMPLE_GAP"||reason=="VERTICAL_VELOCITY_INCONSISTENT"||
       reason=="VERTICAL_POSITION_RATE_INCONSISTENT"||reason=="RC_QUEUED_SAFETY_CONDITION"||
@@ -1513,7 +1525,18 @@ class Core {
     Output out;last_status_stamp_=s.status_stamp;last_land_stamp_=s.land_stamp;
     const bool publish=rc_start_.step(c_,s,now,queued_reason.empty()?health(s):queued_reason);
     reason_=rc_start_.reason();
-    if(rc_start_.phase()==RcStartPhase::Blocked){fault(reason_,!rc_preparation_retry_reason(reason_));return out;}
+    if(rc_start_.phase()==RcStartPhase::Blocked){
+      if(reason_=="RC_ARMED_GROUND_REFERENCE_NOT_STABLE"){
+        const double height=rc_start_.z0()-s.z;
+        const std::uint32_t mask=(!s.landed?4U:0U)|
+          ((!std::isfinite(height)||std::abs(height)>c_.height_tolerance)?8U:0U)|
+          ((!std::isfinite(s.vz)||std::abs(s.vz)>c_.ground_vz_tolerance)?16U:0U);
+        armed_ground_fault_evidence_={true,mask,s.armed,s.offboard,s.landed,
+          rc_start_.z0(),s.z,s.vz,height,-s.vz,c_.height_tolerance,c_.ground_vz_tolerance,
+          s.status_stamp,s.land_stamp,s.local_stamp};
+      }
+      fault(reason_,!rc_preparation_retry_reason(reason_));return out;
+    }
     z_set_=rc_start_.anchor_valid();
     if(z_set_){
       z0_=rc_start_.z0();z_reset_=rc_start_.z_reset();vz_reset_=rc_start_.vz_reset();

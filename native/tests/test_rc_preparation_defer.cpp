@@ -47,7 +47,7 @@ struct Preparation {
     }
   }
   void ready(){
-    for(int i=0;i<40;++i)tick();
+    for(int i=0;i<50;++i)tick();
     need(r.attitude_core().phase()==a::Phase::RcWaitArm,"committed prestream must reach WaitArm");
   }
   f::Snapshot age_expired()const{
