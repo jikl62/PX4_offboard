@@ -207,32 +207,40 @@ class Runtime {
     // This bit describes the current plan, not evidence that a sink ran.
     last_attitude_output_active_=false;message_=reason;return true;
   }
+  // Read-only admission uses exactly the same gates as reprepare_rc(). This
+  // distinguishes task recovery from transport/command integrity blockers.
+  std::string rc_reprepare_block_reason(const Snapshot& s,double now)const{
+    if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled)return "RC_RECOVERY_DISABLED";
+    if(shutdown_latched_)return "RC_SHUTDOWN_IN_PROGRESS";
+    if(maintenance_)return "RC_MAINTENANCE_ACTIVE";
+    if(ground_)return "RC_GROUND_TEST_ACTIVE";
+    if(!std::isfinite(now)||now<0)return "RC_INVALID_HOST_TIME";
+    if(s.publication_fault_latched&&!rc_preparation_timing_fault_)return "RC_PUBLICATION_FAULT_LATCHED";
+    if(s.time_regressed)return "RC_TIME_REGRESSION_LATCHED";
+    if(!s.control_cycle_fresh)return "RC_CONTROL_CYCLE_NOT_FRESH";
+    if(last_attitude_output_active_||s.attitude_output_active||s.offboard_heartbeat_active)
+      return "RC_OUTPUT_STILL_ACTIVE";
+    if(!rc_restart_allowed(s))return "RC_CORE_RESTART_CONDITIONS_NOT_MET";
+    for(unsigned command:{176U,400U,21U}){
+      const auto& p=pending_[index(command)];
+      if(!p.requested)continue;
+      const bool newer_status=s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor});
+      const bool terminal=p.state_verified||(!p.ack_ambiguous&&p.rejected)||
+        (p.command400_kind==Command400Kind::None&&p.accepted&&newer_status);
+      if(!terminal&&!ended_rc_disarm_terminal(p,s))
+        return "RC_COMMAND_"+std::to_string(command)+"_OUTCOME_UNRESOLVED";
+    }
+    return {};
+  }
   bool reprepare_rc(const Snapshot& s,double now){
     // The end-of-cycle check includes reporting and final snapshot work.
     // An early healthy observation must not survive an eventual overrun.
     if(rc_preparation_timing_fault_&&!s.control_cycle_fresh)
       attitude_core_.clear_rc_timing_recovery();
-    if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled||
-       shutdown_latched_||maintenance_||ground_||!std::isfinite(now)||now<0||
-       (s.publication_fault_latched&&!rc_preparation_timing_fault_)||s.time_regressed||
-       !s.control_cycle_fresh||last_attitude_output_active_||
-       s.attitude_output_active||s.offboard_heartbeat_active||!rc_restart_allowed(s))return false;
+    if(!rc_reprepare_block_reason(s,now).empty())return false;
     // Rebuild only task state. Wire generations and ACK watermarks outlive
     // every RC attempt, including accepted/state-only Disarm transactions.
-    const auto ended_disarm_terminal=[&](const Pending& p){
-      return attitude_core_.rc_fault_recovery_ready()&&p.command400_kind==Command400Kind::Disarm&&
-        p.sent&&p.published&&!p.sink_denied&&s.arming_state_known&&
-        s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor})&&
-        s.land_stamp>std::max(p.land_at_wire,p.causal_floor);
-    };
-    for(const auto& p:pending_){
-      if(!p.requested)continue;
-      const bool newer_status=s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor});
-      const bool terminal=p.state_verified||(!p.ack_ambiguous&&p.rejected)||
-        (p.command400_kind==Command400Kind::None&&p.accepted&&newer_status);
-      if(!terminal&&!ended_disarm_terminal(p))return false; // Timeout alone is unresolved.
-    }
-    for(auto& p:pending_)if(p.requested&&!p.state_verified&&ended_disarm_terminal(p)){
+    for(auto& p:pending_)if(p.requested&&!p.state_verified&&ended_rc_disarm_terminal(p,s)){
       // The ended task's independent NEW ground/disarmed dwell settles the
       // physical outcome, without attributing a delayed 400 ACK to Disarm.
       p.state_verified=true;p.verified_status_stamp=s.status_stamp;p.verified_at=now;
@@ -759,6 +767,12 @@ class Runtime {
     return out;
   }
  private:
+  bool ended_rc_disarm_terminal(const Pending& p,const Snapshot& s)const{
+    return attitude_core_.rc_fault_recovery_ready()&&p.command400_kind==Command400Kind::Disarm&&
+      p.sent&&p.published&&!p.sink_denied&&s.arming_state_known&&
+      s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor})&&
+      s.land_stamp>std::max(p.land_at_wire,p.causal_floor);
+  }
   bool normal_offboard_candidate_scope(const Pending& p) const{
     return config_.profile=="attitude_altitude"&&config_.attitude.flight_actions_enabled&&
       !config_.attitude.bench_arm_only_enabled&&!ground_&&

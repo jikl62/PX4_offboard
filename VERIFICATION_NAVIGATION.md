@@ -1,4 +1,4 @@
-Current verification: [2026-11-03 takeoff and readiness audit](docs/TAKEOFF_AUDIT_20261103.md). The record below describes the original release and its environment at that time.
+Current delivery: [20261110 recovery diagnostic release](docs/FC01_RECOVERY_DIAGNOSTIC_V4_20261110.md), version `20261110.6`. `HOST_VERIFICATION.json` records the host checks for this package; target ARM64 evidence is generated only after native compilation on the Orange Pi. The record below describes the original release and its environment at that time.
 
 # RC navigation verification record
 

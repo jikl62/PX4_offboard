@@ -163,9 +163,16 @@ static void reset_invalid_and_continuous_estimates(){
     after.vz-=.005;after.z_deriv=after.vz;after.heading+=.01;
     assert(!f::local_receive_event(before,after,config));before=after;
   }
-  // Preserve a suspect sample for the existing vertical freeze/dwell logic.
+  // Preserve diagnostic disagreement samples and the return-to-agreement
+  // edge. Otherwise a 20Hz scan of alternating 40Hz samples sees only bad
+  // samples and incorrectly joins separate 25ms disagreement episodes.
   config.feedback_guard.enabled=true;config.feedback_guard.rate_tolerance_mps=.2;
   local_transition(config,[](auto& s){s.vz=.3;s.z_deriv=0.;});
+  before=Local{};before.z_deriv=.3;after=before;
+  after.timestamp+=25000;after.timestamp_sample+=25000;after.z_deriv=0.;
+  assert(f::local_receive_event(before,after,config));
+  before=after;after.timestamp+=25000;after.timestamp_sample+=25000;
+  assert(!f::local_receive_event(before,after,config));
   before=Local{};after=before;after.vz=.1;
   assert(!f::local_receive_event(before,after,config));
   config.feedback_guard.enabled=false;after.vz=.3;

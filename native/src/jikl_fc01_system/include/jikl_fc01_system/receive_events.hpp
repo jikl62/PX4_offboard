@@ -41,11 +41,14 @@ template<class M>bool local_receive_event(const M& a,const M& b,const attitude::
   if(key(a)!=key(b))return true;
   for(double value:{double(b.x),double(b.y),double(b.z),double(b.vx),double(b.vy),
       double(b.vz),double(b.z_deriv),double(b.heading)})if(!std::isfinite(value))return true;
-  // The existing consistency guard must see a disagreeing sample before a
-  // later agreeing sample can erase its freeze/dwell observation. This only
-  // stops receive draining; Core still decides whether the guard is active.
-  if(c.feedback_guard.enabled&&
-     std::abs(double(b.vz)-b.z_deriv)>c.feedback_guard.rate_tolerance_mps)return true;
+  // Preserve disagreement observations AND the return to agreement. Dropping
+  // that return would join separate episodes into a false continuous warning.
+  // This schedules diagnostic observations; it grants no output permission.
+  if(c.feedback_guard.enabled){
+    const bool before=std::abs(double(a.vz)-a.z_deriv)>c.feedback_guard.rate_tolerance_mps;
+    const bool after=std::abs(double(b.vz)-b.z_deriv)>c.feedback_guard.rate_tolerance_mps;
+    if(after||before!=after)return true;
+  }
   // The node's disarmed stationary dwell also consumes Vz. Preserve a
   // departure from (or return to) its existing rest band before another
   // callback can hide it. No ground reference is created here.

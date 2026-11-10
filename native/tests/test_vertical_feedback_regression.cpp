@@ -1,64 +1,59 @@
-// Compiles against both the archived baseline and this candidate. The same
-// behavioural assertion must fail on the baseline, then pass on the candidate.
+// Exercise diagnostic rate disagreement and retained hard faults through the
+// current Runtime. Synthetic feedback only; no ROS/PX4 or hardware outputs.
 #include "ramp_guard_test_support.hpp"
-#if __has_include("jikl_fc01_system/vertical_feedback_guard.hpp")
-#define HAS_VERTICAL_FEEDBACK_GUARD 1
-#endif
 static f::Config feedback_config(){
-  auto c=guard_config();
-#ifdef HAS_VERTICAL_FEEDBACK_GUARD
-  c.attitude.feedback_guard.enabled=true;
-#endif
-  return c;
+  auto c=guard_config();c.attitude.feedback_guard.enabled=true;return c;
 }
-static void sustained_contradiction(){
-  f::Runtime r(feedback_config());auto s=sample();double t=ready(r,s,true);
-  require_guard(r.request("INTERACTIVE",{},s,t).accepted,"interactive admission");
-  require_guard(r.request("TAKEOFF",{.5},s,t).accepted,"takeoff admitted");
-  f::Output o;
-  for(int i=0;i<100;++i){
-    r.request("PING",{},s,t);s.status_stamp+=50000;s.land_stamp+=50000;
-    s.attitude.local_stamp+=50000;
-#ifdef HAS_VERTICAL_FEEDBACK_GUARD
-    s.attitude.z_deriv=0;
-    s.attitude.vertical_sample_stamp=s.attitude.local_stamp;
-#endif
-    o=r.step(s,t+=.05);
-    if(o.attitude.command==a::Command::Arm){
-      r.ack({r.pending(400).baseline+1,400,0,1,191,false},t+.001);s.feedback.armed=true;
-    }
-    if(r.attitude_core().phase()==a::Phase::ThrustRamp)break;
+static void sustained_rate_difference_preserves_control_and_integral(){
+  GuardFlight q(.5,feedback_config());q.s.attitude.z_deriv=0;q.ground_ramp();
+  q.s.feedback.landed=false;q.s.at_rest=false;
+  for(int i=1;i<=50;++i){q.observe(i*.01,.2);q.advance();}
+  q.observe(.5,0);for(int i=0;i<55;++i)q.advance();
+  require_guard(q.r.attitude_core().phase()==a::Phase::HeightHold,"rate diagnostic starts in genuine height hold");
+  const double initial_integral=q.o.attitude.integral_thrust;
+  q.s.attitude.vz=-.3;q.s.attitude.z_deriv=0;
+  bool warning_observed=false;
+  for(int i=0;i<24;++i){
+    q.advance();const auto& e=q.r.attitude_core().vertical_feedback_evidence();
+    require_guard(e.healthy&&e.suspect&&e.reason.empty(),
+      "a sustained vz/z_deriv difference cannot create a hard fault");
+    warning_observed=warning_observed||e.rate_warning;
+    require_guard(q.r.attitude_core().phase()==a::Phase::HeightHold&&q.o.attitude.publish&&
+        q.o.attitude.vertical_closed_loop&&q.thrust()>0,
+      "diagnostic rate disagreement retains ordinary closed-loop publication");
   }
-  require_guard(r.attitude_core().phase()==a::Phase::ThrustRamp,"ramp reached");
-  // Apparent fast climb velocity, but no position change for 0.8 seconds.
-  // Below the old jump/envelope limits; baseline keeps accepting the data.
-  s.attitude.vz=-.4;
-  for(int i=0;i<16 && r.attitude_core().active();++i){
-    r.request("PING",{},s,t);s.status_stamp+=50000;s.land_stamp+=50000;
-    s.attitude.local_stamp+=50000;
-#ifdef HAS_VERTICAL_FEEDBACK_GUARD
-    s.attitude.vertical_sample_stamp=s.attitude.local_stamp;
-#endif
-    o=r.step(s,t+=.05);
-  }
-  require_guard(r.attitude_core().phase()==a::Phase::Safety,
-    "sustained contradictory vertical feedback must stop autonomous control");
-  require_guard(!o.attitude.publish,"fault must suppress publication, never publish a zero-thrust packet");
-  require_guard(!r.request("TAKEOFF",{.5},s,t).accepted,"no rearm from a feedback fault");
+  require_guard(warning_observed,"a sustained rate difference remains visible as a warning");
+  require_guard(q.o.attitude.integral_thrust<initial_integral-.005,
+    "rate disagreement alone cannot freeze normal integral adaptation");
+  q.s.attitude.vz=0;q.advance();const auto& recovered=q.r.attitude_core().vertical_feedback_evidence();
+  require_guard(recovered.healthy&&!recovered.suspect&&!recovered.rate_warning&&
+      recovered.disagreement_seconds==0&&recovered.disagreement_samples==0&&q.o.attitude.publish,
+    "a new agreeing sample clears diagnostics while control remains active");
 }
-#ifdef HAS_VERTICAL_FEEDBACK_GUARD
+static void position_contradiction_still_stops_control(){
+  GuardFlight q(.5,feedback_config());q.s.attitude.vz=q.s.attitude.z_deriv=-.4;
+  // Both rates agree, but their integrated displacement contradicts fixed z.
+  for(int i=0;i<16&&q.r.attitude_core().active();++i)q.advance();
+  require_guard(q.r.attitude_core().phase()==a::Phase::Safety&&
+      q.r.attitude_core().reason()=="VERTICAL_POSITION_RATE_INCONSISTENT",
+    "a genuine position/derivative contradiction must still stop autonomous control");
+  require_guard(!q.o.attitude.publish,"hard feedback faults suppress publication rather than sending zero thrust");
+  require_guard(!q.r.request("TAKEOFF",{.5},q.s,q.t).accepted,"hard feedback faults cannot admit another takeoff");
+}
 static void raw_samples_not_envelopes(){
-  GuardFlight q(.5,feedback_config());q.s.attitude.z_deriv=0;
-  q.s.attitude.vz=-.4;
+  GuardFlight q(.5,feedback_config());q.s.attitude.z_deriv=0;q.s.attitude.vz=-.4;
   for(int i=0;i<6;++i)q.advance();
-  const auto duration=q.r.attitude_core().vertical_feedback_evidence().disagreement_seconds;
+  const auto before=q.r.attitude_core().vertical_feedback_evidence();
   for(int i=0;i<6;++i){
     q.s.attitude.local_stamp+=50000; // new envelope, repeated raw estimate
     q.advance(.05,true,false);
-    require_guard(q.r.attitude_core().active(),"repeated raw estimate must not falsely complete a disagreement dwell");
+    require_guard(q.r.attitude_core().active()&&q.o.attitude.publish,
+      "repeated raw estimates cannot stop control for a diagnostic rate difference");
   }
-  require_guard(q.r.attitude_core().vertical_feedback_evidence().disagreement_seconds==duration,
-    "only strictly new raw samples supply disagreement duration");
+  const auto& after=q.r.attitude_core().vertical_feedback_evidence();
+  require_guard(after.disagreement_seconds==before.disagreement_seconds&&
+      after.disagreement_samples==before.disagreement_samples&&!after.rate_warning,
+    "new envelopes cannot manufacture raw disagreement duration, counts or warnings");
 }
 static void guarded_lifecycle(){
   GuardFlight q(.5,feedback_config());q.s.attitude.z_deriv=0;q.ground_ramp();
@@ -86,27 +81,24 @@ static void guarded_lifecycle(){
   require_guard(q.r.attitude_core().phase()!=a::Phase::Safety,"normal guarded lifecycle must not fault");
   require_guard(!q.r.attitude_core().active(),"normal guarded lifecycle must finish release");
 }
-static void bad_raw_clock_fails_closed(){
-  for(int k=0;k<2;++k){
+static void bad_raw_inputs_fail_closed(){
+  for(int k=0;k<4;++k){
     GuardFlight q(.5,feedback_config());q.s.attitude.z_deriv=0;q.advance();
     if(k==0)q.s.attitude.vertical_sample_stamp=0;
-    else --q.s.attitude.vertical_sample_stamp;
+    else if(k==1)--q.s.attitude.vertical_sample_stamp;
+    else if(k==2)q.s.attitude.vertical_sample_stamp+=600000;
+    else q.s.attitude.z_deriv=NAN;
     q.advance(.05,true,false);
-    require_guard(q.r.attitude_core().phase()==a::Phase::Safety&&!q.o.attitude.publish,
-      "missing/regressed raw clock must fail closed without envelope fallback");
+    const char* reason=k==0||k==3?"VERTICAL_FEEDBACK_INPUT_INVALID":
+      k==1?"VERTICAL_FEEDBACK_TIME_REGRESSION":"VERTICAL_FEEDBACK_SAMPLE_GAP";
+    require_guard(q.r.attitude_core().phase()==a::Phase::Safety&&!q.o.attitude.publish&&
+        q.r.attitude_core().reason()==reason,
+      "invalid, regressed and gapped raw feedback retains the specific hard fault");
   }
 }
-#endif
 int main(int argc,char** argv){
-#ifdef HAS_VERTICAL_FEEDBACK_GUARD
   if(argc>1&&std::string(argv[1])=="raw-clock"){raw_samples_not_envelopes();return 0;}
-#else
-  (void)argc;(void)argv;
-#endif
-  sustained_contradiction();
-#ifdef HAS_VERTICAL_FEEDBACK_GUARD
-  raw_samples_not_envelopes();
-  guarded_lifecycle();bad_raw_clock_fails_closed();
-#endif
+  sustained_rate_difference_preserves_control_and_integral();position_contradiction_still_stops_control();
+  raw_samples_not_envelopes();guarded_lifecycle();bad_raw_inputs_fail_closed();
   std::cout<<"VERTICAL_FEEDBACK_REGRESSION_PASS\n";
 }

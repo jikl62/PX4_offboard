@@ -739,13 +739,15 @@ static void production_no_vision_rc_1p5m_lifecycle_uses_vertical_only(){
 static void ended_fault_needs_new_safe_ground_cycle(){
   auto c=rc_config();c.attitude.feedback_guard.enabled=true;c.validate();Flight q(c);
   q.join();for(int i=0;i<16;++i)q.tick();
-  q.s.attitude.z_deriv=-.6;
+  // Position moves while its derivative remains zero. This is a real
+  // displacement inconsistency, independent of the diagnostic vz difference.
+  q.s.attitude.z_deriv=0;
   for(int i=0;i<16&&q.r.attitude_core().phase()!=a::Phase::Safety;++i){
     q.s.attitude.z-=.03;q.tick();
   }
   need(q.r.attitude_core().phase()==a::Phase::Safety&&
-    q.r.attitude_core().reason()=="VERTICAL_VELOCITY_INCONSISTENT",
-    "real vertical disagreement faults the active RC task");
+    q.r.attitude_core().reason()=="VERTICAL_POSITION_RATE_INCONSISTENT",
+    "inconsistent position displacement still faults the active RC task");
   const auto generation=q.r.pending(400).generation;
   const auto observe=[&]{
     q.r.begin_attitude_safety_observation();
@@ -761,9 +763,9 @@ static void ended_fault_needs_new_safe_ground_cycle(){
   q.s.feedback.landed=q.s.at_rest=true;q.s.stationary_seconds=3;
   q.s.attitude.rc_arm_switch=3;q.s.attitude.rc_mode_slot=1;
   observe();need(!q.r.reprepare_rc(q.s,q.t),"one healthy ground sample cannot clear the old fault");
-  q.s.attitude.z_deriv=.6;
-  for(int i=0;i<45;++i){observe();need(!q.r.reprepare_rc(q.s,q.t),"original disagreement still blocks recovery");}
-  q.s.attitude.z_deriv=0;q.s.attitude.kill=true;
+  for(int i=0;i<45;++i){q.s.attitude.z-=.015;observe();
+    need(!q.r.reprepare_rc(q.s,q.t),"continuing inconsistent position movement still blocks recovery");}
+  q.s.attitude.z=2;q.s.attitude.kill=true;
   for(int i=0;i<45;++i){observe();need(!q.r.reprepare_rc(q.s,q.t),"held Kill forbids a new cycle");}
   q.s.attitude.kill=false;
   for(int i=0;i<43;++i)observe();
@@ -781,7 +783,7 @@ static void ended_fault_needs_new_safe_ground_cycle(){
     if(invalid==1)changed.feedback.landed=false;
     if(invalid==2)changed.attitude.kill=true;
     if(invalid==3)changed.attitude.rc_switch_sample_stamp=1;
-    if(invalid==4)changed.attitude.z_deriv=.6;
+    if(invalid==4)changed.attitude.z_deriv=std::numeric_limits<double>::quiet_NaN();
     if(invalid==5)changed.attitude.rc_axes_safe=false;
     if(invalid==6)changed.attitude.rc_sticks_moving=true;
     if(invalid==7)changed.attitude.rc_arm_switch=1;
@@ -789,7 +791,7 @@ static void ended_fault_needs_new_safe_ground_cycle(){
     need(!q.r.reprepare_rc(changed,q.t),"current unsafe or old RC evidence cannot consume an earlier recovery dwell");
   }
   need(q.r.reprepare_rc(q.s,q.t),"ended measurement fault safely resets task state in the same process");
-  need(q.r.last_rc_attempt_reason()=="VERTICAL_VELOCITY_INCONSISTENT"&&q.r.rc_attempts_completed()==1,
+  need(q.r.last_rc_attempt_reason()=="VERTICAL_POSITION_RATE_INCONSISTENT"&&q.r.rc_attempts_completed()==1,
     "reprepare preserves historical reason and attempt sequence");
   need(q.r.pending(400).generation==generation,"safe reprepare preserves command wire history");
   q.warm();need(q.r.attitude_core().phase()==a::Phase::RcWaitArm,
@@ -800,6 +802,71 @@ static void ended_fault_needs_new_safe_ground_cycle(){
   q.s.feedback.armed=true;q.s.armed_time=20;q.s.latest_arming_reason=2;q.s.at_rest=false;q.tick();
   q.navigation();need(q.r.attitude_core().phase()==a::Phase::ArmedGround,
     "new manual arm and new Offboard evidence can join a subsequent task");
+}
+static void diagnostic_velocity_difference_allows_safe_ground_and_recovery(){
+  auto c=rc_config();c.attitude.feedback_guard.enabled=true;
+  c.attitude.feedback_guard.rate_tolerance_mps=.05;c.validate();
+  // The stationary position and its derivative agree. The small vz remains
+  // within the independent ground-speed envelope while exceeding the warning.
+  Flight ground(c);ground.s.attitude.vz=.09;ground.warm();
+  need(ground.r.attitude_core().rc_ground_reference_qualified()&&
+    ground.r.attitude_core().phase()==a::Phase::RcWaitArm&&
+    !ground.r.attitude_core().flight_started()&&!a::nonzero(ground.o.attitude.thrust),
+    "persistent diagnostic velocity difference cannot prevent safe ground qualification");
+  for(int invalid=0;invalid<10;++invalid){
+    Flight q(c);q.s.attitude.vz=.09;
+    if(invalid==0)q.s.attitude.z_valid=false;
+    if(invalid==1)q.s.attitude.vz_valid=false;
+    if(invalid==2)q.s.attitude.z=std::numeric_limits<double>::quiet_NaN();
+    if(invalid==3)q.s.attitude.z_deriv=std::numeric_limits<double>::quiet_NaN();
+    if(invalid==6)q.s.feedback.landed=false;
+    if(invalid==7)q.s.at_rest=false;
+    if(invalid==9)q.s.local_fresh=false;
+    for(int i=0;i<75;++i){
+      if(invalid==4)q.s.attitude.vertical_sample_stamp-=50000;
+      if(invalid==5)q.s.attitude.local_stamp-=50000;
+      if(invalid==8)q.s.attitude.z-=.01;
+      q.tick();
+      need(!q.r.attitude_core().rc_ground_reference_qualified()&&
+        q.r.attitude_core().phase()!=a::Phase::RcWaitArm&&
+        !q.r.attitude_core().flight_started()&&!a::nonzero(q.o.attitude.thrust),
+        "diagnostic rate difference cannot bypass position, input, sample or ground safety");
+    }
+  }
+  Flight recovery(c);recovery.join();for(int i=0;i<16;++i)recovery.tick();
+  recovery.s.attitude.vz=.09;
+  for(int i=0;i<16&&recovery.r.attitude_core().phase()!=a::Phase::Safety;++i){
+    recovery.s.attitude.z-=.02;recovery.tick();
+  }
+  need(recovery.r.attitude_core().phase()==a::Phase::Safety&&
+    recovery.r.attitude_core().reason()=="VERTICAL_POSITION_RATE_INCONSISTENT",
+    "the recovery fixture starts from a retained production position fault");
+  recovery.s.attitude.z=2;recovery.s.feedback.armed=false;recovery.s.feedback.offboard=false;
+  recovery.s.nav_state=15;recovery.s.feedback.landed=recovery.s.at_rest=true;
+  recovery.s.attitude.rc_arm_switch=3;recovery.s.attitude.rc_mode_slot=1;
+  ++recovery.s.attitude.operator_switch_generation;
+  for(int i=0;i<60;++i){
+    recovery.r.begin_attitude_safety_observation();
+    const auto fb=recovery.r.publication_context(recovery.s,recovery.t,true,true).feedback;
+    recovery.r.observe_attitude_safety_event(fb,a::Core::SafetyEvent::Vertical,recovery.t);
+    recovery.r.observe_attitude_safety_event(fb,a::Core::SafetyEvent::Authority,recovery.t);
+    recovery.tick();
+    need(!recovery.o.attitude.publish&&!a::nonzero(recovery.o.attitude.thrust),
+      "diagnostic disagreement during ended-fault recovery never authorizes an output");
+    if(i<20)need(!recovery.r.rc_restart_allowed(recovery.s),
+      "a rate warning cannot bypass the complete new ground dwell");
+  }
+  need(recovery.r.rc_restart_allowed(recovery.s)&&recovery.r.reprepare_rc(recovery.s,recovery.t),
+    "persistent velocity diagnostics cannot invalidate an otherwise complete safe recovery window");
+  need(recovery.r.last_rc_attempt_reason()=="VERTICAL_POSITION_RATE_INCONSISTENT"&&
+    recovery.r.rc_attempts_completed()==1,
+    "safe diagnostic-only recovery preserves the original position fault history");
+  recovery.warm();
+  need(recovery.r.attitude_core().rc_ground_reference_qualified()&&
+    recovery.r.attitude_core().phase()==a::Phase::RcWaitArm&&
+    !recovery.r.attitude_core().flight_started()&&recovery.arm_commands==0&&recovery.mode_commands==0,
+    "recovery with a persistent velocity warning returns only to fresh manual-arm readiness");
+  std::cout<<"RC_DIAGNOSTIC_VELOCITY_GROUND_RECOVERY_PASS\n";
 }
 static void cold_start_never_resumes_armed_or_unknown_flight(){
   for(int condition=0;condition<4;++condition){Flight q;
@@ -861,6 +928,7 @@ int main(int argc,char** argv){
     else if(std::string(argv[1])=="ground_reference"){
       task_ground_reference_uses_fresh_disarmed_evidence();
       ground_reference_resets_and_timestamps_need_a_new_window();
+      diagnostic_velocity_difference_allows_safe_ground_and_recovery();
     }
     else if(std::string(argv[1])=="lifecycle"){
       ended_fault_needs_new_safe_ground_cycle();cold_start_never_resumes_armed_or_unknown_flight();
@@ -880,6 +948,7 @@ int main(int argc,char** argv){
   valid_path_without_automatic_commands();status_switch_reordering();unavailable_evidence_never_launches();
   arm_and_navigation_faults_latch();reference_is_disarmed_only();final_boundary_and_interface_reject_bypasses();
   task_ground_reference_uses_fresh_disarmed_evidence();ground_reference_resets_and_timestamps_need_a_new_window();
+  diagnostic_velocity_difference_allows_safe_ground_and_recovery();
   exits_and_faults_preserve_existing_policy();
   full_height_hold_land_and_safe_reset();
   ended_fault_needs_new_safe_ground_cycle();cold_start_never_resumes_armed_or_unknown_flight();

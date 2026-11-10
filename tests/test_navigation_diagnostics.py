@@ -24,6 +24,180 @@ STATE = dict(kind='state', phase='HEIGHT_HOLD', reason='last native feedback',
 
 
 class NavigationDiagnosticsTests(unittest.TestCase):
+    def test_recovery_explains_expired_sample_and_independent_fresh_rest_blocker(self):
+        state=dict(STATE,phase='SAFETY',reason='OPERATOR_TAKEOVER_LATCHED',local_fresh=False,
+                   land_fresh=True,landed=True,at_rest=False,armed=False,
+                   rc_recovery_block_reason='RC_RECOVERY_QUEUED_EVENT_DDS_SOURCE_CLOCK_UNSYNCHRONIZED_OR_STALE',
+                   source_timing={'local':dict(source_reason='ENVELOPE_EXPIRED',
+                       envelope_age_s=.535409,sample_age_s=.536524,timeout_s=.5,rmw_to_callback_s=.49733)})
+        row=dict(status='FAULT',reason=state['reason'],supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=False)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('位置/垂直速度消息过期（消息年龄 0.537 秒，阈值 0.500 秒）',view)
+        self.assertIn('位置/垂直速度中间件接收至回调间隔 0.497 秒',view)
+        self.assertIn('飞控尚未确认静止（at_rest=false）',view)
+        self.assertNotIn('飞控仍解锁',view)
+        self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_recovery_never_revives_historical_detector_or_takeover_observations(self):
+        state=dict(STATE,phase='SAFETY',land_fresh=False,status_fresh=False,
+                   landed=False,at_rest=False,armed=True,px4_user_takeover_reported=True)
+        row=dict(status='FAULT',supervisor_pid=10,updated_unix=1000,state=state,
+                 state_age_seconds=.1,feedback_current=False)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertNotIn('恢复条件快照',view)
+        state.update(land_fresh=True,status_fresh=True)
+        row['ipc_error']=dict(kind='clean_eof')
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertNotIn('恢复条件快照',view)
+
+    def test_recovery_reports_actual_takeover_with_fresh_status(self):
+        state=dict(STATE,phase='SAFETY',px4_user_takeover_reported=True,
+                   source_timing={'local':dict(source_reason='VALID',timeout_s=.5)})
+        row=dict(status='FAULT',supervisor_pid=10,updated_unix=1000,state=state,
+                 state_age_seconds=.1,feedback_current=True)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('飞控仍报告人工接管有效',view)
+        self.assertNotIn('消息过期',view)
+
+    def test_recovery_details_tolerate_missing_and_nonfinite_timing(self):
+        state=dict(STATE,phase='SAFETY',source_timing={
+            'local':dict(source_reason='SAMPLE_EXPIRED',sample_age_s=float('nan'),
+                         timeout_s='unknown',rmw_to_callback_s=float('inf')),
+            'attitude':None})
+        row=dict(status='FAULT',supervisor_pid=10,updated_unix=1000,state=state,
+                 state_age_seconds=.1,feedback_current=True)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('恢复条件快照（0.1 秒前）：位置/垂直速度消息过期',view)
+        self.assertNotIn('nan',view)
+        self.assertNotIn('inf',view)
+
+    def test_recovery_observations_explicitly_retain_their_snapshot_age(self):
+        state=dict(STATE,phase='SAFETY',land_fresh=True,at_rest=False,
+                   px4_user_takeover_reported=True,source_timing={
+                       name:dict(source_reason='VALID',envelope_age_s=2.4,timeout_s=2.5)
+                       for name in ('status','land')})
+        row=dict(status='FAULT',supervisor_pid=10,updated_unix=1000,state=state,
+                 state_age_seconds=.1,feedback_current=True)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1001)
+        self.assertIn('恢复条件快照（1.1 秒前）',view)
+        self.assertNotIn('恢复条件观测',view)
+        self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_current_safety_remains_fault_when_aircraft_feedback_is_stale(self):
+        state=dict(STATE,phase='SAFETY',reason='HEIGHT_OR_SPEED_ENVELOPE_EXCEEDED',local_fresh=False,
+                   rc_recovery_block_reason='WAIT_NEW_LOCAL_SAMPLE',flight_actions_enabled=True,
+                   takeoff_enabled=True,rc_navigation_enabled=True)
+        row=dict(status='WAITING',reason='等待飞控新鲜状态和本地位置',supervisor_pid=10,
+                 updated_unix=1000,state=state,state_age_seconds=.05,feedback_current=False)
+        for displayed in (row,navigation_service.describe_row(row)):
+            with self.subTest(described=displayed is not row):
+                view=navigation.render_status(displayed,dict(ActiveState='active',MainPID='10'),now=1000)
+                self.assertIn('[FAULT]',view)
+                self.assertIn('故障锁存（当前控制器）：HEIGHT_OR_SPEED_ENVELOPE_EXCEEDED',view)
+                self.assertIn('飞控反馈：已过期或无效；当前飞机状态未知',view)
+                self.assertIn('恢复观察（飞控反馈过期）',view)
+                self.assertNotIn('实际模式：',view)
+                self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_old_safety_is_history_after_disconnect_snapshot_expiry_or_process_change(self):
+        row=dict(status='FAULT',reason='previous fault',supervisor_pid=10,updated_unix=1000,
+                 state=dict(STATE,phase='SAFETY',reason='previous fault'),state_age_seconds=.1,
+                 feedback_current=True,controller_pid=2057,state_controller_pid=2057,boot_id='current')
+        info=dict(ActiveState='active',MainPID='10',boot_id='current')
+        cases=[(dict(ipc_error=dict(kind='clean_eof')),{},1000),
+               (dict(state_age_seconds=4),{},1000),(dict(controller_pid=2058),{},1000),
+               ({},{},1020),({},dict(MainPID='11'),1000),({},dict(boot_id='next'),1000),
+               ({},dict(ActiveState='inactive'),1000)]
+        for changes,service_changes,now in cases:
+            with self.subTest(changes=changes,service_changes=service_changes,now=now):
+                view=navigation.render_status(dict(row,**changes),dict(info,**service_changes),now=now)
+                self.assertNotIn('[FAULT]',view)
+                self.assertIn('最近故障锁存（历史）：previous fault',view)
+                self.assertNotIn('故障锁存（当前控制器）',view)
+                self.assertNotIn('实际模式：',view)
+                self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_expired_ready_feedback_never_prompts_manual_arming(self):
+        state=dict(STATE,phase='RC_READY_WAIT_ARM',armed=False,local_fresh=False,
+                   flight_actions_enabled=True,takeoff_enabled=True,rc_navigation_enabled=True)
+        row=dict(status='READY_WAIT_ARM',reason='previous ready',supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=False)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('[STALE]',view)
+        self.assertNotIn('已准备：CH5 手动解锁',view)
+        self.assertNotIn('实际模式：',view)
+
+    def test_preparation_wait_names_ground_blocker_with_healthy_rc_and_data(self):
+        state=dict(STATE,phase='IDLE',reason='RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND',
+                   armed=False,nav_state=15,landed=True,at_rest=False,rc_arm_switch=3,
+                   rc_mode_slot=4,rc_navigation_mode_slot=1,rc_link_ready=True,rc_switches_ready=True,
+                   rc_axes_safe=True,rc_sticks_moving=False,preflight=True,battery_fresh=True,
+                   stationary_seconds=0.,required_ground_seconds=2.,ground_vz_ned=.002,ground_vz_tolerance=.1)
+        row=dict(status='WAITING',reason=state['reason'],supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=True)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('准备等待：未确认静止；持续静止不足（0.00/2.00 秒）',view)
+        self.assertNotIn('遥控源/链路未就绪',view)
+        self.assertNotIn('飞控预检未通过',view)
+        self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_preparation_diagnostics_explain_stale_sources_and_preflight_without_admission(self):
+        state=dict(STATE,phase='IDLE',reason='BATTERY_PREFLIGHT_REQUIRED',preflight=False,
+                   local_fresh=False,source_clock_valid=False,battery_fresh=False)
+        row=dict(status='WAITING',reason=state['reason'],supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=False)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('位置/垂直速度反馈过期',view)
+        self.assertIn('源消息时间戳过期或无效',view)
+        self.assertIn('飞控预检未通过',view)
+        self.assertIn('电池反馈未就绪',view)
+        self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_recovery_view_preserves_first_fault_and_prioritizes_actual_runtime_block(self):
+        state=dict(STATE,phase='SAFETY',armed=False,rc_first_fault_reason='OPERATOR_TAKEOVER_LATCHED',
+                   rc_latest_fault_reason='DDS_STATUS_LAND_OR_FAILSAFE_STALE',
+                   rc_recovery_block_reason='GROUND_WINDOW_READY',rc_reprepare_block_reason='COMMAND_400_UNRESOLVED',
+                   rc_recovery_elapsed_s=1.25,rc_recovery_required_s=2.,rc_recovery_status_samples=8,
+                   rc_recovery_land_samples=4,rc_recovery_local_samples=12,rc_recovery_ready=True,
+                   rc_recovery_event_blocked=False,rc_fault_recoverable=True)
+        row=dict(status='FAULT',reason='first fault',supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=True)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('[FAULT]',view)
+        self.assertIn('首次故障 OPERATOR_TAKEOVER_LATCHED',view)
+        self.assertIn('最新故障 DDS_STATUS_LAND_OR_FAILSAFE_STALE',view)
+        self.assertIn('恢复等待原因：COMMAND_400_UNRESOLVED',view)
+        self.assertIn('1.25/2.00 秒',view)
+        self.assertIn('status / land / local：8 / 4 / 12',view)
+        self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_recovery_view_uses_core_block_when_runtime_has_none_and_labels_stale_history(self):
+        state=dict(STATE,phase='SAFETY',rc_recovery_block_reason='WAIT_NEW_LAND_SAMPLE',
+                   rc_reprepare_block_reason='',rc_recovery_elapsed_s=float('nan'),rc_recovery_required_s=2.)
+        row=dict(status='FAULT',reason='old fault',supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=20,feedback_current=False)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('最近恢复观察（历史）',view)
+        self.assertIn('恢复等待原因：WAIT_NEW_LAND_SAMPLE',view)
+        self.assertIn('恢复地面窗口：未知',view)
+        self.assertNotIn('nan',view)
+        self.assertNotIn('已准备：CH5 手动解锁',view)
+
+    def test_recovery_view_shows_specific_core_wait_and_omits_normal_ready_without_fault(self):
+        state=dict(STATE,phase='SAFETY',rc_recovery_block_reason='WAIT_GROUND_DWELL',
+                   rc_reprepare_block_reason='RC_CORE_RESTART_CONDITIONS_NOT_MET')
+        row=dict(status='FAULT',reason='fault',supervisor_pid=10,updated_unix=1000,
+                 state=state,state_age_seconds=.1,feedback_current=True)
+        view=navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertIn('恢复等待原因：WAIT_GROUND_DWELL',view)
+        self.assertNotIn('RC_CORE_RESTART_CONDITIONS_NOT_MET',view)
+        state.update(phase='RC_READY_WAIT_ARM',rc_first_fault_reason='',rc_latest_fault_reason='',
+                     rc_recovery_window_active=False)
+        view=navigation.render_status(dict(row,status='READY_WAIT_ARM'),dict(ActiveState='active',MainPID='10'),now=1000)
+        self.assertNotIn('恢复观察',view)
+        self.assertNotIn('恢复等待原因',view)
+
     def test_closed_native_action_gate_labels_preparation_as_diagnostic(self):
         for closed in ('flight_actions_enabled', 'takeoff_enabled'):
             with self.subTest(closed=closed):

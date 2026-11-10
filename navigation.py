@@ -10,9 +10,9 @@ import pwd
 import subprocess
 import sys
 import time
-from datetime import datetime
-import zipfile
-from navigation_status import manual_rc_guidance_allowed, preparation_diagnostic_reason
+from navigation_status import (controller_state_current, manual_rc_guidance_allowed,
+                               preparation_diagnostic_reason, preparation_wait_details,
+                               recovery_wait_details)
 
 SERVICE='fc01-navigation.service'
 ENTRY=Path(__file__).resolve().parent
@@ -49,10 +49,15 @@ def render_status(row,info,now=None):
     updated=row.get('updated_unix')
     if age is not None and type(updated) in (int,float) and math.isfinite(updated):
         age+=max(0,now-updated)
-    current=(status not in ('STARTING','STALE','STOPPED') and row.get('feedback_current') is True
+    native_current=(status not in ('STARTING','STALE','STOPPED','STOPPING')
+                    and controller_state_current(row,age=age))
+    locked_fault=native_current and state.get('phase')=='SAFETY'
+    current=(native_current and row.get('feedback_current') is True
              and age is not None and age<=3 and state.get('status_fresh') is True
              and state.get('local_fresh') is True)
-    if not current and row.get('feedback_current') is True and status not in ('STARTING','STALE','STOPPED','STOPPING','WAITING'):
+    if locked_fault:
+        status='FAULT';reason=state.get('reason') or reason
+    elif not current and status not in ('STARTING','STALE','STOPPED','STOPPING','WAITING'):
         reason=f'飞机反馈已过期或无效；最近状态 {status}；{reason}'
         status='STALE'
     if current and status=='HEIGHT_HOLD' and state.get('liftoff_confirmed') is False:
@@ -68,6 +73,11 @@ def render_status(row,info,now=None):
     height_reason=state.get('height_unavailable_reason') or '未收到有效 relative_height_m'
     height_text=f'{height:.2f} m' if type(height) in (float,int) and math.isfinite(height) else f'未知（{height_reason}）'
     lines=[f'FC01 导航控制  [{status}]',f'原因：{reason}']
+    if state.get('phase')=='SAFETY':
+        label='故障锁存（当前控制器）' if locked_fault else '最近故障锁存（历史）'
+        lines.append(f"{label}：{state.get('reason','未知')}")
+        if locked_fault and not current:
+            lines.append('飞控反馈：已过期或无效；当前飞机状态未知，不据此解锁或进入导航。')
     if current:
         lines.append(f'实际模式：{mode}  armed={armed_text}  相对高度：{height_text}  反馈年龄：{age:.1f} 秒')
     elif state:
@@ -83,6 +93,33 @@ def render_status(row,info,now=None):
             lines.append(f"内部阶段：{state.get('phase','未知')}；原生原因：{state.get('reason','未知')}")
         lines.append(f"起飞平台：{state.get('rc_target_height','未知')} m  心跳预发送提交：{state.get('rc_prestream_commits',0)}  日志丢弃：{state.get('native_log_dropped',0)}")
         lines.append(f"导航档位：期望 {state.get('rc_navigation_mode_slot','未知')} / 观测 {state.get('rc_mode_slot','未知')}")
+        if native_current:
+            preparation=preparation_wait_details(state)
+            if preparation:
+                lines.append('准备等待：'+'；'.join(preparation))
+        if (state.get('rc_first_fault_reason') or state.get('rc_latest_fault_reason') or
+            state.get('phase')=='SAFETY' or status=='FAULT' or state.get('rc_recovery_window_active') is True):
+            label=('恢复观察' if current else '恢复观察（飞控反馈过期）') if native_current else '最近恢复观察（历史）'
+            first=state.get('rc_first_fault_reason') or '未记录'
+            latest=state.get('rc_latest_fault_reason') or '未记录'
+            lines.append(f'{label}：首次故障 {first}；最新故障 {latest}')
+            runtime_block=state.get('rc_reprepare_block_reason')
+            core_block=state.get('rc_recovery_block_reason')
+            blocked=runtime_block
+            if not blocked or blocked=='RC_CORE_RESTART_CONDITIONS_NOT_MET':blocked=core_block or blocked
+            blocked=blocked or '未报告阻塞'
+            lines.append(f'恢复等待原因：{blocked}')
+            if native_current:
+                observations=recovery_wait_details(state)
+                if observations:
+                    snapshot_age=f'（{age:.1f} 秒前）' if age is not None else ''
+                    lines.append('恢复条件快照'+snapshot_age+'：'+'；'.join(observations))
+            elapsed=state.get('rc_recovery_elapsed_s');required=state.get('rc_recovery_required_s')
+            valid_seconds=lambda value: type(value) in (int,float) and math.isfinite(value) and value>=0
+            window=(f'{elapsed:.2f}/{required:.2f} 秒' if valid_seconds(elapsed) and valid_seconds(required) else '未知')
+            counts=' / '.join(str(state.get('rc_recovery_'+name+'_samples','未知')) for name in ('status','land','local'))
+            lines.append(f'恢复地面窗口：{window}；新样本 status / land / local：{counts}')
+            lines.append(f"恢复证据就绪={gate('rc_recovery_ready')}  本轮不安全事件={gate('rc_recovery_event_blocked')}  故障允许恢复={gate('rc_fault_recoverable')}")
         if state.get('takeoff_stage'):
             liftoff='本轮曾通过离地反馈确认，实际离地需现场核对' if state.get('liftoff_confirmed') is True else '离地未确认'
             navigation='导航已允许' if state.get('navigation_allowed') is True else '导航未允许'
@@ -127,21 +164,8 @@ def monitor(home):
         return  # Vanished view output never becomes a service stop request.
 
 def report(home):
-    folder=home/'FC01_navigation'
-    folder.mkdir(mode=0o700,exist_ok=True)
-    target=home/('FC01_navigation_report_'+datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'.zip')
-    with zipfile.ZipFile(target,'x',zipfile.ZIP_DEFLATED) as z:
-        for name in ('status.json','runtime.yaml','standby.log','standby.log.1','standby.log.2',
-                     'controller.log','controller.log.1','controller.log.2','install.log','install.log.1','install.log.2','probe.json','install-runtime.yaml'):
-            p=folder/name
-            if p.is_file() and not p.is_symlink():z.write(p,name)
-        for name,argv in (('service.txt',['/usr/bin/systemctl','status',SERVICE,'--no-pager']),
-                           ('journal.txt',['/usr/bin/journalctl','-u',SERVICE,'-n','100','--no-pager'])):
-            try:
-                p=subprocess.run(argv,capture_output=True,text=True,timeout=10)
-                z.writestr(name,(p.stdout+p.stderr)[-262144:])
-            except (OSError,subprocess.SubprocessError) as exc:z.writestr(name,str(exc))
-    target.chmod(0o600);print('自动报告：'+str(target));return target
+    from navigation_report import collect_report
+    return collect_report(home,entry=ENTRY,runner=subprocess.run)
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description='FC01 手动解锁、遥控触发导航定高')

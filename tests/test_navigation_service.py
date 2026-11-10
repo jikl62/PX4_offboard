@@ -34,6 +34,12 @@ class NavigationServiceTests(unittest.TestCase):
                 binary.write_bytes(markers+b'FC01_SAFE_LIFECYCLE_V1_20261109')
                 with self.assertRaisesRegex(m.ControlError, '生命周期'):
                     m.check_controller(root)
+                binary.write_bytes(markers+b'FC01_VERTICAL_DIAGNOSTIC_V1_20261110')
+                with self.assertRaisesRegex(m.ControlError, '生命周期'):
+                    m.check_controller(root)
+                binary.write_bytes(markers+b'FC01_RECOVERY_DIAGNOSTIC_V1_20261110')
+                with self.assertRaisesRegex(m.ControlError, '生命周期'):
+                    m.check_controller(root)
                 binary.write_bytes(markers+m.LIFECYCLE_MARKER)
                 self.assertEqual(m.check_controller(root), binary)
 
@@ -155,7 +161,8 @@ class NavigationServiceTests(unittest.TestCase):
 
     def test_native_fault_overrides_connected_and_ready_is_distinct(self):
         m=self.api()
-        common=dict(status='CONNECTED',reason='transport okay',state=dict(phase='SAFETY',reason='VERTICAL_VELOCITY_INCONSISTENT'))
+        common=dict(status='CONNECTED',reason='transport okay',state_age_seconds=.1,feedback_current=True,
+                    state=dict(phase='SAFETY',reason='VERTICAL_VELOCITY_INCONSISTENT'))
         row=m.describe_row(common)
         self.assertEqual(row['status'],'FAULT')
         self.assertIn('VERTICAL_VELOCITY_INCONSISTENT',row['reason'])
@@ -163,6 +170,44 @@ class NavigationServiceTests(unittest.TestCase):
         self.assertEqual(m.describe_row(common)['status'],'READY_WAIT_ARM')
         common['state']=dict(phase='HEIGHT_HOLD',reason='HEIGHT_HOLD')
         self.assertEqual(m.describe_row(common)['status'],'HEIGHT_HOLD')
+
+    def test_current_native_fault_survives_expired_aircraft_feedback(self):
+        m=self.api()
+        state=dict(phase='SAFETY',reason='HEIGHT_OR_SPEED_ENVELOPE_EXCEEDED',
+                   status_fresh=True,local_fresh=False,controller_pid=2057)
+        row=dict(status='WAITING',reason='等待飞控新鲜状态和本地位置',feedback_current=False,
+                 state=state,state_age_seconds=.05,controller_pid=2057,state_controller_pid=2057)
+        described=m.describe_row(row)
+        self.assertEqual(described['status'],'FAULT')
+        self.assertEqual(described['reason'],state['reason'])
+        self.assertIs(described['controller_state_current'],True)
+        self.assertIs(described['fault_latched'],True)
+        self.assertIs(described['feedback_current'],False)
+        self.assertEqual(row['status'],'WAITING')
+
+    def test_old_or_disconnected_safety_cannot_override_transport_status(self):
+        m=self.api()
+        base=dict(status='WAITING',reason='native connection unavailable',feedback_current=False,
+                  state=dict(phase='SAFETY',reason='previous fault',controller_pid=2057),
+                  state_age_seconds=.05,controller_pid=2057,state_controller_pid=2057)
+        cases=[dict(state_age_seconds=3.01),dict(state_age_seconds=None),dict(state_age_seconds=float('nan')),
+               dict(ipc_error=dict(kind='clean_eof')),dict(controller_returncode=0),
+               dict(retry_in_seconds=5),dict(controller_pid=2058),dict(state_controller_pid=2056),
+               dict(status='STOPPING'),dict(status='STOPPED')]
+        for changes in cases:
+            with self.subTest(changes=changes):
+                row=dict(base,**changes)
+                described=m.describe_row(row)
+                self.assertEqual(described['status'],row['status'])
+                self.assertEqual(described['reason'],row['reason'])
+                self.assertIs(described['controller_state_current'],False)
+                self.assertIs(described['fault_latched'],False)
+
+    def test_unknown_aircraft_feedback_cannot_become_ready(self):
+        m=self.api()
+        row=dict(status='CONNECTED',reason='IPC connected',state_age_seconds=.1,
+                 state=dict(phase='RC_READY_WAIT_ARM',reason='RC_READY_WAIT_CH5_MANUAL_ARM'))
+        self.assertEqual(m.describe_row(row)['status'],'CONNECTED')
 
     def test_service_runs_private_native_with_status_only_and_graceful_recovery(self):
         m=self.api();import standby
@@ -206,7 +251,9 @@ class NavigationServiceTests(unittest.TestCase):
         self.assertTrue((ROOT/'navigation.py').exists(),'navigation management/view missing')
         m=importlib.import_module('navigation')
         row=dict(status='READY_WAIT_ARM',reason='ready',supervisor_pid=10,updated_unix=1000,
-                 state=dict(phase='RC_READY_WAIT_ARM',armed=False,nav_state=15,relative_height_m=.01))
+                 state_age_seconds=.1,feedback_current=True,
+                 state=dict(phase='RC_READY_WAIT_ARM',armed=False,nav_state=15,relative_height_m=.01,
+                            status_fresh=True,local_fresh=True))
         self.assertIn('STARTING',m.render_status(row,{'ActiveState':'active','MainPID':'11'},now=1001))
         self.assertIn('STALE',m.render_status(row,{'ActiveState':'active','MainPID':'10'},now=1020))
         self.assertIn('READY_WAIT_ARM',m.render_status(row,{'ActiveState':'active','MainPID':'10'},now=1001))

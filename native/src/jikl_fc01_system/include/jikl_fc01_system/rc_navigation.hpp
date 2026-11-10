@@ -241,8 +241,7 @@ class RcNavigationStart {
        !s.local_fresh||!s.status_fresh||!s.land_fresh||!std::isfinite(s.z)||!std::isfinite(s.vz)||
        std::abs(s.vz)>c.ground_vz_tolerance||!s.local_stamp||!s.status_stamp||!s.land_stamp||
        !s.rc_switch_sample_stamp||
-       (c.feedback_guard.enabled&&(!s.vertical_sample_stamp||!std::isfinite(s.z_deriv)||
-         std::abs(s.vz-s.z_deriv)>c.feedback_guard.rate_tolerance_mps))){
+       (c.feedback_guard.enabled&&(!s.vertical_sample_stamp||!std::isfinite(s.z_deriv)))){
       clear_ground_reference();return false;
     }
     const bool discontinuity=ground_since_>=0&&(
@@ -264,7 +263,7 @@ class RcNavigationStart {
       ground_guard_.emplace(c.feedback_guard);
     }
     const auto& vertical=ground_guard_->observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c.local_timeout);
-    if(c.feedback_guard.enabled&&(!vertical.healthy||vertical.suspect)){
+    if(c.feedback_guard.enabled&&!vertical.healthy){
       clear_ground_reference();stream_first_=stream_last_=-1;commits_=0;ready_source_floor_=0;return false;
     }
     if(s.local_stamp>ground_local_)++ground_samples_;

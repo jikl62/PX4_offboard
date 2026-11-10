@@ -28,14 +28,18 @@ inline const char* receive_pass_stop_name(ReceivePassStop value){
 //
 // Callbacks increment the total callback count, and increment the event count
 // when a safety-relevant observation must reach Runtime::step before another
-// sample can overwrite it. This scheduler does not interpret measurements,
-// alter timeouts, or grant control authority. A stopped schedule stays stopped
-// until begin() starts the next control cycle.
+// sample can overwrite it. An output-silent Safety observer may keep collecting
+// bounded passes while the adapter retains every discrete payload for its
+// recovery scan. This scheduler does not interpret measurements, alter
+// timeouts, or grant control authority. A stopped schedule stays stopped until
+// begin() starts the next control cycle.
 class ReceivePassSchedule {
  public:
   static constexpr std::size_t max_passes=10;
-  void begin(double now,double budget,std::uint64_t callbacks,std::uint64_t events){
+  void begin(double now,double budget,std::uint64_t callbacks,std::uint64_t events,
+      bool stop_on_events=true){
     started_=observed_=now;budget_=budget;callbacks_=callbacks;events_=events;passes_=0;
+    stop_on_events_=stop_on_events;
     reason_=ReceivePassStop::Running;
     if(!std::isfinite(now)||now<0)reason_=ReceivePassStop::InvalidClock;
     else if(!std::isfinite(budget)||budget<=0)reason_=ReceivePassStop::InvalidBudget;
@@ -45,13 +49,13 @@ class ReceivePassSchedule {
     if(!std::isfinite(now)||now<observed_)return stop(ReceivePassStop::InvalidClock);
     observed_=now;
     if(callbacks<callbacks_||events<events_)return stop(ReceivePassStop::InvalidCounter);
-    if(events!=events_)return stop(ReceivePassStop::Event);
+    if(stop_on_events_&&events!=events_)return stop(ReceivePassStop::Event);
     if(passes_){
       if(callbacks==callbacks_)return stop(ReceivePassStop::Idle);
       if(now-started_>=budget_)return stop(ReceivePassStop::Budget);
       if(passes_>=max_passes)return stop(ReceivePassStop::PassLimit);
     }
-    callbacks_=callbacks;++passes_;return true;
+    callbacks_=callbacks;events_=events;++passes_;return true;
   }
   std::size_t pass_count()const{return passes_;}
   ReceivePassStop reason()const{return reason_;}
@@ -61,6 +65,7 @@ class ReceivePassSchedule {
   bool stop(ReceivePassStop reason){reason_=reason;return false;}
   double started_{},observed_{},budget_{};
   std::uint64_t callbacks_{},events_{};
+  bool stop_on_events_{true};
   std::size_t passes_{};
   ReceivePassStop reason_{ReceivePassStop::InvalidClock};
 };

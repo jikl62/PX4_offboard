@@ -147,7 +147,7 @@ class SystemNode final:public rclcpp::Node {
       csv_<<"steady_s,phase,nav_state,armed,landed,xy_valid,z_valid,vxy_valid,vz_valid,heading_good,local_age_s,x_ned,y_ned,z_ned,vx_ned,vy_ned,vz_ned,ax_ned,ay_ned,az_ned,relative_height_m,reason,aa_healthy,aa_yaw_reference,aa_thrust_z,aa_height_target,aa_velocity_target,aa_saturated,aa_slew_limited,aa_z_deriv_ned,aa_feedback_checked,aa_feedback_suspect,aa_feedback_rate_error_mps,aa_feedback_position_rate_error_mps,aa_feedback_disagreement_s,aa_feedback_reason,aa_vertical_closed_loop,aa_takeoff_thrust_limited,aa_p_thrust,aa_i_thrust,aa_raw_thrust,aa_thrust_ceiling\n";
     }
     std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)
-      <<",\"controller_build\":\"FC01_REFERENCE_PUBLICATION_V1_20261110\""
+      <<",\"controller_build\":\"FC01_RECOVERY_DIAGNOSTIC_V4_20261110\""
       <<",\"lifecycle_policy\":\"FC01_SAFE_LIFECYCLE_V1_20261109\""
       <<",\"safety_event_policy\":\"R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108\""
       <<",\"runtime_mode\":"<<f::quote(config.runtime_mode.empty()?"unspecified":config.runtime_mode)
@@ -177,6 +177,14 @@ class SystemNode final:public rclcpp::Node {
   std::uint64_t received_callbacks()const{return received_callbacks_;}
   std::uint64_t receive_events()const{return receive_events_;}
   double receive_budget_seconds()const{return loop_period().count()/10.;}
+  bool stop_receive_on_events()const{
+    // A stopped task still retains every payload for the same-cycle recovery
+    // veto. Extra bounded passes let its cached DDS samples catch up instead
+    // of repeatedly stopping on an ended flight's reference or invalid XY.
+    return config_.profile!="attitude_altitude"||
+      runtime_->attitude_core().phase()!=f::attitude::Phase::Safety||
+      last_attitude_output_.publish;
+  }
   void receive_pass_done(){++work_.receive_passes;}
   void receive_stopped(const f::ReceivePassSchedule& schedule){receive_stop_reason_=schedule.stop_reason();}
   void callbacks_done(double now){
@@ -199,7 +207,6 @@ class SystemNode final:public rclcpp::Node {
     publication_audit_.begin(now);
     const std::string phase_before=runtime_->phase_name();
     auto s=snapshot(now);
-    observe_pending_safety(s,now);
     bool resting=s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed&&s.at_rest;
     if(config_.profile=="attitude_altitude"){
       resting=resting&&s.local_fresh&&local_.z_valid&&local_.v_z_valid&&std::isfinite(local_.z)&&std::isfinite(local_.vz)&&std::abs(local_.vz)<=config_.attitude.ground_vz_tolerance;
@@ -208,6 +215,10 @@ class SystemNode final:public rclcpp::Node {
     }
     if(resting){if(rest_since_<0)rest_since_=now;s.stationary_seconds=now-rest_since_;}
     else {rest_since_=-1;s.stationary_seconds=0;}
+    // Queued events must use the same current ground dwell as step(). A
+    // default-zero snapshot here would reset recovery even on healthy events.
+    // Their individual unsafe payloads still veto recovery during the scan.
+    observe_pending_safety(s,now);
     if(config_.profile!="attitude_altitude"){
       if(resting&&s.local_fresh&&local_.z_valid&&!velocity_reference_set_&&s.stationary_seconds>=2){
         velocity_reference_z_=local_.z;velocity_reference_set_=true;
@@ -360,7 +371,11 @@ class SystemNode final:public rclcpp::Node {
     }
     if(config_.profile=="attitude_altitude"&&previous_heartbeat_committed&&
        !last_attitude_output_.publish){
-      const auto& fb=s.attitude;
+      // The adapter stores status/land facts in Snapshot, then Runtime folds
+      // them into attitude feedback. Raw s.attitude leaves those fields at
+      // defaults and can falsely report a disarmed mode departure on this edge.
+      // Reuse this tick's snapshot; this conversion performs no graph query.
+      const auto fb=runtime_->publication_context(s,now,server_->connected(),true).feedback;
       const auto att=f::attitude::attitude_diagnostics(fb.q,previous_attitude_output.q);
       // PREVIOUS committed target vs CURRENT observed pose. Never claim that
       // a locally committed ROS publish was received/applied by PX4.
@@ -494,12 +509,37 @@ class SystemNode final:public rclcpp::Node {
     if(stopping_)return;
     stopping_=true;stop_since_=now;runtime_->begin_shutdown(s,now);
   }
+  double source_timeout(f::SourceSlot slot)const{
+    switch(slot){
+      case f::SourceSlot::Status:return config_.attitude.status_timeout;
+      case f::SourceSlot::Land:return config_.attitude.land_timeout;
+      case f::SourceSlot::Local:return config_.attitude.local_timeout;
+      case f::SourceSlot::Attitude:return config_.attitude.attitude_timeout;
+      case f::SourceSlot::Flags:return config_.attitude.flags_timeout;
+      case f::SourceSlot::Battery:return 1.;
+      case f::SourceSlot::Count:break;
+    }
+    return 0;
+  }
   void record_receipt(f::SourceSlot slot,std::uint64_t envelope,std::uint64_t sample,
       bool sampled,double received,const rclcpp::MessageInfo& info){
     ++received_callbacks_;++source_callbacks_[std::size_t(slot)];++source_cycle_callbacks_[std::size_t(slot)];
     receipt_timing_[std::size_t(slot)]=f::observe_source_receipt(envelope,sample,sampled,
       timestamp(),received,info.get_rmw_message_info().received_timestamp);
     const auto host=receipt_timing_[std::size_t(slot)].host_stamp;
+    // A newer healthy callback must not erase an unsafe timing observation
+    // while stopped Safety drains queued samples. Preserve the first cause
+    // through the same acknowledgement boundary as discrete payload events.
+    if(receive_timing_block_source_==f::SourceSlot::Count){
+      const auto timeout=source_timeout(slot);
+      const auto source_reason=f::source_time_reason(envelope,sample,sampled,host,timeout);
+      const auto receipt_reason=f::receipt_time_reason(received,steady(),timeout);
+      if(source_reason!=f::SourceTimeReason::Valid||receipt_reason!=f::ReceiptTimeReason::Valid){
+        receive_timing_block_source_=slot;
+        receive_timing_block_reason_=source_reason!=f::SourceTimeReason::Valid?
+          f::source_time_reason_name(source_reason):f::receipt_time_reason_name(receipt_reason);
+      }
+    }
     if(!envelope||(sampled&&(!sample||sample>envelope))||
        (envelope>host&&envelope-host>f::source_clock_skew_budget_us))++receive_events_;
   }
@@ -546,6 +586,10 @@ class SystemNode final:public rclcpp::Node {
       sample.status_fresh=base.status_fresh&&(value.arming_state==Status::ARMING_STATE_ARMED||
         value.arming_state==Status::ARMING_STATE_DISARMED);sample.armed=value.arming_state==Status::ARMING_STATE_ARMED;
       sample.offboard=value.nav_state==Status::NAVIGATION_STATE_OFFBOARD;sample.failsafe=value.failsafe;
+      sample.auto_land_selected=value.nav_state==Status::NAVIGATION_STATE_AUTO_LAND;
+      sample.stabilized_selected=value.nav_state==Status::NAVIGATION_STATE_STAB;
+      sample.stabilized_selectable=(value.can_set_nav_states_mask&(1U<<Status::NAVIGATION_STATE_STAB))!=0;
+      sample.exclusive=base.exclusive&&value.system_id==1&&value.component_id==1;
       sample.kill=base.kill||value.nav_state==Status::NAVIGATION_STATE_TERMINATION;
       sample.operator_takeover=value.failsafe_and_user_took_over;
       sample.calibration=value.calibration_enabled||value.rc_calibration_in_progress;
@@ -574,6 +618,12 @@ class SystemNode final:public rclcpp::Node {
       sample.rc_aux_switches_safe=value.rc_aux_switches_safe;sample.rc_throttle=value.rc_throttle;
       sample.rc_switch_sample_stamp=value.switch_sample_stamp;sample.operator_switch_generation=value.switch_generation;
       observe(sample,Event::Authority);});
+    // Scan payloads first: one may enter Safety this cycle. The timing veto
+    // also applies then, even when the newest continuous snapshot is healthy.
+    if(receive_timing_block_source_!=f::SourceSlot::Count&&
+       runtime_->attitude_core().phase()==f::attitude::Phase::Safety){
+      auto sample=base;sample.source_clock_valid=false;observe(sample,Event::Status);
+    }
   }
   void latch_event_for_slot(f::SourceSlot slot,const Status& value){
     if(slot==f::SourceSlot::Status)latch_event(status_events_,value);
@@ -594,6 +644,7 @@ class SystemNode final:public rclcpp::Node {
     battery_events_.acknowledge_all();flags_events_.acknowledge_all();
     local_events_.acknowledge_all();attitude_events_.acknowledge_all();
     authority_events_.acknowledge_all();
+    receive_timing_block_source_=f::SourceSlot::Count;receive_timing_block_reason_="";
   }
   template<class T,class Event>void receive_event(const T& msg,T& destination,f::Stamp& stamp,
       f::SourceSlot slot,const rclcpp::MessageInfo& info,Event event){
@@ -837,6 +888,8 @@ class SystemNode final:public rclcpp::Node {
        <<",\"vertical_feedback_checked\":"<<boolean(e.checked)
        <<",\"vertical_feedback_healthy\":"<<boolean(e.healthy)
        <<",\"vertical_feedback_suspect\":"<<boolean(e.suspect)
+       <<",\"vertical_feedback_velocity_policy\":\"diagnostic_only\""
+       <<",\"vertical_feedback_rate_warning\":"<<boolean(e.rate_warning)
        <<",\"vertical_feedback_rate_error_mps\":"<<number(e.rate_error_mps,e.checked)
        <<",\"vertical_feedback_position_rate_error_mps\":"<<number(e.position_rate_error_mps,e.position_window_checked)
        <<",\"vertical_feedback_disagreement_s\":"<<number(e.disagreement_seconds,e.checked)
@@ -865,7 +918,7 @@ class SystemNode final:public rclcpp::Node {
     const auto& ag=core.armed_ground_fault_evidence();
     std::cout<<"{\"kind\":\"phase_event\",\"monotonic_s\":"<<number(now)
       <<",\"phase_before\":"<<f::quote(before)<<",\"phase_after\":"<<f::quote(runtime_->phase_name())
-      <<",\"reason\":"<<f::quote(core.reason())<<progress_fields()<<reference_fields(s)<<vertical_feedback_fields()<<vertical_control_fields(planned,true)<<",\"ownership\":"<<f::quote(core.recovery_responsibility(fb))
+      <<",\"reason\":"<<f::quote(core.reason())<<progress_fields()<<rc_recovery_fields(s,now)<<reference_fields(s)<<vertical_feedback_fields()<<vertical_control_fields(planned,true)<<",\"ownership\":"<<f::quote(core.recovery_responsibility(fb))
       <<",\"armed\":"<<boolean(s.feedback.armed)<<",\"nav_state\":"<<s.nav_state
       <<",\"status_stamp\":"<<s.status_stamp<<",\"land_stamp\":"<<s.land_stamp
       <<",\"local_stamp\":"<<s.attitude.local_stamp<<",\"landed\":"<<boolean(s.feedback.landed)
@@ -920,6 +973,28 @@ class SystemNode final:public rclcpp::Node {
       <<",\"command400_local_commit\":"<<boolean(p.published)<<",\"command400_wire_stamp\":"<<p.wire_stamp
       <<",\"command400_ack_result\":"<<p.result
       <<",\"px4_receipt_proven\":false}"<<std::endl;
+  }
+  std::string rc_recovery_fields(const f::Snapshot& s,double now)const{
+    const auto& core=runtime_->attitude_core();const auto d=core.rc_recovery_diagnostics();
+    std::ostringstream out;
+    out<<",\"rc_first_fault_reason\":"<<f::quote(d.first_fault_reason)
+      <<",\"rc_latest_fault_reason\":"<<f::quote(d.latest_fault_reason)
+      <<",\"rc_fault_recoverable\":"<<boolean(d.recoverable)
+      <<",\"rc_restart_required\":"<<boolean(core.restart_required())
+      <<",\"rc_recovery_ready\":"<<boolean(d.ready)
+      <<",\"rc_recovery_event_blocked\":"<<boolean(d.event_blocked)
+      <<",\"rc_recovery_window_active\":"<<boolean(d.window_active)
+      <<",\"rc_recovery_elapsed_s\":"<<number(d.elapsed_s)
+      <<",\"rc_recovery_required_s\":"<<number(d.required_s)
+      <<",\"rc_recovery_status_samples\":"<<d.status_samples
+      <<",\"rc_recovery_land_samples\":"<<d.land_samples
+      <<",\"rc_recovery_local_samples\":"<<d.local_samples
+      <<",\"rc_recovery_status_stamp\":"<<d.status_stamp
+      <<",\"rc_recovery_land_stamp\":"<<d.land_stamp
+      <<",\"rc_recovery_local_stamp\":"<<d.local_stamp
+      <<",\"rc_recovery_block_reason\":"<<f::quote(d.block_reason)
+      <<",\"rc_reprepare_block_reason\":"<<f::quote(runtime_->rc_reprepare_block_reason(s,now));
+    return out.str();
   }
   std::string progress_fields()const{
     const auto& core=runtime_->attitude_core();const auto& e=core.liftoff_evidence();
@@ -992,6 +1067,9 @@ class SystemNode final:public rclcpp::Node {
       <<",\"receive_policy\":\"BOUNDED_SINGLE_THREAD_PASSES_V1\",\"receive_budget_s\":"<<number(receive_budget_seconds())
       <<",\"receive_stop_reason\":"<<f::quote(receive_stop_reason_)
       <<",\"receive_callbacks_total\":"<<received_callbacks_<<",\"receive_events_total\":"<<receive_events_
+      <<",\"receive_timing_block_source\":"<<f::quote(receive_timing_block_source_==f::SourceSlot::Count?
+        "":f::source_slot_name(receive_timing_block_source_))
+      <<",\"receive_timing_block_reason\":"<<f::quote(receive_timing_block_reason_)
       <<",\"host_clock_event_count\":"<<clock_event_count_
       <<",\"host_clock_last_event\":"<<f::quote(f::host_clock_change_name(last_clock_event_.change))
       <<",\"host_clock_last_event_us\":"<<last_clock_event_stamp_
@@ -1102,7 +1180,7 @@ class SystemNode final:public rclcpp::Node {
       <<",\"visual_state_age_s\":"<<number(now-s.attitude.visual_input.state.received_at,s.attitude.visual_input.state.received_at>=0)
       <<",\"visual_command_age_s\":"<<number(now-s.attitude.visual_input.command.received_at,s.attitude.visual_input.command.received_at>=0)
       <<",\"rc_target_height\":"<<number(config_.attitude.rc_target_height)
-      <<progress_fields()<<reference_fields(s)<<feedback_timing_fields(s,now)
+      <<progress_fields()<<rc_recovery_fields(s,now)<<reference_fields(s)<<feedback_timing_fields(s,now)
       <<",\"rc_navigation_mode_slot\":"<<config_.attitude.rc_navigation_mode_slot
       <<",\"rc_prestream_commits\":"<<runtime_->attitude_core().rc_prestream_commits()
       <<",\"rc_manual_arm_proven\":"<<boolean(runtime_->attitude_core().rc_manual_arm_proven())
@@ -1182,6 +1260,9 @@ class SystemNode final:public rclcpp::Node {
       <<",\"rc_switch_clock_valid\":"<<boolean(s.attitude.rc_switch_clock_valid)
       <<",\"estimate_valid\":"<<boolean(s.feedback.fresh&&s.feedback.valid&&s.feedback.heading_ok&&!s.dead_reckoning)
       <<",\"arming_state_known\":"<<boolean(s.arming_state_known)<<",\"arming_state_raw\":"<<int(status_.arming_state)
+      <<",\"local_payload_z_valid\":"<<boolean(local_.z_valid)
+      <<",\"local_payload_vz_valid\":"<<boolean(local_.v_z_valid)
+      <<",\"px4_user_takeover_reported\":"<<boolean(status_.failsafe_and_user_took_over)
       <<",\"xy_valid\":"<<boolean(s.local_fresh&&local_.xy_valid)<<",\"z_valid\":"<<boolean(s.local_fresh&&local_.z_valid)<<",\"vxy_valid\":"<<boolean(s.local_fresh&&local_.v_xy_valid)<<",\"vz_valid\":"<<boolean(s.local_fresh&&local_.v_z_valid)
       <<",\"heading_good\":"<<boolean(s.local_fresh&&local_.heading_good_for_control)<<",\"dead_reckoning\":"<<boolean(s.dead_reckoning)<<",\"preflight\":"<<boolean(s.status_fresh&&s.feedback.preflight)
       <<",\"manual_signal\":"<<boolean(s.manual_fresh&&!s.manual_lost)<<",\"battery_connected\":"<<boolean(s.battery_fresh&&s.battery_connected)<<",\"voltage_v\":"<<number(battery_.voltage_v,s.battery_fresh&&s.battery_connected)
@@ -1225,6 +1306,8 @@ class SystemNode final:public rclcpp::Node {
   std::array<bool,std::size_t(f::SourceSlot::Count)> receipt_accepted_{};
   std::array<std::uint64_t,std::size_t(f::SourceSlot::Count)> source_callbacks_{},source_accepted_{},source_cycle_callbacks_{};
   std::uint64_t received_callbacks_{},receive_events_{};
+  f::SourceSlot receive_timing_block_source_{f::SourceSlot::Count};
+  const char* receive_timing_block_reason_{""};
   f::DiscreteEventLatch<Status> status_events_;
   f::DiscreteEventLatch<Land> land_events_;
   f::DiscreteEventLatch<Battery> battery_events_;
@@ -1262,8 +1345,9 @@ int main(int argc,char** argv){
     if(supervisor_lost)stop_requested=1;
     auto node=std::make_shared<SystemNode>();
     // One executor/thread; complete ready passes may catch up within a small
-    // cooperative budget. A discrete event ends extra passes before tick(),
-    // preserving event visibility instead of overwriting it with a later sample.
+    // cooperative budget. Discrete events end extra passes while a task can
+    // publish. An output-silent Safety task retains every event and scans it
+    // after bounded catch-up, so an unsafe payload still vetoes recovery.
     rclcpp::executors::SingleThreadedExecutor executor;executor.add_node(node);
     while(rclcpp::ok()){
       if(!supervisor_lost&&getppid()!=supervisor_pid){
@@ -1274,7 +1358,8 @@ int main(int argc,char** argv){
       const double start=steady();
       node->begin_cycle(start);
       f::ReceivePassSchedule receive;
-      receive.begin(start,node->receive_budget_seconds(),node->received_callbacks(),node->receive_events());
+      receive.begin(start,node->receive_budget_seconds(),node->received_callbacks(),node->receive_events(),
+        node->stop_receive_on_events());
       while(receive.next_pass(steady(),node->received_callbacks(),node->receive_events())){
         executor.spin_some();node->receive_pass_done();
       }

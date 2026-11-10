@@ -12,6 +12,9 @@ import adapter_compile_check as fixture
 HARNESS = r'''
 #include "adapter_under_test.cpp"
 #include "authority_test_support.hpp"
+#define main rc_adapter_fixture_main
+#include "test_rc_navigation.cpp"
+#undef main
 #include <cassert>
 using Event=fc01::attitude::Core::SafetyEvent;
 struct Fixture {
@@ -30,7 +33,135 @@ struct Fixture {
   void blocked(){auto out=run();assert(!out.attitude.publish);assert(out.attitude.command==fc01::attitude::Command::None);
     assert(node.runtime_->attitude_core().phase()==fc01::attitude::Phase::Safety);}
 };
+// Keep the actual node's callback predicate, retained event scan, Runtime and
+// final publication sinks in this regression. Source samples arrive at 40Hz,
+// twice per 20Hz control scan; no ROS/DDS or flight hardware is involved.
+struct FeedbackFixture {
+  SystemNode node;fc01::Config c;fc01::Snapshot s;double now{};
+  Local current{};double z{};unsigned queued_good{},queued_bad{},targets{},heartbeats{};
+  FeedbackFixture(){
+    Flight flight(production_no_vision_rc_config());flight.join();
+    for(unsigned i=0;i<25&&flight.r.attitude_core().phase()!=fc01::attitude::Phase::ThrustRamp;++i)flight.tick();
+    assert(flight.r.attitude_core().phase()==fc01::attitude::Phase::ThrustRamp);
+    for(unsigned i=0;i<84;++i)flight.tick();
+    // Establish early height feedback with a coherent position/derivative
+    // history. A pending detector does not bypass the feedback protections.
+    for(unsigned i=1;i<=20;++i){
+      flight.s.attitude.z=2.-.01*i;flight.s.attitude.vz=flight.s.attitude.z_deriv=-.2;flight.tick();
+    }
+    flight.s.attitude.vz=flight.s.attitude.z_deriv=0;flight.tick();
+    assert(flight.o.attitude.vertical_closed_loop&&flight.o.attitude.publish);
+    c=flight.c;s=flight.s;now=flight.t;node.config_=c;
+    node.runtime_=std::make_unique<fc01::Runtime>(std::move(flight.r));
+    current.timestamp=s.attitude.local_stamp;current.timestamp_sample=s.attitude.vertical_sample_stamp;
+    current.z=float(s.attitude.z);current.z_valid=current.v_z_valid=true;z=current.z;node.local_=current;
+  }
+  void receive(double vz,double derivative,bool integrate=true){
+    const auto previous=current;current.timestamp+=25000;current.timestamp_sample+=25000;
+    current.vz=float(vz);current.z_deriv=float(derivative);
+    if(integrate)z+=(double(previous.z_deriv)+current.z_deriv)*.5*.025;
+    current.z=float(z);
+    const auto old=node.local_;
+    node.receive_sampled(current,node.local_,node.local_stamp_,node.local_sample_,
+      fc01::SourceSlot::Local,rclcpp::MessageInfo{});
+    if(fc01::local_receive_event(old,current,node.config_.attitude)||
+       node.runtime_->attitude_core().local_requires_control_step(
+         current.timestamp_sample,current.z,current.vz,current.z_deriv)){
+      node.latch_event(node.local_events_,current);++node.receive_events_;
+      if(std::abs(vz-derivative)<=c.attitude.feedback_guard.rate_tolerance_mps)++queued_good;
+      else ++queued_bad;
+    }
+  }
+  fc01::Output scan(bool expect_output=true){
+    now+=.05;s.status_stamp+=50000;s.land_stamp+=50000;
+    s.attitude.rc_switch_sample_stamp+=50000;s.attitude.source_host_stamp=s.status_stamp;
+    s.attitude.local_stamp=current.timestamp;s.attitude.vertical_sample_stamp=current.timestamp_sample;
+    s.attitude.z=current.z;s.attitude.vz=current.vz;s.attitude.z_deriv=current.z_deriv;
+    node.observe_pending_safety(s,now);auto out=node.runtime_->step(s,now);
+    if(expect_output){
+      assert(out.attitude.publish&&node.runtime_->attitude_core().phase()!=fc01::attitude::Phase::Safety);
+      const auto decision=fc01::attitude::publish_attitude_at_boundary<Mode,AttitudeTarget>(
+        node.runtime_->publication_context(s,now,true,true),out.attitude,s.status_stamp,
+        [&](const auto&){++targets;},[&](const auto&){++heartbeats;});
+      assert(decision.allowed);node.runtime_->confirm_rc_output(true,now);
+    }else{
+      assert(!out.attitude.publish&&node.runtime_->attitude_core().phase()==fc01::attitude::Phase::Safety);
+    }
+    node.end_latched_events();return out;
+  }
+};
+static void alternating_rate_samples_keep_separate_diagnostic_episodes(){
+  FeedbackFixture f;
+  for(unsigned i=0;i<20;++i){
+    f.receive(0,0);f.receive(0,.3);f.scan();
+    const auto& e=f.node.runtime_->attitude_core().vertical_feedback_evidence();
+    assert(e.healthy&&e.suspect&&!e.rate_warning&&e.reason.empty());
+    assert(e.disagreement_samples==1&&e.disagreement_seconds==0);
+  }
+  assert(f.queued_good>=19&&f.queued_bad==20&&f.targets==20&&f.heartbeats==20);
+  f.receive(0,0);f.receive(0,0);f.scan();
+  const auto& e=f.node.runtime_->attitude_core().vertical_feedback_evidence();
+  assert(e.healthy&&!e.suspect&&!e.rate_warning&&e.disagreement_samples==0&&e.disagreement_seconds==0);
+}
+static void persistent_rate_difference_warns_without_cutting_publication(){
+  FeedbackFixture f;
+  for(unsigned i=0;i<20;++i){f.receive(0,.3);f.receive(0,.3);f.scan();}
+  const auto& e=f.node.runtime_->attitude_core().vertical_feedback_evidence();
+  assert(e.healthy&&e.suspect&&e.rate_warning&&e.reason.empty());
+  assert(e.disagreement_seconds>=.9&&e.disagreement_samples==40);
+  assert(f.targets==20&&f.heartbeats==20);
+}
+static void rate_diagnostics_do_not_freeze_vertical_integration(){
+  FeedbackFixture f;
+  f.receive(0,0);f.receive(0,0);const auto before=f.scan();
+  assert(before.attitude.integral_thrust>0);
+  for(unsigned i=0;i<15;++i){
+    f.receive(-.4,0);f.receive(-.4,0);const auto out=f.scan();
+    assert(out.attitude.integral_thrust<before.attitude.integral_thrust);
+  }
+  assert(f.node.runtime_->attitude_core().vertical_feedback_evidence().rate_warning);
+}
+static void rate_diagnostics_preserve_fatal_feedback_checks(){
+  for(unsigned failure=0;failure<4;++failure){
+    FeedbackFixture f;f.receive(0,0);f.receive(0,0);f.scan();
+    Local bad=f.current;bad.timestamp+=25000;bad.timestamp_sample+=25000;
+    if(failure==0)bad.z_deriv=std::numeric_limits<float>::quiet_NaN();
+    if(failure==1)bad.timestamp_sample=f.current.timestamp_sample-1;
+    if(failure==2)++bad.z_reset_counter;
+    if(failure==3)bad.timestamp_sample=f.current.timestamp_sample+600000;
+    f.node.local_events_.push(bad);
+    f.node.local_events_.push(f.current); // later healthy data cannot erase the event
+    f.scan(false);
+    const auto& why=f.node.runtime_->attitude_core().reason();
+    assert(why==(failure==0?"NONFINITE_VERTICAL_TELEMETRY":
+      failure==1?"VERTICAL_FEEDBACK_TIME_REGRESSION":failure==2?
+      "ACTIVE_VERTICAL_ESTIMATOR_RESET":"VERTICAL_FEEDBACK_SAMPLE_GAP"));
+  }
+  FeedbackFixture f;
+  // Establish coherent position windows, then change position by .03m per
+  // control tick with zero derivative. The independent residual must fail.
+  for(unsigned i=0;i<10;++i){f.receive(0,0);f.receive(0,0);f.scan();}
+  bool blocked=false;
+  for(unsigned i=0;i<12&&!blocked;++i){
+    f.z+=.015;f.receive(0,0,false);f.z+=.015;f.receive(0,0,false);
+    // Use the real preflight scan before deciding whether output is allowed.
+    f.now+=.05;f.s.status_stamp+=50000;f.s.land_stamp+=50000;
+    f.s.attitude.rc_switch_sample_stamp+=50000;f.s.attitude.source_host_stamp=f.s.status_stamp;
+    f.s.attitude.local_stamp=f.current.timestamp;f.s.attitude.vertical_sample_stamp=f.current.timestamp_sample;
+    f.s.attitude.z=f.current.z;f.s.attitude.vz=f.s.attitude.z_deriv=0;
+    f.node.observe_pending_safety(f.s,f.now);const auto out=f.node.runtime_->step(f.s,f.now);
+    blocked=f.node.runtime_->attitude_core().phase()==fc01::attitude::Phase::Safety;
+    if(blocked)assert(!out.attitude.publish&&f.node.runtime_->attitude_core().reason()=="VERTICAL_POSITION_RATE_INCONSISTENT");
+    else assert(out.attitude.publish);
+    f.node.end_latched_events();
+  }
+  assert(blocked);
+}
 int main(){
+  alternating_rate_samples_keep_separate_diagnostic_episodes();
+  persistent_rate_difference_warns_without_cutting_publication();
+  rate_diagnostics_do_not_freeze_vertical_integration();
+  rate_diagnostics_preserve_fatal_feedback_checks();
   {Fixture f;f.node.begin_cycle(steady());f.node.callbacks_done(steady());
    f.node.sampling_pair_=true;
    const auto callbacks=f.node.received_callbacks();const auto events=f.node.receive_events();

@@ -310,7 +310,12 @@ class StatusWriter(threading.Thread):
 
 
 class LogPump(threading.Thread):
-    """Bounded reads, including output without newlines; no growing line buffer."""
+    """Preserve native records across pipe reads, with bounded buffering.
+
+    Pipe reads are unrelated to JSON record boundaries. Logging each 4096-byte
+    read inserted timestamps inside state records and could glue startup onto
+    an older partial record. Oversized/no-newline output is still drained.
+    """
     def __init__(self, stream, log):
         super().__init__(daemon=True)
         self.stream, self.log = stream, log
@@ -318,12 +323,28 @@ class LogPump(threading.Thread):
         self.start()
 
     def run(self):
+        pending = b''
+        limits = [handler.maxBytes//2 for handler in self.log.handlers
+                  if getattr(handler, 'maxBytes', 0) > 0]
+        record_limit = max(1024, min([65536, *limits]))
         try:
             while True:
                 chunk = os.read(self.stream.fileno(), 4096)
                 if not chunk:
+                    if pending:
+                        self.log.info('%s', pending.decode('utf8', errors='replace'))
                     return
-                self.log.info('%s', chunk.decode('utf8', errors='replace').rstrip('\n'))
+                pending += chunk
+                while pending:
+                    newline = pending.find(b'\n')
+                    if 0 <= newline <= record_limit:
+                        record, pending = pending[:newline], pending[newline+1:]
+                        self.log.info('%s', record.rstrip(b'\r').decode('utf8', errors='replace'))
+                    elif len(pending) > record_limit:
+                        record, pending = pending[:record_limit], pending[record_limit:]
+                        self.log.info('NATIVE_LOG_RECORD_FRAGMENT %s', record.decode('utf8', errors='replace'))
+                    else:
+                        break
         finally:
             self.stream.close()
             for handler in self.log.handlers:handler.close()

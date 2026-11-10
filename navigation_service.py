@@ -13,15 +13,15 @@ import yaml
 
 from fc01_control import ControlError, DEFAULT_TAKEOFF_HEIGHT_M, runtime_profile
 from launcher import PROJECT, private_dir, verify_binary
-from navigation_status import preparation_diagnostic_reason
+from navigation_status import controller_state_current, preparation_diagnostic_reason
 import standby
 
 ENTRY = Path(__file__).resolve().parent
 MARKER = b'RC_NAVIGATION_MANUAL_ARM_V1'
 TAKEOFF_MARKER = b'NAV_TAKEOFF_EVIDENCE_V2_20261103'
 SAFETY_MARKER = b'R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108'
-LIFECYCLE_MARKER = b'FC01_REFERENCE_PUBLICATION_V1_20261110'
-ENTRY_VERSION = '20261110.1'
+LIFECYCLE_MARKER = b'FC01_RECOVERY_DIAGNOSTIC_V4_20261110'
+ENTRY_VERSION = '20261110.6'
 DIAGNOSTIC = 'diagnostic'
 FLIGHT_TEST = 'flight-test'
 MODES = (DIAGNOSTIC, FLIGHT_TEST)
@@ -100,12 +100,16 @@ def describe_row(row):
     state=row.get('state') or {}
     phase=state.get('phase')
     result=dict(row)
-    if row.get('feedback_current') is False or row.get('status') in ('STOPPING','STOPPED') or not phase:
-        return result
+    native_current=controller_state_current(row)
+    result['controller_state_current']=native_current
+    result['fault_latched']=native_current and phase=='SAFETY'
     reason=state.get('reason') or row.get('reason','')
-    if phase=='SAFETY':
+    if result['fault_latched']:
         result.update(status='FAULT',reason=reason)
-    elif row.get('status')=='CONNECTED':
+        return result
+    if not native_current or row.get('feedback_current') is not True or not phase:
+        return result
+    if row.get('status')=='CONNECTED':
         diagnostic=preparation_diagnostic_reason(state)
         if diagnostic:
             result.update(status='DIAGNOSTIC',reason=diagnostic)
@@ -131,6 +135,10 @@ def main(argv=None):
     parser.add_argument('--file',type=Path)
     parser.add_argument('--prefix',type=Path)
     parser.add_argument('--build-dir',type=Path)
+    parser.add_argument('--require-existing-agent',action='store_true',
+                        help='部署探针仅复用既有 Agent；不创建新的 Agent')
+    parser.add_argument('--require-rc-safe',action='store_true',
+                        help='部署探针另需新鲜、安全且单一来源的 RC 反馈')
     args=parser.parse_args(argv)
     if args.flight_test:args.mode=FLIGHT_TEST
     if args.mode==FLIGHT_TEST and not args.confirm_flight_test:
@@ -171,8 +179,14 @@ def main(argv=None):
         return subprocess.run([str(checker),'--ros-args','--disable-external-lib-logs',
                                '--params-file',str(args.file)],check=False).returncode
     elif args.action=='probe':
-        load_profile(root,agent,ENTRY,args.mode)
+        profile=load_profile(root,agent,ENTRY,args.mode)
         from navigation_probe import probe
+        if args.require_rc_safe:
+            return probe(root,agent,args.file,require_existing_agent=args.require_existing_agent,
+                         require_rc_safe=True,
+                         rc_navigation_mode_slot=profile['fc01_system']['ros__parameters']['rc_navigation_mode_slot'])
+        if args.require_existing_agent:
+            return probe(root,agent,args.file,require_existing_agent=True)
         return probe(root,agent,args.file)
     else:
         stopped=threading.Event()

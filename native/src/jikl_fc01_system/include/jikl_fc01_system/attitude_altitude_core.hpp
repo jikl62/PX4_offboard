@@ -225,8 +225,25 @@ class Core {
   const std::string& takeover_reason() const{return takeover_reason_;}
   bool restart_required() const{return restart_required_;}
   bool rc_fault_recovery_ready()const{return rc_recovery_ready_&&!recovery_event_blocked_;}
+  struct RcRecoveryDiagnostics {
+    std::string first_fault_reason,latest_fault_reason,block_reason;
+    bool recoverable{},ready{},event_blocked{},window_active{};
+    double elapsed_s{},required_s{};
+    unsigned status_samples{},land_samples{},local_samples{};
+    std::uint64_t status_stamp{},land_stamp{},local_stamp{};
+  };
+  RcRecoveryDiagnostics rc_recovery_diagnostics()const{
+    return {first_fault_reason_,latest_fault_reason_,rc_recovery_block_reason_,
+      rc_fault_recoverable_,rc_fault_recovery_ready(),recovery_event_blocked_,rc_recovery_since_>=0,
+      rc_recovery_since_<0?0:std::max(0.,rc_recovery_observed_at_-rc_recovery_since_),c_.ground_seconds,
+      rc_recovery_status_samples_,rc_recovery_land_samples_,rc_recovery_local_samples_,
+      rc_recovery_last_status_,rc_recovery_last_land_,rc_recovery_last_local_};
+  }
   void observe_safety_terminal(const Feedback& s,double now){
-    if(phase_==Phase::Safety){observe_external_terminal(s,now);observe_rc_recovery(s,now);}
+    if(phase_==Phase::Safety){
+      observe_fault_watermarks(s);
+      observe_external_terminal(s,now);observe_rc_recovery(s,now);
+    }
   }
   bool offboard_observed() const{return offboard_observed_;}
   bool ground_confirmed() const{return ground_confirmed_;}
@@ -533,24 +550,30 @@ class Core {
        authority_.takeover_latched||s.armed||s.offboard)return false;
     fault(reason);rc_fault_recoverable_=true;return true;
   }
-  void clear_rc_timing_recovery(){clear_rc_recovery();}
-  void begin_safety_observation(){queued_vertical_suspect_=false;recovery_event_blocked_=false;}
+  void clear_rc_timing_recovery(){clear_rc_recovery("RC_RECOVERY_CONTROL_LOOP_NOT_FRESH");}
+  void begin_safety_observation(){recovery_event_blocked_=false;}
   enum class SafetyEvent {Attitude,Vertical,Status,Failsafe,Authority,Battery,Land};
   // Scan queued payloads before planning output. A healthy observation cannot
   // advance a phase or clear a fault. Unjoined RC preparation retains its
   // existing wait/reset policy; once arm intent exists, that policy blocks.
   bool observe_safety_event(const Feedback& s,SafetyEvent source,double now){
     if(phase_==Phase::Safety){
+      observe_fault_watermarks(s);
       // Invalid queued payloads remain discrete events even when the newest
       // continuous snapshot is healthy. They restart ground recovery proof.
-      bool safe=rc_recovery_sample_safe(s);
+      std::string blocked=rc_recovery_sample_block_reason(s);
       if(rc_recovery_since_>=0&&(s.quat_reset!=rc_recovery_quat_reset_||
-         s.z_reset!=rc_recovery_z_reset_||s.vz_reset!=rc_recovery_vz_reset_))safe=false;
-      if(safe&&source==SafetyEvent::Vertical&&c_.feedback_guard.enabled){
+         s.z_reset!=rc_recovery_z_reset_||s.vz_reset!=rc_recovery_vz_reset_))blocked="RC_RECOVERY_ESTIMATOR_RESET";
+      if(blocked.empty()&&source==SafetyEvent::Vertical&&c_.feedback_guard.enabled){
         const auto& e=recovery_feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c_.local_timeout);
-        safe=e.healthy&&!e.suspect;
+        if(!e.healthy)blocked=e.reason;
       }
-      if(!safe){recovery_event_blocked_=true;clear_rc_recovery();}
+      if(!blocked.empty()){
+        // The first unsafe payload explains why this cycle lost its proof.
+        // Later queued failures must neither erase that cause nor the veto.
+        const auto reason=recovery_event_blocked_?rc_recovery_block_reason_:"RC_RECOVERY_QUEUED_EVENT_"+blocked;
+        recovery_event_blocked_=true;clear_rc_recovery(reason);
+      }
       return true;
     }
     const auto reject=[&](const std::string& why){
@@ -584,7 +607,6 @@ class Core {
       if(c_.feedback_guard.enabled&&flight_started_&&!bench_arm_only_active_&&
          s.armed&&phase_>=Phase::ThrustRamp&&phase_<=Phase::RequestDisarm){
         const auto& evidence=feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c_.local_timeout);
-        queued_vertical_suspect_=queued_vertical_suspect_||evidence.suspect;
         if(!evidence.healthy)return reject(evidence.reason);
       }
     }else if(source==SafetyEvent::Battery){
@@ -703,9 +725,8 @@ class Core {
     if(c_.feedback_guard.enabled&&flight_started_&&!bench_arm_only_active_&&
        s.armed&&phase_>=Phase::ThrustRamp&&phase_<=Phase::RequestDisarm){
       const auto& evidence=feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c_.local_timeout);
-      // A short disagreement cannot wind up the speed integrator. The P
-      // response, braking and physical slew limits remain the existing ones.
-      vertical_->freeze_integral(evidence.suspect||queued_vertical_suspect_);
+      // Velocity-output disagreement is diagnostic only. The controller keeps
+      // its existing integration, anti-windup, braking and physical limits.
       if(!evidence.healthy){
         fault_class_=FaultClass::UnknownAirborne;fault(evidence.reason);return {};
       }
@@ -1246,11 +1267,21 @@ class Core {
     return out;
   }
  private:
+  void observe_fault_watermarks(const Feedback& s){
+    // A second fault can occur after output has already stopped. Its causal
+    // floor must include feedback observed in Safety, even when that feedback
+    // invalidated/cleared the recovery window. This records no authorization.
+    last_status_stamp_=std::max(last_status_stamp_,s.status_stamp);
+    last_land_stamp_=std::max(last_land_stamp_,s.land_stamp);
+    last_local_stamp_=std::max(last_local_stamp_,s.local_stamp);
+    last_rc_switch_stamp_=std::max(last_rc_switch_stamp_,s.rc_switch_sample_stamp);
+  }
   static bool rc_recoverable_fault(const std::string& reason){
     // Task/measurement failures may end after independent safe-ground proof.
     // Unknown reasons, wire/publication integrity and clock regressions stay
     // latched; changing RC switches cannot repair a corrupt execution domain.
-    return rc_preparation_retry_reason(reason)||reason=="OPERATOR_TAKEOVER_LATCHED"||
+    return rc_preparation_retry_reason(reason)||reason=="RC_ARM_SOURCE_BEFORE_READY"||
+      reason=="RC_ARM_STATE_BEFORE_READY"||reason=="OPERATOR_TAKEOVER_LATCHED"||
       reason=="ATTITUDE_STALE_OR_INVALID"||reason=="Z_VZ_STALE_OR_INVALID"||
       reason=="NONFINITE_VERTICAL_TELEMETRY"||reason=="DDS_STATUS_LAND_OR_FAILSAFE_STALE"||
       reason=="DDS_SOURCE_CLOCK_UNSYNCHRONIZED_OR_STALE"||reason=="PX4_FAILSAFE"||
@@ -1266,56 +1297,98 @@ class Core {
       reason=="DISARMED_WHILE_GROUND_UNCONFIRMED_EXTERNAL_FAILSAFE_REQUIRED"||
       reason=="DISARMED_BUT_GROUND_LOST_EXTERNAL_FAILSAFE_REQUIRED";
   }
-  bool rc_recovery_sample_safe(const Feedback& s)const{
-    return health(s).empty()&&s.source_clock_validated&&s.source_host_stamp>0&&
-      !s.armed&&!s.offboard&&!s.operator_takeover&&s.landed&&s.at_rest&&s.stabilized_selected&&
-      s.preflight&&s.battery_ready&&s.stationary_seconds>=c_.ground_seconds&&
-      std::abs(s.vz)<=c_.ground_vz_tolerance&&RcNavigationStart::rc_live(s)&&
-      s.rc_axes_safe&&s.rc_aux_switches_safe&&!s.rc_sticks_moving&&s.rc_arm_switch==3&&
-      s.rc_mode_slot>0&&s.rc_mode_slot<=6&&s.rc_mode_slot!=c_.rc_navigation_mode_slot&&
-      (!c_.feedback_guard.enabled||(s.vertical_sample_stamp&&std::isfinite(s.z_deriv)&&
-        std::abs(s.vz-s.z_deriv)<=c_.feedback_guard.rate_tolerance_mps));
+  std::string rc_recovery_sample_block_reason(const Feedback& s)const{
+    const auto unhealthy=health(s);if(!unhealthy.empty())return unhealthy;
+    if(!s.source_clock_validated||!s.source_host_stamp)return "RC_RECOVERY_SOURCE_CLOCK_VALIDATION_REQUIRED";
+    if(s.armed)return "RC_RECOVERY_DISARM_REQUIRED";
+    if(s.offboard)return "RC_RECOVERY_NON_OFFBOARD_REQUIRED";
+    if(s.operator_takeover)return "RC_RECOVERY_OPERATOR_TAKEOVER_ACTIVE";
+    if(!s.landed||!s.at_rest)return "RC_RECOVERY_LANDED_AT_REST_REQUIRED";
+    if(!s.stabilized_selected)return "RC_RECOVERY_STABILIZED_REQUIRED";
+    if(!s.preflight||!s.battery_ready)return "RC_RECOVERY_BATTERY_PREFLIGHT_REQUIRED";
+    if(s.stationary_seconds<c_.ground_seconds)return "RC_RECOVERY_STATIONARY_DWELL";
+    if(std::abs(s.vz)>c_.ground_vz_tolerance)return "RC_RECOVERY_GROUND_SPEED_EXCEEDED";
+    if(!RcNavigationStart::rc_live(s))return "RC_RECOVERY_FRESH_SAFE_RC_REQUIRED";
+    if(!s.rc_axes_safe||!s.rc_aux_switches_safe||s.rc_sticks_moving)return "RC_RECOVERY_RC_AXES_OR_AUX_UNSAFE";
+    if(s.rc_arm_switch!=3)return "RC_RECOVERY_ARM_SWITCH_OFF_REQUIRED";
+    if(s.rc_mode_slot==0||s.rc_mode_slot>6||s.rc_mode_slot==c_.rc_navigation_mode_slot)
+      return "RC_RECOVERY_NAVIGATION_SWITCH_OFF_REQUIRED";
+    if(c_.feedback_guard.enabled&&(!s.vertical_sample_stamp||!std::isfinite(s.z_deriv)))
+      return "RC_RECOVERY_VERTICAL_SAMPLE_REQUIRED";
+    return {};
   }
-  void clear_rc_recovery(){
-    rc_recovery_ready_=false;rc_recovery_since_=-1;rc_recovery_land_samples_=0;
+  bool rc_recovery_sample_safe(const Feedback& s)const{return rc_recovery_sample_block_reason(s).empty();}
+  void clear_rc_recovery(std::string reason="RC_RECOVERY_WAIT_NEW_GROUND"){
+    rc_recovery_ready_=false;rc_recovery_since_=-1;
+    rc_recovery_land_samples_=rc_recovery_status_samples_=rc_recovery_local_samples_=0;
     rc_recovery_last_land_=rc_recovery_last_status_=rc_recovery_last_local_=0;
+    rc_recovery_last_switch_=rc_recovery_last_vertical_=0;
+    rc_recovery_block_reason_=std::move(reason);
     recovery_feedback_guard_.reset();
   }
   void observe_rc_recovery(const Feedback& s,double now){
-    if(!c_.rc_navigation_enabled||!rc_fault_recoverable_||recovery_event_blocked_||
-       !std::isfinite(now)||!rc_recovery_sample_safe(s)||
-       s.status_stamp<=fault_status_baseline_||s.land_stamp<=fault_land_baseline_||
-       s.local_stamp<=fault_local_baseline_||s.rc_switch_sample_stamp<=fault_rc_switch_baseline_){
-      clear_rc_recovery();return;
-    }
+    const bool observation_time_regressed=std::isfinite(now)&&now<rc_recovery_observed_at_;
+    if(std::isfinite(now))rc_recovery_observed_at_=now;
+    if(!c_.rc_navigation_enabled){clear_rc_recovery("RC_RECOVERY_ROUTE_DISABLED");return;}
+    if(!rc_fault_recoverable_){clear_rc_recovery("RC_RECOVERY_FAULT_REQUIRES_RESTART");return;}
+    if(recovery_event_blocked_){clear_rc_recovery(rc_recovery_block_reason_);return;}
+    if(!std::isfinite(now)){clear_rc_recovery("RC_RECOVERY_INVALID_OBSERVATION_TIME");return;}
+    const auto unsafe=rc_recovery_sample_block_reason(s);
+    if(!unsafe.empty()){clear_rc_recovery(unsafe);return;}
+    if(s.status_stamp<=fault_status_baseline_){clear_rc_recovery("RC_RECOVERY_WAIT_NEW_STATUS");return;}
+    if(s.land_stamp<=fault_land_baseline_){clear_rc_recovery("RC_RECOVERY_WAIT_NEW_LAND");return;}
+    if(s.local_stamp<=fault_local_baseline_){clear_rc_recovery("RC_RECOVERY_WAIT_NEW_LOCAL");return;}
+    if(s.rc_switch_sample_stamp<=fault_rc_switch_baseline_){clear_rc_recovery("RC_RECOVERY_WAIT_NEW_RC_SWITCHES");return;}
     // A reset/jump during observation starts another proof window. The new
     // task will capture its own origin only AFTER disarmed ground is proven;
     // the ended task's barometric origin cannot certify the next takeoff.
-    const bool discontinuity=rc_recovery_since_>=0&&(now<rc_recovery_since_||
+    const bool discontinuity=rc_recovery_since_>=0&&(observation_time_regressed||now<rc_recovery_since_||
       s.quat_reset!=rc_recovery_quat_reset_||s.z_reset!=rc_recovery_z_reset_||
       s.vz_reset!=rc_recovery_vz_reset_||s.local_stamp<rc_recovery_last_local_||
       s.status_stamp<rc_recovery_last_status_||s.land_stamp<rc_recovery_last_land_||
+      s.rc_switch_sample_stamp<rc_recovery_last_switch_||s.vertical_sample_stamp<rc_recovery_last_vertical_||
+      (s.local_stamp==rc_recovery_last_local_&&(s.z!=rc_recovery_last_z_||s.vz!=rc_recovery_last_vz_))||
+      (c_.feedback_guard.enabled&&s.vertical_sample_stamp==rc_recovery_last_vertical_&&
+        (s.z!=rc_recovery_last_z_||s.vz!=rc_recovery_last_vz_||s.z_deriv!=rc_recovery_last_deriv_))||
+      (s.local_stamp>rc_recovery_last_local_&&
+        double(s.local_stamp-rc_recovery_last_local_)*1e-6>c_.local_timeout)||
       std::abs(s.z-rc_recovery_z_)>c_.height_tolerance||
       (s.land_stamp!=rc_recovery_last_land_&&now-rc_recovery_last_land_at_>
         std::min(c_.land_sample_max_gap,c_.land_timeout*.5)));
-    if(discontinuity)clear_rc_recovery();
+    if(discontinuity)clear_rc_recovery("RC_RECOVERY_NEW_PROOF_AFTER_DISCONTINUITY");
     if(rc_recovery_since_<0){
       rc_recovery_since_=now;rc_recovery_z_=s.z;rc_recovery_z_reset_=s.z_reset;
       rc_recovery_vz_reset_=s.vz_reset;rc_recovery_quat_reset_=s.quat_reset;
     }
     const auto& vertical=recovery_feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,
       s.z_deriv,c_.local_timeout);
-    if(c_.feedback_guard.enabled&&(!vertical.healthy||vertical.suspect)){clear_rc_recovery();return;}
+    if(c_.feedback_guard.enabled&&!vertical.healthy){clear_rc_recovery(vertical.reason);return;}
+    // DDS sources advance independently. A fresh cached status between two
+    // land callbacks cannot erase a healthy proof window. Each source must
+    // still provide independent NEW observations over the complete window.
+    if(s.status_stamp>rc_recovery_last_status_)++rc_recovery_status_samples_;
+    if(s.local_stamp>rc_recovery_last_local_)++rc_recovery_local_samples_;
     if(s.land_stamp>rc_recovery_last_land_){
-      // Each land observation must also witness advancing status/local data.
-      if(rc_recovery_last_land_&&(s.status_stamp<=rc_recovery_last_status_||
-         s.local_stamp<=rc_recovery_last_local_)){clear_rc_recovery();return;}
-      ++rc_recovery_land_samples_;rc_recovery_last_land_=s.land_stamp;
-      rc_recovery_last_status_=s.status_stamp;rc_recovery_last_local_=s.local_stamp;
-      rc_recovery_last_land_at_=now;
-      rc_recovery_ready_=now-rc_recovery_since_+1e-9>=c_.ground_seconds&&
-        rc_recovery_land_samples_>=3&&(!c_.feedback_guard.enabled||vertical.position_window_checked);
+      ++rc_recovery_land_samples_;rc_recovery_last_land_at_=now;
     }
+    rc_recovery_last_status_=s.status_stamp;rc_recovery_last_land_=s.land_stamp;
+    rc_recovery_last_local_=s.local_stamp;rc_recovery_last_switch_=s.rc_switch_sample_stamp;
+    rc_recovery_last_vertical_=s.vertical_sample_stamp;rc_recovery_last_z_=s.z;
+    rc_recovery_last_vz_=s.vz;rc_recovery_last_deriv_=s.z_deriv;
+    // The detector observations themselves must span the ground dwell. Host
+    // ticks after a burst/freeze cannot finish a shorter detector sequence.
+    rc_recovery_ready_=rc_recovery_last_land_at_-rc_recovery_since_+1e-9>=c_.ground_seconds&&
+      now-rc_recovery_last_land_at_<=std::min(c_.land_sample_max_gap,c_.land_timeout*.5)&&
+      rc_recovery_land_samples_>=3&&rc_recovery_status_samples_>=2&&rc_recovery_local_samples_>=3&&
+      (!c_.feedback_guard.enabled||vertical.position_window_checked);
+    if(rc_recovery_ready_)rc_recovery_block_reason_.clear();
+    else if(discontinuity)rc_recovery_block_reason_="RC_RECOVERY_NEW_PROOF_AFTER_DISCONTINUITY";
+    else if(rc_recovery_status_samples_<2)rc_recovery_block_reason_="RC_RECOVERY_WAIT_STATUS_PROGRESS";
+    else if(rc_recovery_local_samples_<3)rc_recovery_block_reason_="RC_RECOVERY_WAIT_LOCAL_PROGRESS";
+    else if(rc_recovery_land_samples_<3)rc_recovery_block_reason_="RC_RECOVERY_WAIT_LAND_SAMPLES";
+    else if(c_.feedback_guard.enabled&&!vertical.position_window_checked)
+      rc_recovery_block_reason_="RC_RECOVERY_WAIT_VERTICAL_POSITION_WINDOW";
+    else rc_recovery_block_reason_="RC_RECOVERY_WAIT_GROUND_DWELL";
   }
   bool land_fallback_ready(const Feedback& s) const{
     return c_.px4_land_fallback_confirmed&&!c_.px4_land_evidence_id.empty()&&
@@ -1507,6 +1580,8 @@ class Core {
     clear_land_dwell();land_dwell_blocked_stamp_=0;command_sent_=false;reason_=name(phase);}
   void fault(const std::string& why,bool restart_required=true){
     const bool first=phase_!=Phase::Safety;
+    if(first)first_fault_reason_=why;
+    latest_fault_reason_=why;
     rc_fault_recoverable_=first?rc_recoverable_fault(why):
       (rc_fault_recoverable_&&rc_recoverable_fault(why));
     restart_required_=restart_required_||restart_required;
@@ -1518,7 +1593,7 @@ class Core {
     fault_land_baseline_=std::max(fault_land_baseline_,last_land_stamp_);
     fault_local_baseline_=std::max(fault_local_baseline_,last_local_stamp_);
     fault_rc_switch_baseline_=std::max(fault_rc_switch_baseline_,last_rc_switch_stamp_);
-    clear_rc_recovery();
+    clear_rc_recovery(rc_fault_recoverable_?"RC_RECOVERY_WAIT_NEW_GROUND":"RC_RECOVERY_FAULT_REQUIRES_RESTART");
     clear_land_dwell();land_dwell_blocked_stamp_=fault_land_baseline_;
   }
   Output rc_startup(const Feedback& s,double now,const std::string& queued_reason={}){
@@ -1565,15 +1640,18 @@ class Core {
   Config c_;Phase phase_{Phase::Idle};AttitudeReference reference_;
   vision::Controller visual_;vision::Result visual_result_;
   double visual_plan_at_{-1},committed_yaw_{};bool committed_yaw_set_{};
-  VerticalFeedbackGuard feedback_guard_;bool queued_vertical_suspect_{};
+  VerticalFeedbackGuard feedback_guard_;
   VerticalFeedbackGuard recovery_feedback_guard_;
   bool rc_fault_recoverable_{},rc_recovery_ready_{},recovery_event_blocked_{};
-  double rc_recovery_since_{-1},rc_recovery_last_land_at_{-1},rc_recovery_z_{};
-  unsigned rc_recovery_land_samples_{};
+  double rc_recovery_since_{-1},rc_recovery_last_land_at_{-1},rc_recovery_z_{},rc_recovery_observed_at_{};
+  double rc_recovery_last_z_{},rc_recovery_last_vz_{},rc_recovery_last_deriv_{};
+  unsigned rc_recovery_land_samples_{},rc_recovery_status_samples_{},rc_recovery_local_samples_{};
   std::uint8_t rc_recovery_z_reset_{},rc_recovery_vz_reset_{},rc_recovery_quat_reset_{};
   std::uint64_t rc_recovery_last_land_{},rc_recovery_last_status_{},rc_recovery_last_local_{},
+    rc_recovery_last_switch_{},rc_recovery_last_vertical_{},
     fault_local_baseline_{},fault_rc_switch_baseline_{},last_local_stamp_{},last_rc_switch_stamp_{},
     task_rc_switch_baseline_{};
+  std::string first_fault_reason_,latest_fault_reason_,rc_recovery_block_reason_{"RC_RECOVERY_NO_ENDED_FAULT"};
   std::unique_ptr<VerticalController> vertical_;
   bool interactive_{},flight_started_{},bench_arm_only_active_{},ground_abort_{},z_set_{},command_sent_{};
   bool arm_cancel_pending_{},arm_command_committed_{};
