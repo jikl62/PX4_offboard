@@ -6,7 +6,7 @@ inline attitude::Config attitude_parameters(rclcpp::Node& node){
   attitude::Config c;
   c.visual.enabled=node.declare_parameter<bool>("visual_navigation_enabled",false);
   c.rc_navigation_enabled=node.declare_parameter<bool>("rc_navigation_enabled",false);
-  c.rc_target_height=node.declare_parameter<double>("rc_target_height",.5);
+  c.rc_target_height=node.declare_parameter<double>("rc_target_height",c.rc_target_height);
   c.rc_navigation_mode_slot=node.declare_parameter<std::int64_t>("rc_navigation_mode_slot",6);
   c.rc_arm_to_navigation_timeout=node.declare_parameter<double>("rc_arm_to_navigation_timeout",8.);
   c.flight_actions_enabled=node.declare_parameter<bool>("flight_actions_enabled",false);

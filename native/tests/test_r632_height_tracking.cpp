@@ -14,7 +14,7 @@ static void require_height(bool ok,const char* message){
 static bool near_height(double x,double y){return std::abs(x-y)<1e-9;}
 static f::Config height_config(){
   auto c=cfg(true);auto& p=c.attitude;
-  p.vertical.hover=.475;p.vertical.minimum=.12;p.vertical.maximum=.75;p.vertical.slew=.4;
+  p.vertical.hover=.50;p.vertical.minimum=.12;p.vertical.maximum=.80;p.vertical.slew=.4;
   p.vertical.height_gain=.5;p.vertical.velocity_gain=.15;p.vertical.integral_gain=.03;
   p.vertical.integral_limit=.08;p.vertical.max_climb=.3;p.vertical.max_descent=.2;
   p.ramp_seconds=2.;p.liftoff_dwell_seconds=.2;p.takeoff_reserve_thrust=.04;
@@ -35,8 +35,8 @@ struct HeightFlight {
     require_height(r.attitude_core().phase()==a::Phase::ThrustRamp,"armed ground dwell");
     for(int i=0;i<42;++i)advance();
     require_height(r.attitude_core().phase()==a::Phase::ThrustRamp,"time/thrust cannot prove liftoff");
-    s.feedback.landed=false;s.at_rest=false;s.attitude.z=2.-height;s.attitude.vz=-.1;
-    for(int i=0;i<12&&r.attitude_core().phase()!=a::Phase::Ascend;++i)advance();
+    s.feedback.landed=false;s.at_rest=false;s.attitude.z=2.-height+.04;s.attitude.vz=-.1;
+    for(int i=0;i<12&&r.attitude_core().phase()!=a::Phase::Ascend;++i){s.attitude.z-=.005;advance();}
     require_height(r.attitude_core().phase()==a::Phase::Ascend,"joint liftoff evidence");
   }
   void advance(double dt=.05){
@@ -49,7 +49,7 @@ static void liftoff_reference(){
   HeightFlight q;
   require_height(q.o.attitude.target_height>=q.height_at_liftoff&&q.o.attitude.target_height<=q.requested,
     "early feedback must already have joined observed height before liftoff confirmation");
-  require_height(-q.o.attitude.thrust[2]<=.515+1e-9,"liftoff must retain bounded physical ramp");
+  require_height(-q.o.attitude.thrust[2]<=.54+1e-9,"liftoff must retain bounded physical ramp");
 }
 static void moving_climb(){
   HeightFlight q(.2);

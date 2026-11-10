@@ -1,0 +1,127 @@
+{
+  "scope": "Synthetic ideal plant only, with shipping YAML control parameters. Takeoff warmup uses prescribed sensor feedback. No hardware, ROS or PX4 adoption/physical flight proof.",
+  "config_path": "native/config/attitude_altitude.yaml",
+  "config_sha256": "f82e0df4d0075bb1c265bb66cdff7a94d11337d257f7b07d8ae1fb1ddd5dadb6",
+  "demos": {
+    "cruise": {
+      "command": "python3 vision_replay.py --demo cruise",
+      "rows": 180,
+      "all_rows_dual_sink_allowed": true,
+      "first": {
+        "time": 0.05,
+        "phase": "HEIGHT_HOLD",
+        "height": 1.5,
+        "target_height": 1.5,
+        "position_error": 0.894427191,
+        "thrust": [
+          0,
+          0,
+          -0.479125
+        ],
+        "submitted_thrust": [
+          0,
+          0,
+          -0.479124993086
+        ],
+        "q": [
+          0.999533211483,
+          0.0136515658906,
+          -0.0273286401673,
+          0.00037325296214
+        ],
+        "arm_commands": 0,
+        "mode_commands": 0,
+        "baseline_hover_thrust": 0.475,
+        "baseline_height_gain": 0.5
+      },
+      "last": {
+        "time": 9,
+        "phase": "HEIGHT_HOLD",
+        "height": 1.51585707495,
+        "target_height": 1.5,
+        "position_error": 0.00085140793778,
+        "thrust": [
+          0,
+          0,
+          -0.474904419686
+        ],
+        "submitted_thrust": [
+          0,
+          0,
+          -0.474904417992
+        ],
+        "q": [
+          0.999999995469,
+          4.2570749688e-05,
+          -8.51414988154e-05,
+          3.62453745055e-09
+        ],
+        "arm_commands": 0,
+        "mode_commands": 0,
+        "baseline_hover_thrust": 0.475,
+        "baseline_height_gain": 0.5
+      },
+      "raw_output_sha256": "bbd9b16134b68f2a1f27e31b58b2c4afce7c77e837d6367732e6eef4c0ab8760"
+    },
+    "height": {
+      "command": "python3 vision_replay.py --demo height",
+      "rows": 180,
+      "all_rows_dual_sink_allowed": true,
+      "first": {
+        "time": 0.05,
+        "phase": "HEIGHT_HOLD",
+        "height": 1.5,
+        "target_height": 1.515,
+        "position_error": 0,
+        "thrust": [
+          0,
+          0,
+          -0.499125
+        ],
+        "submitted_thrust": [
+          0,
+          0,
+          -0.499125003815
+        ],
+        "q": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "arm_commands": 0,
+        "mode_commands": 0,
+        "baseline_hover_thrust": 0.475,
+        "baseline_height_gain": 0.5
+      },
+      "last": {
+        "time": 9,
+        "phase": "HEIGHT_HOLD",
+        "height": 1.92013263641,
+        "target_height": 1.9,
+        "position_error": 0,
+        "thrust": [
+          0,
+          0,
+          -0.474903495798
+        ],
+        "submitted_thrust": [
+          0,
+          0,
+          -0.47490349412
+        ],
+        "q": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "arm_commands": 0,
+        "mode_commands": 0,
+        "baseline_hover_thrust": 0.475,
+        "baseline_height_gain": 0.5
+      },
+      "raw_output_sha256": "bd262c4a92193810ee2b0602767f01ba507465dc1c5f994facb36088fad0437f"
+    }
+  }
+}

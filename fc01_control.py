@@ -10,6 +10,9 @@ class ControlError(RuntimeError):
     pass
 
 
+DEFAULT_TAKEOFF_HEIGHT_M = 1.5
+
+
 ACTION_FLAGS = (
     'flight_enabled', 'flight_actions_enabled', 'arm_enabled', 'takeoff_enabled',
     'flight_parameters_confirmed', 'rc_takeover_confirmed',

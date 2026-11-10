@@ -24,9 +24,13 @@ static f::Snapshot sample(){
   s.feedback.exclusive=true;s.feedback.landed=true;
   s.battery_fresh=s.battery_connected=s.power_valid=s.manual_fresh=true;s.feedback.preflight=true;
   s.attitude.attitude_fresh=s.attitude.failsafe_fresh=s.attitude.z_valid=s.attitude.vz_valid=true;
-  s.attitude.battery_voltage=7.6;s.attitude.q={1,0,0,0};s.attitude.z=2;s.attitude.vz=0;return s;
+  s.attitude.battery_voltage=7.6;s.attitude.q={1,0,0,0};s.attitude.z=2;s.attitude.vz=0;
+  s.attitude.local_stamp=s.attitude.vertical_sample_stamp=1000;return s;
 }
-static f::Output tick(f::Runtime& r,f::Snapshot& s,double now){s.status_stamp+=1000;s.land_stamp+=1000;return r.step(s,now);}
+static f::Output tick(f::Runtime& r,f::Snapshot& s,double now){
+  s.status_stamp+=50000;s.land_stamp+=50000;
+  s.attitude.local_stamp+=50000;s.attitude.vertical_sample_stamp+=50000;return r.step(s,now);
+}
 static double prepare(f::Runtime& r,f::Snapshot& s,bool select_authority=false){
   if(select_authority){
     assert(r.request("INTERACTIVE",{},s,0).accepted);
@@ -159,7 +163,7 @@ static void flight_and_sequential_400(){
   assert(r.attitude_core().phase()==a::Phase::Idle);
 }
 static void active_reset_and_timeout(){
-  for(int reset=0;reset<6;++reset){f::Runtime r(cfg(true));auto s=sample();double t=ready(r,s,true);
+  for(int reset=0;reset<5;++reset){f::Runtime r(cfg(true));auto s=sample();double t=ready(r,s,true);
     r.request("INTERACTIVE",{},s,t);r.request("PING",{},s,t);r.request("TAKEOFF",{1},s,t);tick(r,s,t+=.05);
     auto b=r.pending(400).baseline;r.ack({b+1,400,0,1,191,false},t+.01);s.feedback.armed=true;tick(r,s,t+=.05);
     if(reset==0)++s.attitude.quat_reset;
@@ -167,8 +171,15 @@ static void active_reset_and_timeout(){
     if(reset==2)++s.attitude.vz_reset;
     if(reset==3){s.feedback.offboard=false;s.nav_state=15;}
     if(reset==4)s.attitude.z=-4; // max height applies during ramp as well as hold
-    if(reset==5)s.attitude.q={std::sqrt(.5),std::sqrt(.5),0,0}; // ninety degree tilt
     auto o=tick(r,s,t+.05);assert(!o.attitude.publish&&r.attitude_core().phase()==a::Phase::Safety);
+  }
+  // A valid 90-degree measured pose is feedback, not a tilt-only autonomous
+  // abort condition. The stream remains live for the next guard.
+  {f::Runtime r(cfg(true));auto s=sample();double t=ready(r,s,true);
+    r.request("INTERACTIVE",{},s,t);r.request("PING",{},s,t);r.request("TAKEOFF",{1},s,t);tick(r,s,t+=.05);
+    auto b=r.pending(400).baseline;r.ack({b+1,400,0,1,191,false},t+.01);s.feedback.armed=true;tick(r,s,t+=.05);
+    s.attitude.q={std::sqrt(.5),std::sqrt(.5),0,0};
+    auto o=tick(r,s,t+.05);assert(o.attitude.publish&&r.attitude_core().phase()!=a::Phase::Safety);
   }
   f::Runtime r(cfg(true));auto s=sample();double t=ready(r,s,true);
   r.request("INTERACTIVE",{},s,t);r.request("PING",{},s,t);r.request("TAKEOFF",{1},s,t);tick(r,s,t+=.05);

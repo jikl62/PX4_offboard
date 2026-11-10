@@ -74,6 +74,10 @@ class InstallTests(unittest.TestCase):
         self.assertEqual(p['Service']['KillMode'],'process')
         self.assertEqual(p['Service']['TimeoutStopSec'],'infinity')
         self.assertEqual(p['Service']['SendSIGKILL'],'no')
+        self.assertEqual(p['Service']['Restart'],'on-failure')
+        self.assertEqual(p['Service']['RestartSec'],'30s')
+        self.assertEqual(p['Unit']['StartLimitIntervalSec'],'120s')
+        self.assertEqual(p['Unit']['StartLimitBurst'],'5')
         self.assertIn('10%% $$x',p['Service']['ExecStart'])
         with tempfile.TemporaryDirectory() as d:
             unit=Path(d)/m.SERVICE;unit.write_text(text)
@@ -83,6 +87,15 @@ class InstallTests(unittest.TestCase):
         self.assertIn('Terminal=true',desktop);self.assertIn(' monitor',desktop)
         self.assertIn('10%%',desktop);self.assertNotIn('takeoff',desktop)
         with self.assertRaises(ValueError):m.render_desktop(Path('/tmp/bad\nExec=x'))
+
+    def test_service_defaults_to_diagnostic_and_flight_test_is_explicit(self):
+        m=self.module();entry=Path('/opt/fc01-nav');home=Path('/home/orangepi')
+        diagnostic=m.render_unit('orangepi',home,entry,Path('/tmp/native'))
+        self.assertIn('run --mode diagnostic',diagnostic)
+        self.assertNotIn('--confirm-flight-test',diagnostic)
+        with self.assertRaises(ValueError):m.render_unit('orangepi',home,entry,Path('/tmp/native'),'flight-test')
+        flight=m.render_unit('orangepi',home,entry,Path('/tmp/native'),'flight-test',True)
+        self.assertIn('run --mode flight-test --confirm-flight-test',flight)
     def test_build_is_offline_single_job_and_staged(self):
         m=self.module();commands=[]
         with patch.object(m.shutil,'which',return_value='/usr/bin/tool'):
@@ -254,6 +267,20 @@ class InstallTests(unittest.TestCase):
             self.assertTrue(all('-n' in x for x in changes))
 
 class BundleTests(unittest.TestCase):
+    def test_candidate_directory_and_development_experiment_exclusion(self):
+        b=importlib.import_module('build_navigation_bundle')
+        self.assertFalse(any(name.startswith('native/tests/ros_receive_ab/') for name in b.names(ROOT)))
+        with tempfile.TemporaryDirectory() as d:
+            folder=Path(d);candidate='FC01_OrangePi_Navigation_20261107_feedback'
+            script=b.build(folder/'candidate.sh',ROOT,directory_name=candidate)
+            env={**os.environ,'HOME':str(folder)};env.pop('FC01_NAVIGATION_INSTALL_DIR',None)
+            r=subprocess.run(['bash',str(script),'--install-only'],env=env,capture_output=True,text=True)
+            self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+            self.assertTrue((folder/candidate/'native/src/jikl_fc01_system/src/fc01_system_node.cpp').is_file())
+            self.assertFalse((folder/b.DEFAULT_DIRECTORY).exists())
+            for invalid in ('../live', 'live/path', "live'", ''):
+                with self.assertRaises(ValueError):b.build(folder/'bad.sh',ROOT,directory_name=invalid)
+
     def test_exact_self_extraction_repeat_and_conflict(self):
         b=importlib.import_module('build_navigation_bundle')
         with tempfile.TemporaryDirectory() as d:

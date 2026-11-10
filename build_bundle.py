@@ -38,7 +38,9 @@ def install():
         fail('安装包 SHA256 不匹配，未写入')
     files = {}
     with zipfile.ZipFile(io.BytesIO(payload)) as z:
-        if len(z.infolist()) > 300:
+        # Navigation bundles include explicit diagnostic/flight-test candidate
+        # configs in addition to the historical source set.
+        if len(z.infolist()) > 320:
             fail('安装包文件数量超限')
         total = 0
         for item in z.infolist():

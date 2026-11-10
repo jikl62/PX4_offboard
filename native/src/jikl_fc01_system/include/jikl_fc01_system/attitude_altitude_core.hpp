@@ -1,228 +1,14 @@
 #pragma once
-#include "jikl_fc01_system/attitude_reference.hpp"
-#include "jikl_fc01_system/vertical_controller.hpp"
-#include "jikl_fc01_system/vertical_feedback_guard.hpp"
-#include "jikl_fc01_system/authority.hpp"
+#include "jikl_fc01_system/attitude_types.hpp"
+#include "jikl_fc01_system/takeoff_evidence.hpp"
 #include "jikl_fc01_system/rc_navigation.hpp"
-#include "jikl_fc01_system/vision_navigation.hpp"
 #include <memory>
-#include <cstdint>
 
 namespace fc01::attitude {
-struct Config {
-  bool flight_actions_enabled{},arm_enabled{},takeoff_enabled{},parameters_confirmed{};
-  bool rc_navigation_enabled{};
-  double rc_target_height{.5},rc_arm_to_navigation_timeout{8};
-  std::int64_t rc_navigation_mode_slot{6};
-  // Dedicated no-propeller engineering mode, disabled by default. Normal TAKEOFF is forbidden.
-  bool bench_arm_only_enabled{};
-  // Bench-only estimator grace. Upward height still uses the flight liftoff
-  // threshold; these values cannot admit an ordinary TAKEOFF or touchdown.
-  double bench_ground_down_tolerance_m{.50},bench_ground_vz_tolerance_mps{.25};
-  bool rc_takeover_confirmed{},autonomous_failsafe_confirmed{};
-  VerticalConfig vertical;
-  VerticalFeedbackConfig feedback_guard;
-  vision::Config visual;
-  double prestream_seconds{1.2},ground_seconds{2},loop_hz{20},stall_seconds{.3};
-  double attitude_timeout{.5},local_timeout{.5},status_timeout{2.5},land_timeout{2.5},flags_timeout{2.5};
-  double console_timeout{3},command_timeout{5},ground_vz_tolerance{.1};
-  double land_sample_max_gap{.5};
-  // Flight-only supervised envelope; values MUST be validated on the actual airframe.
-  double armed_dwell_seconds{-.1},liftoff_dwell_seconds{-.1},liftoff_height_m{-.1},liftoff_speed_mps{-.1};
-  double touchdown_dwell_seconds{-.1},height_lower_margin_m{-.1},z_jump_limit_m{-.1},vz_jump_limit_mps{-.1};
-  // Normal TAKEOFF only: bounded, time-ramped lift reserve above historical hover.
-  // Zero preserves R6.3.1 behavior; value is NOT an airborne calibration.
-  double takeoff_reserve_thrust{0.0};
-  double ramp_seconds{-1},settle_seconds{-1},landing_seconds{-1},height_tolerance{-1},speed_tolerance{-1};
-  double ascent_timeout{-1},descent_timeout{-1},saturation_seconds{-1},max_flight_seconds{-1},max_tilt_deg{-1};
-  // Recovery completion deadline, not an output-authorization lease. One
-  // budget per flight; LAND/console loss/shutdown/bounce cannot renew it.
-  // Expiry must be disclosed, but cannot prove PX4 has taken airborne custody.
-  double recovery_seconds{15},px4_land_ack_seconds{5};
-  bool px4_land_fallback_confirmed{};
-  std::string px4_land_evidence_id;
-  void validate() const{
-    visual.validate();
-    if(visual.enabled&&(!rc_navigation_enabled||visual.max_tilt_deg>max_tilt_deg||
-       visual.max_height>vertical.max_height||visual.max_vertical_speed>std::min(vertical.max_climb,vertical.max_descent)))
-      throw std::invalid_argument("VISUAL_NAVIGATION_REQUIRES_RC_ROUTE_AND_EXISTING_ENVELOPE");
-    if(rc_navigation_enabled&&(!flight_actions_enabled||arm_enabled||!takeoff_enabled||!parameters_confirmed||
-       !rc_takeover_confirmed||autonomous_failsafe_confirmed||bench_arm_only_enabled||rc_navigation_mode_slot<1||rc_navigation_mode_slot>6||
-       !std::isfinite(rc_target_height)||rc_target_height<=0||rc_target_height>=vertical.max_height||
-       !std::isfinite(rc_arm_to_navigation_timeout)||rc_arm_to_navigation_timeout<1||rc_arm_to_navigation_timeout>10||
-       max_flight_seconds>30||max_tilt_deg>10))throw std::invalid_argument("INVALID_MANUAL_RC_NAVIGATION_CONFIG");
-    feedback_guard.validate();
-    for(double value:{prestream_seconds,ground_seconds,loop_hz,stall_seconds,attitude_timeout,
-        local_timeout,status_timeout,land_timeout,flags_timeout,console_timeout,command_timeout,ground_vz_tolerance,land_sample_max_gap,
-        bench_ground_down_tolerance_m,bench_ground_vz_tolerance_mps})
-      if(!std::isfinite(value)||value<=0)throw std::invalid_argument("INVALID_PREPARATION_PARAMETER");
-    if(bench_ground_down_tolerance_m>.50||bench_ground_vz_tolerance_mps>.25)
-      throw std::invalid_argument("BENCH_GROUND_GRACE_OUTSIDE_BOUNDED_LIMITS");
-    if(land_sample_max_gap>=land_timeout)throw std::invalid_argument("INVALID_LAND_SAMPLE_GAP");
-    if(!std::isfinite(recovery_seconds)||recovery_seconds<=0||recovery_seconds>60||
-       !std::isfinite(px4_land_ack_seconds)||px4_land_ack_seconds<=0||px4_land_ack_seconds>5)
-      throw std::invalid_argument("INVALID_BOUNDED_RECOVERY_POLICY");
-    if(px4_land_fallback_confirmed&&px4_land_evidence_id.empty())
-      throw std::invalid_argument("PX4_LAND_FALLBACK_NEEDS_EXTERNAL_EVIDENCE_ID");
-    if(prestream_seconds<1.1||ground_seconds<2||loop_hz<20||loop_hz>50||command_timeout!=5)
-      throw std::invalid_argument("PRESTREAM_REST_RATE_OR_ACK_TIMEOUT_INVALID");
-    if(bench_arm_only_enabled&&(!flight_actions_enabled||!arm_enabled||takeoff_enabled||!parameters_confirmed))
-      throw std::invalid_argument("ARM_ONLY_REQUIRES_EXCLUSIVE_GATES_TAKEOFF_DISABLED");
-    if(flight_actions_enabled){  //flight_actions_enabled=false 时，不执行完整飞行动力参数校验。
-      if(!parameters_confirmed)throw std::invalid_argument("FLIGHT_PARAMETERS_NOT_CONFIRMED_BY_OPERATOR");
-      vertical.validate();  //设为 true 后，首先检查 flight_parameters_confirmed。随后执行 vertical.validate()。参数不满足要求时，节点直接拒绝启动。
-      for(double value:{ramp_seconds,settle_seconds,landing_seconds,height_tolerance,speed_tolerance,
-          ascent_timeout,descent_timeout,saturation_seconds,max_flight_seconds,max_tilt_deg,
-          armed_dwell_seconds,liftoff_dwell_seconds,liftoff_height_m,liftoff_speed_mps,
-          touchdown_dwell_seconds,height_lower_margin_m,z_jump_limit_m,vz_jump_limit_mps})
-        if(!std::isfinite(value)||value<=0)throw std::invalid_argument("EXPLICIT_VALIDATED_FLIGHT_LIMITS_REQUIRED");
-      if(!std::isfinite(takeoff_reserve_thrust)||takeoff_reserve_thrust<0||
-         takeoff_reserve_thrust>.06||vertical.hover+takeoff_reserve_thrust>vertical.maximum)
-        throw std::invalid_argument("INVALID_BOUNDED_TAKEOFF_RESERVE");
-      if(armed_dwell_seconds<.1||liftoff_height_m>=vertical.max_height||
-         height_lower_margin_m>=vertical.max_height||z_jump_limit_m>=vertical.max_height||
-         touchdown_dwell_seconds<.1)throw std::invalid_argument("FLIGHT_OBSERVATION_ENVELOPE_INVALID");
-      if(max_tilt_deg>=90)throw std::invalid_argument("MAX_TILT_MUST_BE_BELOW_90_DEGREES");
-    }
-  }
-};
-struct Feedback {
-  vision::Input visual_input;
-  Quaternion q{1,0,0,0};
-  std::uint8_t quat_reset{},z_reset{},vz_reset{};
-  double z{},vz{},stationary_seconds{},battery_voltage{NAN};
-  std::uint64_t status_stamp{},land_stamp{};
-  bool attitude_fresh{},local_fresh{},status_fresh{},land_fresh{},failsafe_fresh{};
-  // Pure-Core fixtures have no host clock. The ROS adapter always overwrites
-  // both fields from its checked source timestamps at every snapshot.
-  bool source_clock_valid{true},source_clock_validated{};
-  std::uint64_t source_host_stamp{}; // synchronized adapter clock; never armed_time
-  bool local_sample_fresh{},attitude_sample_fresh{};
-  bool rc_source_clock_valid{},rc_switch_clock_valid{};
-  bool z_valid{},vz_valid{},armed{},landed{},at_rest{},offboard{},failsafe{},exclusive{},time_regressed{};
-  bool calibration{},hil{},preflight{},battery_ready{},manual_ready{};
-  bool stabilized_selectable{},stabilized_selected{};
-  // manual_ready above is a legacy observation, never an authority predicate.
-  bool rc_link_ready{},rc_switches_ready{},kill{},operator_takeover{},offboard_signal_lost{};
-  // Observation diagnostics only. These do not replace the route predicates.
-  bool rc_source_seen{},rc_source_valid{},rc_source_selected{},rc_sticks_moving{};
-  bool rc_switches_seen{},rc_switches_fresh{};
-  std::uint8_t rc_data_source{},rc_mode_slot{},rc_arm_switch{},rc_kill_switch{};
-  bool rc_axes_safe{},rc_aux_switches_safe{};
-  double rc_throttle{NAN};
-  std::uint64_t rc_switch_sample_stamp{},armed_time{};
-  std::uint8_t latest_arming_reason{};
-  std::uint64_t operator_switch_generation{};
-  std::uint64_t local_stamp{};
-  bool xy_valid{},vxy_valid{},land_selectable{},auto_land_selected{};
-  double z_deriv{NAN}; // PX4 down-position derivative, never a new altitude source
-  std::uint64_t vertical_sample_stamp{}; // raw PX4 timestamp_sample, not message timestamp
-};
-inline authority::Inputs authority_inputs(const Config& c,const Feedback& s){
-  return {s.rc_link_ready,s.rc_switches_ready,c.rc_takeover_confirmed,c.autonomous_failsafe_confirmed};
-}
-struct Transaction {
-  bool accepted{},rejected{},timed_out{};
-  // For reused Command 400, ACK cannot identify the operation. Runtime
-  // supplies independent, CURRENT safe-ground PX4 evidence after final commit.
-  bool ambiguous{},state_evidenced{};
-};
-// Arm-only has a disarmed ground anchor and can publish only exact-zero
-// thrust. Motor vibration can prevent PX4 at_rest while it is armed. This
-// observation is ONLY for that bench route, never for ordinary touchdown.
-inline bool bench_vertical_observation(const Config& c,const Feedback& s,double z0){
-  const double height=z0-s.z;
-  return std::isfinite(z0)&&std::isfinite(s.z)&&std::isfinite(s.vz)&&
-    height<=std::min(c.height_tolerance,c.liftoff_height_m)&&
-    height>=-c.bench_ground_down_tolerance_m&&std::abs(s.vz)<=c.bench_ground_vz_tolerance_mps;
-}
-inline std::uint32_t bench_ground_failed_mask(const Config& c,const Feedback& s,double z0){
-  const double height=z0-s.z;
-  return (!s.armed?1U:0U)|(!s.offboard?2U:0U)|(!s.landed?4U:0U)|
-    ((!std::isfinite(height)||height>std::min(c.height_tolerance,c.liftoff_height_m)||
-      height< -c.bench_ground_down_tolerance_m)?8U:0U)|
-    ((!std::isfinite(s.vz)||std::abs(s.vz)>c.bench_ground_vz_tolerance_mps)?16U:0U);
-}
-inline bool bench_ground_observation(const Config& c,const Feedback& s,double z0){
-  return c.bench_arm_only_enabled&&!c.takeoff_enabled&&
-    s.status_fresh&&s.land_fresh&&s.local_fresh&&s.z_valid&&s.vz_valid&&
-    s.offboard&&s.landed&&bench_vertical_observation(c,s,z0);
-}
-// Post-stop observation only: an old barometric origin is not evidence that
-// a DISARMED fixed bench has taken off. Callers must separately establish a
-// new Disarmed status and a new at_rest dwell. This cannot authorize a 400
-// command, Armed ground admission, TAKEOFF, or ordinary flight touchdown.
-inline bool bench_disarmed_ground_observation(const Config& c,const Feedback& s){
-  return c.bench_arm_only_enabled&&!c.takeoff_enabled&&!s.armed&&
-    s.status_fresh&&s.land_fresh&&s.local_fresh&&s.z_valid&&s.vz_valid&&
-    s.landed&&std::isfinite(s.z)&&std::isfinite(s.vz);
-}
-enum class Phase {Idle,SelfCheck,Prestream,RequestOffboard,OffboardReady,RequestArm,ArmedGround,BenchArmedGround,
-  ThrustRamp,Ascend,HeightHold,Descent,RecoveryDescent,Px4LandPending,PoweredGround,Landed,RequestDisarm,SafeDisarmed,ReleaseOffboard,Safety,
-  RcPrestream,RcWaitArm,RcWaitNavigation};
-inline const char* name(Phase phase){
-  switch(phase){
-    case Phase::Idle:return "IDLE";case Phase::SelfCheck:return "SELF_CHECK";
-    case Phase::Prestream:return "PRESTREAM";case Phase::RequestOffboard:return "REQUEST_OFFBOARD";
-    case Phase::OffboardReady:return "OFFBOARD_READY";case Phase::RequestArm:return "REQUEST_ARM";
-    case Phase::ArmedGround:return "ARMED_GROUND";case Phase::BenchArmedGround:return "BENCH_ARMED_GROUND";case Phase::ThrustRamp:return "THRUST_RAMP";
-    case Phase::Ascend:return "ASCEND";case Phase::HeightHold:return "HEIGHT_HOLD";
-    case Phase::Descent:return "DESCENT";case Phase::PoweredGround:return "POWERED_GROUND_UNCONFIRMED";case Phase::Landed:return "LANDED";
-    case Phase::RecoveryDescent:return "RECOVERY_DESCENT";
-    case Phase::Px4LandPending:return "PX4_LAND_PENDING";
-    case Phase::RequestDisarm:return "REQUEST_DISARM";case Phase::SafeDisarmed:return "SAFE_DISARMED";
-    case Phase::ReleaseOffboard:return "RELEASE_OFFBOARD";
-    case Phase::Safety:return "SAFETY";
-    case Phase::RcPrestream:return "RC_PRESTREAM";
-    case Phase::RcWaitArm:return "RC_READY_WAIT_ARM";
-    case Phase::RcWaitNavigation:return "RC_ARMED_WAIT_NAVIGATION";
-  }return "UNKNOWN";
-}
-enum class Command {None,Offboard,Arm,Disarm,ReleaseOffboard,Px4Land};
-enum class FaultClass {None,GroundAbort,ControlledDescent,Px4Handoff,UnknownAirborne};
-inline const char* name(FaultClass f){switch(f){
-  case FaultClass::None:return "NONE";case FaultClass::GroundAbort:return "GROUND_ABORT";
-  case FaultClass::ControlledDescent:return "CONTROLLED_DESCENT";
-  case FaultClass::Px4Handoff:return "PX4_HANDOFF";
-  case FaultClass::UnknownAirborne:return "UNKNOWN_AIRBORNE";
-}return "UNKNOWN_AIRBORNE";}
-struct Output {
-  bool visual_motion{};
-  bool publish{};Quaternion q{1,0,0,0};std::array<double,3> thrust{};
-  Command command{Command::None};double height{},speed{},target_height{},velocity_target{};
-  bool saturated{},slew_limited{};
-  bool vertical_closed_loop{},takeoff_thrust_limited{};
-  double proportional_thrust{},integral_thrust{},raw_thrust{},thrust_ceiling{};
-};
-// Captured within the same Core::step as the ARMED_GROUND fault.  This is
-// evidence only: it grants no output authority and changes no fault predicate.
-struct ArmedGroundFaultEvidence {
-  bool valid{};
-  std::uint32_t failed_mask{}; // 1=armed, 2=offboard, 4=landed, 8=height, 16=vz
-  bool armed{},offboard{},landed{};
-  double z0{},z{},vz{},height{},up_speed{},height_limit{},vz_limit{};
-  std::uint64_t status_stamp{},land_stamp{},local_stamp{};
-  double downward_height_limit{}; // populated for bench faults only
-};
-// Immutable triggering-sample audit. This has no effect on the flight state machine.
-// In particular it does not adjust the tilt threshold, attitude setpoint,
-// motor output or Offboard heartbeat decision.
-struct TiltFaultEvidence {
-  bool valid{};
-  double measured_tilt_deg{},limit_deg{},height{},up_speed{};
-  Quaternion actual_q{1,0,0,0},requested_q{1,0,0,0};
-  bool armed{},landed{},offboard{};
-  std::uint8_t quat_reset{};
-  std::uint64_t status_stamp{},land_stamp{},local_stamp{};
-};
-struct AuthorityGroundEvidence {
-  bool valid{};std::uint32_t failed_mask{};
-  double stationary_seconds{},vz{};
-  std::uint64_t status_stamp{},land_stamp{},local_stamp{};
-};
 class Core {
  public:
-  explicit Core(Config config={}):c_(config),visual_(config.visual),feedback_guard_(config.feedback_guard){c_.validate();
+  explicit Core(Config config={}):c_(config),visual_(config.visual),feedback_guard_(config.feedback_guard),
+    recovery_feedback_guard_(config.feedback_guard){c_.validate();
     if(c_.flight_actions_enabled){
       auto vertical=c_.vertical;
       vertical.ground_lower_margin=c_.height_lower_margin_m;
@@ -237,13 +23,13 @@ class Core {
     phase_==Phase::RcPrestream||phase_==Phase::RcWaitArm||phase_==Phase::RcWaitNavigation;}
   void note_rc_publication(bool allowed,double now){
     if(c_.rc_navigation_enabled)rc_start_.note_commit(allowed,now);
-    if(allowed&&phase_==Phase::HeightHold&&visual_result_.active&&now>=visual_plan_at_&&now-visual_plan_at_<=c_.stall_seconds){
+    if(allowed&&navigation_allowed()&&visual_result_.active&&now>=visual_plan_at_&&now-visual_plan_at_<=c_.stall_seconds){
       committed_yaw_=visual_result_.yaw;committed_yaw_set_=true;
     }
   }
   const vision::Result& visual_result()const{return visual_result_;}
   bool visual_current(const Feedback& s,double now)const{
-    return c_.visual.enabled&&phase_==Phase::HeightHold&&visual_result_.active&&
+    return c_.visual.enabled&&navigation_allowed()&&visual_result_.active&&
       now>=visual_plan_at_&&now-visual_plan_at_<=c_.stall_seconds&&visual_.current(s.visual_input,now);
   }
   void visual_land(const Feedback& s,double now,const std::string& reason){
@@ -252,6 +38,9 @@ class Core {
     if(!failure.empty())fault(failure);else reason_="VISUAL_RECOVERY_"+reason;
   }
   unsigned rc_prestream_commits()const{return rc_start_.commits();}
+  bool rc_ground_reference_qualified()const{return rc_start_.ground_reference_qualified();}
+  unsigned rc_ground_reference_samples()const{return rc_start_.ground_reference_samples();}
+  double rc_ground_reference_seconds()const{return rc_start_.ground_reference_seconds();}
   bool rc_manual_arm_proven()const{return rc_start_.manual_arm_proven();}
   std::uint64_t rc_manual_armed_time()const{return rc_start_.manual_armed_time();}
   bool rc_arm_evidence_pending(const Feedback& s,double now)const{
@@ -261,14 +50,82 @@ class Core {
     return c_.rc_navigation_enabled&&health(s).empty()&&rc_start_.navigation_zero_allowed(c_,s,now);
   }
   bool rc_restart_allowed(const Feedback& s)const{
-    return c_.rc_navigation_enabled&&(phase_==Phase::Safety||phase_==Phase::SafeDisarmed||
-      (phase_==Phase::Idle&&rc_joined_))&&health(s).empty()&&s.source_clock_validated&&
-      !s.armed&&s.landed&&s.at_rest&&s.stabilized_selected&&
+    const bool completed=rc_joined_&&(phase_==Phase::SafeDisarmed||phase_==Phase::Idle);
+    const bool preparation_retry=phase_==Phase::Safety&&!rc_joined_&&
+      rc_preparation_retry_reason(reason_)&&s.rc_switch_sample_stamp>fault_rc_switch_baseline_;
+    const bool recovered_fault=phase_==Phase::Safety&&rc_fault_recoverable_&&rc_recovery_ready_&&
+      !recovery_event_blocked_&&rc_recovery_sample_safe(s)&&s.status_stamp>fault_status_baseline_&&
+      s.land_stamp>fault_land_baseline_&&s.local_stamp>fault_local_baseline_&&
+      s.rc_switch_sample_stamp>fault_rc_switch_baseline_;
+    return c_.rc_navigation_enabled&&!recovery_event_blocked_&&(!restart_required_||recovered_fault)&&
+      (completed||preparation_retry||recovered_fault)&&
+      health(s).empty()&&s.source_clock_validated&&s.source_host_stamp>0&&
+      !s.armed&&!s.offboard&&!s.operator_takeover&&s.landed&&s.at_rest&&s.stabilized_selected&&
+      s.battery_ready&&s.preflight&&s.rc_switch_sample_stamp>task_rc_switch_baseline_&&
       s.stationary_seconds>=c_.ground_seconds&&std::abs(s.vz)<=c_.ground_vz_tolerance&&
       RcNavigationStart::rc_live(s)&&s.rc_axes_safe&&s.rc_aux_switches_safe&&!s.rc_sticks_moving&&
-      s.rc_arm_switch==3&&s.rc_mode_slot>0&&s.rc_mode_slot!=c_.rc_navigation_mode_slot;
+      s.rc_arm_switch==3&&s.rc_mode_slot>0&&s.rc_mode_slot<=6&&s.rc_mode_slot!=c_.rc_navigation_mode_slot;
+  }
+  // The adapter may defer an unarmed preparation only BEFORE either sink,
+  // after identifying a local/attitude age expiry (not clock discontinuity).
+  // This grants no output permission and never clears a Safety/fault latch.
+  bool defer_rc_preparation(const Feedback& s,double now,const std::string& reason){
+    if(!c_.rc_navigation_enabled||reason.empty()||
+       (phase_!=Phase::RcPrestream&&phase_!=Phase::RcWaitArm)||
+       (rc_start_.phase()!=RcStartPhase::Prestream&&rc_start_.phase()!=RcStartPhase::WaitArm)||
+       !rc_start_.no_arm_intent_observed()||!rc_start_.anchor_valid()||!z_set_||
+       !std::isfinite(now)||now<0||now<rc_observed_at_||rc_joined_||flight_started_||
+       restart_required_||fault_class_!=FaultClass::None||authority_.takeover_latched||
+       arm_confirmed_||arm_cancel_pending_||arm_command_committed_||
+       disarm_in_flight_||disarm_command_committed_||disarm_outcome_uncertain_||
+       offboard_command_committed_||release_command_committed_||offboard_observed_||
+       px4_land_committed_||operator_release_requested_)return false;
+    // The adapter separately proves recent reception and advancing raw
+    // samples; only their source-age expiry may bypass the aggregate result
+    // here. All other feedback and consent remain required.
+    if(s.time_regressed||!s.source_clock_validated||!s.source_host_stamp||!s.exclusive||
+       !s.status_fresh||!s.land_fresh||!s.failsafe_fresh||s.failsafe||s.calibration||s.hil||
+       s.armed||s.offboard||!s.landed||!s.at_rest||!s.stabilized_selected||
+       s.kill||s.operator_takeover||!RcNavigationStart::rc_live(s)||
+       !s.rc_axes_safe||!s.rc_aux_switches_safe||s.rc_sticks_moving||
+       s.rc_arm_switch!=3||s.rc_mode_slot==0||s.rc_mode_slot>6||
+       s.rc_mode_slot==c_.rc_navigation_mode_slot||!s.battery_ready||!s.preflight||
+       !s.z_valid||!s.vz_valid||!std::isfinite(s.z)||!std::isfinite(s.vz)||
+       !std::isfinite(s.stationary_seconds)||s.stationary_seconds<c_.ground_seconds||
+       std::abs(s.vz)>c_.ground_vz_tolerance||std::abs(z0_-s.z)>c_.height_tolerance||
+       s.z_reset!=z_reset_||s.vz_reset!=vz_reset_||
+       s.quat_reset!=reference_.reset_counter())return false;
+    const auto q=normalized(s.q);
+    if(!q||std::acos(std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.))*
+       180/3.141592653589793>c_.max_tilt_deg)return false;
+    rc_start_=RcNavigationStart{};rc_operator_live_=false;rc_observed_at_=now;
+    reference_.clear();z_set_=false;authority_={};last_=now;
+    enter(Phase::Idle,now);reason_=event_=reason;
+    return true;
   }
   bool flight_started() const{return flight_started_;}
+  // flight_started() denotes mission custody, beginning with the Arm request.
+  // These observations distinguish that custody from measured liftoff and the
+  // takeoff target's completed settling gate.
+  // Historical evidence for this attempt, retained during landing; this is
+  // not a claim about current physical airborne/contact state.
+  bool liftoff_confirmed()const{return liftoff_evidenced_;}
+  bool target_height_settled()const{return liftoff_evidenced_&&phase_==Phase::HeightHold;}
+  bool navigation_allowed()const{return target_height_settled()&&flight_started_&&
+    !bench_arm_only_active_&&!operator_release_requested_;}
+  const LiftoffEvidence& liftoff_evidence()const{return takeoff_evidence_.evidence();}
+  const char* takeoff_stage()const{
+    if(phase_==Phase::Safety)return "FAULT";
+    if(!flight_started_)return arm_confirmed_?"COMPLETE":"NOT_STARTED";
+    switch(phase_){
+      case Phase::RequestArm:return "ARMING";
+      case Phase::ArmedGround:case Phase::BenchArmedGround:return "ARMED_GROUND";
+      case Phase::ThrustRamp:return "LIFTOFF_UNCONFIRMED";
+      case Phase::Ascend:return liftoff_evidenced_?"CLIMBING":"LIFTOFF_UNCONFIRMED";
+      case Phase::HeightHold:return navigation_allowed()?"TARGET_SETTLED":"LIFTOFF_UNCONFIRMED";
+      default:return "LANDING";
+    }
+  }
   bool bench_arm_only_active() const{return bench_arm_only_active_;}
   bool bench_disarm_proven() const{return bench_disarm_proven_;}
   bool bench_sample_guard_ready() const{return bench_arm_only_active_&&last_sample_set_;}
@@ -293,8 +150,69 @@ class Core {
   std::uint8_t reference_z_reset() const{return z_reset_;}
   std::uint8_t reference_vz_reset() const{return vz_reset_;}
   std::uint8_t reference_quat_reset() const{return reference_.reset_counter();}
+  // Read-only receive scheduling hint. A true result ends EXTRA callback
+  // collection so step() sees this candidate before a later sample can hide
+  // it. It neither advances guards/references nor faults or authorizes output.
+  bool local_requires_control_step(std::uint64_t stamp,double z,double vz,double z_deriv)const{
+    if(!std::isfinite(z)||!std::isfinite(vz)||!std::isfinite(z_deriv))return true;
+    // Compare against the last CONTROL observation as well as adjacent
+    // callbacks: 0 -> .6 -> 1.2 -> .6 can otherwise hide a >1 cumulative jump.
+    if((flight_started_||(bench_arm_only_active_&&bench_disarmed_seen_))&&last_sample_set_&&
+       (std::abs(z-last_sample_z_)>c_.z_jump_limit_m||
+       std::abs(vz-last_sample_vz_)>c_.vz_jump_limit_mps))return true;
+    const double height=z0_-z;
+    const bool stopped_bench=bench_arm_only_active_&&bench_disarmed_seen_;
+    if(flight_started_&&!stopped_bench&&
+       ((z_set_&&(height>c_.vertical.max_height||
+          height< -(bench_arm_only_active_?c_.bench_ground_down_tolerance_m:c_.height_lower_margin_m)))||
+        std::abs(vz)>c_.vertical.max_climb+c_.vertical.max_descent+2*c_.vz_jump_limit_mps))return true;
+    // Preview the actual monitor from its last control-step state. In
+    // particular, matching vz/z_deriv may still violate its position window.
+    if(c_.feedback_guard.enabled&&flight_started_&&!bench_arm_only_active_&&
+       phase_>=Phase::ThrustRamp&&phase_<=Phase::RequestDisarm){
+      auto preview=feedback_guard_;
+      const auto& evidence=preview.observe(stamp,z,vz,z_deriv,c_.local_timeout);
+      if(evidence.suspect||!evidence.healthy)return true;
+    }
+    // The RC arm/navigation join owns its existing disarmed anchor. A
+    // callback must not erase movement across that armed admission window.
+    if(c_.rc_navigation_enabled&&!rc_joined_&&rc_start_.anchor_valid()&&
+       (rc_start_.phase()==RcStartPhase::WaitArm||rc_start_.phase()==RcStartPhase::WaitNavigation)&&
+       (std::abs(rc_start_.z0()-z)>c_.height_tolerance||std::abs(vz)>c_.ground_vz_tolerance))return true;
+    if(phase_==Phase::SelfCheck&&prep_since_>=0&&std::abs(z-prep_z_)>c_.height_tolerance)return true;
+    if(!z_set_)return false;
+    const auto normal_ground=[&](double speed){
+      return std::abs(height)<=c_.height_tolerance&&std::abs(vz)<=speed;
+    };
+    const auto bench_ground=[&]{
+      return height<=std::min(c_.height_tolerance,c_.liftoff_height_m)&&
+        height>=-c_.bench_ground_down_tolerance_m&&std::abs(vz)<=c_.bench_ground_vz_tolerance_mps;
+    };
+    if(phase_==Phase::ArmedGround&&!normal_ground(c_.ground_vz_tolerance))return true;
+    if(phase_==Phase::BenchArmedGround&&!bench_ground())return true;
+    if(phase_==Phase::PoweredGround||phase_==Phase::RequestDisarm||phase_==Phase::SafeDisarmed){
+      if(bench_arm_only_active_){
+        // A confirmed disarmed bench intentionally accepts finite estimator
+        // drift; the actual step still requires NEW disarmed/rest evidence.
+        if(!bench_disarmed_seen_&&!external_bench_disarm_pending_&&!bench_ground())return true;
+      }else if(!normal_ground(c_.speed_tolerance))return true;
+    }
+    if(phase_==Phase::Landed&&!normal_ground(c_.speed_tolerance))return true;
+    // Once a touchdown/settling dwell exists, a transient false sample must
+    // clear it. Ordinary high-altitude descent can continue catching up.
+    if((phase_==Phase::Descent||phase_==Phase::RecoveryDescent||phase_==Phase::Px4LandPending)&&
+       land_dwell_first_time_>=0&&!normal_ground(c_.speed_tolerance))return true;
+    if(phase_==Phase::Ascend&&dwell_since_>=0&&
+       (std::abs(height-target_)>c_.height_tolerance||std::abs(vz)>c_.speed_tolerance))return true;
+    if(phase_==Phase::ThrustRamp){
+      if(!ramp_feedback_active_&&height>=std::min(target_,c_.liftoff_height_m))return true;
+      const auto& rise=takeoff_evidence_.evidence();
+      if(rise.local_samples&&(height<c_.liftoff_height_m||
+         (!rise.rise_confirmed&&-vz<c_.liftoff_speed_mps)))return true;
+    }
+    return false;
+  }
   const ArmedGroundFaultEvidence& armed_ground_fault_evidence() const{return armed_ground_fault_evidence_;}
-  const TiltFaultEvidence& tilt_fault_evidence() const{return tilt_fault_evidence_;}
   const AuthorityGroundEvidence& authority_ground_evidence() const{return authority_ground_evidence_;}
   std::uint32_t authority_ground_failed_mask(const Feedback& s) const{
     return (s.armed?1U:0U)|(!s.landed?2U:0U)|(!s.at_rest?4U:0U)|
@@ -306,6 +224,27 @@ class Core {
   const authority::State& authority_state() const{return authority_;}
   const std::string& takeover_reason() const{return takeover_reason_;}
   bool restart_required() const{return restart_required_;}
+  bool rc_fault_recovery_ready()const{return rc_recovery_ready_&&!recovery_event_blocked_;}
+  struct RcRecoveryDiagnostics {
+    std::string first_fault_reason,latest_fault_reason,block_reason;
+    bool recoverable{},ready{},event_blocked{},window_active{};
+    double elapsed_s{},required_s{};
+    unsigned status_samples{},land_samples{},local_samples{};
+    std::uint64_t status_stamp{},land_stamp{},local_stamp{};
+  };
+  RcRecoveryDiagnostics rc_recovery_diagnostics()const{
+    return {first_fault_reason_,latest_fault_reason_,rc_recovery_block_reason_,
+      rc_fault_recoverable_,rc_fault_recovery_ready(),recovery_event_blocked_,rc_recovery_since_>=0,
+      rc_recovery_since_<0?0:std::max(0.,rc_recovery_observed_at_-rc_recovery_since_),c_.ground_seconds,
+      rc_recovery_status_samples_,rc_recovery_land_samples_,rc_recovery_local_samples_,
+      rc_recovery_last_status_,rc_recovery_last_land_,rc_recovery_last_local_};
+  }
+  void observe_safety_terminal(const Feedback& s,double now){
+    if(phase_==Phase::Safety){
+      observe_fault_watermarks(s);
+      observe_external_terminal(s,now);observe_rc_recovery(s,now);
+    }
+  }
   bool offboard_observed() const{return offboard_observed_;}
   bool ground_confirmed() const{return ground_confirmed_;}
   bool ground_release_pending() const{return ground_release_pending_;}
@@ -467,7 +406,7 @@ class Core {
     px4_land_mode_observed_=recovery_progress_observed_=external_ground_disarmed_confirmed_=false;
     recovery_last_local_stamp_=0;
     fault_class_=FaultClass::None;last_sample_set_=false;operator_release_requested_=false;
-    armed_ground_fault_evidence_={};tilt_fault_evidence_={};clear_disarmed_prep();
+    armed_ground_fault_evidence_={};clear_disarmed_prep();
     command_sent_=false;last_=now;event_="LOCAL_YAW_REFERENCE_CAPTURED";
     enter(Phase::SelfCheck,now);return {};
   }
@@ -604,9 +543,109 @@ class Core {
     }
   }
   void block(const std::string& reason){fault(reason);}
+  bool block_rc_preparation_timing(const std::string& reason,const Feedback& s){
+    if((phase_!=Phase::RcPrestream&&phase_!=Phase::RcWaitArm)||
+       !c_.rc_navigation_enabled||!rc_start_.no_arm_intent_observed()||
+       rc_joined_||flight_started_||restart_required_||fault_class_!=FaultClass::None||
+       authority_.takeover_latched||s.armed||s.offboard)return false;
+    fault(reason);rc_fault_recoverable_=true;return true;
+  }
+  void clear_rc_timing_recovery(){clear_rc_recovery("RC_RECOVERY_CONTROL_LOOP_NOT_FRESH");}
+  void begin_safety_observation(){recovery_event_blocked_=false;}
+  enum class SafetyEvent {Attitude,Vertical,Status,Failsafe,Authority,Battery,Land};
+  // Scan queued payloads before planning output. A healthy observation cannot
+  // advance a phase or clear a fault. Unjoined RC preparation retains its
+  // existing wait/reset policy; once arm intent exists, that policy blocks.
+  bool observe_safety_event(const Feedback& s,SafetyEvent source,double now){
+    if(phase_==Phase::Safety){
+      observe_fault_watermarks(s);
+      // Invalid queued payloads remain discrete events even when the newest
+      // continuous snapshot is healthy. They restart ground recovery proof.
+      std::string blocked=rc_recovery_sample_block_reason(s);
+      if(rc_recovery_since_>=0&&(s.quat_reset!=rc_recovery_quat_reset_||
+         s.z_reset!=rc_recovery_z_reset_||s.vz_reset!=rc_recovery_vz_reset_))blocked="RC_RECOVERY_ESTIMATOR_RESET";
+      if(blocked.empty()&&source==SafetyEvent::Vertical&&c_.feedback_guard.enabled){
+        const auto& e=recovery_feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c_.local_timeout);
+        if(!e.healthy)blocked=e.reason;
+      }
+      if(!blocked.empty()){
+        // The first unsafe payload explains why this cycle lost its proof.
+        // Later queued failures must neither erase that cause nor the veto.
+        const auto reason=recovery_event_blocked_?rc_recovery_block_reason_:"RC_RECOVERY_QUEUED_EVENT_"+blocked;
+        recovery_event_blocked_=true;clear_rc_recovery(reason);
+      }
+      return true;
+    }
+    const auto reject=[&](const std::string& why){
+      last_status_stamp_=std::max(last_status_stamp_,s.status_stamp);
+      last_land_stamp_=std::max(last_land_stamp_,s.land_stamp);
+      last_local_stamp_=std::max(last_local_stamp_,s.local_stamp);
+      last_rc_switch_stamp_=std::max(last_rc_switch_stamp_,s.rc_switch_sample_stamp);
+      if(c_.rc_navigation_enabled&&!rc_joined_)rc_startup(s,now,why);
+      else fault(why);
+      return true;
+    };
+    const bool estimator_active=flight_started_||s.armed;
+    if(source==SafetyEvent::Attitude){
+      if(!normalized(s.q))return reject("ATTITUDE_STALE_OR_INVALID");
+      if(estimator_active&&reference_.ready()&&s.quat_reset!=reference_.reset_counter())
+        return reject("ACTIVE_QUATERNION_RESET");
+    }else if(source==SafetyEvent::Vertical){
+      if(!s.z_valid||!s.vz_valid)return reject("Z_VZ_STALE_OR_INVALID");
+      if(!std::isfinite(s.z)||!std::isfinite(s.vz)||
+         (c_.feedback_guard.enabled&&!std::isfinite(s.z_deriv)))return reject("NONFINITE_VERTICAL_TELEMETRY");
+      if(estimator_active&&z_set_&&(s.z_reset!=z_reset_||s.vz_reset!=vz_reset_))
+        return reject("ACTIVE_VERTICAL_ESTIMATOR_RESET");
+      if(estimator_active&&last_sample_set_&&
+         (std::abs(s.z-last_sample_z_)>c_.z_jump_limit_m||
+          std::abs(s.vz-last_sample_vz_)>c_.vz_jump_limit_mps))
+        return reject("UNEXPLAINED_Z_VZ_ESTIMATOR_JUMP");
+      if(flight_started_&&(z0_-s.z>c_.vertical.max_height||
+          z0_-s.z<-(bench_arm_only_active_?c_.bench_ground_down_tolerance_m:c_.height_lower_margin_m)||
+          std::abs(s.vz)>c_.vertical.max_climb+c_.vertical.max_descent+2*c_.vz_jump_limit_mps))
+        return reject("HEIGHT_OR_SPEED_ENVELOPE_EXCEEDED");
+      if(c_.feedback_guard.enabled&&flight_started_&&!bench_arm_only_active_&&
+         s.armed&&phase_>=Phase::ThrustRamp&&phase_<=Phase::RequestDisarm){
+        const auto& evidence=feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c_.local_timeout);
+        if(!evidence.healthy)return reject(evidence.reason);
+      }
+    }else if(source==SafetyEvent::Battery){
+      if(!s.battery_ready)return reject("BATTERY_NOT_READY");
+    }else if(source==SafetyEvent::Land){
+      if((phase_==Phase::Landed||phase_==Phase::RequestDisarm||phase_==Phase::SafeDisarmed||
+          phase_==Phase::ReleaseOffboard)&&(!s.landed||(!s.at_rest&&!bench_arm_only_active_))){
+        ground_confirmed_=false;clear_land_dwell();return true;
+      }
+      if(c_.rc_navigation_enabled&&!rc_joined_&&(!s.landed||
+          (!s.at_rest&&!s.armed&&s.rc_arm_switch!=1&&rc_start_.no_arm_intent_observed())))
+        return reject("RC_PRESTREAM_GROUND_CHANGED");
+    }else if(source==SafetyEvent::Status||source==SafetyEvent::Failsafe||source==SafetyEvent::Authority){
+      if(c_.rc_navigation_enabled&&!rc_joined_){
+        if(s.kill||s.failsafe||s.calibration||s.hil||!s.preflight||!s.battery_ready||
+           !RcNavigationStart::rc_live(s)||!s.rc_axes_safe||s.rc_sticks_moving||!s.rc_aux_switches_safe)
+          return reject("RC_QUEUED_SAFETY_CONDITION");
+      }
+      if(const auto cause=takeover_cause(s)){
+        if(s.offboard&&s.armed&&!s.kill&&!s.failsafe&&s.status_fresh&&
+           std::string(cause)=="EXPLICIT_OPERATOR_INTERVENTION"){
+          const auto why=request_operator_takeover(s,now);if(!why.empty())fault(why);
+          return phase_==Phase::Safety;
+        }else release_to_operator(cause);
+        return true;
+      }
+      if(source==SafetyEvent::Status&&!s.status_fresh)return reject("DDS_STATUS_LAND_OR_FAILSAFE_STALE");
+      if(source==SafetyEvent::Status&&flight_started_&&!bench_arm_only_active_&&
+         phase_>=Phase::ArmedGround&&phase_!=Phase::RequestDisarm&&phase_!=Phase::ReleaseOffboard&&!s.armed)
+        return reject("UNEXPECTED_DISARM_ACTIVE_FLIGHT");
+      if(source==SafetyEvent::Status&&(s.calibration||s.hil))return reject("CALIBRATION_OR_HIL_ACTIVE");
+      if(source==SafetyEvent::Status&&flight_started_&&!s.battery_ready)return reject("BATTERY_NOT_READY");
+    }
+    return false;
+  }
   Output step(const Feedback& s,double now,Transaction mode,Transaction arm,Transaction px4_land={}){
     Output out;
-    if(phase_==Phase::Safety){observe_external_terminal(s,now);return out;}
+    if(phase_==Phase::Safety){observe_safety_terminal(s,now);return out;}
+    last_local_stamp_=s.local_stamp;last_rc_switch_stamp_=s.rc_switch_sample_stamp;
     if(c_.rc_navigation_enabled){
       rc_operator_live_=RcNavigationStart::rc_live(s);rc_observed_at_=now;
       if(!rc_joined_)return rc_startup(s,now);
@@ -686,9 +725,8 @@ class Core {
     if(c_.feedback_guard.enabled&&flight_started_&&!bench_arm_only_active_&&
        s.armed&&phase_>=Phase::ThrustRamp&&phase_<=Phase::RequestDisarm){
       const auto& evidence=feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c_.local_timeout);
-      // A short disagreement cannot wind up the speed integrator. The P
-      // response, braking and physical slew limits remain the existing ones.
-      vertical_->freeze_integral(evidence.suspect);
+      // Velocity-output disagreement is diagnostic only. The controller keeps
+      // its existing integration, anti-windup, braking and physical limits.
       if(!evidence.healthy){
         fault_class_=FaultClass::UnknownAirborne;fault(evidence.reason);return {};
       }
@@ -766,17 +804,11 @@ class Core {
         if(bench_arm_only_active_)capture_bench_ground_fault(s);
         fault_class_=FaultClass::UnknownAirborne;fault("HEIGHT_OR_SPEED_ENVELOPE_EXCEEDED");return {};
       }
-      const auto q=normalized(s.q);
-      const double cosine=std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.);
-      const double tilt_deg=std::acos(cosine)*180/3.14159265358979323846;
-      if(tilt_deg>c_.max_tilt_deg){
-        // Capture the SAME sample that caused the fault; a later ROS read
-        // may describe post-failsafe tilt or estimator changes instead.
-        tilt_fault_evidence_={true,tilt_deg,c_.max_tilt_deg,out.height,out.speed,
-          *q,out.q,s.armed,s.landed,s.offboard,s.quat_reset,
-          s.status_stamp,s.land_stamp,s.local_stamp};
-        fault("EXCESS_TILT");return {};
-      }
+      // A valid measured attitude is feedback, not an autonomous takeoff
+      // admission fault.  Invalid/NaN quaternions are rejected by health()
+      // and the final publication boundary; estimator resets remain guarded
+      // above.  Do not convert a real but steep pose into a Safety fault:
+      // this path used to stop the receive stream and could starve feedback.
     }
     if(recovery_deadline_>=0&&s.armed&&!verified_ground(s)&&now>=recovery_deadline_){
       // Timeout is not evidence of landing or an actual PX4 takeover. All
@@ -830,7 +862,7 @@ class Core {
           // an unguarded stop of an armed Offboard stream.
           if(phase_==Phase::PoweredGround){
             if(!apply(vertical_->ramp(0,elapsed),out,now))return {};
-          }else if(!apply(vertical_->step({z0_,s.z,s.vz,true,true,true,s.z_reset,s.vz_reset},
+          }else if(!apply(vertical_->step(vertical_sample(s),
               command_height_,elapsed),out,now))return {};
           reason_="LATE_ARM_STATUS_SUPERVISED_GROUND_RECOVERY";
         }else if(arm.accepted||(bench_arm_only_active_&&arm_command_committed_&&s.source_clock_validated)||
@@ -918,7 +950,7 @@ class Core {
           if(!apply(reduce,out,now))return {};
         }else{
           command_height_=std::max(0.,out.height);
-          const auto hold=vertical_->step({z0_,s.z,s.vz,true,true,true,s.z_reset,s.vz_reset},command_height_,elapsed);
+          const auto hold=vertical_->step(vertical_sample(s),command_height_,elapsed);
           if(!apply(hold,out,now))return {};
         }
       }
@@ -952,11 +984,8 @@ class Core {
           auto control=vertical_->ramp(ramp_demand,elapsed);
           if(!apply(control,out,now))return {};
         }
-        observe_ramp_rise(s,out,now);
-        const bool lifting=!s.landed&&s.land_stamp>land_baseline_&&
-          out.height>=c_.liftoff_height_m&&
-          (out.speed>=c_.liftoff_speed_mps||ramp_rise_confirmed_);
-        if(dwell_land(lifting,now,c_.liftoff_dwell_seconds,s.land_stamp)){
+        if(takeoff_evidence_.observe(c_,now,land_baseline_,s.land_stamp,s.landed,
+                                    s.vertical_sample_stamp,out.height,out.speed)){
           // Feedback already joined the measured height while the detector
           // was pending. Keep its trajectory, integral and physical slew state.
           out.target_height=command_height_;
@@ -967,6 +996,16 @@ class Core {
     }else if(phase_==Phase::Ascend||phase_==Phase::HeightHold||phase_==Phase::Descent||
              phase_==Phase::RecoveryDescent||phase_==Phase::Px4LandPending){
       bool descending=phase_==Phase::Descent||phase_==Phase::RecoveryDescent||phase_==Phase::Px4LandPending;
+      if(!descending&&s.landed){
+        // A detector contradiction revokes navigation, but is not proof that
+        // motor power can be removed. Require the normal NEW touchdown dwell
+        // while retaining healthy, guarded vertical control.
+        visual_.stop();visual_result_.active=false;ground_abort_=false;
+        command_height_=std::max(0.,out.height);land_baseline_=s.land_stamp;
+        fault_class_=FaultClass::ControlledDescent;enter(Phase::Descent,now);
+        reason_="FLIGHT_DETECTOR_CONTRADICTION_NAVIGATION_REVOKED_SUPERVISED_DESCENT";
+        descending=true;
+      }
       if(phase_==Phase::Ascend&&now-entered_>=c_.ascent_timeout){
         // A navigation timeout is NOT permission to abandon a live armed
         // Offboard vehicle. Health, authority, limits and sink gates above
@@ -1012,7 +1051,7 @@ class Core {
           reason_="PX4_LAND_ACK_OR_MODE_UNRESOLVED_NO_RETRY_GUARDED_RECOVERY";
         }
       }
-      if(phase_==Phase::HeightHold&&c_.visual.enabled){
+      if(navigation_allowed()&&c_.visual.enabled){
         visual_result_=visual_.step(s.visual_input,now,out.height,yaw_reference(),elapsed);
         if(visual_result_.request_land){
           visual_land(s,now,visual_result_.reason);descending=true;out.q=level_target();
@@ -1023,7 +1062,7 @@ class Core {
         }
       }
       if(!height_feedback(s,out,now,elapsed,descending))return {};
-      if(phase_==Phase::Ascend&&dwell(command_height_>=target_&& !s.landed&&std::abs(out.height-target_)<=c_.height_tolerance&&
+      if(phase_==Phase::Ascend&&liftoff_evidenced_&&dwell(command_height_>=target_&& !s.landed&&std::abs(out.height-target_)<=c_.height_tolerance&&
           std::abs(out.speed)<=c_.speed_tolerance,now,c_.settle_seconds))enter(Phase::HeightHold,now);
       if(descending&&dwell_land(s.landed&&s.land_stamp>land_baseline_&&
           std::abs(out.height)<=c_.height_tolerance&&
@@ -1067,7 +1106,7 @@ class Core {
         ground_abort_=false;fault_class_=FaultClass::ControlledDescent;
         land_baseline_=s.land_stamp;enter(Phase::Descent,now);
         command_height_=std::max(0.,out.height);
-        const auto hold=vertical_->step({z0_,s.z,s.vz,true,true,true,s.z_reset,s.vz_reset},command_height_,elapsed);
+        const auto hold=vertical_->step(vertical_sample(s),command_height_,elapsed);
         if(!apply(hold,out,now))return {};
       }else{
         auto control=vertical_->ramp(0,elapsed);if(!apply(control,out,now))return {};
@@ -1086,7 +1125,7 @@ class Core {
         if(health(s).empty()&&s.armed){
           land_baseline_=s.land_stamp;enter(Phase::Descent,now);
           command_height_=std::max(0.,out.height);
-          const auto hold=vertical_->step({z0_,s.z,s.vz,true,true,true,s.z_reset,s.vz_reset},command_height_,elapsed);
+          const auto hold=vertical_->step(vertical_sample(s),command_height_,elapsed);
           if(!apply(hold,out,now))return {};
           // New control arrives under the same Final Sink without heartbeat gap.
         }else{fault_class_=FaultClass::UnknownAirborne;fault("LANDED_CONFIRMATION_LOST");return {};}
@@ -1164,7 +1203,7 @@ class Core {
           fault("BENCH_DISARM_GROUND_BOUNCE_OPERATOR_INTERVENTION_REQUIRED");return {};}
         fault_class_=FaultClass::ControlledDescent;land_baseline_=s.land_stamp;
         enter(Phase::Descent,now);command_height_=std::max(0.,out.height);
-        if(!apply(vertical_->step({z0_,s.z,s.vz,true,true,true,s.z_reset,s.vz_reset},
+        if(!apply(vertical_->step(vertical_sample(s),
               command_height_,elapsed),out,now))return {};
         reason_="DISARM_SUBMITTED_GROUND_BOUNCE_SUPERVISED_DESCENT";
       }else if(arm.rejected&&!disarm_command_committed_){
@@ -1228,6 +1267,129 @@ class Core {
     return out;
   }
  private:
+  void observe_fault_watermarks(const Feedback& s){
+    // A second fault can occur after output has already stopped. Its causal
+    // floor must include feedback observed in Safety, even when that feedback
+    // invalidated/cleared the recovery window. This records no authorization.
+    last_status_stamp_=std::max(last_status_stamp_,s.status_stamp);
+    last_land_stamp_=std::max(last_land_stamp_,s.land_stamp);
+    last_local_stamp_=std::max(last_local_stamp_,s.local_stamp);
+    last_rc_switch_stamp_=std::max(last_rc_switch_stamp_,s.rc_switch_sample_stamp);
+  }
+  static bool rc_recoverable_fault(const std::string& reason){
+    // Task/measurement failures may end after independent safe-ground proof.
+    // Unknown reasons, wire/publication integrity and clock regressions stay
+    // latched; changing RC switches cannot repair a corrupt execution domain.
+    return rc_preparation_retry_reason(reason)||reason=="RC_ARM_SOURCE_BEFORE_READY"||
+      reason=="RC_ARM_STATE_BEFORE_READY"||reason=="OPERATOR_TAKEOVER_LATCHED"||
+      reason=="ATTITUDE_STALE_OR_INVALID"||reason=="Z_VZ_STALE_OR_INVALID"||
+      reason=="NONFINITE_VERTICAL_TELEMETRY"||reason=="DDS_STATUS_LAND_OR_FAILSAFE_STALE"||
+      reason=="DDS_SOURCE_CLOCK_UNSYNCHRONIZED_OR_STALE"||reason=="PX4_FAILSAFE"||
+      reason=="BATTERY_NOT_READY"||reason=="ACTIVE_QUATERNION_RESET"||
+      reason=="ACTIVE_VERTICAL_ESTIMATOR_RESET"||reason=="RC_ARMED_ESTIMATOR_RESET"||
+      reason=="RC_ARMED_GROUND_REFERENCE_NOT_STABLE"||
+      reason=="UNEXPLAINED_Z_VZ_ESTIMATOR_JUMP"||reason=="VERTICAL_FEEDBACK_INPUT_INVALID"||
+      reason=="VERTICAL_FEEDBACK_SAMPLE_GAP"||reason=="VERTICAL_VELOCITY_INCONSISTENT"||
+      reason=="VERTICAL_POSITION_RATE_INCONSISTENT"||reason=="RC_QUEUED_SAFETY_CONDITION"||
+      reason=="HEIGHT_OR_SPEED_ENVELOPE_EXCEEDED"||reason=="ARMED_GROUND_NOT_STABLE"||
+      reason=="OFFBOARD_LOST_OR_OPERATOR_MODE_CHANGED"||reason=="LANDED_CONFIRMATION_LOST"||
+      reason=="SAFE_DISARMED_GROUND_LOST"||reason=="UNEXPECTED_DISARM_ACTIVE_FLIGHT"||
+      reason=="DISARMED_WHILE_GROUND_UNCONFIRMED_EXTERNAL_FAILSAFE_REQUIRED"||
+      reason=="DISARMED_BUT_GROUND_LOST_EXTERNAL_FAILSAFE_REQUIRED";
+  }
+  std::string rc_recovery_sample_block_reason(const Feedback& s)const{
+    const auto unhealthy=health(s);if(!unhealthy.empty())return unhealthy;
+    if(!s.source_clock_validated||!s.source_host_stamp)return "RC_RECOVERY_SOURCE_CLOCK_VALIDATION_REQUIRED";
+    if(s.armed)return "RC_RECOVERY_DISARM_REQUIRED";
+    if(s.offboard)return "RC_RECOVERY_NON_OFFBOARD_REQUIRED";
+    if(s.operator_takeover)return "RC_RECOVERY_OPERATOR_TAKEOVER_ACTIVE";
+    if(!s.landed||!s.at_rest)return "RC_RECOVERY_LANDED_AT_REST_REQUIRED";
+    if(!s.stabilized_selected)return "RC_RECOVERY_STABILIZED_REQUIRED";
+    if(!s.preflight||!s.battery_ready)return "RC_RECOVERY_BATTERY_PREFLIGHT_REQUIRED";
+    if(s.stationary_seconds<c_.ground_seconds)return "RC_RECOVERY_STATIONARY_DWELL";
+    if(std::abs(s.vz)>c_.ground_vz_tolerance)return "RC_RECOVERY_GROUND_SPEED_EXCEEDED";
+    if(!RcNavigationStart::rc_live(s))return "RC_RECOVERY_FRESH_SAFE_RC_REQUIRED";
+    if(!s.rc_axes_safe||!s.rc_aux_switches_safe||s.rc_sticks_moving)return "RC_RECOVERY_RC_AXES_OR_AUX_UNSAFE";
+    if(s.rc_arm_switch!=3)return "RC_RECOVERY_ARM_SWITCH_OFF_REQUIRED";
+    if(s.rc_mode_slot==0||s.rc_mode_slot>6||s.rc_mode_slot==c_.rc_navigation_mode_slot)
+      return "RC_RECOVERY_NAVIGATION_SWITCH_OFF_REQUIRED";
+    if(c_.feedback_guard.enabled&&(!s.vertical_sample_stamp||!std::isfinite(s.z_deriv)))
+      return "RC_RECOVERY_VERTICAL_SAMPLE_REQUIRED";
+    return {};
+  }
+  bool rc_recovery_sample_safe(const Feedback& s)const{return rc_recovery_sample_block_reason(s).empty();}
+  void clear_rc_recovery(std::string reason="RC_RECOVERY_WAIT_NEW_GROUND"){
+    rc_recovery_ready_=false;rc_recovery_since_=-1;
+    rc_recovery_land_samples_=rc_recovery_status_samples_=rc_recovery_local_samples_=0;
+    rc_recovery_last_land_=rc_recovery_last_status_=rc_recovery_last_local_=0;
+    rc_recovery_last_switch_=rc_recovery_last_vertical_=0;
+    rc_recovery_block_reason_=std::move(reason);
+    recovery_feedback_guard_.reset();
+  }
+  void observe_rc_recovery(const Feedback& s,double now){
+    const bool observation_time_regressed=std::isfinite(now)&&now<rc_recovery_observed_at_;
+    if(std::isfinite(now))rc_recovery_observed_at_=now;
+    if(!c_.rc_navigation_enabled){clear_rc_recovery("RC_RECOVERY_ROUTE_DISABLED");return;}
+    if(!rc_fault_recoverable_){clear_rc_recovery("RC_RECOVERY_FAULT_REQUIRES_RESTART");return;}
+    if(recovery_event_blocked_){clear_rc_recovery(rc_recovery_block_reason_);return;}
+    if(!std::isfinite(now)){clear_rc_recovery("RC_RECOVERY_INVALID_OBSERVATION_TIME");return;}
+    const auto unsafe=rc_recovery_sample_block_reason(s);
+    if(!unsafe.empty()){clear_rc_recovery(unsafe);return;}
+    if(s.status_stamp<=fault_status_baseline_){clear_rc_recovery("RC_RECOVERY_WAIT_NEW_STATUS");return;}
+    if(s.land_stamp<=fault_land_baseline_){clear_rc_recovery("RC_RECOVERY_WAIT_NEW_LAND");return;}
+    if(s.local_stamp<=fault_local_baseline_){clear_rc_recovery("RC_RECOVERY_WAIT_NEW_LOCAL");return;}
+    if(s.rc_switch_sample_stamp<=fault_rc_switch_baseline_){clear_rc_recovery("RC_RECOVERY_WAIT_NEW_RC_SWITCHES");return;}
+    // A reset/jump during observation starts another proof window. The new
+    // task will capture its own origin only AFTER disarmed ground is proven;
+    // the ended task's barometric origin cannot certify the next takeoff.
+    const bool discontinuity=rc_recovery_since_>=0&&(observation_time_regressed||now<rc_recovery_since_||
+      s.quat_reset!=rc_recovery_quat_reset_||s.z_reset!=rc_recovery_z_reset_||
+      s.vz_reset!=rc_recovery_vz_reset_||s.local_stamp<rc_recovery_last_local_||
+      s.status_stamp<rc_recovery_last_status_||s.land_stamp<rc_recovery_last_land_||
+      s.rc_switch_sample_stamp<rc_recovery_last_switch_||s.vertical_sample_stamp<rc_recovery_last_vertical_||
+      (s.local_stamp==rc_recovery_last_local_&&(s.z!=rc_recovery_last_z_||s.vz!=rc_recovery_last_vz_))||
+      (c_.feedback_guard.enabled&&s.vertical_sample_stamp==rc_recovery_last_vertical_&&
+        (s.z!=rc_recovery_last_z_||s.vz!=rc_recovery_last_vz_||s.z_deriv!=rc_recovery_last_deriv_))||
+      (s.local_stamp>rc_recovery_last_local_&&
+        double(s.local_stamp-rc_recovery_last_local_)*1e-6>c_.local_timeout)||
+      std::abs(s.z-rc_recovery_z_)>c_.height_tolerance||
+      (s.land_stamp!=rc_recovery_last_land_&&now-rc_recovery_last_land_at_>
+        std::min(c_.land_sample_max_gap,c_.land_timeout*.5)));
+    if(discontinuity)clear_rc_recovery("RC_RECOVERY_NEW_PROOF_AFTER_DISCONTINUITY");
+    if(rc_recovery_since_<0){
+      rc_recovery_since_=now;rc_recovery_z_=s.z;rc_recovery_z_reset_=s.z_reset;
+      rc_recovery_vz_reset_=s.vz_reset;rc_recovery_quat_reset_=s.quat_reset;
+    }
+    const auto& vertical=recovery_feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,
+      s.z_deriv,c_.local_timeout);
+    if(c_.feedback_guard.enabled&&!vertical.healthy){clear_rc_recovery(vertical.reason);return;}
+    // DDS sources advance independently. A fresh cached status between two
+    // land callbacks cannot erase a healthy proof window. Each source must
+    // still provide independent NEW observations over the complete window.
+    if(s.status_stamp>rc_recovery_last_status_)++rc_recovery_status_samples_;
+    if(s.local_stamp>rc_recovery_last_local_)++rc_recovery_local_samples_;
+    if(s.land_stamp>rc_recovery_last_land_){
+      ++rc_recovery_land_samples_;rc_recovery_last_land_at_=now;
+    }
+    rc_recovery_last_status_=s.status_stamp;rc_recovery_last_land_=s.land_stamp;
+    rc_recovery_last_local_=s.local_stamp;rc_recovery_last_switch_=s.rc_switch_sample_stamp;
+    rc_recovery_last_vertical_=s.vertical_sample_stamp;rc_recovery_last_z_=s.z;
+    rc_recovery_last_vz_=s.vz;rc_recovery_last_deriv_=s.z_deriv;
+    // The detector observations themselves must span the ground dwell. Host
+    // ticks after a burst/freeze cannot finish a shorter detector sequence.
+    rc_recovery_ready_=rc_recovery_last_land_at_-rc_recovery_since_+1e-9>=c_.ground_seconds&&
+      now-rc_recovery_last_land_at_<=std::min(c_.land_sample_max_gap,c_.land_timeout*.5)&&
+      rc_recovery_land_samples_>=3&&rc_recovery_status_samples_>=2&&rc_recovery_local_samples_>=3&&
+      (!c_.feedback_guard.enabled||vertical.position_window_checked);
+    if(rc_recovery_ready_)rc_recovery_block_reason_.clear();
+    else if(discontinuity)rc_recovery_block_reason_="RC_RECOVERY_NEW_PROOF_AFTER_DISCONTINUITY";
+    else if(rc_recovery_status_samples_<2)rc_recovery_block_reason_="RC_RECOVERY_WAIT_STATUS_PROGRESS";
+    else if(rc_recovery_local_samples_<3)rc_recovery_block_reason_="RC_RECOVERY_WAIT_LOCAL_PROGRESS";
+    else if(rc_recovery_land_samples_<3)rc_recovery_block_reason_="RC_RECOVERY_WAIT_LAND_SAMPLES";
+    else if(c_.feedback_guard.enabled&&!vertical.position_window_checked)
+      rc_recovery_block_reason_="RC_RECOVERY_WAIT_VERTICAL_POSITION_WINDOW";
+    else rc_recovery_block_reason_="RC_RECOVERY_WAIT_GROUND_DWELL";
+  }
   bool land_fallback_ready(const Feedback& s) const{
     return c_.px4_land_fallback_confirmed&&!c_.px4_land_evidence_id.empty()&&
       s.local_fresh&&s.xy_valid&&s.vxy_valid&&s.z_valid&&s.vz_valid&&s.land_selectable&&
@@ -1273,6 +1435,10 @@ class Core {
     if(!std::isfinite(s.z)||!std::isfinite(s.vz)||!std::isfinite(s.stationary_seconds))return "NONFINITE_VERTICAL_TELEMETRY";
     return {};
   }
+  // All callers run health() and the estimator gates earlier in step().
+  VerticalSample vertical_sample(const Feedback& s)const{
+    return {z0_,s.z,s.vz,true,true,true,s.z_reset,s.vz_reset};
+  }
   bool apply(const VerticalOutput& value,Output& output,double now){
     if(!value.healthy){fault(value.reason);return false;}
     if(value.saturated){if(saturated_since_<0)saturated_since_=now;
@@ -1305,38 +1471,13 @@ class Core {
       (descending?command_height_:c_.visual.enabled&&phase_==Phase::HeightHold?
         std::abs(target_-command_height_):target_-command_height_);
     const double velocity_feedforward=std::clamp(trajectory_velocity,-approach_speed,approach_speed);
-    const auto control=vertical_->step({z0_,s.z,s.vz,true,true,true,s.z_reset,s.vz_reset},
+    const auto control=vertical_->step(vertical_sample(s),
                                      command_height_,elapsed,velocity_feedforward,takeoff_ceiling);
     if(!apply(control,out,now))return false;
     out.target_height=command_height_;return true;
   }
   void clear_ramp_feedback(){
-    ramp_feedback_active_=ramp_rise_confirmed_=false;
-    ramp_rise_since_=ramp_rise_last_time_=-1;
-    ramp_rise_first_stamp_=ramp_rise_last_stamp_=0;
-  }
-  // A slow detector may report its second !landed sample after the height
-  // loop has already stopped the climb. Retain sustained rise evidence from
-  // strictly new local samples; a cached sample, velocity alone, or a fixed
-  // height offset cannot establish this alternative to CURRENT climb speed.
-  void observe_ramp_rise(const Feedback& s,const Output& out,double now){
-    if(out.height<c_.liftoff_height_m){ramp_rise_confirmed_=false;ramp_rise_since_=-1;}
-    if(!s.local_stamp)return;
-    if(s.local_stamp<ramp_rise_last_stamp_){
-      ramp_rise_confirmed_=false;ramp_rise_since_=-1;return;
-    }
-    if(s.local_stamp==ramp_rise_last_stamp_)return;
-    const bool gap=ramp_rise_last_time_>=0&&now-ramp_rise_last_time_>c_.local_timeout;
-    ramp_rise_last_stamp_=s.local_stamp;ramp_rise_last_time_=now;
-    if(out.height<c_.liftoff_height_m||out.speed<c_.liftoff_speed_mps){
-      ramp_rise_since_=-1;return;
-    }
-    if(ramp_rise_since_<0||gap){
-      ramp_rise_since_=now;ramp_rise_height_=out.height;ramp_rise_first_stamp_=s.local_stamp;
-    }
-    if(s.local_stamp>ramp_rise_first_stamp_&&now-ramp_rise_since_+1e-9>=c_.liftoff_dwell_seconds&&
-       out.height-ramp_rise_height_+1e-9>=c_.liftoff_speed_mps*c_.liftoff_dwell_seconds)
-      ramp_rise_confirmed_=true;
+    ramp_feedback_active_=false;takeoff_evidence_.reset();
   }
   bool verified_ground(const Feedback& s) const{
     return s.status_fresh&&s.land_fresh&&s.local_fresh&&s.z_valid&&s.vz_valid&&
@@ -1438,20 +1579,39 @@ class Core {
   void enter(Phase phase,double now){phase_=phase;entered_=now;dwell_since_=-1;
     clear_land_dwell();land_dwell_blocked_stamp_=0;command_sent_=false;reason_=name(phase);}
   void fault(const std::string& why,bool restart_required=true){
+    const bool first=phase_!=Phase::Safety;
+    if(first)first_fault_reason_=why;
+    latest_fault_reason_=why;
+    rc_fault_recoverable_=first?rc_recoverable_fault(why):
+      (rc_fault_recoverable_&&rc_recoverable_fault(why));
     restart_required_=restart_required_||restart_required;
     if(fault_class_==FaultClass::None||fault_class_==FaultClass::ControlledDescent){
       fault_class_=flight_started_?FaultClass::UnknownAirborne:FaultClass::GroundAbort;
     }
-    ground_confirmed_=false;phase_=Phase::Safety;reason_=why;
+    ground_confirmed_=false;phase_=Phase::Safety;if(first)reason_=why;
     fault_status_baseline_=std::max(fault_status_baseline_,last_status_stamp_);
     fault_land_baseline_=std::max(fault_land_baseline_,last_land_stamp_);
+    fault_local_baseline_=std::max(fault_local_baseline_,last_local_stamp_);
+    fault_rc_switch_baseline_=std::max(fault_rc_switch_baseline_,last_rc_switch_stamp_);
+    clear_rc_recovery(rc_fault_recoverable_?"RC_RECOVERY_WAIT_NEW_GROUND":"RC_RECOVERY_FAULT_REQUIRES_RESTART");
     clear_land_dwell();land_dwell_blocked_stamp_=fault_land_baseline_;
   }
-  Output rc_startup(const Feedback& s,double now){
+  Output rc_startup(const Feedback& s,double now,const std::string& queued_reason={}){
     Output out;last_status_stamp_=s.status_stamp;last_land_stamp_=s.land_stamp;
-    const bool publish=rc_start_.step(c_,s,now,health(s));
+    const bool publish=rc_start_.step(c_,s,now,queued_reason.empty()?health(s):queued_reason);
     reason_=rc_start_.reason();
-    if(rc_start_.phase()==RcStartPhase::Blocked){fault(reason_);return out;}
+    if(rc_start_.phase()==RcStartPhase::Blocked){
+      if(reason_=="RC_ARMED_GROUND_REFERENCE_NOT_STABLE"){
+        const double height=rc_start_.z0()-s.z;
+        const std::uint32_t mask=(!s.landed?4U:0U)|
+          ((!std::isfinite(height)||std::abs(height)>c_.height_tolerance)?8U:0U)|
+          ((!std::isfinite(s.vz)||std::abs(s.vz)>c_.ground_vz_tolerance)?16U:0U);
+        armed_ground_fault_evidence_={true,mask,s.armed,s.offboard,s.landed,
+          rc_start_.z0(),s.z,s.vz,height,-s.vz,c_.height_tolerance,c_.ground_vz_tolerance,
+          s.status_stamp,s.land_stamp,s.local_stamp};
+      }
+      fault(reason_,!rc_preparation_retry_reason(reason_));return out;
+    }
     z_set_=rc_start_.anchor_valid();
     if(z_set_){
       z0_=rc_start_.z0();z_reset_=rc_start_.z_reset();vz_reset_=rc_start_.vz_reset();
@@ -1461,6 +1621,7 @@ class Core {
     if(rc_start_.phase()==RcStartPhase::Joined){
       rc_joined_=true;flight_started_=arm_confirmed_=true;flight_since_=last_=now;
       target_=c_.rc_target_height;command_height_=0;switch_generation_=s.operator_switch_generation;
+      task_rc_switch_baseline_=s.rc_switch_sample_stamp;
       offboard_observed_=true;ground_confirmed_=liftoff_evidenced_=false;
       last_sample_set_=true;last_sample_z_=s.z;last_sample_vz_=s.vz;
       clear_ramp_feedback();vertical_->reset(0);feedback_guard_.reset();
@@ -1480,6 +1641,17 @@ class Core {
   vision::Controller visual_;vision::Result visual_result_;
   double visual_plan_at_{-1},committed_yaw_{};bool committed_yaw_set_{};
   VerticalFeedbackGuard feedback_guard_;
+  VerticalFeedbackGuard recovery_feedback_guard_;
+  bool rc_fault_recoverable_{},rc_recovery_ready_{},recovery_event_blocked_{};
+  double rc_recovery_since_{-1},rc_recovery_last_land_at_{-1},rc_recovery_z_{},rc_recovery_observed_at_{};
+  double rc_recovery_last_z_{},rc_recovery_last_vz_{},rc_recovery_last_deriv_{};
+  unsigned rc_recovery_land_samples_{},rc_recovery_status_samples_{},rc_recovery_local_samples_{};
+  std::uint8_t rc_recovery_z_reset_{},rc_recovery_vz_reset_{},rc_recovery_quat_reset_{};
+  std::uint64_t rc_recovery_last_land_{},rc_recovery_last_status_{},rc_recovery_last_local_{},
+    rc_recovery_last_switch_{},rc_recovery_last_vertical_{},
+    fault_local_baseline_{},fault_rc_switch_baseline_{},last_local_stamp_{},last_rc_switch_stamp_{},
+    task_rc_switch_baseline_{};
+  std::string first_fault_reason_,latest_fault_reason_,rc_recovery_block_reason_{"RC_RECOVERY_NO_ENDED_FAULT"};
   std::unique_ptr<VerticalController> vertical_;
   bool interactive_{},flight_started_{},bench_arm_only_active_{},ground_abort_{},z_set_{},command_sent_{};
   bool arm_cancel_pending_{},arm_command_committed_{};
@@ -1489,7 +1661,6 @@ class Core {
        ground_release_pending_{};
   FaultClass fault_class_{FaultClass::None};
   ArmedGroundFaultEvidence armed_ground_fault_evidence_{};
-  TiltFaultEvidence tilt_fault_evidence_{};
   AuthorityGroundEvidence authority_ground_evidence_{};
   bool external_bench_disarm_pending_{};
   bool bench_disarm_proven_{},bench_disarmed_seen_{};
@@ -1499,9 +1670,8 @@ class Core {
   bool offboard_command_committed_{},release_command_committed_{};
   std::uint64_t external_bench_status_baseline_{},external_bench_land_baseline_{};
   double last_sample_z_{},last_sample_vz_{};
-  bool ramp_feedback_active_{},ramp_rise_confirmed_{};
-  double ramp_rise_since_{-1},ramp_rise_last_time_{-1},ramp_rise_height_{};
-  std::uint64_t ramp_rise_first_stamp_{},ramp_rise_last_stamp_{};
+  bool ramp_feedback_active_{};
+  TakeoffEvidence takeoff_evidence_;
   std::uint64_t touchdown_baseline_{},disarm_land_commit_stamp_{};
   std::uint8_t z_reset_{},vz_reset_{};
   std::uint64_t status_baseline_{},land_baseline_{};

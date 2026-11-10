@@ -1,11 +1,20 @@
 #pragma once
 #include "jikl_fc01_system/attitude_reference.hpp"
+#include "jikl_fc01_system/vertical_feedback_guard.hpp"
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <optional>
 
 namespace fc01::attitude {
 enum class RcStartPhase {WaitGround,Prestream,WaitArm,WaitNavigation,Joined,Blocked};
+inline bool rc_preparation_retry_reason(const std::string& reason){
+  return reason=="RC_MANUAL_ARM_EVIDENCE_TIMEOUT"||reason=="RC_NAVIGATION_SELECTION_TIMEOUT"||
+    reason=="RC_NAVIGATION_CONFIRMATION_TIMEOUT"||reason=="RC_NAVIGATION_MODE_SLOT_MISMATCH"||
+    reason=="RC_NAVIGATION_BEFORE_MANUAL_ARM"||reason=="RC_ARM_OR_NAVIGATION_BEFORE_READY"||
+    reason=="RC_NAVIGATION_SELECTION_WITHDRAWN"||reason=="RC_NAVIGATION_MODE_WITHDRAWN"||
+    reason=="RC_ARM_AUTHORIZATION_WITHDRAWN"||reason=="RC_UNEXPECTED_MODE_BEFORE_NAVIGATION";
+}
 // Admission only. This object cannot construct an ARM command or nonzero thrust.
 class RcNavigationStart {
  public:
@@ -17,9 +26,17 @@ class RcNavigationStart {
   std::uint8_t z_reset()const{return z_reset_;}
   std::uint8_t vz_reset()const{return vz_reset_;}
   std::uint8_t quat_reset()const{return quat_reset_;}
+  bool ground_reference_qualified()const{return ground_qualified_;}
+  unsigned ground_reference_samples()const{return ground_samples_;}
+  double ground_reference_seconds()const{return ground_since_<0?0:ground_last_at_-ground_since_;}
   unsigned commits()const{return commits_;}
   bool manual_arm_proven()const{return manual_arm_proven_;}
   std::uint64_t manual_armed_time()const{return manual_armed_time_;}
+  // A latest arm-OFF sample is not proof that this attempt never observed
+  // arming intent. Keep that history even when health() resets preparation.
+  bool no_arm_intent_observed()const{return !arm_intent_observed_&&!manual_arm_proven_&&
+    !manual_armed_time_&&!arm_edge_&&!navigation_edge_&&!pending_armed_time_&&
+    arm_since_<0&&navigation_since_<0&&!navigation_offboard_observed_;}
   void note_commit(bool success,double now){
     if(!success){stream_first_=stream_last_=-1;commits_=0;return;}
     if(phase_==RcStartPhase::WaitGround||phase_==RcStartPhase::Blocked||phase_==RcStartPhase::Joined)return;
@@ -93,6 +110,7 @@ class RcNavigationStart {
   }
   template<class C,class F>bool step(const C& c,const F& s,double now,const std::string& health){
     if(phase_==RcStartPhase::Blocked||phase_==RcStartPhase::Joined)return false;
+    if(s.armed||s.rc_arm_switch==1)arm_intent_observed_=true;
     const auto block=[this](const std::string& why){phase_=RcStartPhase::Blocked;reason_=why;return false;};
     if(!std::isfinite(now)||(observed_at_>=0&&now<observed_at_))return block("RC_TIME_REGRESSION");
     observed_at_=now;
@@ -106,6 +124,8 @@ class RcNavigationStart {
     if(why.empty()&&(!s.battery_ready||!s.preflight))why="BATTERY_PREFLIGHT_REQUIRED";
     const auto q=normalized(s.q);
     if(why.empty()&&q){const double tilt=std::acos(std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.))*180/3.141592653589793;
+      // Manual RC ground admission remains independently guarded; this is not
+      // the autonomous measured-attitude takeoff path.
       if(tilt>c.max_tilt_deg)why="RC_GROUND_TILT_EXCEEDED";}
     if(!why.empty()){
       if(intent||s.armed)return block(why);
@@ -113,25 +133,28 @@ class RcNavigationStart {
     }
     if(phase_==RcStartPhase::WaitGround){
       if(s.armed||arm_on||nav||s.offboard||!s.stabilized_selected||!s.landed||!s.at_rest||
-         s.rc_arm_switch!=3||s.rc_mode_slot==0||s.stationary_seconds<c.ground_seconds||std::abs(s.vz)>c.ground_vz_tolerance){
+         s.rc_arm_switch!=3||s.rc_mode_slot==0||s.rc_mode_slot>6||
+         s.stationary_seconds<c.ground_seconds||std::abs(s.vz)>c.ground_vz_tolerance){
         reset("RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND");return false;
       }
-      if(ground_since_<0)ground_since_=now;
-      if(now-ground_since_<c.ground_seconds){reason_="RC_WAIT_CONTINUOUS_SAFE_GROUND";return false;}
+      // The zero-only prestream overlaps a new source-sample proof window.
+      // Host stationary_seconds alone cannot certify a task's z reference:
+      // its callbacks may have changed estimator frame or repeated old data.
       phase_=RcStartPhase::Prestream;
     }
     if(phase_==RcStartPhase::Prestream){
       if(s.armed||arm_on||nav||s.offboard)return block("RC_ARM_OR_NAVIGATION_BEFORE_READY");
       if(!s.stabilized_selected||!s.landed||!s.at_rest||std::abs(s.vz)>c.ground_vz_tolerance){
         reset("RC_PRESTREAM_GROUND_CHANGED");return false;}
+      const bool qualified=observe_ground_reference(c,s,now);
       capture(s);
-      if(stream_ready(c,now)&&!s.offboard_signal_lost){
+      if(qualified&&stream_ready(c,now)&&!s.offboard_signal_lost){
         // Include the same 100ms future-source allowance as the clock guard:
         // an event generated before readiness cannot arrive later as consent.
         ready_source_floor_=s.source_host_stamp+100000;
         phase_=RcStartPhase::WaitArm;reason_="RC_READY_WAIT_CH5_MANUAL_ARM";
       }
-      else reason_="RC_PRESTREAM_WAIT_COMMITS_AND_PX4_SIGNAL";
+      else reason_=qualified?"RC_PRESTREAM_WAIT_COMMITS_AND_PX4_SIGNAL":"RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE";
       return true;
     }
     const bool new_switch=s.rc_switch_sample_stamp>last_switch_stamp_;
@@ -150,6 +173,10 @@ class RcNavigationStart {
       if(nav||s.offboard)return block("RC_NAVIGATION_BEFORE_MANUAL_ARM");
       if(!s.armed&&!arm_on){
         if(!s.landed||!s.at_rest||!s.stabilized_selected||std::abs(s.vz)>c.ground_vz_tolerance){reset("RC_READY_GROUND_CHANGED");return false;}
+        if(!observe_ground_reference(c,s,now)){
+          stream_first_=stream_last_=-1;commits_=0;ready_source_floor_=0;
+          phase_=RcStartPhase::Prestream;capture(s);reason_="RC_PRESTREAM_REBUILD_GROUND_REFERENCE";return true;
+        }
         capture(s);reason_="RC_READY_WAIT_CH5_MANUAL_ARM";return true;
       }
       arm_since_=now;phase_=RcStartPhase::WaitNavigation;
@@ -159,10 +186,10 @@ class RcNavigationStart {
       // Expiry precedes pairing: evidence received on an overdue tick cannot
       // turn an expired attempt into a proven arm or navigation admission.
       if(!manual_arm_proven_&&now-arm_since_>c.status_timeout)return block("RC_MANUAL_ARM_EVIDENCE_TIMEOUT");
-      if(!s.landed||std::abs(z0_-s.z)>c.height_tolerance||std::abs(s.vz)>c.ground_vz_tolerance)
-        return block("RC_ARMED_GROUND_REFERENCE_NOT_STABLE");
       if(s.z_reset!=z_reset_||s.vz_reset!=vz_reset_||s.quat_reset!=quat_reset_)
         return block("RC_ARMED_ESTIMATOR_RESET");
+      if(!ground_qualified_||!s.landed||std::abs(z0_-s.z)>c.height_tolerance||std::abs(s.vz)>c.ground_vz_tolerance)
+        return block("RC_ARMED_GROUND_REFERENCE_NOT_STABLE");
       if(!s.stabilized_selected&&!s.offboard)return block("RC_UNEXPECTED_MODE_BEFORE_NAVIGATION");
       if(s.armed&&s.latest_arming_reason!=2)return block("RC_ARM_REASON_NOT_RC_SWITCH");
       if(s.armed&&s.status_stamp<=ready_source_floor_)return block("RC_ARM_STATE_BEFORE_READY");
@@ -200,18 +227,86 @@ class RcNavigationStart {
     return false;
   }
  private:
-  void reset(const std::string& why){phase_=RcStartPhase::WaitGround;anchor_=false;ground_since_=-1;
-    stream_first_=stream_last_=-1;commits_=0;ready_source_floor_=0;reason_=why;}
+  void clear_ground_reference(){
+    ground_qualified_=false;ground_since_=ground_last_at_=ground_land_at_=-1;
+    ground_samples_=ground_land_samples_=ground_status_samples_=0;
+    ground_local_=ground_status_=ground_land_=ground_switch_=ground_vertical_=0;
+    ground_guard_.reset();
+  }
+  template<class C,class F>bool observe_ground_reference(const C& c,const F& s,double now){
+    // Only disarmed, resting, non-Offboard, safe-RC observations reach here.
+    // In particular, neither arm intent nor landed=true in flight can rebase.
+    if(s.armed||s.offboard||s.rc_arm_switch!=3||!s.stabilized_selected||!s.landed||!s.at_rest||
+       !std::isfinite(s.stationary_seconds)||s.stationary_seconds<c.ground_seconds||!s.z_valid||!s.vz_valid||
+       !s.local_fresh||!s.status_fresh||!s.land_fresh||!std::isfinite(s.z)||!std::isfinite(s.vz)||
+       std::abs(s.vz)>c.ground_vz_tolerance||!s.local_stamp||!s.status_stamp||!s.land_stamp||
+       !s.rc_switch_sample_stamp||
+       (c.feedback_guard.enabled&&(!s.vertical_sample_stamp||!std::isfinite(s.z_deriv)))){
+      clear_ground_reference();return false;
+    }
+    const bool discontinuity=ground_since_>=0&&(
+      s.z_reset!=ground_z_reset_||s.vz_reset!=ground_vz_reset_||s.quat_reset!=ground_quat_reset_||
+      s.local_stamp<ground_local_||s.status_stamp<ground_status_||s.land_stamp<ground_land_||
+      s.rc_switch_sample_stamp<ground_switch_||s.vertical_sample_stamp<ground_vertical_||
+      (s.local_stamp==ground_local_&&(s.z!=ground_last_z_||s.vz!=ground_last_vz_))||
+      (c.feedback_guard.enabled&&s.vertical_sample_stamp==ground_vertical_&&
+        (s.z!=ground_last_z_||s.vz!=ground_last_vz_||s.z_deriv!=ground_last_deriv_))||
+      (s.local_stamp>ground_local_&&double(s.local_stamp-ground_local_)*1e-6>c.local_timeout)||
+      (s.land_stamp>ground_land_&&now-ground_land_at_>std::min(c.land_sample_max_gap,c.land_timeout*.5))||
+      std::abs(s.z-ground_window_z_)>c.height_tolerance);
+    if(discontinuity){
+      clear_ground_reference();stream_first_=stream_last_=-1;commits_=0;ready_source_floor_=0;
+    }
+    if(ground_since_<0){
+      ground_since_=ground_window_since_=now;ground_window_z_=s.z;
+      ground_z_reset_=s.z_reset;ground_vz_reset_=s.vz_reset;ground_quat_reset_=s.quat_reset;
+      ground_guard_.emplace(c.feedback_guard);
+    }
+    const auto& vertical=ground_guard_->observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c.local_timeout);
+    if(c.feedback_guard.enabled&&!vertical.healthy){
+      clear_ground_reference();stream_first_=stream_last_=-1;commits_=0;ready_source_floor_=0;return false;
+    }
+    if(s.local_stamp>ground_local_)++ground_samples_;
+    if(s.status_stamp>ground_status_)++ground_status_samples_;
+    if(s.land_stamp>ground_land_){
+      // Sources have independent DDS rates. Each must advance over the proof
+      // window; requiring one status callback per detector callback would
+      // reject healthy lower-rate status streams indefinitely.
+      ++ground_land_samples_;ground_land_at_=now;
+    }
+    ground_local_=s.local_stamp;ground_status_=s.status_stamp;ground_land_=s.land_stamp;
+    ground_switch_=s.rc_switch_sample_stamp;ground_vertical_=s.vertical_sample_stamp;ground_last_at_=now;
+    ground_last_z_=s.z;ground_last_vz_=s.vz;ground_last_deriv_=s.z_deriv;
+    ground_qualified_=now-ground_since_+1e-9>=c.ground_seconds&&ground_samples_>=3&&ground_land_samples_>=3&&
+      ground_status_samples_>=2&&
+      (!c.feedback_guard.enabled||vertical.position_window_checked);
+    // After qualification retain a bounded current-ground stability window;
+    // this lets a slow valid disarmed drift refresh z0 without using the
+    // previous task's altitude as a permanent map/ground reference.
+    if(ground_qualified_&&now-ground_window_since_>=c.ground_seconds){
+      ground_window_since_=now;ground_window_z_=s.z;
+    }
+    return ground_qualified_;
+  }
+  void reset(const std::string& why){phase_=RcStartPhase::WaitGround;anchor_=false;
+    stream_first_=stream_last_=-1;commits_=0;ready_source_floor_=0;clear_ground_reference();reason_=why;}
   template<class F>void capture(const F& s){
     anchor_=true;z0_=s.z;q0_=s.q;z_reset_=s.z_reset;vz_reset_=s.vz_reset;quat_reset_=s.quat_reset;
     disarmed_status_=s.status_stamp;disarmed_armed_time_=s.armed_time;
     last_arm_switch_=s.rc_arm_switch;last_mode_slot_=s.rc_mode_slot;last_switch_stamp_=s.rc_switch_sample_stamp;
   }
   RcStartPhase phase_{RcStartPhase::WaitGround};std::string reason_{"RC_WAIT_SAFE_GROUND"};
-  bool anchor_{},manual_arm_proven_{},navigation_offboard_observed_{};Quaternion q0_{1,0,0,0};double z0_{};
+  bool anchor_{},manual_arm_proven_{},navigation_offboard_observed_{},arm_intent_observed_{};
+  Quaternion q0_{1,0,0,0};double z0_{};
   std::uint8_t z_reset_{},vz_reset_{},quat_reset_{},last_arm_switch_{},last_mode_slot_{};
-  double ground_since_{-1},arm_since_{-1},navigation_since_{-1},stream_first_{-1},stream_last_{-1},observed_at_{-1};unsigned commits_{};
+  double arm_since_{-1},navigation_since_{-1},stream_first_{-1},stream_last_{-1},observed_at_{-1};unsigned commits_{};
   std::uint64_t disarmed_status_{},disarmed_armed_time_{},manual_armed_time_{},arm_edge_{},navigation_edge_{},last_switch_stamp_{};
   std::uint64_t ready_source_floor_{},pending_armed_time_{},last_stabilized_status_{};
+  bool ground_qualified_{};unsigned ground_samples_{},ground_land_samples_{},ground_status_samples_{};
+  double ground_since_{-1},ground_last_at_{-1},ground_land_at_{-1},ground_window_since_{-1},ground_window_z_{};
+  double ground_last_z_{},ground_last_vz_{},ground_last_deriv_{};
+  std::uint64_t ground_local_{},ground_status_{},ground_land_{},ground_switch_{},ground_vertical_{};
+  std::uint8_t ground_z_reset_{},ground_vz_reset_{},ground_quat_reset_{};
+  std::optional<VerticalFeedbackGuard> ground_guard_;
 };
 } // namespace fc01::attitude

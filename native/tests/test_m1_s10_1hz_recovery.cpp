@@ -13,6 +13,7 @@ struct Harness {
   f::Runtime runtime;
   f::Snapshot s;
   double now{};
+  bool rising{};
   Harness():config(make_config()),runtime(config),s(authority_test::sample()){
     authority_test::armed(runtime,s,now,"AUTHORITY_AUTONOMOUS");
     assert(runtime.attitude_core().phase()==a::Phase::ArmedGround);
@@ -32,7 +33,8 @@ struct Harness {
   }
   f::Output tick(){
     now+=.05;
-    s.status_stamp+=1000;
+    s.status_stamp+=50000;s.attitude.local_stamp+=50000;s.attitude.vertical_sample_stamp+=50000;
+    if(rising&&runtime.attitude_core().phase()==a::Phase::ThrustRamp)s.attitude.z-=.006;
     assert(runtime.request("PING",{},s,now).accepted);
     return runtime.step(s,now);
   }
@@ -43,7 +45,7 @@ struct Harness {
     for(int i=0;i<4&&runtime.attitude_core().phase()!=a::Phase::ThrustRamp;++i)one_hz();
     assert(runtime.attitude_core().phase()==a::Phase::ThrustRamp);
   }
-  void evidence_airborne(){s.feedback.landed=false;s.attitude.z=1.8;s.attitude.vz=-.12;}
+  void evidence_airborne(){s.feedback.landed=false;s.attitude.z=1.8;s.attitude.vz=-.12;rising=true;}
   void ascend(){
     ramp();evidence_airborne();
     for(int i=0;i<3&&runtime.attitude_core().phase()!=a::Phase::Ascend;++i)one_hz();

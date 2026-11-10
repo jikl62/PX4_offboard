@@ -11,7 +11,7 @@
 
 static f::Config r63_config(){
   auto c=cfg(true);
-  c.attitude.vertical.hover=.475;
+  c.attitude.vertical.hover=.50;
   c.attitude.bench_arm_only_enabled=false;
   c.validate();
   return c;
@@ -20,12 +20,12 @@ static void r63_hover_mapping(){
   auto c=r63_config();
   assert(!c.attitude.bench_arm_only_enabled);
   a::VerticalController controller(c.attitude.vertical);
-  controller.reset(.475);
+  controller.reset(.50);
   a::VerticalSample s{s.z0=2.,s.z=2.,s.vz=0.,s.fresh=true,s.z_valid=true,s.vz_valid=true};
   auto o=controller.step(s,0.,.05);
-  assert(o.healthy&&std::abs(o.thrust-.475)<1e-12);
-  // Body FRD/NED thrust in VehicleAttitudeSetpoint: command is (0,0,-0.475).
-  std::cout<<"R63_HOVER_0P475_NORMALIZED_NEGATIVE_BODY_Z_PASS\n";
+  assert(o.healthy&&std::abs(o.thrust-.50)<1e-12);
+  // Body FRD/NED thrust in VehicleAttitudeSetpoint: command is (0,0,-0.50).
+  std::cout<<"R63_HOVER_0P50_NORMALIZED_NEGATIVE_BODY_Z_PASS\n";
 }
 static void r63_flight_chain(){
   f::Runtime r(r63_config());auto s=sample();double t=ready(r,s,true);
@@ -49,12 +49,12 @@ static void r63_flight_chain(){
     assert(r.request("PING",{},s,t).accepted);
     o=tick(r,s,t+=.05);
     assert(o.attitude.publish&&o.attitude.command==a::Command::None);
-    assert(o.attitude.thrust[2]<=0&&o.attitude.thrust[2]>=-.4750001);
+    assert(o.attitude.thrust[2]<=0&&o.attitude.thrust[2]>=-.5000001);
     if(o.attitude.thrust[2]<-.01)saw_ramp=true;
     assert(r.attitude_core().phase()==a::Phase::ThrustRamp);
   }
   assert(saw_ramp); // Timer alone cannot prove liftoff.
-  assert(std::abs(o.attitude.thrust[2]+.475)<1e-7);
+  assert(std::abs(o.attitude.thrust[2]+.50)<1e-7);
   s.feedback.landed=false;s.at_rest=false;
   s.attitude.z=1.97;s.attitude.vz=-.02;
   for(int i=0;i<4;++i){
@@ -64,6 +64,7 @@ static void r63_flight_chain(){
   }
   s.attitude.z=1.87;s.attitude.vz=-.1;
   for(int i=0;i<8&&r.attitude_core().phase()!=a::Phase::Ascend;++i){
+    s.attitude.z-=.005; // new local samples observe the claimed 0.1 m/s rise
     assert(r.request("PING",{},s,t).accepted);
     o=tick(r,s,t+=.05);
   }

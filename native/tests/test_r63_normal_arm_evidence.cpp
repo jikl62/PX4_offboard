@@ -81,7 +81,9 @@ static void denial_matrix(){
       case 1:break; // SINK DENIED
       case 2:h.s.latest_arming_reason=2;break; // RC arm
       case 3:h.s.armed_time=0;break; // no new event
-      case 4:h.s.status_stamp=h.r.pending(400).causal_floor-1000;break;
+      // tick() advances source time by 50 ms. Keep the observed status
+      // strictly behind the wire causal floor after that advance as well.
+      case 4:h.s.status_stamp=h.r.pending(400).causal_floor-50001;break;
       case 5:h.s.attitude.rc_arm_switch=1;break;
       case 6:h.s.attitude.rc_link_ready=false;break;
       case 7:h.s.attitude.source_clock_validated=false;break;

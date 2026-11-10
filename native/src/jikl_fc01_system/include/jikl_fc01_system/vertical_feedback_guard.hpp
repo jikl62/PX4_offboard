@@ -9,6 +9,8 @@ struct VerticalFeedbackConfig {
   // Opt in explicitly in the deployed YAML; legacy synthetic Core callers
   // need not manufacture a PX4 z_deriv or a source timestamp.
   bool enabled{};
+  // Velocity-output differences are diagnostic only. These existing values
+  // also bound the independent position/derivative consistency window.
   double rate_tolerance_mps{.20},dwell_seconds{.50};
   void validate() const{
     if(!std::isfinite(rate_tolerance_mps)||rate_tolerance_mps<=0||rate_tolerance_mps>1||
@@ -17,7 +19,10 @@ struct VerticalFeedbackConfig {
   }
 };
 struct VerticalFeedbackEvidence {
+  // While healthy, suspect/rate_warning report velocity-output disagreement.
+  // Hard input, clock and position-consistency faults use healthy/reason.
   bool checked{},healthy{true},suspect{},position_window_checked{};
+  bool rate_warning{};
   double rate_error_mps{},position_rate_error_mps{},disagreement_seconds{};
   std::uint64_t sample_stamp{};
   std::uint32_t disagreement_samples{};
@@ -51,13 +56,14 @@ class VerticalFeedbackGuard {
       if(!bad_since_)bad_since_=stamp;
       ++e_.disagreement_samples;
       e_.disagreement_seconds=double(stamp-bad_since_)*1e-6;
-      if(e_.disagreement_seconds>=c_.dwell_seconds&&e_.disagreement_samples>=3)
-        return fail("VERTICAL_VELOCITY_INCONSISTENT");
+      // PX4 produces vz and z_deriv with different correction algorithms.
+      // Keep the observation without treating their difference as a fault.
+      e_.rate_warning=e_.disagreement_seconds>=c_.dwell_seconds&&e_.disagreement_samples>=3;
     }else{
-      bad_since_=0;e_.disagreement_samples=0;e_.disagreement_seconds=0;
+      bad_since_=0;e_.disagreement_samples=0;e_.disagreement_seconds=0;e_.rate_warning=false;
     }
     // Integrate the position derivative over strictly new PX4 samples.
-    // vz is a different EKF output, already compared above; integrating vz
+    // vz is a different EKF output, monitored above; integrating vz
     // here would double-count that disagreement and position corrections.
     // A window-average
     // residual tolerates ordinary sample noise without differentiating z at

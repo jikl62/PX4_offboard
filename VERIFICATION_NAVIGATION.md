@@ -1,3 +1,5 @@
+Current delivery: [20261110 recovery diagnostic release](docs/FC01_RECOVERY_DIAGNOSTIC_V4_20261110.md), version `20261110.6`. `HOST_VERIFICATION.json` records the host checks for this package; target ARM64 evidence is generated only after native compilation on the Orange Pi. The record below describes the original release and its environment at that time.
+
 # RC navigation verification record
 
 Scope: native manual-RC admission integrated into the supplied R632 attitude/height controller, supervised boot service, visible read-only status and staged offline installation. The original supplied candidate tree remains unchanged. `native/BASELINE_SHA256.json` records the pristine overlay inputs.

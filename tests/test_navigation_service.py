@@ -21,6 +21,61 @@ class NavigationServiceTests(unittest.TestCase):
         self.assertTrue((ROOT/'navigation_service.py').exists(),'navigation background controller missing')
         return importlib.import_module('navigation_service')
 
+    def test_old_binary_without_lifecycle_marker_is_not_accepted(self):
+        m = self.api()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            binary = root/'fc01_system_node'
+            markers = m.MARKER+m.TAKEOFF_MARKER+m.SAFETY_MARKER
+            binary.write_bytes(markers)
+            with patch.object(m, 'controller_path', return_value=binary), patch.object(m, 'verify_binary'):
+                with self.assertRaisesRegex(m.ControlError, '生命周期'):
+                    m.check_controller(root)
+                binary.write_bytes(markers+b'FC01_SAFE_LIFECYCLE_V1_20261109')
+                with self.assertRaisesRegex(m.ControlError, '生命周期'):
+                    m.check_controller(root)
+                binary.write_bytes(markers+b'FC01_VERTICAL_DIAGNOSTIC_V1_20261110')
+                with self.assertRaisesRegex(m.ControlError, '生命周期'):
+                    m.check_controller(root)
+                binary.write_bytes(markers+b'FC01_RECOVERY_DIAGNOSTIC_V1_20261110')
+                with self.assertRaisesRegex(m.ControlError, '生命周期'):
+                    m.check_controller(root)
+                binary.write_bytes(markers+m.LIFECYCLE_MARKER)
+                self.assertEqual(m.check_controller(root), binary)
+
+    def test_private_controller_does_not_require_the_sdk_controller_binary(self):
+        import launcher
+        import standby
+        import types
+        self.api()
+        msgs=types.ModuleType('px4_msgs.msg')
+        for name in ('BatteryStatus','VehicleAttitude','VehicleLocalPosition','VehicleStatus','VehicleLandDetected','FailsafeFlags'):
+            setattr(msgs,name,type(name,(),{}))
+        px4=types.ModuleType('px4_msgs');px4.msg=msgs
+        rclpy=types.ModuleType('rclpy');support=types.ModuleType('rclpy.type_support')
+        support.check_for_type_support=lambda _:None
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);(root/'config').mkdir()
+            (root/'config/attitude_altitude.yaml').write_text((ROOT/'tests/fixtures/base.yaml').read_text())
+            binary=root/'private/fc01_system_node';binary.parent.mkdir()
+            data=bytearray(64);data[:6]=b'\x7fELF\x02\x01';data[18:20]=(183).to_bytes(2,'little')
+            binary.write_bytes(bytes(data)+b''.join(launcher.BINARY_MARKERS));binary.chmod(0o700)
+            agent=root/'MicroXRCEAgent';agent.write_text('#!/bin/sh\n');agent.chmod(0o700)
+            with patch.dict(sys.modules,{'px4_msgs':px4,'px4_msgs.msg':msgs,'rclpy':rclpy,'rclpy.type_support':support}),\
+                 patch.object(launcher.platform,'machine',return_value='aarch64'),\
+                 patch.object(launcher,'process_list',return_value=[]),patch.object(launcher,'uart_owners',return_value=set()),\
+                 patch.object(standby.shutil,'which',return_value='/usr/bin/fuser'),\
+                 patch.dict(os.environ,ROS_DOMAIN_ID='0',ROS_LOCALHOST_ONLY='0'):
+                selected,_=launcher.preflight(root,agent,'/dev/null',controller=binary)
+                config=standby.validate(root,agent,controller=binary)
+                self.assertEqual(selected,binary)
+                self.assertEqual(config['fc01_system']['ros__parameters']['profile'],'attitude_altitude')
+                binary.write_bytes(b'invalid')
+                with self.assertRaises(launcher.ControlError):launcher.preflight(root,agent,'/dev/null',controller=binary)
+                with self.assertRaises(launcher.ControlError):standby.validate(root,agent,controller=binary)
+                # Installation prepares YAML before compiling its controller.
+                self.assertEqual(standby.validate(root,agent)['fc01_system']['ros__parameters']['profile'],'attitude_altitude')
+
     def test_navigation_profile_keeps_program_arm_disabled_and_numeric_limits(self):
         m=self.api();base=yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text())
         result=m.navigation_profile(base)['fc01_system']['ros__parameters']
@@ -29,11 +84,50 @@ class NavigationServiceTests(unittest.TestCase):
         self.assertFalse(result['arm_enabled'] or result['flight_enabled'] or result['bench_arm_only_enabled'])
         self.assertTrue(result['rc_takeover_confirmed'] and result['flight_parameters_confirmed'])
         self.assertFalse(result['autonomous_failsafe_confirmed'])
-        self.assertEqual(result['rc_target_height'],.5)
+        self.assertEqual(result['rc_target_height'],1.5)
         self.assertEqual(result['rc_navigation_mode_slot'],6)
         self.assertEqual(result['csv_path'],'')
         for name in ('aa_hover_thrust','aa_takeoff_reserve_thrust','aa_max_tilt_deg','aa_feedback_rate_tolerance_mps','aa_feedback_dwell_seconds'):
             self.assertEqual(result[name],base['fc01_system']['ros__parameters'][name])
+
+    def test_diagnostic_mode_closes_every_action_authority_and_visual_gate(self):
+        m=self.api();base=yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text())
+        p=m.diagnostic_profile(base)['fc01_system']['ros__parameters']
+        for key in ('flight_enabled','flight_actions_enabled','arm_enabled','takeoff_enabled',
+                    'flight_parameters_confirmed','rc_navigation_enabled','rc_takeover_confirmed',
+                    'autonomous_failsafe_confirmed','bench_arm_only_enabled','visual_navigation_enabled'):
+            self.assertIs(p[key],False,key)
+        self.assertEqual(p['rc_target_height'],1.5)
+
+    def test_shipped_mode_candidates_start_with_closed_gates(self):
+        for name in ('diagnostic.yaml','flight_test.yaml'):
+            with self.subTest(name=name):
+                p=yaml.safe_load((ROOT/'native/config'/name).read_text())['fc01_system']['ros__parameters']
+                self.assertFalse(p['flight_actions_enabled'])
+                self.assertFalse(p['arm_enabled'])
+                self.assertFalse(p['takeoff_enabled'])
+                self.assertFalse(p['rc_navigation_enabled'])
+                self.assertFalse(p['visual_navigation_enabled'])
+                self.assertEqual(p['rc_target_height'],1.5)
+
+    def test_load_profile_uses_bundle_candidate_and_writes_mode_metadata(self):
+        m=self.api();base=yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text());seen={}
+        def validate(root,agent,**kwargs):
+            seen.update(kwargs);return base
+        with tempfile.TemporaryDirectory() as d,patch.object(m.standby,'validate',side_effect=validate):
+            entry=Path(d);out=entry/'runtime.yaml'
+            p=m.load_profile(entry,entry/'agent',entry,m.DIAGNOSTIC,config_path=out)
+            params=p['fc01_system']['ros__parameters']
+            self.assertEqual(seen['config_path'],entry/'native/config/diagnostic.yaml')
+            self.assertEqual(params['fc01_runtime_mode'],'diagnostic')
+            self.assertEqual(Path(params['fc01_config_path']),out.resolve())
+            self.assertEqual(Path(params['fc01_config_source_path']),seen['config_path'].resolve())
+
+    def test_flight_test_requires_explicit_confirmation(self):
+        m=self.api()
+        with self.assertRaises(SystemExit) as error:
+            m.main(['run','--mode','flight-test'])
+        self.assertEqual(error.exception.code,2)
 
     def test_mode_slot_is_configurable_and_rejects_invalid_values(self):
         m=self.api();base=yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text())
@@ -67,7 +161,8 @@ class NavigationServiceTests(unittest.TestCase):
 
     def test_native_fault_overrides_connected_and_ready_is_distinct(self):
         m=self.api()
-        common=dict(status='CONNECTED',reason='transport okay',state=dict(phase='SAFETY',reason='VERTICAL_VELOCITY_INCONSISTENT'))
+        common=dict(status='CONNECTED',reason='transport okay',state_age_seconds=.1,feedback_current=True,
+                    state=dict(phase='SAFETY',reason='VERTICAL_VELOCITY_INCONSISTENT'))
         row=m.describe_row(common)
         self.assertEqual(row['status'],'FAULT')
         self.assertIn('VERTICAL_VELOCITY_INCONSISTENT',row['reason'])
@@ -75,6 +170,44 @@ class NavigationServiceTests(unittest.TestCase):
         self.assertEqual(m.describe_row(common)['status'],'READY_WAIT_ARM')
         common['state']=dict(phase='HEIGHT_HOLD',reason='HEIGHT_HOLD')
         self.assertEqual(m.describe_row(common)['status'],'HEIGHT_HOLD')
+
+    def test_current_native_fault_survives_expired_aircraft_feedback(self):
+        m=self.api()
+        state=dict(phase='SAFETY',reason='HEIGHT_OR_SPEED_ENVELOPE_EXCEEDED',
+                   status_fresh=True,local_fresh=False,controller_pid=2057)
+        row=dict(status='WAITING',reason='等待飞控新鲜状态和本地位置',feedback_current=False,
+                 state=state,state_age_seconds=.05,controller_pid=2057,state_controller_pid=2057)
+        described=m.describe_row(row)
+        self.assertEqual(described['status'],'FAULT')
+        self.assertEqual(described['reason'],state['reason'])
+        self.assertIs(described['controller_state_current'],True)
+        self.assertIs(described['fault_latched'],True)
+        self.assertIs(described['feedback_current'],False)
+        self.assertEqual(row['status'],'WAITING')
+
+    def test_old_or_disconnected_safety_cannot_override_transport_status(self):
+        m=self.api()
+        base=dict(status='WAITING',reason='native connection unavailable',feedback_current=False,
+                  state=dict(phase='SAFETY',reason='previous fault',controller_pid=2057),
+                  state_age_seconds=.05,controller_pid=2057,state_controller_pid=2057)
+        cases=[dict(state_age_seconds=3.01),dict(state_age_seconds=None),dict(state_age_seconds=float('nan')),
+               dict(ipc_error=dict(kind='clean_eof')),dict(controller_returncode=0),
+               dict(retry_in_seconds=5),dict(controller_pid=2058),dict(state_controller_pid=2056),
+               dict(status='STOPPING'),dict(status='STOPPED')]
+        for changes in cases:
+            with self.subTest(changes=changes):
+                row=dict(base,**changes)
+                described=m.describe_row(row)
+                self.assertEqual(described['status'],row['status'])
+                self.assertEqual(described['reason'],row['reason'])
+                self.assertIs(described['controller_state_current'],False)
+                self.assertIs(described['fault_latched'],False)
+
+    def test_unknown_aircraft_feedback_cannot_become_ready(self):
+        m=self.api()
+        row=dict(status='CONNECTED',reason='IPC connected',state_age_seconds=.1,
+                 state=dict(phase='RC_READY_WAIT_ARM',reason='RC_READY_WAIT_CH5_MANUAL_ARM'))
+        self.assertEqual(m.describe_row(row)['status'],'CONNECTED')
 
     def test_service_runs_private_native_with_status_only_and_graceful_recovery(self):
         m=self.api();import standby
@@ -97,7 +230,7 @@ class NavigationServiceTests(unittest.TestCase):
                 if path==Path('/proc',str(agent.pid),'cmdline'):return b'\0'.join(os.fsencode(x) for x in agent.args)+b'\0'
                 return real_read(path)
             start=time.monotonic()
-            with patch.object(Path,'home',return_value=home),patch.object(standby,'preflight',return_value=(home/'old_binary',existing)),\
+            with patch.object(Path,'home',return_value=home),patch.object(standby,'preflight',return_value=(native,existing)),\
                  patch.object(standby,'verify_binary'),patch.object(standby.subprocess,'Popen',side_effect=spawn),\
                  patch.object(standby,'connect_controller',return_value=Channel(a)),patch.object(Path,'read_bytes',new=read_bytes):
                 standby.supervise(home/'base',home/'agent',home/'FC01_navigation',stopped,
@@ -118,7 +251,9 @@ class NavigationServiceTests(unittest.TestCase):
         self.assertTrue((ROOT/'navigation.py').exists(),'navigation management/view missing')
         m=importlib.import_module('navigation')
         row=dict(status='READY_WAIT_ARM',reason='ready',supervisor_pid=10,updated_unix=1000,
-                 state=dict(phase='RC_READY_WAIT_ARM',armed=False,nav_state=15,relative_height_m=.01))
+                 state_age_seconds=.1,feedback_current=True,
+                 state=dict(phase='RC_READY_WAIT_ARM',armed=False,nav_state=15,relative_height_m=.01,
+                            status_fresh=True,local_fresh=True))
         self.assertIn('STARTING',m.render_status(row,{'ActiveState':'active','MainPID':'11'},now=1001))
         self.assertIn('STALE',m.render_status(row,{'ActiveState':'active','MainPID':'10'},now=1020))
         self.assertIn('READY_WAIT_ARM',m.render_status(row,{'ActiveState':'active','MainPID':'10'},now=1001))

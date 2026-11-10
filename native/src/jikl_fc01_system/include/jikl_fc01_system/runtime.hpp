@@ -8,6 +8,7 @@
 #include <array>
 #include <memory>
 #include <sstream>
+#include <string>
 #include <vector>
 
 namespace fc01 {
@@ -28,11 +29,23 @@ struct Stamp {
 };
 struct Config {
   std::string profile{"ground"};
+  // Provenance metadata from the selected candidate profile. These fields
+  // describe the launch; they never grant flight authority by themselves.
+  std::string runtime_mode{},entry_version{"unknown"},config_path{},config_source_path{};
   bool flight_enabled{};
   attitude::Config attitude;
   v::Config control=[](){v::Config c;c.height=1;c.max_height=5;c.max_radius=3;
     c.xy_speed=.3;c.z_speed=.3;c.climb_speed=.3;return c;}();
   void validate() const {
+    if(!runtime_mode.empty()&&runtime_mode!="diagnostic"&&runtime_mode!="flight-test")
+      throw std::invalid_argument("FC01_RUNTIME_MODE_INVALID");
+    if(runtime_mode=="diagnostic"&&
+       (flight_enabled||attitude.flight_actions_enabled||attitude.arm_enabled||
+        attitude.takeoff_enabled||attitude.rc_navigation_enabled||
+        attitude.bench_arm_only_enabled||attitude.visual.enabled||
+        attitude.parameters_confirmed||attitude.rc_takeover_confirmed||
+        attitude.autonomous_failsafe_confirmed))
+      throw std::invalid_argument("DIAGNOSTIC_ACTION_GATES_MUST_BE_CLOSED");
     control.validate();attitude.validate();
     if(attitude.rc_navigation_enabled&&profile!="attitude_altitude")
       throw std::invalid_argument("RC_NAVIGATION_REQUIRES_ATTITUDE_PROFILE");
@@ -65,6 +78,9 @@ struct Snapshot {
   int battery_warning{},nav_state{4},system{1},component{1};
   double stationary_seconds{};
   bool attitude_output_active{},offboard_heartbeat_active{},publication_fault_latched{};
+  // Adapter supplies the completed current-cycle deadline check. Recovery
+  // observations cannot accrue through repeated overruns, even without sinks.
+  bool control_cycle_fresh{true};
 };
 struct Reply {bool accepted{};std::string message;};
 struct Output {v::Output flight{};attitude::Output attitude;bool send_ground{};};
@@ -138,6 +154,29 @@ class Runtime {
     shutdown_latched_=true;request("LAND",{},s,now);
   }
   void abort_attitude(const std::string& reason){attitude_core_.block(reason);message_=reason;}
+  bool abort_rc_preparation_timing(const std::string& reason,const Snapshot& s){
+    // The adapter calls this ONLY for a typed deadline refusal (no throwing
+    // sink), an exact-zero plan and no command. Unknown/nonzero partial pairs
+    // remain execution-integrity faults. Runtime independently checks scope.
+    if(reason!="ROS_ADAPTER_CONTROL_LOOP_STALL"&&
+       reason!="PUBLISHER_BOUNDARY_CONTROL_LOOP_STALL"&&
+       reason!="PARTIAL_OR_FAILED_SETPOINT_PUBLICATION_HEARTBEAT_FINAL_CONTEXT_CHANGED_CONTROL_LOOP_STALL")return false;
+    if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled||
+       shutdown_latched_||maintenance_||ground_||s.time_regressed||
+       !s.arming_state_known||!s.status_fresh||!s.land_fresh||s.feedback.armed||
+       s.feedback.offboard||!s.feedback.landed||!s.at_rest)return false;
+    for(const auto& p:pending_)if(p.requested)return false;
+    if(!attitude_core_.block_rc_preparation_timing(reason,attitude_snapshot(s)))return false;
+    rc_preparation_timing_fault_=true;last_rc_timing_observation_=-1;
+    last_attitude_output_active_=false;message_=reason;
+    return true;
+  }
+  void begin_attitude_safety_observation(){queued_safety_wait_=false;attitude_core_.begin_safety_observation();}
+  void observe_attitude_safety_event(const attitude::Feedback& feedback,
+      attitude::Core::SafetyEvent source,double now){
+    if(config_.profile!="attitude_altitude")return;
+    queued_safety_wait_=attitude_core_.observe_safety_event(feedback,source,now)||queued_safety_wait_;message_=attitude_core_.reason();
+  }
   bool visual_output_current(const Snapshot& s,double now)const{return attitude_core_.visual_current(attitude_snapshot(s),now);}
   void request_visual_land(const Snapshot& s,double now,const std::string& reason){
     attitude_core_.visual_land(attitude_snapshot(s),now,reason);message_=attitude_core_.reason();
@@ -149,12 +188,72 @@ class Runtime {
   const v::Core& flight_core() const{return core_;}
   const Pending& pending(unsigned cmd) const{return pending_[index(cmd)];}
   const std::vector<Pending>& command400_history() const{return command400_history_;}
+  const std::string& last_rc_attempt_reason()const{return last_rc_attempt_reason_;}
+  std::uint64_t rc_attempts_completed()const{return rc_attempts_completed_;}
   // Enable in the production ROS adapter. Pure-core fixtures intentionally
   // retain their historical implicit publication model.
   void require_attitude_sink_commit(){if(config_.profile=="attitude_altitude")
     attitude_sink_commit_required_=true;}
   void confirm_rc_output(bool allowed,double now){attitude_core_.note_rc_publication(allowed,now);}
   bool rc_restart_allowed(const Snapshot& s)const{return attitude_core_.rc_restart_allowed(attitude_snapshot(s));}
+  bool defer_rc_preparation(const Snapshot& s,double now,const std::string& reason){
+    if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled||
+       shutdown_latched_||maintenance_||ground_||s.publication_fault_latched||s.time_regressed||
+       s.attitude_output_active||s.offboard_heartbeat_active)return false;
+    // A prior command is outside this deliberately narrow no-arm retry path,
+    // even when its transaction is terminal. Preserve every wire watermark.
+    for(const auto& p:pending_)if(p.requested)return false;
+    if(!attitude_core_.defer_rc_preparation(attitude_snapshot(s),now,reason))return false;
+    // This bit describes the current plan, not evidence that a sink ran.
+    last_attitude_output_active_=false;message_=reason;return true;
+  }
+  // Read-only admission uses exactly the same gates as reprepare_rc(). This
+  // distinguishes task recovery from transport/command integrity blockers.
+  std::string rc_reprepare_block_reason(const Snapshot& s,double now)const{
+    if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled)return "RC_RECOVERY_DISABLED";
+    if(shutdown_latched_)return "RC_SHUTDOWN_IN_PROGRESS";
+    if(maintenance_)return "RC_MAINTENANCE_ACTIVE";
+    if(ground_)return "RC_GROUND_TEST_ACTIVE";
+    if(!std::isfinite(now)||now<0)return "RC_INVALID_HOST_TIME";
+    if(s.publication_fault_latched&&!rc_preparation_timing_fault_)return "RC_PUBLICATION_FAULT_LATCHED";
+    if(s.time_regressed)return "RC_TIME_REGRESSION_LATCHED";
+    if(!s.control_cycle_fresh)return "RC_CONTROL_CYCLE_NOT_FRESH";
+    if(last_attitude_output_active_||s.attitude_output_active||s.offboard_heartbeat_active)
+      return "RC_OUTPUT_STILL_ACTIVE";
+    if(!rc_restart_allowed(s))return "RC_CORE_RESTART_CONDITIONS_NOT_MET";
+    for(unsigned command:{176U,400U,21U}){
+      const auto& p=pending_[index(command)];
+      if(!p.requested)continue;
+      const bool newer_status=s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor});
+      const bool terminal=p.state_verified||(!p.ack_ambiguous&&p.rejected)||
+        (p.command400_kind==Command400Kind::None&&p.accepted&&newer_status);
+      if(!terminal&&!ended_rc_disarm_terminal(p,s))
+        return "RC_COMMAND_"+std::to_string(command)+"_OUTCOME_UNRESOLVED";
+    }
+    return {};
+  }
+  bool reprepare_rc(const Snapshot& s,double now){
+    // The end-of-cycle check includes reporting and final snapshot work.
+    // An early healthy observation must not survive an eventual overrun.
+    if(rc_preparation_timing_fault_&&!s.control_cycle_fresh)
+      attitude_core_.clear_rc_timing_recovery();
+    if(!rc_reprepare_block_reason(s,now).empty())return false;
+    // Rebuild only task state. Wire generations and ACK watermarks outlive
+    // every RC attempt, including accepted/state-only Disarm transactions.
+    for(auto& p:pending_)if(p.requested&&!p.state_verified&&ended_rc_disarm_terminal(p,s)){
+      // The ended task's independent NEW ground/disarmed dwell settles the
+      // physical outcome, without attributing a delayed 400 ACK to Disarm.
+      p.state_verified=true;p.verified_status_stamp=s.status_stamp;p.verified_at=now;
+      p.stage=CommandStage::StateOnlyTerminal;
+      p.ack_disposition="ENDED_TASK_GROUND_CONFIRMED_ACK_UNATTRIBUTED";
+    }
+    last_rc_attempt_reason_=attitude_core_.reason();++rc_attempts_completed_;
+    attitude_core_=attitude::Core(config_.attitude);
+    rc_preparation_timing_fault_=false;
+    last_rc_timing_observation_=-1;
+    message_="RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET";
+    return true;
+  }
   void confirm_attitude_command_publication(attitude::Command command,bool allowed,
       std::uint64_t wire_stamp,const Snapshot& actual,double now){
     if(command==attitude::Command::None)return;
@@ -502,6 +601,24 @@ class Runtime {
   }
   Output step(const Snapshot& s,double now){
     Output out;
+    if(rc_preparation_timing_fault_){
+      if(!s.control_cycle_fresh||!std::isfinite(now)||
+         (last_rc_timing_observation_>=0&&(now<last_rc_timing_observation_||
+           now-last_rc_timing_observation_>config_.attitude.stall_seconds)))
+        attitude_core_.clear_rc_timing_recovery();
+      last_rc_timing_observation_=now;
+      if(!s.control_cycle_fresh){
+        last_attitude_output_active_=false;queued_safety_wait_=false;return out;
+      }
+    }
+    if(queued_safety_wait_){
+      queued_safety_wait_=false;
+      // A faulted task remains output-silent but still observes independent
+      // terminal/recovery evidence. Ordinary queued callbacks must not starve
+      // that read-only observer forever. The Core retains bad-event latches.
+      attitude_core_.observe_safety_terminal(attitude_snapshot(s),now);
+      last_attitude_output_active_=false;return out;
+    }
     if(ground_&&!ground_->finished()){
       if(s.time_regressed||!s.status_fresh||!s.land_fresh){
         ground_->abort(s.time_regressed?"TIME_REGRESSION_RESTART_ON_GROUND":!s.status_fresh?"STATUS_STALE":"LAND_STALE");
@@ -650,6 +767,12 @@ class Runtime {
     return out;
   }
  private:
+  bool ended_rc_disarm_terminal(const Pending& p,const Snapshot& s)const{
+    return attitude_core_.rc_fault_recovery_ready()&&p.command400_kind==Command400Kind::Disarm&&
+      p.sent&&p.published&&!p.sink_denied&&s.arming_state_known&&
+      s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor})&&
+      s.land_stamp>std::max(p.land_at_wire,p.causal_floor);
+  }
   bool normal_offboard_candidate_scope(const Pending& p) const{
     return config_.profile=="attitude_altitude"&&config_.attitude.flight_actions_enabled&&
       !config_.attitude.bench_arm_only_enabled&&!ground_&&
@@ -775,11 +898,14 @@ class Runtime {
   Config config_;v::Core core_;attitude::Core attitude_core_;std::unique_ptr<g::Core> ground_;
   double last_ping_{-1},velocity_until_{-1},ground_origin_{},recover_started_{};
   bool recover_land_{},maintenance_{},shutdown_latched_{};
-  bool last_attitude_output_active_{},attitude_sink_commit_required_{};
+  bool last_attitude_output_active_{},attitude_sink_commit_required_{},queued_safety_wait_{};
   int recover_nav_{};
   std::array<Pending,3> pending_{};
   unsigned command400_commits_{},command176_commits_{};
   std::vector<Pending> command400_history_;
+  std::uint64_t rc_attempts_completed_{};std::string last_rc_attempt_reason_;
+  bool rc_preparation_timing_fault_{};
+  double last_rc_timing_observation_{-1};
   std::string message_{"IDLE_NO_AUTOMATIC_ARM"};
 };
 } // namespace fc01

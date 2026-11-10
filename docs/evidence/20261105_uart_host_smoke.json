@@ -1,0 +1,23 @@
+{
+  "audit_date_client": "2026-11-05",
+  "scope": "Developer x86 host smoke only, not an OrangePi or FC01 test",
+  "machine": "x86_64",
+  "summary": "unknown",
+  "board_confirmation": "NOT_CONFIRMED_ON_ORANGEPI",
+  "hardware_validation": "NOT_PERFORMED",
+  "check_statuses": {
+    "board_identity": "unknown",
+    "candidate_character_device": "observed",
+    "primary_character_device": "observed",
+    "distinct_from_primary": "observed",
+    "candidate_driver_binding": "unknown",
+    "candidate_device_tree": "unknown",
+    "candidate_pinctrl": "unknown",
+    "default_candidate_mapping": "unknown",
+    "kernel_console": "unknown",
+    "serial_getty": "observed",
+    "visible_process_users": "unknown"
+  },
+  "source_fingerprints_checked": 12,
+  "source_fingerprints_match": true
+}

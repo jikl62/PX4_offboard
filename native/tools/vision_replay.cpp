@@ -35,7 +35,7 @@ static fc01::Config simulation_config(fc01::Config cfg){
   cfg.profile="attitude_altitude";cfg.flight_enabled=false;
   auto& p=cfg.attitude;p.flight_actions_enabled=p.takeoff_enabled=p.parameters_confirmed=true;
   p.arm_enabled=p.bench_arm_only_enabled=p.autonomous_failsafe_confirmed=false;
-  p.rc_takeover_confirmed=p.rc_navigation_enabled=true;p.rc_navigation_mode_slot=1;p.rc_target_height=.5;
+  p.rc_takeover_confirmed=p.rc_navigation_enabled=true;p.rc_navigation_mode_slot=1;
   p.visual.enabled=true;p.vertical.ground_lower_margin=p.height_lower_margin_m;
   cfg.validate();return cfg;
 }
@@ -112,8 +112,9 @@ static v::State demo_state(std::uint64_t seq,std::uint64_t stamp,const v::Vec3& 
 static void demo(fc01::Config cfg,const std::string& scenario){
   if(scenario!="cruise"&&scenario!="height")throw std::invalid_argument("UNKNOWN_DEMO");
   vt::VisionFlight q(simulation_config(cfg));q.reach_hold();v::Inbox inbox;
-  v::Vec3 p{0,0,-.5},velocity{0,0,0};a::Quaternion actual{1,0,0,0};
-  const v::Vec3 target=scenario=="height"?v::Vec3{0,0,-.9}:v::Vec3{.8,.4,-.5};
+  const double platform=q.c.attitude.rc_target_height;
+  v::Vec3 p{0,0,-platform},velocity{0,0,0};a::Quaternion actual{1,0,0,0};
+  const v::Vec3 target=scenario=="height"?v::Vec3{0,0,-platform-.4}:v::Vec3{.8,.4,-platform};
   constexpr double dt=.05,g=9.80665;double elapsed=0;
   for(std::uint64_t seq=1;seq<=180;++seq){
     elapsed+=dt;const auto stamp=1000000000ULL+static_cast<std::uint64_t>(std::llround(elapsed*1e9));

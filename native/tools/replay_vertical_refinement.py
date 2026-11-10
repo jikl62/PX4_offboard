@@ -99,7 +99,7 @@ def main():
                 result = []
                 for r in rows:
                     t = float(r['elapsed_s'])
-                    cap = .475*min(1., t/2.)+.04*max(0., min((t-2.)/2., 1.))
+                    cap = .50*min(1., t/2.)+.04*max(0., min((t-2.)/2., 1.))
                     if r['phase'] == 'THRUST_RAMP' and r['publish'] == '1':
                         result.append(max(0., float(r['thrust'])-cap))
                 return max(result, default=0.)

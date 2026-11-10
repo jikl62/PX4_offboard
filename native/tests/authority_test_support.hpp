@@ -21,10 +21,13 @@ inline f::Snapshot sample(){
   s.feedback.exclusive=s.feedback.landed=s.feedback.preflight=true;
   s.battery_fresh=s.battery_connected=s.power_valid=true;
   s.attitude.attitude_fresh=s.attitude.failsafe_fresh=s.attitude.z_valid=s.attitude.vz_valid=true;
-  s.attitude.battery_voltage=7.6;s.attitude.z=2;return s;
+  s.attitude.battery_voltage=7.6;s.attitude.z=2;
+  s.attitude.local_stamp=s.attitude.vertical_sample_stamp=1000;return s;
 }
 inline f::Output tick(f::Runtime& r,f::Snapshot& s,double& now){
-  now+=.05;s.status_stamp+=1000;s.land_stamp+=1000;r.request("PING",{},s,now);return r.step(s,now);
+  now+=.05;s.status_stamp+=50000;s.land_stamp+=50000;
+  s.attitude.local_stamp+=50000;s.attitude.vertical_sample_stamp+=50000;
+  r.request("PING",{},s,now);return r.step(s,now);
 }
 inline void ready(f::Runtime& r,f::Snapshot& s,double& now,const char* selection=nullptr){
   assert(r.request("INTERACTIVE",{},s,now).accepted);

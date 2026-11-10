@@ -282,7 +282,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
   if(!commanded||!std::isfinite(c.yaw_reference))return deny(BoundaryReason::CommandedAttitude);
   Quaternion level{std::cos(c.yaw_reference/2),0,0,std::sin(c.yaw_reference/2)};
   if(output.visual_motion){
-    if(!c.config.visual.enabled||c.phase!=Phase::HeightHold||!c.flight_started||!c.visual_motion_allowed)
+    if(!c.config.visual.enabled||c.phase!=Phase::HeightHold||!c.flight_started||!c.visual_motion_allowed||c.feedback.landed)
       return deny(BoundaryReason::VisualInput);
     const auto expected=normalized(c.visual_target_q);if(!expected)return deny(BoundaryReason::VisualAttitude);
     level=*expected;
@@ -361,11 +361,8 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
     if(!c.session_connected)return deny(BoundaryReason::SessionDisconnected);
     if(!c.operator_lease_live)return deny(BoundaryReason::OperatorLease);
   }
-  const auto q=normalized(c.feedback.q);
-  const double cosine=std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.);
   if(!std::isfinite(c.reference_z)||c.reference_z-c.feedback.z>c.config.vertical.max_height||
-     c.reference_z-c.feedback.z< -c.config.height_lower_margin_m||
-     std::acos(cosine)*180/3.14159265358979323846>c.config.max_tilt_deg)return deny(BoundaryReason::FlightEnvelope);
+     c.reference_z-c.feedback.z< -c.config.height_lower_margin_m)return deny(BoundaryReason::FlightEnvelope);
   return allow();
 }
 inline std::string flight_gates_json(const Config& c){

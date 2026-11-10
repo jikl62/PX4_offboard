@@ -11,19 +11,155 @@ import math
 import os
 from pathlib import Path
 import platform
+import queue
 import select
 import shutil
 import signal
+import socket
+import stat
 import subprocess
+import sys
 import threading
 import time
 
 from fc01_control import readiness_issues, runtime_profile
 from launcher import (Channel, ChannelError, ControlError, NodeStop, PROJECT, connect_controller,
                       finish_agent, make_socket_path, preflight, private_dir,
-                      verify_binary)
+                      verify_binary, choose_agent, process_list, uart_owners)
 
 RETRY_SECONDS = 30
+
+
+class AgentTransport:
+    """Recover UART transport only; never command or replace the live controller.
+
+    The launcher lock remains held by supervise. A separate UART lock protects
+    cooperating transport workers, and every restart checks actual UART owners.
+    The worker stays alive during a requested graceful native shutdown because
+    that shutdown may need fresh DDS evidence before it can safely finish.
+    """
+    def __init__(self, binary, owned, existing, cache, message):
+        self.binary, self.owned, self.existing = binary, owned, existing
+        self.cache, self.message = cache, message
+        self.closing = threading.Event()
+        self.guard = threading.Lock()
+        self.launch_guard = threading.Lock()
+        self.worker = None
+        self.next_check, self.backoff, self.restarts = 0., 1., 0
+        self.live_since = time.monotonic()
+        self.info = {}
+        self._report('CONNECTED' if owned is not None or existing is not None else 'RECOVERING', None)
+
+    def _report(self, status, reason):
+        pid = self.owned.pid if self.owned is not None else self.existing.pid if self.existing else None
+        info = dict(agent_pid=pid, agent_owned=self.owned is not None,
+                    agent_transport_status=status, agent_transport_reason=reason,
+                    agent_restart_count=self.restarts)
+        with self.guard:
+            previous = (self.info.get('agent_transport_status'), self.info.get('agent_transport_reason'))
+            self.info = info
+        if previous != (status, reason):
+            self.message('Agent transport %s: %s; PID=%s', status, reason or 'UART /dev/ttyS2 115200', pid)
+
+    def snapshot(self):
+        with self.guard:
+            return dict(self.info)
+
+    def alive(self):
+        if self.owned is not None:
+            return self.owned.poll() is None
+        if self.existing is None:
+            return False
+        try:
+            argv = tuple(x.decode(errors='replace') for x in
+                         Path('/proc', str(self.existing.pid), 'cmdline').read_bytes().split(b'\0') if x)
+            return argv == self.existing.argv
+        except OSError:
+            return False
+
+    def step(self, now=None):
+        now = time.monotonic() if now is None else now
+        if now < self.next_check or self.closing.is_set():
+            return
+        if self.alive():
+            if now-self.live_since >= 10:
+                self.backoff = 1.
+            self.next_check = now+1
+            return
+        old_code = self.owned.poll() if self.owned is not None else None
+        self.owned = self.existing = None
+        self._report('RECOVERING', 'Agent unavailable; native retained, exit='+str(old_code))
+        try:
+            fd = os.open(self.cache/'agent.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, 'w') as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                existing = choose_agent(process_list(), uart_owners('/dev/ttyS2'), '/dev/ttyS2', os.getuid())
+                with self.launch_guard:
+                    if self.closing.is_set():
+                        return
+                    if existing is not None:
+                        self.existing = existing
+                    else:
+                        if not self.binary.is_file() or not os.access(self.binary, os.X_OK):
+                            raise ControlError('缺少可执行 Agent: '+str(self.binary))
+                        self.owned = subprocess.Popen([str(self.binary), 'serial', '-D', '/dev/ttyS2',
+                                                       '-b', '115200', '-v', '0'],
+                                                      stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                                      stderr=subprocess.DEVNULL, start_new_session=True)
+                        self.restarts += 1
+            self.live_since = now
+            self.next_check = now+self.backoff
+            self.backoff = min(30., self.backoff*2)
+            self._report('CONNECTED', 'transport restored; controller safety state retained')
+        except (OSError, ControlError) as exc:
+            self._report('RECOVERING', str(exc)[:1000])
+            self.next_check = now+self.backoff
+            self.backoff = min(30., self.backoff*2)
+
+    def start(self):
+        def run():
+            while not self.closing.is_set():
+                try:
+                    self.step()
+                except Exception as exc:
+                    self._report('RECOVERING', 'transport check failed: '+str(exc)[:1000])
+                    self.next_check = time.monotonic()+30
+                self.closing.wait(.2)
+        self.worker = threading.Thread(target=run, daemon=True)
+        self.worker.start()
+
+    def close(self):
+        self.closing.set()
+        with self.launch_guard:
+            pass  # Finish a launch already admitted before the stop request.
+        if self.worker is not None:
+            self.worker.join(timeout=5)
+        # An in-flight ownership check cannot spawn after closing was set.
+        return self.owned
+
+
+def wait_for_previous_controller(agent_binary, cache, stopped, publish, message):
+    """Keep transport available while an orphan completes native safe shutdown."""
+    def controllers():
+        return [p.pid for p in process_list() if Path(p.argv[0]).name == 'fc01_system_node']
+    previous = controllers()
+    if not previous:
+        return not stopped.is_set()
+    transport = AgentTransport(agent_binary, None, None, cache, message)
+    transport.start()
+    try:
+        while previous and not stopped.is_set():
+            publish(dict(status='WAITING', reason='等待已有控制器安全退出；仅恢复 Agent 传输',
+                         previous_controller_pids=previous, feedback_current=False,
+                         **transport.snapshot()))
+            if stopped.wait(1):
+                break
+            previous = controllers()
+    finally:
+        retained = transport.close()
+        if retained is not None:
+            message('保留恢复的 Agent PID=%s；已有控制器的安全退出由原生程序确认', retained.pid)
+    return not stopped.is_set()
 
 
 def standby_config(base):
@@ -35,33 +171,188 @@ def standby_config(base):
 
 def rotating_logger(path, max_bytes=4*1024*1024):
     log = logging.Logger(str(path), level=logging.INFO)
-    handler = RotatingFileHandler(path, maxBytes=max_bytes, backupCount=2, encoding='utf8')
+    handler = BackgroundFileHandler(path, maxBytes=max_bytes, backupCount=2, encoding='utf8')
     handler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
     log.addHandler(handler)
     return log
 
 
+def background_log_owner(log):
+    # These handlers are closed by their daemon owner. logging.shutdown's
+    # implicit main-thread lock/flush would otherwise defeat bounded shutdown.
+    for reference in list(logging._handlerList):
+        if reference() in log.handlers:
+            logging._removeHandlerRef(reference)
+
+
+class ConsoleOutput:
+    """Best-effort worker output without Python's shared stdout buffer lock."""
+    def __init__(self, output):
+        self.fd = self.sock = None
+        try:
+            original = output.fileno()
+            if stat.S_ISSOCK(os.fstat(original).st_mode):
+                # MSG_DONTWAIT applies to this send; it does not change the
+                # shared open-file flags of systemd's journal socket.
+                self.sock = socket.socket(fileno=os.dup(original))
+            else:
+                # dup()+set_blocking() would alter the original stdout too.
+                # /proc opens an independent file description for pipes/TTYs.
+                self.fd = os.open(f'/proc/self/fd/{original}',
+                                  os.O_WRONLY | os.O_NONBLOCK | os.O_CLOEXEC | os.O_NOCTTY)
+        except (AttributeError, OSError, ValueError):
+            pass  # The rotating log remains the full transition record.
+
+    def write(self, message):
+        data = (message[:1000] + ('…' if len(message) > 1000 else '') + '\n').encode('utf8', errors='replace')
+        try:
+            if self.sock is not None:
+                self.sock.send(data, socket.MSG_DONTWAIT | socket.MSG_NOSIGNAL)
+            elif self.fd is not None:
+                os.write(self.fd, data)
+        except OSError:
+            pass  # Full/closed console sinks never hold the status worker.
+
+    def close(self):
+        if self.sock is not None:
+            self.sock.close()
+            self.sock = None
+        if self.fd is not None:
+            os.close(self.fd)
+            self.fd = None
+
+
+class BackgroundFileHandler(RotatingFileHandler):
+    """Report storage errors without acquiring Python's shared stderr lock."""
+    def __init__(self, *args, **kwargs):
+        self.write_errors = 0
+        self.last_write_error = ''
+        self.error_output = None
+        super().__init__(*args, **kwargs)
+        self.error_output = ConsoleOutput(sys.stderr)
+
+    def record_error(self):
+        self.write_errors += 1
+        error = sys.exc_info()[1]
+        self.last_write_error = f'{type(error).__name__}: {error}'[:512]
+        if self.error_output is not None:
+            self.error_output.write(f'Log storage failure ({self.write_errors}): {self.last_write_error}')
+
+    def handleError(self, record):
+        # The default handler prints a traceback to buffered sys.stderr. A
+        # full pipe there can hold both this daemon and interpreter shutdown.
+        self.record_error()
+
+    def close(self):
+        try:
+            super().close()
+        except (OSError, ValueError):
+            # A failed stream can fail its final flush too. Keep that failure
+            # out of threading.excepthook, which also uses buffered stderr.
+            self.record_error()
+        finally:
+            if self.error_output is not None:
+                self.error_output.close()
+                self.error_output = None
+
+
+class StatusWriter(threading.Thread):
+    """One pending snapshot and a bounded transition log; no I/O in producers."""
+    def __init__(self, folder, log):
+        super().__init__(daemon=True)
+        self.folder,self.log,self.output=folder,log,ConsoleOutput(sys.stdout)
+        self.latest=queue.Queue(maxsize=1)
+        self.messages=queue.Queue(maxsize=16)
+        self.closing=threading.Event()
+        background_log_owner(log)
+        self.start()
+
+    @staticmethod
+    def replace(pending, value):
+        try:pending.put_nowait(value)
+        except queue.Full:
+            try:pending.get_nowait()
+            except queue.Empty:pass
+            try:pending.put_nowait(value)
+            except queue.Full:pass
+
+    def submit(self, row):
+        self.replace(self.latest,{**row,'updated_unix':time.time()})
+
+    def message(self, text, *args):
+        self.replace(self.messages,text % args if args else text)
+
+    def close(self, timeout=.2):
+        self.closing.set()
+        self.join(timeout=timeout)
+
+    def run(self):
+        try:
+            while not self.closing.is_set() or not self.latest.empty() or not self.messages.empty():
+                try:row=self.latest.get(timeout=.05)
+                except queue.Empty:row=None
+                if row is not None:
+                    row = {**row, 'status_log_write_errors':sum(
+                        getattr(handler, 'write_errors', 0) for handler in self.log.handlers),
+                        'status_log_last_error':next((handler.last_write_error for handler in self.log.handlers
+                                                     if getattr(handler, 'last_write_error', '')), None)}
+                    try:write_status(self.folder,row)
+                    except (OSError,ValueError):pass  # Old snapshot keeps its old timestamp.
+                for _ in range(16):
+                    try:message=self.messages.get_nowait()
+                    except queue.Empty:break
+                    try:self.log.info('%s',message)
+                    except (OSError,ValueError):pass
+                    self.output.write(message)
+        finally:
+            self.output.close()
+            for handler in self.log.handlers:handler.close()
+
+
 class LogPump(threading.Thread):
-    """Bounded reads, including output without newlines; no growing line buffer."""
+    """Preserve native records across pipe reads, with bounded buffering.
+
+    Pipe reads are unrelated to JSON record boundaries. Logging each 4096-byte
+    read inserted timestamps inside state records and could glue startup onto
+    an older partial record. Oversized/no-newline output is still drained.
+    """
     def __init__(self, stream, log):
         super().__init__(daemon=True)
         self.stream, self.log = stream, log
+        background_log_owner(log)
         self.start()
 
     def run(self):
+        pending = b''
+        limits = [handler.maxBytes//2 for handler in self.log.handlers
+                  if getattr(handler, 'maxBytes', 0) > 0]
+        record_limit = max(1024, min([65536, *limits]))
         try:
             while True:
                 chunk = os.read(self.stream.fileno(), 4096)
                 if not chunk:
+                    if pending:
+                        self.log.info('%s', pending.decode('utf8', errors='replace'))
                     return
-                self.log.info('%s', chunk.decode('utf8', errors='replace').rstrip('\n'))
+                pending += chunk
+                while pending:
+                    newline = pending.find(b'\n')
+                    if 0 <= newline <= record_limit:
+                        record, pending = pending[:newline], pending[newline+1:]
+                        self.log.info('%s', record.rstrip(b'\r').decode('utf8', errors='replace'))
+                    elif len(pending) > record_limit:
+                        record, pending = pending[:record_limit], pending[record_limit:]
+                        self.log.info('NATIVE_LOG_RECORD_FRAGMENT %s', record.decode('utf8', errors='replace'))
+                    else:
+                        break
         finally:
             self.stream.close()
+            for handler in self.log.handlers:handler.close()
 
 
 def write_status(folder, payload):
     content = {'flight_actions_enabled': False, 'rc_navigation_enabled': False,
-               **payload, 'updated_unix': time.time()}
+               'updated_unix': time.time(), **payload}
     temp = folder/'status.json.tmp'
     with open(temp, 'w', encoding='utf8') as f:
         json.dump(content, f, ensure_ascii=False, allow_nan=False)
@@ -168,12 +459,18 @@ def monitor(channel, node, stopped, observe, health=lambda: None, *, diagnostics
     return state, state_at, failure
 
 
-def validate(root, agent):
+def validate(root, agent, *, controller=None, config_path=None):
+    """Validate SDK/configuration; pre-build preparation has no controller yet."""
     if platform.machine().lower() not in ('aarch64', 'arm64'):
         raise ControlError('仅供 ARM64 香橙派安装/运行')
-    verify_binary(root/'install_r632/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node')
+    if controller is not None:
+        verify_binary(controller)
     import yaml
-    with open(root/'config/attitude_altitude.yaml', encoding='utf8') as f:
+    # Navigation callers pass a bundle-owned candidate config.  The project
+    # root is retained for SDK discovery only and must not silently override
+    # the installed navigation policy.
+    selected = Path(config_path) if config_path is not None else root/'config/attitude_altitude.yaml'
+    with open(selected, encoding='utf8') as f:
         config = standby_config(yaml.safe_load(f))
     if not agent.is_file() or not os.access(agent, os.X_OK):
         raise ControlError('缺少离线 Agent: '+str(agent))
@@ -188,13 +485,13 @@ def validate(root, agent):
 
 
 def supervise(root, agent_binary, folder, stopped, *, controller=None, config_factory=None,
-              status_metadata=None, row_formatter=None):
+              status_metadata=None, row_formatter=None, config_path=None):
     import yaml
     private_dir(folder)
     cache = Path.home()/'.cache/fc01_operator'
     private_dir(cache)
     log = rotating_logger(folder/'standby.log', max_bytes=1024*1024)
-    native_log = rotating_logger(folder/'controller.log')
+    writer = StatusWriter(folder,log)
     last_message = None
     last_state, last_state_at, last_state_pid = {}, -math.inf, None
     diagnostics = {}
@@ -219,16 +516,15 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                        state_age_seconds=max(0, now-last_state_at) if last_state_at != -math.inf else None)
         row = row_formatter(row) if row_formatter else row
         row = {**metadata, **row}
-        write_status(folder, row)
+        writer.submit(row)
         key = row['status']+': '+row['reason']
         if key != last_message:
-            log.info('%s', key)
-            print(key, flush=True)
+            writer.message(key)
             last_message = key
 
     try:
         while not stopped.is_set():
-            node = agent = lock = pump = channel = ipc = None
+            node = agent = lock = pump = channel = ipc = native_log = transport = None
             state, state_at, existing = {}, -math.inf, None
             failure = None
             try:
@@ -238,11 +534,12 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 except BlockingIOError as exc:
                     raise ControlError('旧入口正在运行；保留它，等待其退出') from exc
-                binary, existing = preflight(root, agent_binary, '/dev/ttyS2')
-                if controller is not None:
-                    verify_binary(controller)
-                    binary = controller
-                config = (config_factory or validate)(root, agent_binary)
+                if not wait_for_previous_controller(agent_binary, cache, stopped, publish, writer.message):
+                    break
+                preflight_options={'controller':controller} if controller is not None else {}
+                if config_path is not None:preflight_options['config_path']=config_path
+                binary, existing = preflight(root, agent_binary, '/dev/ttyS2', **preflight_options)
+                config = config_factory(root, agent_binary) if config_factory else validate(root, agent_binary, controller=binary)
                 with open(folder/'runtime.yaml', 'w', encoding='utf8') as f:
                     yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False)
                 ipc = make_socket_path(cache/'ipc')
@@ -252,6 +549,11 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                                               '-b', '115200', '-v', '0'],
                                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                              stderr=subprocess.DEVNULL, start_new_session=True)
+                transport = AgentTransport(agent_binary, agent, existing, cache, writer.message)
+                transport.start()
+                # Open storage before the controller starts; the pump owns
+                # this attempt's handlers after it starts reading stdout.
+                native_log = rotating_logger(folder/'controller.log')
                 node = subprocess.Popen([str(binary), '--ros-args', '--disable-external-lib-logs',
                                          '--params-file', str(folder/'runtime.yaml'),
                                          '-p', 'socket_path:='+str(ipc)],
@@ -260,28 +562,18 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                 # Keep the last native outcome through failed reconnect checks;
                 # a successfully started replacement begins a new IPC lifetime.
                 diagnostics = {}
+                # Each pump solely owns its handlers. An old pump delayed by
+                # storage cannot close a replacement controller's logger.
                 pump = LogPump(node.stdout, native_log)
                 publish(dict(status='WAITING', reason='控制器已启动，等待飞控反馈', controller_pid=node.pid,
-                             agent_pid=agent.pid if agent else existing.pid, agent_owned=agent is not None))
+                             **transport.snapshot()))
                 channel = connect_controller(ipc, node)
                 def observe(row):
-                    row.update(agent_pid=agent.pid if agent else existing.pid, agent_owned=agent is not None)
+                    row.update(transport.snapshot())
                     publish(row)
-                next_health_check = 0
-                def health():
-                    nonlocal next_health_check
-                    if time.monotonic() < next_health_check:
-                        return None
-                    next_health_check = time.monotonic()+1
-                    if agent is not None:
-                        return '自建 Agent 已退出' if agent.poll() is not None else None
-                    try:
-                        argv = tuple(x.decode(errors='replace') for x in
-                                     Path('/proc', str(existing.pid), 'cmdline').read_bytes().split(b'\0') if x)
-                        return None if argv == existing.argv else '复用的 Agent 已退出或进程已变化'
-                    except OSError:
-                        return '复用的 Agent 已退出'
-                state, state_at, failure = monitor(channel, node, stopped, observe, health,
+                # Agent loss is a transport failure. The same native process
+                # handles feedback loss and fresh recovery evidence itself.
+                state, state_at, failure = monitor(channel, node, stopped, observe,
                                                   diagnostics=diagnostics)
                 if state:
                     last_state, last_state_at, last_state_pid = state, state_at, node.pid
@@ -294,27 +586,31 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                     publish(dict(status='STOPPING', reason='等待原生控制器优雅退出', controller_pid=node.pid))
                     while node.poll() is None:
                         time.sleep(.1)
+                if transport is not None:
+                    agent = transport.close()
                 if channel is not None:
                     channel.sock.close()
                 if node is not None:
                     diagnostics.update(controller_result(node))
                 if pump is not None:
                     pump.join(timeout=3)
+                elif native_log is not None:
+                    for handler in native_log.handlers:handler.close()
                 if ipc is not None:
                     try:
                         ipc.unlink(missing_ok=True)
                         ipc.parent.rmdir()
                     except OSError as exc:
-                        log.info('保留本次 IPC 目录：%s', exc)
+                        writer.message('保留本次 IPC 目录：%s', exc)
                 if agent is not None:
                     if finish_agent(agent, True, node is not None and node.poll() == 0,
                                     state, state_at, time.monotonic()):
                         try:
                             agent.wait(timeout=5)
                         except subprocess.TimeoutExpired:
-                            log.info('Agent 尚未退出，未强制终止 PID=%s', agent.pid)
+                            writer.message('Agent 尚未退出，未强制终止 PID=%s', agent.pid)
                     else:
-                        log.info('保留自建 Agent PID=%s；缺少新鲜未解锁接地退出证据', agent.pid)
+                        writer.message('保留自建 Agent PID=%s；缺少新鲜未解锁接地退出证据', agent.pid)
                 if lock is not None:
                     lock.close()
             if not stopped.is_set():
@@ -331,9 +627,7 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                     remaining -= step
         publish(dict(status='STOPPED', reason='后台待命已停止'))
     finally:
-        for logger in (log, native_log):
-            for handler in logger.handlers:
-                handler.close()
+        writer.close()
 
 
 def main(argv=None):
@@ -345,7 +639,7 @@ def main(argv=None):
     os.umask(0o077)
     root, agent = args.root.expanduser().resolve(), args.agent.expanduser().resolve()
     if args.validate:
-        validate(root, agent)
+        validate(root, agent, controller=root/'install_r632/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node')
         print('ROS / px4_msgs / ARM64 控制器 / 关闭动作门配置检查通过。')
         return 0
     stopped = threading.Event()

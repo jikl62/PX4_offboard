@@ -7,6 +7,7 @@ import sys
 
 import yaml
 from launcher import ControlError
+from fc01_control import DEFAULT_TAKEOFF_HEIGHT_M
 from navigation_service import navigation_profile
 from vision_settings import apply_settings
 
@@ -26,7 +27,7 @@ def main(argv=None):
         navigation=json.loads(args.navigation_settings.read_text())
         selected=json.loads(args.settings.read_text())
         if args.enable_vision:selected={**selected,'enabled':True}
-        config=navigation_profile(base,navigation.get('target_height_m',.5),navigation.get('navigation_mode_slot',6))
+        config=navigation_profile(base,navigation.get('target_height_m',DEFAULT_TAKEOFF_HEIGHT_M),navigation.get('navigation_mode_slot',6))
         apply_settings(config,selected)
         args.output.write_text(yaml.safe_dump(config,allow_unicode=True,sort_keys=False))
         print('候选 YAML 已生成：'+str(args.output))

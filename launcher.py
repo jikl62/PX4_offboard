@@ -27,7 +27,7 @@ import time
 import uuid
 import zipfile
 
-from fc01_control import ControlError, Mission, readiness_issues, runtime_profile
+from fc01_control import ControlError, DEFAULT_TAKEOFF_HEIGHT_M, Mission, readiness_issues, runtime_profile
 
 PROJECT = 'FC01_ARM64_PORT_20261020/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE'
 BINARY_MARKERS = (b'R632_ACK176_STATE_CANDIDATE_V1', b'R632_SCHEDULED_TAKEOFF_CEILING_V1')
@@ -418,7 +418,7 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
     try:
         send('INTERACTIVE', [])
         send('STATUS', [])
-        say('命令：takeoff [高度m，默认0.5] | land | status | quit' if flight else '只检查：动作门关闭，正在收集实时状态……')
+        say(f'命令：takeoff [高度m，默认{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit' if flight else '只检查：动作门关闭，正在收集实时状态……')
         while node.poll() is None:
             now = time.monotonic()
             if stop_signal[0]:
@@ -483,7 +483,7 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
                         if not parts:
                             continue
                         if parts[0] == 'takeoff' and len(parts) in (1, 2):
-                            mission.request_takeoff(float(parts[1]) if len(parts) == 2 else 0.5, now)
+                            mission.request_takeoff(float(parts[1]) if len(parts) == 2 else DEFAULT_TAKEOFF_HEIGHT_M, now)
                             say('准备起飞 %.2f m；核对 RC 和实时反馈后由原生控制器执行一次 TAKEOFF。' % mission.target)
                         elif parts == ['land']:
                             mission.cancel()
@@ -496,7 +496,7 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
                         elif parts == ['quit']:
                             close_session('operator_quit')
                         else:
-                            say('命令：takeoff [0.5] | land | status | quit')
+                            say(f'命令：takeoff [{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit')
                     except (ControlError, ValueError) as exc:
                         evidence.failure(exc)
                         say('未执行：'+str(exc))
@@ -553,15 +553,20 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
         display.close()
 
 
-def preflight(root, agent_binary, device):
+def preflight(root, agent_binary, device, *, controller=None, config_path=None):
     if platform.machine().lower() not in ('aarch64', 'arm64'):
         raise ControlError('本入口只在实际 ARM64 香橙派上运行；本机架构='+platform.machine())
     if os.environ.get('ROS_DOMAIN_ID', '0') != '0' or os.environ.get('ROS_LOCALHOST_ONLY', '0') != '0':
         raise ControlError('当前固定使用 ROS_DOMAIN_ID=0、ROS_LOCALHOST_ONLY=0')
-    node = root/'install_r632/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node'
+    node = controller if controller is not None else root/'install_r632/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node'
     verify_binary(node)
-    if not (root/'config/attitude_altitude.yaml').is_file():
-        raise ControlError('缺少原配置 attitude_altitude.yaml')
+    # The navigation bundle may be installed beside an older SDK checkout.
+    # Callers can provide the bundle-owned candidate config; the project root
+    # remains an SDK/runtime dependency and is never used as a source of
+    # navigation policy in that path.
+    selected_config = Path(config_path) if config_path is not None else root/'config/attitude_altitude.yaml'
+    if not selected_config.is_file():
+        raise ControlError('缺少原配置 attitude_altitude.yaml: '+str(selected_config))
     if not Path(device).exists() or not stat.S_ISCHR(Path(device).stat().st_mode) or not os.access(device, os.R_OK | os.W_OK):
         raise ControlError('串口不存在/不可读写: '+device)
     processes = process_list()
@@ -627,6 +632,12 @@ def main(argv=None):
             config = runtime_profile(yaml.safe_load(f), args.flight)
         params = config['fc01_system']['ros__parameters']
         config_path = folder/'runtime.yaml'
+        # Keep the standalone legacy console compatible with native launch
+        # provenance checks. Navigation service mode selection is separate;
+        # this path remains an explicitly interactive --flight session.
+        params.update(fc01_runtime_mode='flight-test' if args.flight else 'diagnostic',
+                      fc01_entry_version='launcher-legacy', fc01_config_path=str(config_path.resolve()),
+                      fc01_config_source_path=str((root/'config/attitude_altitude.yaml').resolve()))
         with open(config_path, 'x', encoding='utf8') as f:
             yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False)
         say('会话配置：20 Hz；UART 115200；定高上限 %.1f m；最长 %.1f s；倾角上限 %.1f°。' %
