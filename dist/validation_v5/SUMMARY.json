@@ -1,0 +1,17 @@
+{
+  "controller_build": "FC01_RECOVERY_DIAGNOSTIC_V5_20261110",
+  "flight_parameters_unchanged": true,
+  "hardware_validated": false,
+  "height_matrix_cases": 25,
+  "native_cpp": 71,
+  "native_python": 41,
+  "normal_trace_rows_identical": 3058,
+  "python_total": 365,
+  "receive_matrix_cases": 46,
+  "result": "PASS",
+  "root_python": 324,
+  "schema_version": 1,
+  "source_commit": "1a208dddba92a05b26f9dba4759f99b553fd5b1c",
+  "ubsan": 8,
+  "version": "20261110.7"
+}

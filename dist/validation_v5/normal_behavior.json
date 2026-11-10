@@ -1,0 +1,24 @@
+{
+  "baseline": {
+    "exit_code": 0,
+    "trace_rows": 3058,
+    "sha256": "1c736d3bc273c0a001bfaa511d56c801d9f30323ec4c74469dcdfe0d7ab8e7dc"
+  },
+  "candidate": {
+    "exit_code": 0,
+    "trace_rows": 3058,
+    "sha256": "1c736d3bc273c0a001bfaa511d56c801d9f30323ec4c74469dcdfe0d7ab8e7dc"
+  },
+  "identical": true,
+  "cases": [
+    "valid_path_without_automatic_commands",
+    "status_switch_reordering",
+    "delayed_arm_evidence_keeps_continuous_zero_commits",
+    "delayed_navigation_evidence_keeps_continuous_zero_commits",
+    "full_height_hold_land_and_safe_reset",
+    "production_no_vision_rc_1p5m_lifecycle_uses_vertical_only",
+    "ended_fault_needs_new_safe_ground_cycle",
+    "diagnostic_velocity_difference_allows_safe_ground_and_recovery"
+  ],
+  "artifacts": "/tmp/fc01_v5_release_validation_h247qa07/normal_behavior"
+}
