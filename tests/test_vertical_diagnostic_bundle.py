@@ -60,8 +60,8 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
         self.assertTrue(expected<=manifest['payload_sha256'].keys())
         for name in expected:
             self.assertEqual(manifest['source_sha256'][name],hashlib.sha256((ROOT/name).read_bytes()).hexdigest())
-        self.assertEqual(manifest['version'],'20261110.6')
-        self.assertEqual(manifest['controller_build'],'FC01_RECOVERY_DIAGNOSTIC_V4_20261110')
+        self.assertEqual(manifest['version'],'20261110.7')
+        self.assertEqual(manifest['controller_build'],'FC01_RECOVERY_DIAGNOSTIC_V5_20261110')
         self.assertNotIn(bundle.MANIFEST,manifest['payload_sha256'])
         self.assertNotIn('ARM64_BUILD_EVIDENCE.json',manifest['payload_sha256'])
 

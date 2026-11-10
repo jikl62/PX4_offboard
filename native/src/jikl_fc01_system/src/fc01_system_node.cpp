@@ -109,7 +109,9 @@ class SystemNode final:public rclcpp::Node {
     }
     local_sub_=create_subscription<Local>("/fmu/out/vehicle_local_position",qos,[this](Local::ConstSharedPtr m,const rclcpp::MessageInfo& info){const auto previous=local_;receive_sampled(*m,local_,local_stamp_,local_sample_,f::SourceSlot::Local,info);
       const auto& core=runtime_->attitude_core();
-      if(f::local_receive_event(previous,*m,config_.attitude)||
+      const bool vertical_only=config_.profile=="attitude_altitude"&&
+        !config_.attitude.visual.enabled&&!config_.attitude.px4_land_fallback_confirmed;
+      if(f::local_receive_event(previous,*m,config_.attitude,vertical_only)||
          core.local_requires_control_step(m->timestamp_sample,m->z,m->vz,m->z_deriv)){latch_event(local_events_,*m);++receive_events_;}});
     status_sub_=create_subscription<Status>("/fmu/out/vehicle_status_v1",qos,[this](Status::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive_event(*m,status_,status_stamp_,f::SourceSlot::Status,info,f::status_receive_event<Status>);});
     land_sub_=create_subscription<Land>("/fmu/out/vehicle_land_detected",qos,[this](Land::ConstSharedPtr m,const rclcpp::MessageInfo& info){receive_event(*m,land_,land_stamp_,f::SourceSlot::Land,info,f::land_receive_event<Land>);});
@@ -147,7 +149,7 @@ class SystemNode final:public rclcpp::Node {
       csv_<<"steady_s,phase,nav_state,armed,landed,xy_valid,z_valid,vxy_valid,vz_valid,heading_good,local_age_s,x_ned,y_ned,z_ned,vx_ned,vy_ned,vz_ned,ax_ned,ay_ned,az_ned,relative_height_m,reason,aa_healthy,aa_yaw_reference,aa_thrust_z,aa_height_target,aa_velocity_target,aa_saturated,aa_slew_limited,aa_z_deriv_ned,aa_feedback_checked,aa_feedback_suspect,aa_feedback_rate_error_mps,aa_feedback_position_rate_error_mps,aa_feedback_disagreement_s,aa_feedback_reason,aa_vertical_closed_loop,aa_takeoff_thrust_limited,aa_p_thrust,aa_i_thrust,aa_raw_thrust,aa_thrust_ceiling\n";
     }
     std::cout<<"{\"kind\":\"startup\",\"profile\":"<<f::quote(config.profile)
-      <<",\"controller_build\":\"FC01_RECOVERY_DIAGNOSTIC_V4_20261110\""
+      <<",\"controller_build\":\"FC01_RECOVERY_DIAGNOSTIC_V5_20261110\""
       <<",\"lifecycle_policy\":\"FC01_SAFE_LIFECYCLE_V1_20261109\""
       <<",\"safety_event_policy\":\"R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108\""
       <<",\"runtime_mode\":"<<f::quote(config.runtime_mode.empty()?"unspecified":config.runtime_mode)

@@ -20,7 +20,7 @@ class BuildFixture:
         self.sdk = Path(folder)/'sdk'; self.sdk.mkdir()
         self.library = Path(folder)/'runtime.so'; self.library.write_bytes(b'original runtime')
         self.calls = []; self.fail = False
-        self.marker = 'FC01_RECOVERY_DIAGNOSTIC_V4_20261110'
+        self.marker = 'FC01_RECOVERY_DIAGNOSTIC_V5_20261110'
         self.dependencies = dict(sdk_root=str(self.sdk), host_architecture='aarch64',
             tools={name:dict(path='/fake/'+name) for name in ('cmake','g++','gcc')},
             packages={name:dict(prefix=str(self.sdk/name)) for name in
@@ -167,9 +167,12 @@ class NavigationBuildEvidenceTests(unittest.TestCase):
         path.write_bytes(data+self.fixture.marker.encode());path.chmod(0o700)
         with self.assertRaisesRegex(evidence.BuildEvidenceError,'AArch64 ELF'):
             evidence.aarch64_binary(path,self.fixture.marker)
-        data[18:20]=(183).to_bytes(2,'little');path.write_bytes(data+b'FC01_REFERENCE_PUBLICATION_V1_20261110')
-        with self.assertRaisesRegex(evidence.BuildEvidenceError,'release marker'):
-            evidence.aarch64_binary(path,self.fixture.marker)
+        data[18:20]=(183).to_bytes(2,'little')
+        for marker in (b'FC01_REFERENCE_PUBLICATION_V1_20261110',b'FC01_RECOVERY_DIAGNOSTIC_V4_20261110'):
+            with self.subTest(marker=marker):
+                path.write_bytes(data+marker)
+                with self.assertRaisesRegex(evidence.BuildEvidenceError,'release marker'):
+                    evidence.aarch64_binary(path,self.fixture.marker)
 
     def test_changed_cmake_dependency_cannot_pass_verification(self):
         first=self.build();cache=Path(first['build_dir'])/'CMakeCache.txt'

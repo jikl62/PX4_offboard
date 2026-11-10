@@ -179,6 +179,29 @@ static void reset_invalid_and_continuous_estimates(){
   assert(!f::local_receive_event(before,after,config));
 }
 
+static void unavailable_horizontal_fields_do_not_strand_vertical_feedback(){
+  f::attitude::Config config;
+  Local before,after;
+  before.xy_valid=before.v_xy_valid=before.heading_good_for_control=false;
+  after=before;after.timestamp+=50000;after.timestamp_sample+=50000;
+  after.x=after.y=after.vx=after.vy=after.heading=std::numeric_limits<double>::quiet_NaN();
+  assert(f::local_receive_event(before,after,config)); // Conservative default for other profiles.
+  assert(!f::local_receive_event(before,after,config,true));
+  auto changed=after;changed.xy_valid=true;
+  assert(f::local_receive_event(after,changed,config,true));
+  assert(f::local_receive_event(changed,changed,config,true)); // A claimed-valid NaN is still invalid.
+  changed=after;changed.v_xy_valid=true;
+  assert(f::local_receive_event(changed,changed,config,true));
+  changed=after;changed.heading_good_for_control=true;
+  assert(f::local_receive_event(changed,changed,config,true));
+  changed=after;++changed.xy_reset_counter;
+  assert(f::local_receive_event(after,changed,config,true));
+  for(auto field:{&Local::z,&Local::vz,&Local::z_deriv}){
+    changed=after;changed.*field=std::numeric_limits<double>::quiet_NaN();
+    assert(f::local_receive_event(after,changed,config,true));
+  }
+}
+
 static f::Config receive_flight_config(f::Config config){
   config.attitude.autonomous_failsafe_confirmed=true; // synthetic fixture only
   return config;
@@ -374,6 +397,7 @@ int main(){
   status_and_ground_transitions();
   authority_events_do_not_compare_numeric_stick_motion();
   reset_invalid_and_continuous_estimates();
+  unavailable_horizontal_fields_do_not_strand_vertical_feedback();
   absolute_flight_envelope_and_control_step_baseline();
   ground_guards_and_ramp_rise_survive_extra_passes();
   feedback_preview_preserves_position_window_and_real_state();

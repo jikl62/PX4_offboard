@@ -20,7 +20,12 @@ import standby
 
 STATE = dict(kind='state', phase='HEIGHT_HOLD', reason='last native feedback',
              status_fresh=True, local_fresh=True, nav_state=14, armed=True,
-             relative_height_m=.42)
+             relative_height_m=.42, source_timing={
+                 name:dict(source_reason='VALID',receipt_reason='VALID',timeout_s=timeout,
+                           envelope_age_s=.02,sample_age_s=.02,receipt_age_s=.02,
+                           sample_progress_age_s=.02)
+                 for name,timeout in (('status',2.5),('land',2.5),('local',.5),
+                                      ('attitude',.5),('flags',2.5),('battery',1.))})
 
 
 class NavigationDiagnosticsTests(unittest.TestCase):
@@ -473,9 +478,9 @@ class NavigationDiagnosticsTests(unittest.TestCase):
     def test_view_shows_current_feedback_only_with_valid_age_and_native_flags(self):
         row = dict(status='HEIGHT_HOLD', reason='hold', supervisor_pid=10, updated_unix=1000,
                    state=STATE, state_age_seconds=.1, feedback_current=True)
-        view = navigation.render_status(row, dict(ActiveState='active', MainPID='10'), now=1001)
+        view = navigation.render_status(row, dict(ActiveState='active', MainPID='10'), now=1000.1)
         self.assertIn('实际模式：Offboard', view)
-        self.assertIn('反馈年龄：1.1 秒', view)
+        self.assertIn('反馈年龄：0.2 秒', view)
         self.assertIn('正在定高', view)
         self.assertNotIn('历史', view)
 

@@ -29,6 +29,9 @@ class RcNavigationStart {
   bool ground_reference_qualified()const{return ground_qualified_;}
   unsigned ground_reference_samples()const{return ground_samples_;}
   double ground_reference_seconds()const{return ground_since_<0?0:ground_last_at_-ground_since_;}
+  bool ground_reference_height_changed(double z,double tolerance)const{
+    return ground_since_>=0&&std::abs(z-ground_window_z_)>tolerance;
+  }
   unsigned commits()const{return commits_;}
   bool manual_arm_proven()const{return manual_arm_proven_;}
   std::uint64_t manual_armed_time()const{return manual_armed_time_;}

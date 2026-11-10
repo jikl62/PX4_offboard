@@ -20,7 +20,7 @@ HARNESS = recovery.HARNESS.split('\nint main(){', 1)[0] + r'''
 
 struct SafetyReceiveNode:RecoveryNode {
   int payload_case{};
-  bool resting{},takeover_reported{};
+  bool resting{},takeover_reported{},height_excursion{};
   std::uint64_t raw_override{};
   std::deque<Local> local_queue;
   std::deque<Attitude> attitude_queue;
@@ -120,6 +120,7 @@ struct SafetyReceiveNode:RecoveryNode {
       for(unsigned i=0;i<10;++i)enqueue(stamp-550000+i*50000);
     }else{
       if(unsafe==2){enqueue(node.local_.timestamp+10000,false);enqueue(node.local_.timestamp+20000);}
+      if(height_excursion){enqueue(stamp-125000);local_queue.back().z+=.20f;}
       enqueue(stamp-100000);
     }
     while(local_queue.size()>10){local_queue.pop_front();attitude_queue.pop_front();}
@@ -133,7 +134,9 @@ struct SafetyReceiveNode:RecoveryNode {
         auto value=local_queue.front();local_queue.pop_front();
         if(timing_slot==fc01::SourceSlot::Local&&timing_case==5)
           value.timestamp=tail_stamp(fc01::SourceSlot::Local);
-        payload_event=fc01::local_receive_event(node.local_,value,node.config_.attitude);
+        const bool vertical_only=node.config_.profile=="attitude_altitude"&&
+          !node.config_.attitude.visual.enabled&&!node.config_.attitude.px4_land_fallback_confirmed;
+        payload_event=fc01::local_receive_event(node.local_,value,node.config_.attitude,vertical_only);
         old_core_hint=node.runtime_->attitude_core().local_requires_control_step(
           value.timestamp_sample,value.z,value.vz,value.z_deriv);
         const auto before=node.receive_events();
@@ -172,14 +175,14 @@ static void backlog_reproduces_old_stall_and_catches_up_only_in_stopped_safety()
     auto snapshot=n.node.snapshot(n.now);
     const double age=double(n.stamp-n.node.local_.timestamp)*1e-6;
     assert(n.node.config_.attitude.local_timeout==.5&&n.node.config_.attitude.attitude_timeout==.5);
-    if(force_old&&payload){
+    if(force_old&&payload==1){
       assert(one_pass==75&&retained==75&&n.local_queue.size()==9);
       assert(age>=.55-1e-9&&!snapshot.attitude.source_clock_valid&&!snapshot.local_fresh);
     }else{
       assert(one_pass==0&&n.local_queue.empty()&&age<.11&&snapshot.attitude.source_clock_valid);
     }
     if(payload==1)assert(n.old_core_hint&&!n.payload_event);
-    if(payload==2)assert(!n.old_core_hint&&n.payload_event);
+    if(payload==2)assert(!n.old_core_hint&&!n.payload_event);
     assert(!n.node.receive_event_overflow_&&n.node.clock_event_count_==0);
     // Landed alone cannot establish rest, even after the queue is current.
     assert(!n.node.land_.at_rest&&!n.node.runtime_->attitude_core().rc_fault_recovery_ready());
@@ -329,6 +332,82 @@ static void catchup_never_changes_active_or_integrity_gates(){
   std::cout<<"SAFETY_CATCHUP_ACTIVE_AND_OVERFLOW_GATES_PASS\n";
 }
 
+static void preparation_catches_up_with_unavailable_horizontal_estimates(){
+  for(int payload:{0,2}){
+    SafetyReceiveNode n;n.payload_case=payload;n.resting=true;
+    n.node.runtime_=std::make_unique<fc01::Runtime>(production_no_vision_rc_config());
+    for(unsigned i=0;i<180;++i)n.receive_cycle();
+    assert(n.node.runtime_->attitude_core().phase()==fc01::attitude::Phase::RcWaitArm);
+    assert(n.local_queue.empty()&&n.node.snapshot(n.now).local_fresh);
+    // A real scheduling gap fills the synthetic depth-ten source queues.
+    // Recovery must work without changing the unavailable XY payload.
+    n.now+=.5;n.stamp+=500000;
+    for(unsigned i=0;i<9;++i)n.enqueue(n.stamp-450000+i*50000);
+    for(unsigned i=0;i<180;++i)n.receive_cycle();
+    assert(n.node.runtime_->attitude_core().phase()==fc01::attitude::Phase::RcWaitArm);
+    assert(n.local_queue.empty()&&n.node.snapshot(n.now).local_fresh);
+    assert(n.node.runtime_->rc_attempts_completed()==0);
+  }
+  std::cout<<"PREPARATION_UNAVAILABLE_XY_BACKLOG_RECOVERY_PASS\n";
+}
+
+static void horizontal_consumers_keep_their_nonfinite_events(){
+  for(int consumer:{0,1,2,3}){
+    SafetyReceiveNode n;
+    if(consumer==1)n.node.config_.profile="ground";
+    if(consumer==2)n.node.config_.attitude.visual.enabled=true;
+    if(consumer==3)n.node.config_.attitude.px4_land_fallback_confirmed=true;
+    Local value{};value.z=2;value.z_valid=value.v_z_valid=true;
+    value.x=value.y=value.vx=value.vy=value.heading=std::numeric_limits<float>::quiet_NaN();
+    std::uint64_t before{};
+    for(unsigned i=0;i<2;++i){
+      n.now+=.05;n.stamp+=50000;recovery_test_steady=n.now;recovery_test_wall_ns=std::int64_t(n.stamp)*1000;
+      value.timestamp=value.timestamp_sample=n.stamp;
+      before=n.node.receive_events();
+      n.node.local_sub_->callback(std::make_shared<Local>(value),rclcpp::MessageInfo{});
+    }
+    assert(n.node.receive_events()-before==unsigned(consumer!=0));
+  }
+  std::cout<<"HORIZONTAL_CONSUMERS_KEEP_INVALID_FEEDBACK_EVENTS_PASS\n";
+}
+
+static void finite_height_excursions_restart_both_ground_proof_windows(){
+  for(bool safety:{false,true}){
+    SafetyReceiveNode n;n.resting=true;
+    if(!safety)n.node.runtime_=std::make_unique<fc01::Runtime>(production_no_vision_rc_config());
+    bool window=false;
+    for(unsigned i=0;i<100&&!window;++i){
+      n.receive_cycle();const auto& core=n.node.runtime_->attitude_core();
+      window=safety?(core.rc_recovery_diagnostics().window_active&&core.rc_recovery_diagnostics().elapsed_s>=1.):
+        (core.phase()==fc01::attitude::Phase::RcPrestream&&core.rc_ground_reference_seconds()>=1.);
+    }
+    assert(window);
+    // Causally ordered source stamps: previous tail, 25ms excursion, 25ms
+    // healthy return. Both are before receipt and below the old .45m jump
+    // threshold, but .20m exceeds the ground proof's .15m tolerance.
+    n.height_excursion=true;n.receive_cycle();
+    if(safety){const auto d=n.node.runtime_->attitude_core().rc_recovery_diagnostics();
+      assert(d.event_blocked&&!d.window_active&&!d.ready);
+      assert(d.block_reason=="RC_RECOVERY_QUEUED_EVENT_RC_RECOVERY_HEIGHT_DISCONTINUITY");
+    }else assert(!n.node.runtime_->attitude_core().rc_ground_reference_qualified());
+    for(unsigned i=0;i<100;++i){
+      n.receive_cycle();
+      assert(n.node.runtime_->attitude_core().phase()!=fc01::attitude::Phase::RcWaitArm);
+      assert(n.node.runtime_->rc_attempts_completed()==0);
+      assert(!n.node.snapshot(n.now).time_regressed);
+    }
+    n.height_excursion=false;const auto stable_since=n.now;
+    for(unsigned i=0;i<180&&n.node.runtime_->attitude_core().phase()!=fc01::attitude::Phase::RcWaitArm;++i){
+      n.receive_cycle();
+      if(n.now-stable_since<2.)assert(n.node.runtime_->attitude_core().phase()!=fc01::attitude::Phase::RcWaitArm);
+    }
+    assert(n.node.runtime_->attitude_core().phase()==fc01::attitude::Phase::RcWaitArm);
+    assert(n.node.runtime_->attitude_core().rc_ground_reference_qualified());
+    assert(n.node.runtime_->rc_attempts_completed()==unsigned(safety));
+  }
+  std::cout<<"GROUND_PROOF_RETAINED_HEIGHT_EXCURSION_AND_STABLE_RETRY_PASS\n";
+}
+
 int main(){
   backlog_reproduces_old_stall_and_catches_up_only_in_stopped_safety();
   every_unsafe_payload_still_vetoes_recovery_behind_a_healthy_tail();
@@ -336,6 +415,9 @@ int main(){
   current_resting_ground_can_finish_a_new_independent_recovery();
   catching_up_envelopes_cannot_refresh_frozen_or_regressed_samples();
   catchup_never_changes_active_or_integrity_gates();
+  preparation_catches_up_with_unavailable_horizontal_estimates();
+  horizontal_consumers_keep_their_nonfinite_events();
+  finite_height_excursions_restart_both_ground_proof_windows();
 }
 '''
 
@@ -379,7 +461,10 @@ class SafetyReceiveAdapterTest(unittest.TestCase):
                            'SAFETY_CATCHUP_UNSAFE_TIMING_AND_FIRST_CAUSE_PASS',
                            'SAFETY_CATCHUP_FRESH_GROUND_RECOVERY_PASS',
                            'SAFETY_CATCHUP_FROZEN_AND_REGRESSED_SAMPLE_GATES_PASS',
-                           'SAFETY_CATCHUP_ACTIVE_AND_OVERFLOW_GATES_PASS'):
+                           'SAFETY_CATCHUP_ACTIVE_AND_OVERFLOW_GATES_PASS',
+                           'PREPARATION_UNAVAILABLE_XY_BACKLOG_RECOVERY_PASS',
+                           'HORIZONTAL_CONSUMERS_KEEP_INVALID_FEEDBACK_EVENTS_PASS',
+                           'GROUND_PROOF_RETAINED_HEIGHT_EXCURSION_AND_STABLE_RETRY_PASS'):
                 self.assertIn(marker,result.stdout)
             states=[json.loads(line) for line in result.stdout.splitlines() if line.startswith('{')]
             states=[row for row in states if row.get('kind')=='state']

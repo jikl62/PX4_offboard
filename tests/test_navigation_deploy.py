@@ -28,7 +28,7 @@ class DeploymentTests(unittest.TestCase):
             (root/name).write_bytes((repo/name).read_bytes())
         files = {name: deploy.sha256(root/name) for name in paths}
         (root/'FC01_RELEASE.json').write_text(json.dumps(dict(
-            release_name='candidate', version='20261110.6', payload_sha256=files)))
+            release_name='candidate', version='20261110.7', payload_sha256=files)))
 
     def test_offline_only_builds_and_checks_release_local_config(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -51,7 +51,7 @@ class DeploymentTests(unittest.TestCase):
             local = yaml.safe_load((root/'deployment/flight-test-runtime.yaml').read_text())['fc01_system']['ros__parameters']
             self.assertIs(local['arm_enabled'], False)
             self.assertEqual(local['rc_target_height'], 1.5)
-            self.assertEqual(local['fc01_entry_version'], '20261110.6')
+            self.assertEqual(local['fc01_entry_version'], '20261110.7')
             ready = json.loads((root/'OFFLINE_DEPLOYMENT.json').read_text())
             self.assertFalse(ready['online_probe_executed'] or ready['services_modified'] or ready['controller_executed'])
 

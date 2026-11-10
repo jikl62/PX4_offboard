@@ -259,7 +259,7 @@ class RcRecoveryAdapterTest(unittest.TestCase):
                 self.assertFalse(actual['local_heartbeat_this_tick'])
             startups=[row for row in rows if row.get('kind')=='startup']
             self.assertTrue(startups)
-            self.assertTrue(all(row['controller_build']=='FC01_RECOVERY_DIAGNOSTIC_V4_20261110'
+            self.assertTrue(all(row['controller_build']=='FC01_RECOVERY_DIAGNOSTIC_V5_20261110'
                                 for row in startups))
 
 

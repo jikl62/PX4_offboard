@@ -155,6 +155,13 @@ class Core {
   // it. It neither advances guards/references nor faults or authorizes output.
   bool local_requires_control_step(std::uint64_t stamp,double z,double vz,double z_deriv)const{
     if(!std::isfinite(z)||!std::isfinite(vz)||!std::isfinite(z_deriv))return true;
+    // Ground proof belongs to its own window, not the ended flight's origin
+    // or the preparation snapshot captured on the previous control tick.
+    // Retain a departure even when a later callback returns to the anchor.
+    if(phase_==Phase::Safety&&rc_recovery_since_>=0&&
+       std::abs(z-rc_recovery_z_)>c_.height_tolerance)return true;
+    if(c_.rc_navigation_enabled&&!rc_joined_&&rc_start_.phase()==RcStartPhase::Prestream&&
+       rc_start_.ground_reference_height_changed(z,c_.height_tolerance))return true;
     // Compare against the last CONTROL observation as well as adjacent
     // callbacks: 0 -> .6 -> 1.2 -> .6 can otherwise hide a >1 cumulative jump.
     if((flight_started_||(bench_arm_only_active_&&bench_disarmed_seen_))&&last_sample_set_&&
@@ -564,6 +571,9 @@ class Core {
       std::string blocked=rc_recovery_sample_block_reason(s);
       if(rc_recovery_since_>=0&&(s.quat_reset!=rc_recovery_quat_reset_||
          s.z_reset!=rc_recovery_z_reset_||s.vz_reset!=rc_recovery_vz_reset_))blocked="RC_RECOVERY_ESTIMATOR_RESET";
+      if(blocked.empty()&&source==SafetyEvent::Vertical&&rc_recovery_since_>=0&&
+         std::abs(s.z-rc_recovery_z_)>c_.height_tolerance)
+        blocked="RC_RECOVERY_HEIGHT_DISCONTINUITY";
       if(blocked.empty()&&source==SafetyEvent::Vertical&&c_.feedback_guard.enabled){
         const auto& e=recovery_feedback_guard_.observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c_.local_timeout);
         if(!e.healthy)blocked=e.reason;
@@ -594,6 +604,9 @@ class Core {
       if(!s.z_valid||!s.vz_valid)return reject("Z_VZ_STALE_OR_INVALID");
       if(!std::isfinite(s.z)||!std::isfinite(s.vz)||
          (c_.feedback_guard.enabled&&!std::isfinite(s.z_deriv)))return reject("NONFINITE_VERTICAL_TELEMETRY");
+      if(c_.rc_navigation_enabled&&!rc_joined_&&rc_start_.phase()==RcStartPhase::Prestream&&
+         rc_start_.ground_reference_height_changed(s.z,c_.height_tolerance))
+        return reject("RC_PRESTREAM_GROUND_CHANGED");
       if(estimator_active&&z_set_&&(s.z_reset!=z_reset_||s.vz_reset!=vz_reset_))
         return reject("ACTIVE_VERTICAL_ESTIMATOR_RESET");
       if(estimator_active&&last_sample_set_&&

@@ -10,7 +10,7 @@ import pwd
 import subprocess
 import sys
 import time
-from navigation_status import (controller_state_current, manual_rc_guidance_allowed,
+from navigation_status import (aircraft_feedback_current, controller_state_current, manual_rc_guidance_allowed,
                                preparation_diagnostic_reason, preparation_wait_details,
                                recovery_wait_details)
 
@@ -54,7 +54,7 @@ def render_status(row,info,now=None):
     locked_fault=native_current and state.get('phase')=='SAFETY'
     current=(native_current and row.get('feedback_current') is True
              and age is not None and age<=3 and state.get('status_fresh') is True
-             and state.get('local_fresh') is True)
+             and state.get('local_fresh') is True and aircraft_feedback_current(state,age))
     if locked_fault:
         status='FAULT';reason=state.get('reason') or reason
     elif not current and status not in ('STARTING','STALE','STOPPED','STOPPING','WAITING'):

@@ -34,13 +34,23 @@ template<class M>bool battery_receive_event(const M& a,const M& b){
   // thresholds belong to the controller rather than this receive scheduler.
   return a.connected!=b.connected||a.warning!=b.warning||a.voltage_v!=b.voltage_v;
 }
-template<class M>bool local_receive_event(const M& a,const M& b,const attitude::Config& c){
+template<class M>bool local_receive_event(const M& a,const M& b,const attitude::Config& c,
+    bool allow_unused_horizontal=false){
   const auto key=[](const M& m){return std::make_tuple(m.xy_valid,m.z_valid,
     m.v_xy_valid,m.v_z_valid,m.heading_good_for_control,m.dead_reckoning,
     m.xy_reset_counter,m.z_reset_counter,m.vxy_reset_counter,m.vz_reset_counter,m.heading_reset_counter);};
   if(key(a)!=key(b))return true;
-  for(double value:{double(b.x),double(b.y),double(b.z),double(b.vx),double(b.vy),
-      double(b.vz),double(b.z_deriv),double(b.heading)})if(!std::isfinite(value))return true;
+  for(double value:{double(b.z),double(b.vz),double(b.z_deriv)})
+    if(!std::isfinite(value))return true;
+  // A vertical-only consumer does not use estimates explicitly marked
+  // unavailable. Repeated NaNs in those fields must not stop every receive
+  // pass and strand healthy Z/Vz behind a DDS backlog. Validity/reset edges
+  // above and nonfinite fields claimed valid still remain discrete events.
+  if((!allow_unused_horizontal||b.xy_valid)&&
+      (!std::isfinite(b.x)||!std::isfinite(b.y)))return true;
+  if((!allow_unused_horizontal||b.v_xy_valid)&&
+      (!std::isfinite(b.vx)||!std::isfinite(b.vy)))return true;
+  if((!allow_unused_horizontal||b.heading_good_for_control)&&!std::isfinite(b.heading))return true;
   // Preserve disagreement observations AND the return to agreement. Dropping
   // that return would join separate episodes into a false continuous warning.
   // This schedules diagnostic observations; it grants no output permission.

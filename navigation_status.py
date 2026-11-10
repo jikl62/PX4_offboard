@@ -24,6 +24,40 @@ def controller_state_current(row, *, age=None):
     return type(age) in (int, float) and math.isfinite(age) and 0 <= age <= 3
 
 
+def aircraft_feedback_current(state, elapsed):
+    """Advance native sample ages without extending their reported lifetimes."""
+    finite = lambda value: type(value) in (int, float) and math.isfinite(value)
+    if not finite(elapsed) or elapsed < 0:
+        return False
+    if any(state.get(name) is False for name in
+           ('status_fresh', 'land_fresh', 'local_fresh', 'attitude_fresh',
+            'local_sample_fresh', 'attitude_sample_fresh', 'battery_fresh', 'source_clock_valid')):
+        return False
+    timings = state.get('source_timing')
+    if not isinstance(timings, dict):
+        return False
+    for topic in ('status', 'land', 'local', 'attitude', 'flags', 'battery'):
+        item = timings.get(topic)
+        if not isinstance(item, dict):
+            return False
+        timeout = item.get('timeout_s')
+        if (not finite(timeout) or timeout <= 0 or item.get('source_reason') != 'VALID'
+                or item.get('receipt_reason') != 'VALID'):
+            return False
+        names = ('envelope_age_s', 'receipt_age_s')
+        if topic in ('local', 'attitude'):
+            names += ('sample_age_s', 'sample_progress_age_s')
+        for name in names:
+            age = item.get(name)
+            if not finite(age) or (name in ('receipt_age_s', 'sample_progress_age_s') and age < 0):
+                return False
+            # Native VALID may include a source timestamp slightly ahead of
+            # the host clock. It must not buy extra display lifetime.
+            if max(0., age)+elapsed >= timeout:
+                return False
+    return True
+
+
 def preparation_wait_details(state):
     """Explain observed blockers; native code alone decides admission."""
     if state.get('phase') not in PREPARATION_PHASES:

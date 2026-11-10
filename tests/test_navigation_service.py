@@ -40,8 +40,23 @@ class NavigationServiceTests(unittest.TestCase):
                 binary.write_bytes(markers+b'FC01_RECOVERY_DIAGNOSTIC_V1_20261110')
                 with self.assertRaisesRegex(m.ControlError, '生命周期'):
                     m.check_controller(root)
+                binary.write_bytes(markers+b'FC01_RECOVERY_DIAGNOSTIC_V4_20261110')
+                with self.assertRaisesRegex(m.ControlError, '生命周期'):
+                    m.check_controller(root)
                 binary.write_bytes(markers+m.LIFECYCLE_MARKER)
                 self.assertEqual(m.check_controller(root), binary)
+
+    def test_release_entry_and_native_controller_share_the_current_identity(self):
+        m=self.api();bundle=importlib.import_module('build_navigation_bundle')
+        self.assertEqual(m.ENTRY_VERSION,'20261110.7')
+        self.assertEqual(bundle.RELEASE_VERSION,m.ENTRY_VERSION)
+        self.assertEqual(bundle.RELEASE_NAME,'FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v5')
+        self.assertEqual(bundle.DEFAULT_DIRECTORY,bundle.RELEASE_NAME)
+        self.assertEqual(m.LIFECYCLE_MARKER,b'FC01_RECOVERY_DIAGNOSTIC_V5_20261110')
+        self.assertEqual(bundle.CONTROLLER_BUILD,m.LIFECYCLE_MARKER.decode())
+        native=(ROOT/'native/src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
+        self.assertIn(bundle.CONTROLLER_BUILD,native)
+        self.assertNotIn('FC01_RECOVERY_DIAGNOSTIC_V4_20261110',native)
 
     def test_private_controller_does_not_require_the_sdk_controller_binary(self):
         import launcher
@@ -253,10 +268,16 @@ class NavigationServiceTests(unittest.TestCase):
         row=dict(status='READY_WAIT_ARM',reason='ready',supervisor_pid=10,updated_unix=1000,
                  state_age_seconds=.1,feedback_current=True,
                  state=dict(phase='RC_READY_WAIT_ARM',armed=False,nav_state=15,relative_height_m=.01,
-                            status_fresh=True,local_fresh=True))
+                            status_fresh=True,local_fresh=True,source_timing={
+                                name:dict(source_reason='VALID',receipt_reason='VALID',timeout_s=timeout,
+                                          envelope_age_s=.02,sample_age_s=.02,receipt_age_s=.02,
+                                          sample_progress_age_s=.02)
+                                for name,timeout in (('status',2.5),('land',2.5),('local',.5),
+                                                     ('attitude',.5),('flags',2.5),('battery',1.))}))
         self.assertIn('STARTING',m.render_status(row,{'ActiveState':'active','MainPID':'11'},now=1001))
         self.assertIn('STALE',m.render_status(row,{'ActiveState':'active','MainPID':'10'},now=1020))
-        self.assertIn('READY_WAIT_ARM',m.render_status(row,{'ActiveState':'active','MainPID':'10'},now=1001))
+        self.assertIn('[READY_WAIT_ARM]',m.render_status(row,{'ActiveState':'active','MainPID':'10'},now=1000.1))
+        self.assertIn('[STALE]',m.render_status(row,{'ActiveState':'active','MainPID':'10'},now=1001))
         self.assertIn('STOPPED',m.render_status(row,{'ActiveState':'inactive','MainPID':'0'},now=1001))
 
     def test_role_metadata_does_not_override_actual_native_gate_values(self):

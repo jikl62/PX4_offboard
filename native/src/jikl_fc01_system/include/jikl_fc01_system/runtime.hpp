@@ -613,11 +613,19 @@ class Runtime {
     }
     if(queued_safety_wait_){
       queued_safety_wait_=false;
-      // A faulted task remains output-silent but still observes independent
-      // terminal/recovery evidence. Ordinary queued callbacks must not starve
-      // that read-only observer forever. The Core retains bad-event latches.
-      attitude_core_.observe_safety_terminal(attitude_snapshot(s),now);
-      last_attitude_output_active_=false;return out;
+      const auto phase=attitude_core_.phase();
+      // A queued land change clears touchdown proof without ending armed
+      // custody. Let the existing bounce/descent controller run this tick.
+      // Disarmed completion/release and unjoined preparation still wait;
+      // a healthy tail cannot consume a queued unsafe ground observation.
+      const bool armed_landing=s.feedback.armed&&
+        (phase==attitude::Phase::Landed||phase==attitude::Phase::RequestDisarm);
+      if(!armed_landing){
+        // Safety remains output-silent while observing terminal/recovery
+        // evidence. The Core retains every unsafe-event recovery veto.
+        attitude_core_.observe_safety_terminal(attitude_snapshot(s),now);
+        last_attitude_output_active_=false;return out;
+      }
     }
     if(ground_&&!ground_->finished()){
       if(s.time_regressed||!s.status_fresh||!s.land_fresh){
