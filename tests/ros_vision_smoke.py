@@ -19,6 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description='只在隔离 ROS 域验证视觉适配器，不启动控制器。')
     parser.add_argument('--adapter', type=Path)
     parser.add_argument('--report', type=Path)
+    parser.add_argument('--check-resource-budget', action='store_true')
     options = parser.parse_args()
     # 合成来源不能与真实控制服务混用 ROS 域；要求操作者明确选用本机测试域。
     domain = int(os.environ.get('ROS_DOMAIN_ID', '0'))
@@ -70,6 +71,7 @@ def main():
                 VisionState, params['output_topic'], received.append, sensor
             )
             sequence = 0
+            source_override = None
 
             # 经真实参数服务调用并有限等待，finally销毁client，不仅检查源码声明。
             def parameter_call(service_type, suffix, request):
@@ -161,7 +163,9 @@ def main():
                 health = VisionHealth()
                 health.stamp = stamp
                 health.sequence = sequence
-                health.source_id = params['source_id']
+                health.source_id = (
+                    source_override if source_override is not None else params['source_id']
+                )
                 health.frame_id = 'demo_enu'
                 health.body_frame_id = 'demo_flu'
                 for flag in (
@@ -210,6 +214,35 @@ def main():
                 raise RuntimeError('invalid output quaternion')
             if valid.valid_fields & 48 or not all(math.isnan(x) for x in valid.pose_covariance):
                 raise RuntimeError('untransformed covariance was marked valid')
+            if options.check_resource_budget:
+                # 通过真实 DDS 送入超出 256 UTF-8 字节的身份；不制造巨型网络流量或控制端点。
+                # 两种编码都必须撤销；恢复后只能用新的完整配对重新发布有效测量。
+                for oversized_source in ('x' * 257, 'é' * 129):
+                    marker = b'state_quality=VISION_IDENTITY_RESOURCE_LIMIT'
+                    # pread 不移动子进程共享的日志文件偏移；为每类输入单独观察新的拒绝记录。
+                    before_rejections = os.pread(logs.fileno(), 1024 * 1024, 0).count(marker)
+                    source_override = oversized_source
+                    last_sequence = max(x.sequence for x in received)
+                    wait_for(
+                        lambda: any(
+                            x.sequence > last_sequence and x.valid_fields == 0 for x in received
+                        )
+                        and os.pread(logs.fileno(), 1024 * 1024, 0).count(marker)
+                        > before_rejections
+                    )
+                    invalid = max(received, key=lambda x: x.sequence)
+                    if invalid.source_id != params['source_id']:
+                        raise RuntimeError('resource rejection copied untrusted identity')
+                    # 每类坏身份之间先恢复完整配对，保证前一轮在途撤销不能满足下一轮断言。
+                    source_override = None
+                    last_sequence = max(x.sequence for x in received)
+                    wait_for(
+                        lambda: any(
+                            x.sequence > last_sequence and x.valid_fields & 71 == 71
+                            for x in received
+                        )
+                    )
+                valid = next(x for x in reversed(received) if x.valid_fields & 71 == 71)
             # 新增第二个原始Odometry发布者，要求后续VisionState的valid_fields撤销到0。
             last_sequence = valid.sequence
             duplicate = node.create_publisher(Odometry, params['input_topic'], sensor)
@@ -232,6 +265,8 @@ def main():
             final_log = logs.read()
             if process.returncode != 0 or 'Traceback (most recent call last)' in final_log:
                 raise RuntimeError('adapter failed clean SIGINT shutdown: ' + final_log[-2000:])
+            if options.check_resource_budget and 'VISION_IDENTITY_RESOURCE_LIMIT' not in final_log:
+                raise RuntimeError('resource budget rejection was not observed in adapter log')
             report = dict(
                 passed=True,
                 domain_id=domain,
@@ -247,6 +282,11 @@ def main():
                 publisher_endpoints=endpoints,
                 shutdown_exit_code=process.returncode,
             )
+            if options.check_resource_budget:
+                report['checks'] += [
+                    'utf8_identity_budget_revoked',
+                    'fresh_pair_after_resource_rejection',
+                ]
             if options.report is not None:
                 options.report.write_text(json.dumps(report, indent=2) + '\n')
             print(

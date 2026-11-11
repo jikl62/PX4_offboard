@@ -22,6 +22,14 @@ State state_from_message(const Message& message) {
   out.sequence = message.sequence;
   out.stamp_ns = message_stamp_ns(message.stamp);
   out.reset_counter = message.reset_counter;
+  // DDS 已经反序列化；这里必须在首次复制到纯核心对象之前限制全部身份。
+  // 用本机无效标记继续交给 Inbox 撤销旧缓存，不返回“无新消息”而保留旧计划。
+  if (!identity_within_budget(message.frame_id) || !identity_within_budget(message.body_frame_id) ||
+      !identity_within_budget(message.source_id) ||
+      !identity_within_budget(message.angular_velocity_source)) {
+    out.identity_resource_invalid = true;
+    return out;
+  }
   out.frame_id = message.frame_id;
   out.body_frame_id = message.body_frame_id;
   out.source_id = message.source_id;
@@ -56,6 +64,10 @@ Command command_from_message(const Message& message) {
   out.sequence = message.sequence;
   out.stamp_ns = message_stamp_ns(message.stamp);
   out.reset_counter = message.reset_counter;
+  if (!identity_within_budget(message.source_id) || !identity_within_budget(message.frame_id)) {
+    out.identity_resource_invalid = true;
+    return out;
+  }
   out.source_id = message.source_id;
   out.frame_id = message.frame_id;
   // 模式只允许既有 Disabled/Hold/Cruise/Follow/Land；非法版本/时间/枚举保持默认无效。

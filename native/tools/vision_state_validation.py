@@ -35,6 +35,22 @@ AdapterConfig = adapter.AdapterConfig
 ConvertedState = adapter.ConvertedState
 
 
+def _load_resource_budget():
+    """加载与相邻接收工具共享的 UTF-8 字节预算，不依赖启动工作目录。"""
+    name = '_fc01_vision_resource_budget'
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(
+            name, Path(__file__).with_name('vision_resource_budget.py')
+        )
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
+resource_budget = _load_resource_budget()
+
+
 # 只接受有限数且排除 bool；超大整数转换溢出同样按无效数处理。
 def _number(value):
     try:
@@ -134,8 +150,8 @@ class ValidationConfig:
             'alignment_id',
         )
         for name in identity_fields:
-            if len(getattr(self.adapter, name)) > 256:
-                raise ValueError('adapter identity strings must be at most 256 characters')
+            if not resource_budget.identity_within_budget(getattr(self.adapter, name)):
+                raise ValueError('adapter identities must be valid UTF-8 within 256 bytes')
         if not isinstance(self.clock, ClockPolicy):
             raise ValueError('explicit ClockPolicy required')
         if not _integer(self.epoch_history_capacity, 4096) or self.epoch_history_capacity < 1:
@@ -195,10 +211,8 @@ class SampleMetadata:
             or type(self.twist_covariance_valid) is not bool
         ):
             raise ValueError('covariance declarations must be bool')
-        if not isinstance(self.relocalization_id, str) or len(self.relocalization_id) > 256:
-            raise ValueError(
-                'relocalization_id must be an explicit string of at most 256 characters'
-            )
+        if not resource_budget.identity_within_budget(self.relocalization_id):
+            raise ValueError('relocalization_id must be valid UTF-8 within 256 bytes')
 
 
 def covariance_diagnostic(values, declared, upper=None):
@@ -437,7 +451,7 @@ class Validator:
         frame = getattr(getattr(raw, 'header', None), 'frame_id', None)
         body = getattr(raw, 'child_frame_id', None)
         if not all(
-            isinstance(x, str) and x and len(x) <= 256 for x in (source, frame, body)
+            resource_budget.identity_within_budget(x) and x for x in (source, frame, body)
         ) or not _integer(reset, 2**32 - 1):
             return None
         epoch = (source, frame, body, reset, metadata.relocalization_id)
@@ -641,6 +655,19 @@ class Validator:
                 self._cache = None
                 self._previously_rejected = True
                 self._event('expired', expired, observed_at=received_at, observed_on_receive=True)
+
+        # 身份资源检查必须早于周期事件、转换和深拷贝。异常包包括迟到包均撤销旧缓存，
+        # 但不占用可信历史，也不把原始超长字段放进原因或日志中。
+        identity_error = resource_budget.odometry_identity_error(
+            raw
+        ) or resource_budget.health_identity_error(health)
+        if identity_error:
+            reasons.append(identity_error)
+            self._cache = None
+            self._previously_rejected = True
+            self._last_reasons = tuple(reasons)
+            self._event('rejected', reasons, received_at=received_at)
+            return self._invalid(reasons, freshness='INVALID')
 
         # 2. 校验来源周期、健康字段、序号及测量时间。这里只观察，不提交可信历史。
         epoch = self._observe_epoch(raw, health, metadata)

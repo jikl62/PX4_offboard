@@ -4,6 +4,7 @@
 // 世界系 NED（北/东/下）、机体系 FRD（前/右/下），位置 m、速度 m/s、加速度 m/s²、角度 rad。
 // 这里不是 SLAM、PX4 EKF 或角速度内环，也不是新 VelocityCommand 的生产适配器。
 #include "jikl_fc01_system/attitude_reference.hpp"
+#include "jikl_fc01_system/vision_resource_budget.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -57,6 +58,7 @@ struct State {
   double received_at{-1};
   std::uint32_t reset_counter{};
   std::string frame_id, body_frame_id, source_id, angular_velocity_source;
+  bool identity_resource_invalid{}; // ROS 映射拒绝超预算身份后保留撤销证据，不复制原始长文本。
   bool initialized{}, tracking{}, calibration_valid{};
   std::uint16_t valid_fields{};
   // position/velocity 使用世界 NED；angular_velocity 使用机体 FRD；姿态为 Hamilton w,x,y,z 的 FRD→NED。
@@ -73,6 +75,7 @@ struct Command {
   double received_at{-1};
   std::uint32_t reset_counter{};
   std::string source_id, frame_id;
+  bool identity_resource_invalid{};
   Mode mode{Mode::Disabled};
   bool valid{}, position_valid{}, yaw_valid{}, sticks_valid{};
   Vec3 position{missing_array<3>()};
@@ -80,6 +83,16 @@ struct Command {
   // Follow 顺序为右/前/偏航/上，均归一化到 [-1,1]；水平只按视觉 yaw 旋转，垂向单独处理。
   std::array<double, 4> sticks{missing_array<4>()};
 };
+// 在复制或序列化前检查全部身份；未声明的角速度来源也不能夹带无界文本。
+inline bool identities_within_budget(const State& value) {
+  return !value.identity_resource_invalid && identity_within_budget(value.source_id) &&
+         identity_within_budget(value.frame_id) && identity_within_budget(value.body_frame_id) &&
+         identity_within_budget(value.angular_velocity_source);
+}
+inline bool identities_within_budget(const Command& value) {
+  return !value.identity_resource_invalid && identity_within_budget(value.source_id) &&
+         identity_within_budget(value.frame_id);
+}
 // 一次控制计算用的值快照：两个独立来源数量、当前 ROS ns 与本机撤销代数一起参与资格判定。
 struct Input {
   State state;
@@ -414,6 +427,8 @@ private:
     const auto& state = in.state;
     if (in.state_publishers != 1)
       return "VISION_STATE_SOURCE_COUNT";
+    if (!identities_within_budget(state))
+      return "VISION_STATE_IDENTITY_RESOURCE_LIMIT";
     if (!state.sequence || state.source_id.empty())
       return "VISION_STATE_IDENTITY_INVALID";
     if (state.frame_id != "fc01_vision_ned" || state.body_frame_id != "base_link_frd")
@@ -447,6 +462,8 @@ private:
     const auto& command = in.command;
     if (in.command_publishers != 1)
       return "NAVIGATION_COMMAND_SOURCE_COUNT";
+    if (!identities_within_budget(command))
+      return "NAVIGATION_COMMAND_IDENTITY_RESOURCE_LIMIT";
     if (!command.valid || !command.sequence || command.source_id.empty())
       return "NAVIGATION_COMMAND_INVALID";
     if (command.frame_id != "fc01_vision_ned")
@@ -514,7 +531,27 @@ inline void Config::validate() const {
 class Inbox {
 public:
   // 状态身份/坐标/reset 变化和健康→撤销即使序号未增也必须保留，避免被旧序号过滤隐藏失效。
-  bool state(State value, double received_at) {
+  bool state(const State& incoming, double received_at) {
+    // 先看借用输入，避免按值形参先复制长文本。即使是迟到/零序号的异常包也撤销当前资格，
+    // 不推进可信序号；后续健康消息不能抹掉 revocation_generation 的中途撤销证据。
+    if (!identities_within_budget(incoming)) {
+      // 保留先前有界身份及高水位；清空身份会把同源旧 seq 错当新来源而允许水位回退。
+      // 仅移动旧缓存的字符串，绝不保存本次异常输入的原文；所有测量默认恢复为未知。
+      State rejected;
+      rejected.source_id = std::move(state_.source_id);
+      rejected.frame_id = std::move(state_.frame_id);
+      rejected.body_frame_id = std::move(state_.body_frame_id);
+      rejected.reset_counter = state_.reset_counter;
+      rejected.sequence = state_sequence_;
+      rejected.stamp_ns = state_.stamp_ns;
+      rejected.identity_resource_invalid = true;
+      rejected.received_at = received_at;
+      state_ = std::move(rejected);
+      state_seen_ = true;
+      ++revocation_generation_;
+      return true;
+    }
+    State value = incoming;
     const bool changed =
         state_seen_ &&
         (value.source_id != state_.source_id || value.reset_counter != state_.reset_counter ||
@@ -549,7 +586,23 @@ public:
     return true;
   }
   // 目标也单独保留身份和显式撤销；正常重复序号不更新接收时间，不能续期旧命令。
-  bool command(Command value, double received_at) {
+  bool command(const Command& incoming, double received_at) {
+    // 与状态门相同：拒绝不复制文本，保持中途撤销可见；这不授予任何新飞行权限。
+    if (!identities_within_budget(incoming)) {
+      Command rejected;
+      rejected.source_id = std::move(command_.source_id);
+      rejected.frame_id = std::move(command_.frame_id);
+      rejected.reset_counter = command_.reset_counter;
+      rejected.sequence = command_sequence_;
+      rejected.stamp_ns = command_.stamp_ns;
+      rejected.identity_resource_invalid = true;
+      rejected.received_at = received_at;
+      command_ = std::move(rejected);
+      command_seen_ = true;
+      ++revocation_generation_;
+      return true;
+    }
+    Command value = incoming;
     const bool changed = command_seen_ && (value.source_id != command_.source_id ||
                                            value.reset_counter != command_.reset_counter ||
                                            value.frame_id != command_.frame_id);

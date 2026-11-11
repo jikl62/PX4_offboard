@@ -9,6 +9,7 @@ DiagnosticWriter 保存快照和日志，main() 只负责连接 ROS 订阅与这
 """
 from collections import OrderedDict, deque
 from dataclasses import dataclass
+import importlib.util
 import json
 import math
 import os
@@ -18,10 +19,25 @@ import tempfile
 import time
 
 
+def _load_resource_budget():
+    """从同目录加载唯一预算实现，源码与安装后导入均不依赖工作目录或 PYTHONPATH。"""
+    name = '_fc01_vision_resource_budget'
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(
+            name, Path(__file__).with_name('vision_resource_budget.py')
+        )
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
+resource_budget = _load_resource_budget()
+
 # 与视觉端约定的正式类型和默认话题；速度采用机体 FRD：前/右/下，单位 m/s。
 MESSAGE_TYPE = 'jikl_fc01_system/msg/VelocityCommand'
 DEFAULT_TOPIC = '/fc01/vision/velocity_command'
-MAX_TEXT = 256
+MAX_TEXT = resource_budget.IDENTITY_MAX_BYTES
 STREAM_HISTORY_CAPACITY = 32
 LIMIT_NAMES = ('timeout_sec', 'max_speed_mps', 'max_source_age_sec', 'future_tolerance_sec')
 
@@ -54,7 +70,7 @@ def _json_safe(value):
 
 # 文本截断仅限制日志体积；receive 仍对未经截断的原字段进行身份与长度验证。
 def _text(value):
-    return value[:MAX_TEXT] if isinstance(value, str) else None
+    return resource_budget.bounded_text(value)
 
 
 @dataclass(frozen=True)
@@ -72,11 +88,7 @@ class DiagnosticConfig:
             value = getattr(self, name)
             if not _finite(value) or value < 0:
                 raise ValueError(name + ' must be finite and nonnegative; 0 means unconfigured')
-        if (
-            not isinstance(self.expected_source_id, str)
-            or len(self.expected_source_id) > MAX_TEXT
-            or (self.expected_source_id and not self.expected_source_id.strip())
-        ):
+        if not resource_budget.valid_identity(self.expected_source_id, allow_empty=True):
             raise ValueError(
                 'expected_source_id must be empty (unbound) or an explicit source identifier'
             )
@@ -316,12 +328,14 @@ class Receiver:
             errors.append('STAMP_INVALID')
         if not _integer(reset, 2**32 - 1):
             errors.append('RESET_COUNTER_INVALID')
-        if not isinstance(source, str) or not source.strip() or len(source) > MAX_TEXT:
+        if not resource_budget.valid_identity(source):
             errors.append('SOURCE_ID_INVALID')
         elif self.config.expected_source_id and source != self.config.expected_source_id:
             errors.append('SOURCE_ID_NOT_EXPECTED')
         if frame != 'body_frd':
             errors.append('FRAME_ID_MUST_BE_EXPLICIT_BODY_FRD')
+        if not resource_budget.identity_within_budget(frame):
+            errors.append('FRAME_ID_RESOURCE_LIMIT')
         if valid is not True:
             errors.append('COMMAND_INVALID')
         if not all(_finite(value) for value in velocities):
@@ -364,12 +378,7 @@ class Receiver:
         self, source, reset, sequence, stamp_ns, valid, errors, received_at, ros_now_ns
     ):
         """追加顺序错误，并仅在本帧可信时更新防重放记录。"""
-        identity_valid = (
-            _integer(reset, 2**32 - 1)
-            and isinstance(source, str)
-            and bool(source.strip())
-            and len(source) <= MAX_TEXT
-        )
+        identity_valid = _integer(reset, 2**32 - 1) and resource_budget.valid_identity(source)
         if identity_valid:
             identity = (source, reset)
             if self._identity is not None and identity != self._identity:

@@ -43,8 +43,9 @@ install(DIRECTORY include/ DESTINATION include)
 install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vision_odometry_adapter.py"
   "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/velocity_command_diagnostic.py"
   DESTINATION lib/${PROJECT_NAME})
-# 状态校验器是被导入的纯计算模块，与转换器放在同一目录，不注册为节点入口。
+# 状态校验与身份预算是被导入的纯计算模块，与转换器放在同一目录，不注册为节点入口。
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vision_state_validation.py"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vision_resource_budget.py"
   DESTINATION lib/${PROJECT_NAME})
 # 下游使用消息时需要运行期类型支持；ament_package 最后生成包索引和环境脚本。
 ament_export_dependencies(rosidl_default_runtime)

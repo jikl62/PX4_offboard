@@ -12,7 +12,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 
 
-# 验证 workspace/src/jikl_fc01_system 的 ../../tools 相对布局确实可安装三个真实工具。
+# 验证 workspace/src/jikl_fc01_system 的 ../../tools 布局安装两个入口和两个纯计算模块。
 class NativeInstallLayoutTests(unittest.TestCase):
     # 只把复制/安装部分放进临时工作区，CMake 真执行后逐字节比较 Python 工具载荷。
     @unittest.skipUnless(shutil.which('cmake'), 'requires installed CMake')
@@ -83,6 +83,7 @@ class NativeInstallLayoutTests(unittest.TestCase):
                 'vision_odometry_adapter.py',
                 'velocity_command_diagnostic.py',
                 'vision_state_validation.py',
+                'vision_resource_budget.py',
             ):
                 with self.subTest(tool=name):
                     self.assertEqual(

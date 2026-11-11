@@ -10,8 +10,27 @@ GuardedOdometryAdapter 检查两个原始话题的来源数量；main() 才连�
 """
 from collections import OrderedDict
 from dataclasses import dataclass, field
+import importlib.util
 import math
+from pathlib import Path
+import sys
 import time
+
+
+def _load_resource_budget():
+    """加载相邻工具共用的 UTF-8 字节预算；导入不启动 ROS，不依赖当前工作目录。"""
+    name = '_fc01_vision_resource_budget'
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(
+            name, Path(__file__).with_name('vision_resource_budget.py')
+        )
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
+resource_budget = _load_resource_budget()
 
 # 有效位沿用 VisionState 协议；数值为零与“这个物理量有效”是两件不同的事。
 POSITION, VELOCITY, ATTITUDE, ANGULAR_VELOCITY = 1, 2, 4, 8
@@ -170,6 +189,8 @@ class AdapterConfig:
             'extrinsics_id',
             'alignment_id',
         ):
+            if not resource_budget.identity_within_budget(getattr(self, name)):
+                raise ValueError(resource_budget.RESOURCE_ERROR + ': ' + name)
             if not isinstance(getattr(self, name), str) or not getattr(self, name).strip():
                 raise ValueError('explicit ' + name + ' is required')
         if self.world_convention not in ('NED', 'ENU') or self.body_convention not in (
@@ -285,6 +306,13 @@ def convert_odometry(odometry, health, config):
     # 1. 配置是显式合同；默认结果不含任何已确认的测量，防止失败分支填入伪零值。
     config.validate()
     out = ConvertedState(source_id=config.source_id)
+    # 在首次复制来源/坐标身份或扫描其内容之前拒绝；超限消息不获得任何测量有效位。
+    identity_error = resource_budget.odometry_identity_error(odometry) or (
+        resource_budget.health_identity_error(health)
+    )
+    if identity_error:
+        out.reason = identity_error
+        return out
     out.stamp_ns = stamp_ns(odometry.header.stamp)
     # 健康声明与测量必须严格配对；不满足合同就返回默认无效结果及首个拒绝原因。
     if not _check_health_contract(odometry, health, config, out):
@@ -392,6 +420,9 @@ class StampPairBuffer:
         return (message, metadata)
 
     def odometry(self, message, now):
+        # Guarded 入口负责发布撤销；独立使用此低层缓存时也不能保存超预算半包。
+        if resource_budget.odometry_identity_error(message):
+            raise ValueError(resource_budget.RESOURCE_ERROR)
         # 先处理已经超时的等待项；晚到的另一半不能绕过配对窗口恢复旧样本。
         result = self.expire(now)
         key = stamp_ns(message.header.stamp)
@@ -409,6 +440,8 @@ class StampPairBuffer:
         return result
 
     def health(self, message, now):
+        if resource_budget.health_identity_error(message):
+            raise ValueError(resource_budget.RESOURCE_ERROR)
         # 回调同样承担超时观察，不能假设定时器一定先于新消息执行。
         result = self.expire(now)
         key = stamp_ns(message.stamp)
@@ -503,9 +536,24 @@ class GuardedOdometryAdapter:
             for raw, health in pairs
         ]
 
+    def _reject_resource_identity(self, now, ros_now_ns):
+        """先输出已到期的撤销，再清半包并发本次资源拒绝；不保留或回显原始大字符串。
+
+        now 是单调接收秒，ros_now_ns 是观察纳秒。每次拒绝取得新输出序号，不能因原始
+        包的旧序号/旧时间而忽略本次撤销。清半包仍保留配对水位，不授予任何飞行权限。
+        """
+        expired = self._converted(self.pairs.expire(now), ros_now_ns)
+        self.pairs.clear()
+        invalid = ConvertedState(
+            source_id=self.config.source_id, reason=resource_budget.RESOURCE_ERROR
+        )
+        return expired + [self._publish(invalid, ros_now_ns)]
+
     def odometry(self, message, now, ros_now_ns, odometry_publishers, health_publishers):
         allowed, states = self._authority(ros_now_ns, odometry_publishers, health_publishers)
         if allowed:
+            if resource_budget.odometry_identity_error(message):
+                return self._reject_resource_identity(now, ros_now_ns)
             # 来源通过才允许修改配对缓存；新消息处理仍先观察旧项是否已经超时。
             return self._converted(self.pairs.odometry(message, now), ros_now_ns)
         return states
@@ -513,6 +561,8 @@ class GuardedOdometryAdapter:
     def health(self, message, now, ros_now_ns, odometry_publishers, health_publishers):
         allowed, states = self._authority(ros_now_ns, odometry_publishers, health_publishers)
         if allowed:
+            if resource_budget.health_identity_error(message):
+                return self._reject_resource_identity(now, ros_now_ns)
             # 健康消息只参与严格时间配对，不单独构造一个有效的飞机状态。
             return self._converted(self.pairs.health(message, now), ros_now_ns)
         return states

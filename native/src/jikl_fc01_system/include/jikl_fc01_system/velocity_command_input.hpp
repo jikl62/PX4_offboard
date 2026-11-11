@@ -14,7 +14,7 @@ using Vec3 = vision::Vec3;
 
 inline bool identity_valid(const std::string& value) {
   // 与独立诊断接收器采用相同的文本长度限制，避免无限增长的来源标识。
-  return !value.empty() && value.size() <= 256 &&
+  return !value.empty() && vision::identity_within_budget(value) &&
          value.find_first_not_of(" \t\r\n") != std::string::npos;
 }
 
@@ -30,6 +30,7 @@ struct Target {
   std::uint32_t reset_counter{}; // 指令发送方的周期，与状态估计器的 reset 独立。
   std::string source_id;
   std::string frame_id;
+  bool identity_resource_invalid{};
   bool valid{};
   Vec3 body_velocity{vision::missing_array<3>()}; // FRD：前、右、下，单位 m/s。
 };
@@ -41,6 +42,11 @@ template <class Message> Target from_message(const Message& message) {
   target.sequence = message.sequence;
   target.stamp_ns = vision::message_stamp_ns(message.stamp);
   target.reset_counter = message.reset_counter;
+  if (!vision::identity_within_budget(message.source_id) ||
+      !vision::identity_within_budget(message.frame_id)) {
+    target.identity_resource_invalid = true;
+    return target;
+  }
   target.source_id = message.source_id;
   target.frame_id = message.frame_id;
   target.valid = message.valid;
@@ -145,7 +151,7 @@ public:
 
   // 接收飞机实际状态。上游应已完成坐标、标定和原始协方差质量检查。
   // 此处的可选 covariance 检查只复用有限值/非负对角线检查，不证明 PSD。
-  bool state(vision::State value, double received_at, std::uint64_t ros_now_ns,
+  bool state(const vision::State& incoming, double received_at, std::uint64_t ros_now_ns,
              std::size_t publishers = 1) {
     state_publisher_count_ = publishers;
     if (!first_error_.empty() || !clock_observation(received_at, ros_now_ns)) {
@@ -154,6 +160,10 @@ public:
     if (publishers != 1) {
       return latch("STATE_SOURCE_COUNT");
     }
+    if (!vision::identities_within_budget(incoming)) {
+      return latch("STATE_IDENTITY_RESOURCE_LIMIT");
+    }
+    vision::State value = incoming;
 
     // 1. 检查当前输入的身份、坐标、必需字段以及可选字段。
     value.received_at = received_at;
@@ -232,7 +242,7 @@ public:
   }
 
   // 接收上层目标速度；它使用自己的来源、序号和 reset，不能混入实际状态。
-  bool command(Target value, double received_at, std::uint64_t ros_now_ns,
+  bool command(const Target& incoming, double received_at, std::uint64_t ros_now_ns,
                std::size_t publishers = 1) {
     command_publisher_count_ = publishers;
     if (!first_error_.empty() || !clock_observation(received_at, ros_now_ns)) {
@@ -241,6 +251,11 @@ public:
     if (publishers != 1) {
       return latch("COMMAND_SOURCE_COUNT");
     }
+    if (incoming.identity_resource_invalid || !vision::identity_within_budget(incoming.source_id) ||
+        !vision::identity_within_budget(incoming.frame_id)) {
+      return latch("COMMAND_IDENTITY_RESOURCE_LIMIT");
+    }
+    Target value = incoming;
 
     value.received_at = received_at;
     if (value.schema_version != 1 || !value.valid || !value.sequence ||
