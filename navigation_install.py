@@ -77,48 +77,90 @@ StartupNotify=false
 X-GNOME-Autostart-enabled=true
 '''
 
-def source_key(entry,project):
-    h=hashlib.sha256()
+def source_key(entry, project):
+    # 构建键决定使用哪个独立目录；相同输入复用，不覆盖可能正在运行的旧版本。
+    h = hashlib.sha256()
     # CMake 还会安装 native/tools 中的 Python 工具；它们变化也必须选择新构建目录。
-    for root in (entry/'native/src',entry/'native/tools',project/'install_r632/px4_msgs/include'):
+    for root in (
+        entry/'native/src',
+        entry/'native/tools',
+        project/'install_r632/px4_msgs/include',
+    ):
+        # 固定遍历顺序，并同时摘要相对路径和内容，避免目录枚举顺序影响构建键。
         for p in sorted(root.rglob('*')):
-            if p.is_file():h.update(str(p.relative_to(root)).encode());h.update(p.read_bytes())
+            if p.is_file():
+                h.update(str(p.relative_to(root)).encode())
+                h.update(p.read_bytes())
+    # 不同 CPU 架构的构建结果不能共用同一个候选目录。
     h.update(os.uname().machine.encode())
-    compiler=shutil.which('g++')
+    compiler = shutil.which('g++')
     if compiler:
-        st=Path(compiler).stat()
-        h.update(str((str(Path(compiler).resolve()),st.st_size,st.st_mtime_ns)).encode())
+        # 保留原编译器身份策略：路径、大小和修改时间；读取产生的访问时间不触发重建。
+        st = Path(compiler).stat()
+        h.update(str((str(Path(compiler).resolve()), st.st_size, st.st_mtime_ns)).encode())
+    # 保留既有 24 位十六进制目录键约定；这不是完整的 ARM64 构建验收证据。
     return h.hexdigest()[:24]
 
-def build_complete(prefix):
-    binaries=[prefix/'lib/jikl_fc01_system'/name for name in ('fc01_system_node','fc01_config_check')]
-    try:
-        saved=json.loads((prefix.parent/'build-complete.json').read_text())
-        # 两个 ELF 未变不代表消息库、Python 模块和工具未变；旧版二进制清单不再复用。
-        return (saved.get('schema')==2 and all(p.is_file() for p in binaries) and
-                saved.get('installed_files')==tree_fingerprint(prefix))
-    except (OSError,ValueError,AttributeError,BuildEvidenceError):return False
 
-def staging_path(entry,key):
+def build_complete(prefix):
+    # 控制器与配置检查器都是必需输出；仅有其中之一不能证明安装完成。
+    binaries = [
+        prefix/'lib/jikl_fc01_system'/name
+        for name in ('fc01_system_node', 'fc01_config_check')
+    ]
+    try:
+        saved = json.loads((prefix.parent/'build-complete.json').read_text())
+        # 两个 ELF 未变不代表消息库、Python 模块和工具未变；旧版二进制清单不再复用。
+        return (
+            saved.get('schema') == 2
+            and all(p.is_file() for p in binaries)
+            and saved.get('installed_files') == tree_fingerprint(prefix)
+        )
+    except (OSError, ValueError, AttributeError, BuildEvidenceError):
+        # 证据缺失、格式错误或文件树无法确认时，保留旧目录并按未完成处理。
+        return False
+
+
+def staging_path(entry, key):
+    # 尝试数量沿用原上限，避免大量残留目录导致无界搜索。
     for attempt in range(1000):
-        stage=entry/'.build'/(key+(f'.retry{attempt}' if attempt else ''))
-        if not (stage/'install').exists() or build_complete(stage/'install'):return stage
+        stage = entry/'.build'/(key+(f'.retry{attempt}' if attempt else ''))
+        # 尚无安装前缀可用于新构建，完整安装可复用；不完整安装只能保留并另选目录。
+        if not (stage/'install').exists() or build_complete(stage/'install'):
+            return stage
+    # 搜索耗尽时停止准备，不切换服务或覆盖已有安装。
     raise RuntimeError('过多未完成构建；未变更现有服务')
 
-def build_native(entry,prefix,build,run=subprocess.run):
-    if any(shutil.which(x) is None for x in ('cmake','g++')):
+
+def build_native(entry, prefix, build, run=subprocess.run):
+    # 仅使用本机已安装的工具，不在部署过程中下载依赖。
+    if any(shutil.which(x) is None for x in ('cmake', 'g++')):
         raise RuntimeError('缺少已安装的 cmake 或 g++；未下载依赖，未变更服务')
-    if build_complete(prefix):return
-    # Never write a prefix that may be in use if its completion record changed.
-    if prefix.exists():raise RuntimeError('已有构建目录不完整或被修改，保留它；报告中记录路径：'+str(prefix))
-    run(['cmake','-S',str(entry/'native/src/jikl_fc01_system'),'-B',str(build),'-DCMAKE_BUILD_TYPE=Release','-DCMAKE_INSTALL_PREFIX='+str(prefix)],check=True)
-    run(['cmake','--build',str(build),'--parallel','1'],check=True)
-    run(['cmake','--install',str(build)],check=True)
-    binaries=[prefix/'lib/jikl_fc01_system'/name for name in ('fc01_system_node','fc01_config_check')]
+    if build_complete(prefix):
+        # 完整安装树仍匹配证据时，避免重复编译及写入。
+        return
+    if prefix.exists():
+        # 旧前缀可能仍被运行中的服务使用；证据失效也不能直接覆盖它。
+        raise RuntimeError('已有构建目录不完整或被修改，保留它；报告中记录路径：'+str(prefix))
+    # 先配置隔离的构建目录与安装前缀，配置失败立即向调用方报告。
+    run([
+        'cmake', '-S', str(entry/'native/src/jikl_fc01_system'),
+        '-B', str(build), '-DCMAKE_BUILD_TYPE=Release',
+        '-DCMAKE_INSTALL_PREFIX='+str(prefix),
+    ], check=True)
+    # 单任务编译沿用现有资源策略；本函数不启动控制器或 Agent。
+    run(['cmake', '--build', str(build), '--parallel', '1'], check=True)
+    # 仅安装到本次独立前缀，服务切换仍由后续单独流程负责。
+    run(['cmake', '--install', str(build)], check=True)
+    binaries = [
+        prefix/'lib/jikl_fc01_system'/name
+        for name in ('fc01_system_node', 'fc01_config_check')
+    ]
     if all(p.is_file() for p in binaries):
-        # 完整安装树是复用证据；新增、删除或修改任一实际安装文件均使本目录失效。
+        # 只有两个必需程序均已安装才记录成功；整棵安装树摘要用于之后的复用校验。
         (prefix.parent/'build-complete.json').write_text(json.dumps(
-            {'schema':2,'installed_files':tree_fingerprint(prefix)}))
+            {'schema': 2, 'installed_files': tree_fingerprint(prefix)}
+        ))
 
 def boot(entry,home,project,action,*args):
     from standby import rotating_logger
