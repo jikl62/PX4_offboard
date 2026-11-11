@@ -1,0 +1,247 @@
+{
+  "baseline": "d8d14ff30be6bc89dce805205f6489795a5efa5e",
+  "source_commit": "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb",
+  "file_count": 30,
+  "files": [
+    {
+      "path": "native/scripts/r62_cpp_regressions.sh",
+      "sha256": "21d6b2b703582b3f27b57d9beff42f82f12dd1a424c372667cb2c3da3e580069",
+      "bytes": 1248,
+      "lines": 25,
+      "category": "test_entry_fix_and_regression",
+      "reason": "OVN-01，同上；仍明确末尾历史CSV缺失，未伪造回放。"
+    },
+    {
+      "path": "native/scripts/test.sh",
+      "sha256": "c4fc9bbf52765fa7e40fd4d9349996cb6f49e7a75280ccaa7feac70911a3fa6d",
+      "bytes": 2120,
+      "lines": 39,
+      "category": "test_entry_fix_and_regression",
+      "reason": "OVN-01，仅日志资源故障注入测试添加专属链接参数。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
+      "sha256": "6ad57d9dbcb7665eec10027d71db8c82a9cdabaa24f6a74340ceaeea93478842",
+      "bytes": 8189,
+      "lines": 188,
+      "category": "comments_and_layout",
+      "reason": "中文说明流缓冲、锁/移动、入队计数与异步写入/失败边界；合并重复说明。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp",
+      "sha256": "9f69a4cdd11822782a9cf9a1dc2eded00f0ac5b9138cd34fb5f0be6407cc2485",
+      "bytes": 7315,
+      "lines": 115,
+      "category": "comments_and_layout",
+      "reason": "说明参数地址表的借用寿命、声明副作用及异常继续传播。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp",
+      "sha256": "ff66a32c79ce4d585a7ad7e524b2ee76444b02e0d2cbc6547e9b617c08a00793",
+      "bytes": 12108,
+      "lines": 247,
+      "category": "comments_and_layout",
+      "reason": "说明模板字段探测、实际权限来源、Kill与任务锁存及兼容时间戳边界。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp",
+      "sha256": "0967384b3cbd9245bc5df20d7213938be455eae75fe2defa10a697507e8372f6",
+      "bytes": 8159,
+      "lines": 228,
+      "category": "comments_and_layout",
+      "reason": "说明地面诊断事务、ACK水位、请求/发送/接受/状态确认区别。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp",
+      "sha256": "c7e489825229facb6c7c8fe508257974da6e8a1a7ea8b9ac7d4c43e9378ee102",
+      "bytes": 1167,
+      "lines": 19,
+      "category": "comments_and_layout",
+      "reason": "说明父进程信号、输入/输出、系统调用副作用和错误传播。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp",
+      "sha256": "ad5a429800cfe414e0068804085b27f1ddaf8ffb057a862e32a895f5030b197c",
+      "bytes": 2833,
+      "lines": 64,
+      "category": "comments_and_layout",
+      "reason": "说明IPC解析、数字转换、消息大小及文本引用不等于权限认证。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/ros_config.hpp",
+      "sha256": "69bb79f935101170ff708904515ed48b78575dde92bfeaf1b85391cbfe8927b8",
+      "bytes": 2572,
+      "lines": 35,
+      "category": "comments_and_layout",
+      "reason": "说明Node参数声明/覆盖、Config值所有权与启动配置不等于动作授权。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp",
+      "sha256": "f1702f22bb214b2c16ad31c17dd0a242719450d7b04df396896ea09dbf612c82",
+      "bytes": 1685,
+      "lines": 32,
+      "category": "comments_and_layout",
+      "reason": "说明ROS图竞争观察不等于永久租约或飞控采用。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp",
+      "sha256": "dd7795a21c651f7c7bf5f7045e512f27a9c885543ad0e3fdc178731be82bfbc3",
+      "bytes": 3150,
+      "lines": 61,
+      "category": "comments_and_layout",
+      "reason": "说明fd与inode/路径所有权、禁止复制和只清理自有对象。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/source_diagnostics.hpp",
+      "sha256": "b2a9865e4721df8e216255e01d7af619b0d598d6124eaf2f0e09ed667f3f570d",
+      "bytes": 12475,
+      "lines": 292,
+      "category": "comments_and_layout",
+      "reason": "说明双时钟、有符号年龄、首拒绝与诊断不能改TTL/恢复权限。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
+      "sha256": "4886efd0342aad2040a6f94c3d075578d44a5ace728169f4f6a08ba43269595e",
+      "bytes": 9256,
+      "lines": 198,
+      "category": "comments_and_layout",
+      "reason": "说明raw fd失败分支、unique_ptr租约、同步借用及异常捕获范围。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp",
+      "sha256": "da00092e6f3800dd10fec2e66c89506739fe50eea0fade35a52f9a2e4bfc4db5",
+      "bytes": 26633,
+      "lines": 543,
+      "category": "comments_and_layout",
+      "reason": "说明FRD目标、NED实际状态、独立epoch、可信水位和预览撤销。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
+      "sha256": "ec05018b92a5c0e05698c12d8ec4c590db96ffb11b6626ba5654f5072e3cf1b7",
+      "bytes": 26195,
+      "lines": 554,
+      "category": "comments_and_layout",
+      "reason": "说明完整四元数旋转、误差/积分试算与输出候选，不授予动力权限。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "sha256": "8c7530ed945f4418e7fffe56f936ef6d2a86c9f723f48a425bd0485985527477",
+      "bytes": 42070,
+      "lines": 728,
+      "category": "comments_and_layout",
+      "reason": "说明实际状态与目标、坐标/单位/时间门、阶段与缓存连续性。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_resource_budget.hpp",
+      "sha256": "f30e9ebd55af5c98a03ddb20511efdfa341262424a9f035b6b8dae56bee647c7",
+      "bytes": 3214,
+      "lines": 65,
+      "category": "comments_and_layout",
+      "reason": "说明256 UTF-8字节、string_view借用、noexcept和编码扫描。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp",
+      "sha256": "c9047ded2c1af13a297bd7a478e5603093dda3c5b7665a10aba5af54d3935823",
+      "bytes": 5281,
+      "lines": 99,
+      "category": "comments_and_layout",
+      "reason": "说明模板字段复制、有效位、返回值所有权、异常与非坐标变换职责。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+      "sha256": "cb5216e1fb506e049d9dedcd0e59015464ce7fef9a0bcacae4362c93314304a0",
+      "bytes": 2708,
+      "lines": 28,
+      "category": "comments_and_layout",
+      "reason": "明确预览字段、有效性与实际控制发布的区别；声明不变。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/NavigationCommand.msg",
+      "sha256": "505cc578867c0240e92e35bbde3126aa66aba6f991240d9feb5caa19d098e3a2",
+      "bytes": 2741,
+      "lines": 28,
+      "category": "comments_and_layout",
+      "reason": "明确旧模式/位置/杆量合同，不与VelocityCommand混用；声明不变。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VelocityCommand.msg",
+      "sha256": "50294dec76015c08b248010fed13ddae8fcd1604e0cdb4933976deb5174dfc59",
+      "bytes": 2183,
+      "lines": 21,
+      "category": "comments_and_layout",
+      "reason": "明确FRD目标速度、与实际NED速度区别、时钟/身份/reset；声明不变。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VisionHealth.msg",
+      "sha256": "97b108f3512f3752d3be05dc92da6e07fecb125c1ab3f39bf8b0ea5328537541",
+      "bytes": 3470,
+      "lines": 34,
+      "category": "comments_and_layout",
+      "reason": "明确状态配对、追踪/质量/重定位与来源合同；声明不变。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VisionState.msg",
+      "sha256": "7911f07f5766faee8e56773cad6eccebceb8d46b78bdb9f3731090da9a1afa6c",
+      "bytes": 3913,
+      "lines": 38,
+      "category": "comments_and_layout",
+      "reason": "明确自身实际状态、有效位、四元数、协方差和来源；声明不变。"
+    },
+    {
+      "path": "native/tools/velocity_command_diagnostic.py",
+      "sha256": "d15956d567f98ede6287913c144ce2310d6642cbe00726b05095f981d563c147",
+      "bytes": 50059,
+      "lines": 1019,
+      "category": "diagnostic_fix_then_ast_equal_comments",
+      "reason": "OVN-08独立生命周期修复；后续33个函数中文契约完整AST等于功能修复提交。"
+    },
+    {
+      "path": "navigation_restore.py",
+      "sha256": "bc97282e0b5b42a8049975202f81ab1a9bd54adcfa73dd58e935de0a3ca9bc4a",
+      "bytes": 43946,
+      "lines": 932,
+      "category": "comments_and_layout",
+      "reason": "事务/补偿、水位、rollback分支与中断语义中文合同；AST相同。"
+    },
+    {
+      "path": "navigation_service.py",
+      "sha256": "dcdc64abc435ede5617f323a4aa0df30c0c4230190847ba1097c0309dc350940",
+      "bytes": 19366,
+      "lines": 435,
+      "category": "named_factory_equivalent_refactor_and_comments",
+      "reason": "中文合同和具名配置工厂；check/load顺序、动态闭包、对象/异常身份差分。"
+    },
+    {
+      "path": "standby.py",
+      "sha256": "51d8d6e761e21f10ec01398de274ebbadeb4a44e87b0a40713ab4ea144ee4614",
+      "bytes": 43497,
+      "lines": 1008,
+      "category": "comments_and_layout",
+      "reason": "中文说明Agent/锁/IPC/线程/日志所有权、监控与退出边界；AST相同。"
+    },
+    {
+      "path": "tests/test_legacy_cpp_runner_links.py",
+      "sha256": "d131a13b55ce6f98ac1aa23cb8c546f1a65319c6136c26fb9d67b8ddb02e1488",
+      "bytes": 5488,
+      "lines": 120,
+      "category": "test_entry_fix_and_regression",
+      "reason": "新增2方法，运行真实旧脚本及g++，检查专属链接与普通失败退出。"
+    },
+    {
+      "path": "tests/test_overnight_service_readability.py",
+      "sha256": "96726a44d35d2c19c5dd271817c7dd441d8b24baa4581354ec35fada07f2915d",
+      "bytes": 10911,
+      "lines": 255,
+      "category": "deterministic_refactor_regression",
+      "reason": "新增5方法，重放原/现真实服务入口，比较工厂与完整AST归一化。"
+    },
+    {
+      "path": "tests/test_stage_overnight_velocity_lifecycle.py",
+      "sha256": "54309f93c5400968598ae03cf8af85bd4985320c861e24d42b00f5daf7a2012b",
+      "bytes": 17226,
+      "lines": 389,
+      "category": "diagnostic_lifecycle_regression",
+      "reason": "新增15方法，真实main/假ROS的生命周期和异常故障注入。"
+    }
+  ]
+}
