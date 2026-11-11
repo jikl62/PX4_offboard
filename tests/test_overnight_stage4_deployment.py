@@ -155,11 +155,58 @@ class DeploymentReadabilityEquivalenceTests(unittest.TestCase):
         )
         return module
 
-    def test_install_and_deploy_keep_complete_original_ast(self):
+    def test_install_and_deploy_preserve_recorded_behavior_baselines(self):
         for name in ('navigation_install.py', 'navigation_deploy.py'):
             with self.subTest(file=name):
                 before = ast.parse(self.sources[name])
                 after = ast.parse((self.root / name).read_text())
+                if name == 'navigation_deploy.py':
+                    # Stage6单独修复了DeploymentLog写失败后的关闭责任，不能再声称整文件行为等价。
+                    # 先将完整现文件锁到该不可变修复提交，避免随当前工作树任意更新预期。
+                    repaired = subprocess.run(
+                        [
+                            'git',
+                            '-C',
+                            str(self.root),
+                            'show',
+                            '6c4cc7d:navigation_deploy.py',
+                        ],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
+                    self.assertEqual(ast.dump(ast.parse(repaired.stdout)), ast.dump(after))
+                    # 只有已复现并独立测试的日志类允许变化；外部offline/online/main及全部接线
+                    # 继续与Stage4起点逐项比较，不跳过部署编排或放宽安全行为的差分。
+                    old_log = next(
+                        item
+                        for item in before.body
+                        if isinstance(item, ast.ClassDef) and item.name == 'DeploymentLog'
+                    )
+                    new_log = next(
+                        item
+                        for item in after.body
+                        if isinstance(item, ast.ClassDef) and item.name == 'DeploymentLog'
+                    )
+                    for method in ('record', 'step'):
+                        self.assertEqual(
+                            ast.dump(
+                                next(
+                                    item
+                                    for item in old_log.body
+                                    if isinstance(item, ast.FunctionDef) and item.name == method
+                                )
+                            ),
+                            ast.dump(
+                                next(
+                                    item
+                                    for item in new_log.body
+                                    if isinstance(item, ast.FunctionDef) and item.name == method
+                                )
+                            ),
+                        )
+                    before.body.remove(old_log)
+                    after.body.remove(new_log)
                 self.assertEqual(ast.dump(before), ast.dump(after))
 
     def test_build_only_extracts_the_original_command_expression(self):
