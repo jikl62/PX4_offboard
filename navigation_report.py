@@ -132,7 +132,13 @@ def _report_entries(home, entry, row):
             and path.parent.parent.name == 'native'
         ):
             running = path.parents[2]
-            if running.is_relative_to(home) and running != entry:
+            # status.json间接指定的入口还须按真实路径归属home，拒绝..或父目录链接外跳。
+            # 保留原路径供显示；resolve失败原样传播。此检查不承诺消除随后目录替换的竞态。
+            if (
+                running.is_relative_to(home)
+                and running != entry
+                and running.resolve().is_relative_to(home.resolve())
+            ):
                 entries.append(('running_entry', running))
     return entries
 
