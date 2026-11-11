@@ -1,0 +1,734 @@
+{
+  "baseline": "68b3221ac297699e1dfed8fd773358bb26789207",
+  "cpp_and_messages": [
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp",
+      "sha256": "f9c0d0cc57f1f356ded97a841838203c4e940f374b8035d433061e440c793cad",
+      "bytes": 5660,
+      "lines": 102,
+      "status": "comments only",
+      "reason": "补轴约定与位置符号算例，强调仅字段映射，保留上游坐标/外参责任。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "sha256": "e607d9d2abb0510abf9a9ec8cb4e44df48d9d82fe4dd511b3825ccc0a497ddb1",
+      "bytes": 42899,
+      "lines": 735,
+      "status": "comments only",
+      "reason": "补质量/协方差/误差增益算例，收窄撤销代数不覆盖每种Controller拒绝的声明。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp",
+      "sha256": "bbe999b2481515b25d592607b758134cfb828c973794e3e342f2ba12cca11dbd",
+      "bytes": 26770,
+      "lines": 544,
+      "status": "comments only",
+      "reason": "区分保持模长的完整旋转与后续限幅；既有无权限说明充分，未拆分。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VelocityCommand.msg",
+      "sha256": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46",
+      "bytes": 2297,
+      "lines": 22,
+      "status": "comments only",
+      "reason": "补机头朝东时FRD目标到NED的数例；目标不是已实现速度。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VisionState.msg",
+      "sha256": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05",
+      "bytes": 4151,
+      "lines": 40,
+      "status": "comments only",
+      "reason": "补NED实际位置/速度符号及质量评分与协方差的区别。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VisionHealth.msg",
+      "sha256": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb",
+      "bytes": 3575,
+      "lines": 35,
+      "status": "comments only",
+      "reason": "补完全相同stamp配对的1ns反例。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/NavigationCommand.msg",
+      "sha256": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117",
+      "bytes": 2870,
+      "lines": 29,
+      "status": "comments only",
+      "reason": "补CRUISE绝对点目标不是相对位移。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+      "sha256": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf",
+      "bytes": 2820,
+      "lines": 29,
+      "status": "comments only",
+      "reason": "补NED负Vz目标与地面上正高度的单位/符号例。"
+    },
+    {
+      "path": "native/tests/test_vision_navigation.cpp",
+      "sha256": "ff8e7d6ef38f3c5ce8b9b0e41b685020e95738a992b31f2fad38d5f889e0bab7",
+      "bytes": 34798,
+      "lines": 770,
+      "status": "reviewed, unchanged",
+      "reason": "既有状态/目标、坐标、双时钟、撤销、连续性覆盖已充分；保持原字节。"
+    },
+    {
+      "path": "native/tests/test_velocity_command_input.cpp",
+      "sha256": "6dd27574dca8152cebeac6bced2b810fcc94e8323ab5351f76a760400123f8b6",
+      "bytes": 24255,
+      "lines": 553,
+      "status": "reviewed, unchanged",
+      "reason": "既有498断言覆盖完整FRD旋转、独立reset、输入/输出失效及预览无控制权；保持原字节。"
+    },
+    {
+      "path": "native/tests/test_stage3_vision_resource_budget.cpp",
+      "sha256": "a757bb9553d3d7c0c10d3cfae76c411ada3d60955002d40fc1aa4632f1799eb7",
+      "bytes": 10904,
+      "lines": 247,
+      "status": "reviewed, unchanged",
+      "reason": "既有UTF-8预算/拒绝前分配/撤销水位检查充分；保持原字节。"
+    },
+    {
+      "path": "native/tests/test_visual_runtime.cpp",
+      "sha256": "06d0d6341426e146901cd5a60f173efef81294e7ec242089f537f3ca09502170",
+      "bytes": 10335,
+      "lines": 247,
+      "status": "reviewed, unchanged",
+      "reason": "既有真实Runtime/Core与假最终sink集成覆盖充分；保持原字节。"
+    },
+    {
+      "path": "native/tests/vision_test_support.hpp",
+      "sha256": "62a1cdbd7061396fa77e83b7cf783a7fc0a4c78391552e540b042efadc8a0c8f",
+      "bytes": 7725,
+      "lines": 179,
+      "status": "reviewed, unchanged",
+      "reason": "既有合成RC起飞/平台/最终sink责任注释充分；保持原字节。"
+    },
+    {
+      "path": "native/tests/test_overnight_stage5_vision_contract.cpp",
+      "sha256": "55fb358dd42b20d9e7f4151fd947e29c6c390d63af0fad0bfd4ba025ab65de93",
+      "bytes": 8444,
+      "lines": 171,
+      "status": "new host test",
+      "reason": "新增4组39断言；补适配映射到Inbox撤销及精确时间边界的合同覆盖，不固化质量候选。"
+    }
+  ],
+  "python": [
+    {
+      "file": "native/tools/vision_odometry_adapter.py",
+      "role": "ROS-wired actual measurement conversion and exact-stamp pairing",
+      "edits": "Chinese comments only",
+      "checks": [
+        "world/body axes and Hamilton wxyz order",
+        "child-frame twist and body lever-arm correction",
+        "health identity/stamp/quality contract",
+        "bounded exact-stamp buffer and timeout-before-callback handling",
+        "publisher conflict invalidation and fresh-pair recovery",
+        "adapter-owned output sequence and raw health sequence diagnostic",
+        "output covariances NaN with valid bits clear",
+        "Node/Context ownership and signal-only stop"
+      ]
+    },
+    {
+      "file": "native/tools/vision_state_validation.py",
+      "role": "Independent offline Validator; not called by ROS node",
+      "edits": "Chinese wiring boundary comment only",
+      "checks": [
+        "explicit offset policy; no estimated clock mapping",
+        "independent source age and monotonic receive TTL",
+        "epoch history and retirement replay rejection",
+        "trusted baseline survives rejected packets",
+        "raw covariance declaration/symmetry/PSD/limits; no transformed-valid covariance",
+        "independent deep copies and event retention"
+      ]
+    },
+    {
+      "file": "native/tools/vision_resource_budget.py",
+      "role": "Shared application-layer UTF-8 identity resource contract",
+      "edits": "None; original bytes preserved",
+      "checks": [
+        "256 UTF-8 bytes, NUL and surrogate rejection",
+        "bounded log display distinct from identity authorization",
+        "pre-copy/pre-cache application guards",
+        "DDS deserialization allocation outside guarantee"
+      ]
+    },
+    {
+      "file": "native/tools/velocity_command_diagnostic.py",
+      "role": "Read-only VelocityCommand target diagnostic; no flight publishers",
+      "edits": "Chinese graph-count limitation comment only",
+      "checks": [
+        "body_frd target vs actual state separation",
+        "source binding, clock limits and independent expiry",
+        "history vs current candidate vs anomaly separation",
+        "cross-reset source time and per-stream sequence watermarks",
+        "explicit valid=false withdrawal consumes trusted sequence",
+        "bounded logs and event history",
+        "owned Node/Context cleanup and original exception chain"
+      ]
+    },
+    {
+      "file": "tests/test_vision_adapter.py",
+      "role": "Offline conversion/pairing contracts; host wire-to-core mapping",
+      "edits": "Existing combined mount/world/lever-arm test strengthened for nonzero velocity and angular velocity; no added method count",
+      "checks": [
+        "hand-computed world sensor velocity (-3,2,4)",
+        "rotational lever velocity (0,2,0)",
+        "body-origin velocity (-3,0,4)",
+        "position (-6,7,10), identity attitude and body omega (0,0,2)"
+      ]
+    }
+  ],
+  "engineering_modified": [
+    {
+      "path": "native/src/jikl_fc01_system/CMakeLists.txt",
+      "decision": "comment_only",
+      "before_sha256": "43d4deaece7d9153028a9c788e19495fbbfc70d349e4383a51eebbf02b41e2b8",
+      "sha256": "dae3e59d46e65ad5ab9d9d785915d36693da8a4240d31212d270d2d7207a9503",
+      "bytes_without_full_line_comments_equal": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/package.xml",
+      "decision": "comment_only",
+      "before_sha256": "43bfb2d57bdc01ff88d8af9e070181f2fcee0803bdfc84a46a36a3b8d41111b2",
+      "sha256": "d10f583c111190224c62d6508dd2dfb8671a0e83ff7d6d61766360fd50fd4a0b",
+      "bytes_without_full_line_comments_equal": true
+    },
+    {
+      "path": "navigation_environment.sh",
+      "decision": "comment_only",
+      "before_sha256": "652bb813011383413f500d0858e6295beec2fa4b351d27c84b724229b67a387e",
+      "sha256": "3acbafe897ed12f2cb1ce996b60d38a94ddf871699fdc42270e9b2dd7b654327",
+      "bytes_without_full_line_comments_equal": true
+    }
+  ],
+  "environment_entries": [
+    {
+      "path": "native/scripts/install.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "5a140b672303496a9403b2cafc40a64f06c9d42e0cf260301744194c54fb2922",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    },
+    {
+      "path": "native/scripts/r632_build.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "262ae54cddc184cb9ae654c1de832a2612680213a64478de5343ed171db1703c",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    },
+    {
+      "path": "native/scripts/run.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "eedf9c48b71bbf904a326fe556cd6dcc7e2fd959a1f250a8c7e973e1cd9afb96",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    },
+    {
+      "path": "navigation_environment.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "3acbafe897ed12f2cb1ce996b60d38a94ddf871699fdc42270e9b2dd7b654327",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    },
+    {
+      "path": "navigation_build_fresh.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "e6148f1da5bdec7c9eb101a8aa598c5002c94435f378376f166aa37088fd28d8",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    },
+    {
+      "path": "navigation_boot.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "34eb588e140252a59d3ad307b96ada00b6a6738f10b49d55ff8210182ff75b1e",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    },
+    {
+      "path": "navigation_restore.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "05ec1ff6b7f38f0af36a634bbf99c3abf777f806143fe85538eaaf7aa0159ca8",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    },
+    {
+      "path": "navigation.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "b1d56d89f4c11c79c56f6e9c811ec7137da32cb76e3b1b7dd80e9ff19ba2d8c5",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    },
+    {
+      "path": "standby.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "70839a43d1430aeff74ea26539389e57cca95d17e35c7c67ae7c759a46bcc84e",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    },
+    {
+      "path": "start.sh",
+      "decision": "review_environment_or_layout",
+      "sha256": "7efd7922a945ab32222b195d4587d914419b3ea7f132ca0dbfc9fc769d60511e",
+      "reason": "Reviewed environment ordering, installation layout or thin entry responsibilities; none executed."
+    }
+  ],
+  "yaml": [
+    {
+      "path": "native/config/R6_OFFLINE_DEV.yaml",
+      "sha256": "1d223c9a0884df619595605c62d276b8db07fa037ec41dc11753f65f719f6898",
+      "source_bytes_unchanged": true,
+      "parameter_count": 55,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": true,
+      "duplicates": []
+    },
+    {
+      "path": "native/config/R6_REAL_FC01_PENDING_REVIEW.yaml",
+      "sha256": "f098f9d530111aabd396067af9c64fb6056a9ae701dab4f46802e3a4353a75f9",
+      "source_bytes_unchanged": true,
+      "parameter_count": 55,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": true,
+      "duplicates": []
+    },
+    {
+      "path": "native/config/S10_1HZ_EXPERIMENTAL_SIM_ONLY.yaml",
+      "sha256": "c98e291e8684e9544847d9e68b85bb1af715f8ed0f1b2998c34e1a679ef10fbc",
+      "source_bytes_unchanged": true,
+      "parameter_count": 51,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": true,
+      "duplicates": []
+    },
+    {
+      "path": "native/config/attitude_altitude.yaml",
+      "sha256": "01fec7e4388f948c77847ef9ccfc116c3b83f3a2add3a4a1f08de3d1606ce692",
+      "source_bytes_unchanged": true,
+      "parameter_count": 63,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": true,
+      "duplicates": []
+    },
+    {
+      "path": "native/config/diagnostic.yaml",
+      "sha256": "ee965f34b33c9be7d46900ba2dfc32a8c8181e68efecb893b86179e96a28023d",
+      "source_bytes_unchanged": true,
+      "parameter_count": 68,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": false,
+      "duplicates": [
+        {
+          "name": "rc_navigation_enabled",
+          "line_1based": 24,
+          "prior_line_1based": 18,
+          "equal_scalar_text_and_yaml_type": true
+        },
+        {
+          "name": "visual_navigation_enabled",
+          "line_1based": 35,
+          "prior_line_1based": 26,
+          "equal_scalar_text_and_yaml_type": true
+        }
+      ]
+    },
+    {
+      "path": "native/config/flight.yaml",
+      "sha256": "7bb138448112e272e05a8e50c08a1eb260f892167614ef91a29c1e902e892188",
+      "source_bytes_unchanged": true,
+      "parameter_count": 8,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": true,
+      "duplicates": []
+    },
+    {
+      "path": "native/config/flight_test.yaml",
+      "sha256": "1ddce8549bcd9f9b6eaacf532ad9f00d04b70706a54245f51eddbce6cdc5ff2b",
+      "source_bytes_unchanged": true,
+      "parameter_count": 68,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": false,
+      "duplicates": [
+        {
+          "name": "rc_navigation_enabled",
+          "line_1based": 25,
+          "prior_line_1based": 19,
+          "equal_scalar_text_and_yaml_type": true
+        },
+        {
+          "name": "visual_navigation_enabled",
+          "line_1based": 36,
+          "prior_line_1based": 27,
+          "equal_scalar_text_and_yaml_type": true
+        }
+      ]
+    },
+    {
+      "path": "native/config/ground.yaml",
+      "sha256": "8947013b855967b91d1a4d6493b6c280054aa88deab264a67f4de3dfeea4387a",
+      "source_bytes_unchanged": true,
+      "parameter_count": 8,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": true,
+      "duplicates": []
+    },
+    {
+      "path": "native/config/historical/R5_CANDIDATES_GATES_CLOSED.yaml",
+      "sha256": "57f336de2cf7caacc217faf5192f438b7a7e303f361fbd163dd04f3ae652495b",
+      "source_bytes_unchanged": true,
+      "parameter_count": 50,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": true,
+      "duplicates": []
+    },
+    {
+      "path": "native/config/sim.yaml",
+      "sha256": "49df2f1ab02f3785e5ec6d76a2762443b84b005c944af27ddaa0c9f22e667474",
+      "source_bytes_unchanged": true,
+      "parameter_count": 8,
+      "invalid_names_or_types": [],
+      "visual_navigation_enabled": false,
+      "visual_uses_cpp_false_default": true,
+      "duplicates": []
+    }
+  ],
+  "shell": [
+    {
+      "path": "autostart.sh",
+      "sha256": "3d74df3cb2eb0d95d1114cd219aed196955b43f22d195d9111237bacd16f218a",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/agent.sh",
+      "sha256": "4aa1d0a9844c74b1f359712046aa257dcd9f7df7093552480edf71ce6c3176d6",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/build_agent.sh",
+      "sha256": "cbf3e6662bb677bea940bcf128cb348c85a91007a6824ff748fb169a4de79415",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/collect.sh",
+      "sha256": "547889e46a67b9bc9bbbd7e6d315c95471da99367aba4b0e6744a0c8d81a7488",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/common.sh",
+      "sha256": "af25695505a8e6f42ea8da9220fcf2c6d8516c9d13059205cb397b8d99b5df5c",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/console.sh",
+      "sha256": "f17fd0bd29d79eabf6fbb4a8ce33c6811344d70cda964593c110bf530ace595f",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/export_portable.sh",
+      "sha256": "08ab1a30e5338a7929c2ac011fab7607237ef150807b6bd64a9ac787026f3f9e",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/install.sh",
+      "sha256": "5a140b672303496a9403b2cafc40a64f06c9d42e0cf260301744194c54fb2922",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/r62_cpp_regressions.sh",
+      "sha256": "21d6b2b703582b3f27b57d9beff42f82f12dd1a424c372667cb2c3da3e580069",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/r632_build.sh",
+      "sha256": "262ae54cddc184cb9ae654c1de832a2612680213a64478de5343ed171db1703c",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/r632_feedback_guard_offline_verify.sh",
+      "sha256": "8b72b00b986e8f80f2b6c5a1877da63d173766e6c06c5e49b5d23d6218898591",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/r632_offline_verify.sh",
+      "sha256": "e2eb155a6ad44c4f33b1375c45e0e341d7b152203600c093ab83a2fe95def00d",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/r632_ramp_guard_offline_verify.sh",
+      "sha256": "059fa823a30b1b32235ee96d57ae816b11be5df059ab06bcf5cce27ec0981220",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/r632_vertical_refinement_offline_verify.sh",
+      "sha256": "77f088a7ddb3ed51dee082091d115a539e5f16ca67fd9051b9f071a697c99153",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/r63_build.sh",
+      "sha256": "a0738904d969ba2be0de888ffbdb24e4733eb03f933acd87953088de8d21ddd6",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/r63_offline_verify.sh",
+      "sha256": "afa0aead628fd90fd00c048a19f05fa9b7d3c78867ff0fb35fdc36d68498cd05",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/r6_no_props_check.sh",
+      "sha256": "9aec9d2058053fa3058956cd2a005ed4e04050d37f6a349d6223c19aba0d125b",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/review3_bench.sh",
+      "sha256": "0e59f14fcec1b0daa532af90cd2808592e65378f4d48f0affb834db16e0f20fc",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/review3_build.sh",
+      "sha256": "7e8c8ea901f9fc1982b0508ff07674c40362f6345a42689b61d4ec370c38e8c6",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/review4_bench.sh",
+      "sha256": "c21578e505791495e5c31d274978b532afd5cf1a4f1098c6dcd9f5745b2d9f4d",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/review4_build.sh",
+      "sha256": "6ddf2637b34c502173c1c4e51dd354e7f02b143db6c84832f9f2263ddca5e08c",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/run.sh",
+      "sha256": "eedf9c48b71bbf904a326fe556cd6dcc7e2fd959a1f250a8c7e973e1cd9afb96",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/service.sh",
+      "sha256": "6b9c29f24749031f6d8eb8d602961ebdca529aff18469e96d5d22ca68d3578cf",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/start.sh",
+      "sha256": "7f4cfd75ad02a102bb8e790d44b4db074b66b98267318a16564ecb933d655499",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/test.sh",
+      "sha256": "c4fc9bbf52765fa7e40fd4d9349996cb6f49e7a75280ccaa7feac70911a3fa6d",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/test_authority_harness.sh",
+      "sha256": "cb3f8d1fb17fb033ecd398a30a7a489aecb3def1157d3c1890fd87310b61c1d8",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "native/scripts/update.sh",
+      "sha256": "dafa126519eb8fc790ead3ed59dc98accfacc2c95b1dd06d5c6632e00deb1f71",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "navigation.sh",
+      "sha256": "b1d56d89f4c11c79c56f6e9c811ec7137da32cb76e3b1b7dd80e9ff19ba2d8c5",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "navigation_boot.sh",
+      "sha256": "34eb588e140252a59d3ad307b96ada00b6a6738f10b49d55ff8210182ff75b1e",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "navigation_build_fresh.sh",
+      "sha256": "e6148f1da5bdec7c9eb101a8aa598c5002c94435f378376f166aa37088fd28d8",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "navigation_deploy.sh",
+      "sha256": "b1ebba34d3e7e57394a5150ec1f1e73b6708b9a061d48a34f0c5b6b785e492ed",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "navigation_environment.sh",
+      "sha256": "3acbafe897ed12f2cb1ce996b60d38a94ddf871699fdc42270e9b2dd7b654327",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": false
+    },
+    {
+      "path": "navigation_restore.sh",
+      "sha256": "05ec1ff6b7f38f0af36a634bbf99c3abf777f806143fe85538eaaf7aa0159ca8",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "repair_existing.sh",
+      "sha256": "f584badb89e3e4713494b87a3e3ef76f0f70f6ca22d58cb8ecc189d1fdfce4de",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "standby.sh",
+      "sha256": "70839a43d1430aeff74ea26539389e57cca95d17e35c7c67ae7c759a46bcc84e",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    },
+    {
+      "path": "start.sh",
+      "sha256": "7efd7922a945ab32222b195d4587d914419b3ea7f132ca0dbfc9fc769d60511e",
+      "bash_n_exit": 0,
+      "syntax_stderr": "",
+      "noncomment_bytes_unchanged": true,
+      "source_bytes_unchanged": true
+    }
+  ],
+  "root_configuration_and_new_tools": [
+    {
+      "path": "tests/ros_generated_interface_check.py",
+      "reason": "新增显式离线类型检查：新安装身份、字段/常量/默认值、5类型CDR；不初始化ROS。",
+      "sha256": "d520e78938f1310945542df9d923064bf896301dc4d754701b187c33a973c9cf",
+      "baseline_sha256": null,
+      "bytes": 15283,
+      "lines": 345,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "tests/test_overnight_stage5_config.py",
+      "reason": "新增6测试方法：32数值子例、拒绝先于输出、关闭兼容和9组配置差分。",
+      "sha256": "5da2cd484fd27a7f38baa81c19fca30c8e244088c18c793cae08e837bde2c5d7",
+      "baseline_sha256": null,
+      "bytes": 8404,
+      "lines": 197,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "tests/test_overnight_stage5_ros_contract.py",
+      "reason": "新增2静态工程合同方法；生成/类型支持链接及相邻Python安装依赖。",
+      "sha256": "a9786c27524524a0bd9e4a9924ee540fcda6b653068d5a3bd03bd319700c0d91",
+      "baseline_sha256": null,
+      "bytes": 4460,
+      "lines": 102,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "vision_config.py",
+      "reason": "明确输出覆盖而非独占/原子写入；执行AST保持本轮起点。",
+      "sha256": "8fc727992055774f1fa699fcc279a407e448e3ee6b4790830709937cbf88a5b5",
+      "baseline_sha256": "eb3e6fef3d7b6c1da145249fc015cd033d4026814ef3c1ac6ccc9896bc820fdc",
+      "bytes": 2928,
+      "lines": 63,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "vision_settings.py",
+      "reason": "独立修复数值溢出错误合同和启用候选同话题；注释明确原地非事务语义。",
+      "sha256": "25f77a5c09ba3f68b335d7278b14a567bd64bc9288f2403ca9520168483a5877",
+      "baseline_sha256": "db3146e388649a69ce3c0d734ac96180eb047e79f8441261abe57c4899d07ead",
+      "bytes": 5371,
+      "lines": 112,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    }
+  ],
+  "scope": "Specific visual/configuration engineering review. Full regression is not a claim of renewed line-by-line audit of all historical tests or real flight proof."
+}

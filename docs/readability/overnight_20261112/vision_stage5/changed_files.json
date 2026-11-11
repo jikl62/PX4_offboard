@@ -1,0 +1,196 @@
+{
+  "baseline": "68b3221ac297699e1dfed8fd773358bb26789207",
+  "source_commit": "15310f8776d182e668cc846f97ff23c5753995da",
+  "file_count": 21,
+  "files": [
+    {
+      "path": "native/src/jikl_fc01_system/CMakeLists.txt",
+      "reason": "补充准确中文构建/安装/环境边界；执行内容不变。",
+      "sha256": "dae3e59d46e65ad5ab9d9d785915d36693da8a4240d31212d270d2d7207a9503",
+      "baseline_sha256": "43d4deaece7d9153028a9c788e19495fbbfc70d349e4383a51eebbf02b41e2b8",
+      "bytes": 3689,
+      "lines": 55,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp",
+      "reason": "区分保持模长的完整旋转与后续限幅；既有无权限说明充分，未拆分。",
+      "sha256": "bbe999b2481515b25d592607b758134cfb828c973794e3e342f2ba12cca11dbd",
+      "baseline_sha256": "da00092e6f3800dd10fec2e66c89506739fe50eea0fade35a52f9a2e4bfc4db5",
+      "bytes": 26770,
+      "lines": 544,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "reason": "补质量/协方差/误差增益算例，收窄撤销代数不覆盖每种Controller拒绝的声明。",
+      "sha256": "e607d9d2abb0510abf9a9ec8cb4e44df48d9d82fe4dd511b3825ccc0a497ddb1",
+      "baseline_sha256": "8c7530ed945f4418e7fffe56f936ef6d2a86c9f723f48a425bd0485985527477",
+      "bytes": 42899,
+      "lines": 735,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp",
+      "reason": "补轴约定与位置符号算例，强调仅字段映射，保留上游坐标/外参责任。",
+      "sha256": "f9c0d0cc57f1f356ded97a841838203c4e940f374b8035d433061e440c793cad",
+      "baseline_sha256": "c9047ded2c1af13a297bd7a478e5603093dda3c5b7665a10aba5af54d3935823",
+      "bytes": 5660,
+      "lines": 102,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+      "reason": "补NED负Vz目标与地面上正高度的单位/符号例。",
+      "sha256": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf",
+      "baseline_sha256": "cb5216e1fb506e049d9dedcd0e59015464ce7fef9a0bcacae4362c93314304a0",
+      "bytes": 2820,
+      "lines": 29,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/NavigationCommand.msg",
+      "reason": "补CRUISE绝对点目标不是相对位移。",
+      "sha256": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117",
+      "baseline_sha256": "505cc578867c0240e92e35bbde3126aa66aba6f991240d9feb5caa19d098e3a2",
+      "bytes": 2870,
+      "lines": 29,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VelocityCommand.msg",
+      "reason": "补机头朝东时FRD目标到NED的数例；目标不是已实现速度。",
+      "sha256": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46",
+      "baseline_sha256": "50294dec76015c08b248010fed13ddae8fcd1604e0cdb4933976deb5174dfc59",
+      "bytes": 2297,
+      "lines": 22,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VisionHealth.msg",
+      "reason": "补完全相同stamp配对的1ns反例。",
+      "sha256": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb",
+      "baseline_sha256": "97b108f3512f3752d3be05dc92da6e07fecb125c1ab3f39bf8b0ea5328537541",
+      "bytes": 3575,
+      "lines": 35,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VisionState.msg",
+      "reason": "补NED实际位置/速度符号及质量评分与协方差的区别。",
+      "sha256": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05",
+      "baseline_sha256": "7911f07f5766faee8e56773cad6eccebceb8d46b78bdb9f3731090da9a1afa6c",
+      "bytes": 4151,
+      "lines": 40,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/package.xml",
+      "reason": "补充准确中文构建/安装/环境边界；执行内容不变。",
+      "sha256": "d10f583c111190224c62d6508dd2dfb8671a0e83ff7d6d61766360fd50fd4a0b",
+      "baseline_sha256": "43bfb2d57bdc01ff88d8af9e070181f2fcee0803bdfc84a46a36a3b8d41111b2",
+      "bytes": 1539,
+      "lines": 28,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/tests/test_overnight_stage5_vision_contract.cpp",
+      "reason": "新增4组39断言；映射有效位、坏时间、撤销与严格时间边界。",
+      "sha256": "55fb358dd42b20d9e7f4151fd947e29c6c390d63af0fad0bfd4ba025ab65de93",
+      "baseline_sha256": null,
+      "bytes": 8444,
+      "lines": 171,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/tools/velocity_command_diagnostic.py",
+      "reason": "Read-only VelocityCommand target diagnostic; no flight publishers; Chinese graph-count limitation comment only",
+      "sha256": "d5b7f470d37e2a89870283dde9f48c35406a05bcd9e16b665efbf5ea257cdb68",
+      "baseline_sha256": "d15956d567f98ede6287913c144ce2310d6642cbe00726b05095f981d563c147",
+      "bytes": 50291,
+      "lines": 1021,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/tools/vision_odometry_adapter.py",
+      "reason": "ROS-wired actual measurement conversion and exact-stamp pairing; Chinese comments only",
+      "sha256": "89dd21c97be568889313b0d59d1c9e1a8bf6400d82d0e3b0d77ca4bfa709c9c0",
+      "baseline_sha256": "5378771c2bcfc7eb284ce125c99b5b059a7045958bf3699d381b996a9a461416",
+      "bytes": 45310,
+      "lines": 952,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "native/tools/vision_state_validation.py",
+      "reason": "Independent offline Validator; not called by ROS node; Chinese wiring boundary comment only",
+      "sha256": "743b72147559d214e0e6d2c0fefd8d32a8e7096c4ad98eb4c1d370992bcf22be",
+      "baseline_sha256": "f15c4604ba242d8b1263075f813c7f1787c073d33942783a75d4adc5c1a0e0ca",
+      "bytes": 35092,
+      "lines": 767,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "navigation_environment.sh",
+      "reason": "补充准确中文构建/安装/环境边界；执行内容不变。",
+      "sha256": "3acbafe897ed12f2cb1ce996b60d38a94ddf871699fdc42270e9b2dd7b654327",
+      "baseline_sha256": "652bb813011383413f500d0858e6295beec2fa4b351d27c84b724229b67a387e",
+      "bytes": 3005,
+      "lines": 63,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "tests/ros_generated_interface_check.py",
+      "reason": "新增显式离线类型检查：新安装身份、字段/常量/默认值、5类型CDR；不初始化ROS。",
+      "sha256": "d520e78938f1310945542df9d923064bf896301dc4d754701b187c33a973c9cf",
+      "baseline_sha256": null,
+      "bytes": 15283,
+      "lines": 345,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "tests/test_overnight_stage5_config.py",
+      "reason": "新增6测试方法：32数值子例、拒绝先于输出、关闭兼容和9组配置差分。",
+      "sha256": "5da2cd484fd27a7f38baa81c19fca30c8e244088c18c793cae08e837bde2c5d7",
+      "baseline_sha256": null,
+      "bytes": 8404,
+      "lines": 197,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "tests/test_overnight_stage5_ros_contract.py",
+      "reason": "新增2静态工程合同方法；生成/类型支持链接及相邻Python安装依赖。",
+      "sha256": "a9786c27524524a0bd9e4a9924ee540fcda6b653068d5a3bd03bd319700c0d91",
+      "baseline_sha256": null,
+      "bytes": 4460,
+      "lines": 102,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "tests/test_vision_adapter.py",
+      "reason": "Offline conversion/pairing contracts; host wire-to-core mapping; Existing combined mount/world/lever-arm test strengthened for nonzero velocity and angular velocity; no added method count",
+      "sha256": "ac796fdcc5a1804a30c34ba80e96ae1a056bd5b6d412f0ef72bc0253678f0c12",
+      "baseline_sha256": "c1a15d7e1fe7e6e60f162240f944b613ba1e26f92c9c3bbe33193a35c1476b0e",
+      "bytes": 26050,
+      "lines": 517,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "vision_config.py",
+      "reason": "明确输出覆盖而非独占/原子写入；执行AST保持本轮起点。",
+      "sha256": "8fc727992055774f1fa699fcc279a407e448e3ee6b4790830709937cbf88a5b5",
+      "baseline_sha256": "eb3e6fef3d7b6c1da145249fc015cd033d4026814ef3c1ac6ccc9896bc820fdc",
+      "bytes": 2928,
+      "lines": 63,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    },
+    {
+      "path": "vision_settings.py",
+      "reason": "独立修复数值溢出错误合同和启用候选同话题；注释明确原地非事务语义。",
+      "sha256": "25f77a5c09ba3f68b335d7278b14a567bd64bc9288f2403ca9520168483a5877",
+      "baseline_sha256": "db3146e388649a69ce3c0d734ac96180eb047e79f8441261abe57c4899d07ead",
+      "bytes": 5371,
+      "lines": 112,
+      "delivery": "source 15310f8776d182e668cc846f97ff23c5753995da"
+    }
+  ]
+}
