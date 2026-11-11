@@ -1,0 +1,694 @@
+{
+  "schema_version": 1,
+  "verification_complete": true,
+  "completed_utc": "2026-11-11T11:08:15.148063+00:00",
+  "baseline_commit": "14256ca64e925e2072b2e3c9b05d3030ac3118d0",
+  "architecture": "x86_64",
+  "scope": "Readability refactor of isolated velocity receiver, state validator and C++ preview; public contracts and behavior preserved",
+  "source_sha256": {
+    "docs/VELOCITY_COMMAND_INTERFACE.md": "54f96c924a04bdf8297844d91766de57f4225d8bee22d4b8439c3c66d73e53d8",
+    "docs/VISION_CODE_READING_GUIDE_20261111.md": "69eb68143391df10775f3dc214646ad0a477d74a3117e82b430265ef73bf9933",
+    "native/config/R6_OFFLINE_DEV.yaml": "e96c45069866822d2a3b0e44162d9eda5a657fd5409d964c4b2ac92ddf75ca9c",
+    "native/config/R6_REAL_FC01_PENDING_REVIEW.yaml": "5585566ee278c2074568b49bcae60fe9f35802b7036626ebf29c299e6ba9a7e0",
+    "native/config/S10_1HZ_EXPERIMENTAL_SIM_ONLY.yaml": "04ea528b5f1632d3059488d816e86b1d599877bbc2a7b86f0a9c6c16f0b54286",
+    "native/config/attitude_altitude.yaml": "723ba74ade0a474a6221e79a57428fec7c0639805d5419775105873353b16783",
+    "native/config/attitude_altitude.yaml.bak": "dee48d6374ef73330993c4fecc5f52711eca35b9458b68ed9bff0560d63c093f",
+    "native/config/attitude_altitude.yaml.before_flight_params": "8abd5b7c32660f4e9594db71a9fe5e3a68719d0ce131ba03c99245fe44473a24",
+    "native/config/attitude_altitude.yaml.before_rc_confirm": "68813188937743c469d67c7f8c7ecf4666ad6d67319fb64f8a7d7ee5f0d404fa",
+    "native/config/diagnostic.yaml": "3084669f5fe8229439f6f36638221f956d640ae33d24adc6f9760e713b165898",
+    "native/config/flight.yaml": "d1c5196e4c9511e68be359b86d1913fa6eb2f8d25c0d93625c5d1f66752ebd30",
+    "native/config/flight_test.yaml": "2eaafe958cf7f8e8f2b0f2052e351e34ede7c8b29eaafe16fede3ebe40da1953",
+    "native/config/ground.yaml": "0dcaa0312038dadddf11cee3beb96548e0d35e9ef1de5e164bf2ac3be67fcd0e",
+    "native/config/historical/R5_CANDIDATES_GATES_CLOSED.yaml": "dccee1db3df9a05808e07af00939f00249ef61607d4a5aa620f45e4726d44316",
+    "native/config/sim.yaml": "36dcbacd1d393443724bfa6df0c7b5ec1806b081be71281910d3ea51fafd908f",
+    "native/src/jikl_fc01_system/CMakeLists.txt": "d34234a73f9abbb5e0c92955fddb4d1e4212a0ad9c072397037470cb69920b18",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp": "58814aa13575701a459118f8de6dc2c65c3bdb1fd2d5fda3735d4d8c94425762",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp": "ae9da5be415e4f4d722d3e5dd929dace970edd52cedcae41764bc38baae840d4",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_diagnostics.hpp": "80eccaeed44728327375937b3fa194e81d9faedaceccba0ea8707ca9abe45002",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp": "55d1f6e87bce01ea90ddf6827cabe24a357608ed66286fb9360e8ca995a11bd7",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp": "62f794fcede2788df0cf5c9ed0cd8c455b52d75d2f31e3918c1a7ebcf5443527",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp": "a43eb4f5cf69a6323d860d6222aa382174d4be12c845b7a506b2cdd0275b1231",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp": "d251f5d71c4a32362cea2f4a0294828f4df7b123aeefabb8b9ae3ccad5a0a121",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/authority.hpp": "59a7a1f9649f8132f0899e2b7671a7ccfdff129e5c28746a0694d36f50825d97",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp": "ff8460cb3f826ecdcf05b6d5ec8c00918af43439998cbd5dd798a4e504fd017f",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp.bak": "c2749b98938c3a5f8929eba8c1d4064b7c46cb8a5beba3d736abbca9b212b036",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/control_diagnostics.hpp": "fcc4b8a573c414fe13d72f45407dac288a001e221db964518e57adda6e2ea131",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp": "68e85125a24fce12319361869eea3dd383985eb4eacd5b4d8a2d313951dab586",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp": "2fecf8bec7959e5972e9b166726e986391a16a7219c0b40b7368b09c4a2c4588",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp": "b7a00429fc0cf6eeffbfc34be52ebc7d42f18e75dcf4cb09ad653f2c1e48f955",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp": "393ad2ccd9280d314bd4e4623ff5f0b567fe3739626d6f10899b7079f80f16e8",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_audit.hpp": "4d822fac8cb0d8b833eaf69704f99e9b00bf600cb99af4dc7dcebe03385ed276",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp": "332c0d3a4e742b400be1c535581c808b193b08d39fb9b261072940b339c12a0e",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp": "aed2651aeaed0adeea0a6b439851b5cdc371c10d515189b783736efcf277dc72",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp": "ed9da9ec30a02693f3fbf042dfe71b5c4f49bddc077662ac4da340c891d2f836",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp": "91986f4407d4f4d101c75ef761644af8b87b91aca46e130c8ea124e1c384dd0b",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp": "039a7dd6e34385424de8e5ea48b164d17607d2e389b36ee1866da6a732522562",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/ros_config.hpp": "725e6837661c3fd135605d5fc633ea40dc8e7e3027cce5009c682d0782349499",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp": "a88a8d760084c30846d2d8b20a26d38758b24390779b698de91d2fed30654a89",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp": "1d93123b5118426fb99968ba9f443cbcd95573be8cd6b39357ad6efe37682638",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp": "1f2e0c4ca84b71ab20cd63177dfbedd9a920591f5daf5b65be8604e128909b58",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp": "806ee5c76b2e415533d71fad76454147cd1329d42fe1031ab2edbf0814182efe",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/source_diagnostics.hpp": "6cb3cdb603d92a54d3231d17a6889a8a99588f16e2e1625536d2e0862de4d716",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp": "f905e6e3e7c29903ce169e4487496ac7ad8771ce550a61d2e76993621afdbf1c",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp": "e450d86a6b47fe06d596a2354083ead6231833dc661abe766e82f145f7258858",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp": "034feaa450dc8cff2c3d06cf29c06e99f088f1f4068313e976e52f3a3cc69ef8",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp": "4b691b760e549494343bd4bb19f35aa4ee156e8e4b65e513d20065adf05b630f",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp": "5bd639a4baa304ba9d19adb51446bb0b00d00a2c055178a7cd84402bb938908f",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp": "44ec7c56ea688473a69db2b181cfaf7ee0e28f79f433d6d917bf8400ce1d8861",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp": "89ebae9dc8488ec501a86d3aeb33e661f107bd332600bed90fdea41cee6b5e16",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp": "96c65d94662ffc5cd67ff33150b0ea7e5973a74ef9a5cda56c22891bdaf4945a",
+    "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg": "ef65f15fa844c3e7b32b840546238038fe9c023cecf7ab5e0e987e8f2476b1d6",
+    "native/src/jikl_fc01_system/msg/NavigationCommand.msg": "966145eee8b2a6436f25ba6db9322d8123ccbff0f9ff13f2bc4f9b4f95fe6818",
+    "native/src/jikl_fc01_system/msg/VelocityCommand.msg": "c44f303ee7f229869472f23035fad2a97c3661a4fd9dd5bdc2274d4864ffb28a",
+    "native/src/jikl_fc01_system/msg/VisionHealth.msg": "3cc768b75c0d40ded488a7af0b396050863934646b3009c3490a3db6ebac5036",
+    "native/src/jikl_fc01_system/msg/VisionState.msg": "d677170f61e34e632c2ee4fede2128fc54e7b5bd4d7ac55b5c281767e2884def",
+    "native/src/jikl_fc01_system/package.xml": "601e29d162f31be42abfba24aabba9e234a3ecdc4b12e5cc16bac7505f530a3f",
+    "native/src/jikl_fc01_system/src/fc01_config_check.cpp": "daa3a3fc63c275aaeb76ea0ffb755f7b625298814b5d0ef68711f5dc604703ff",
+    "native/src/jikl_fc01_system/src/fc01_system_node.cpp": "9fcf4339d1bbddd70064dd7b83026c181b064d6be5c8ce390754cddb1017fc75",
+    "native/src/jikl_fc01_system/src/fc01_system_node.cpp.before_message_version_fix": "06d8e7d5dc8c02e316d30cbc15041023dd195eeaba4702762926819375e45086",
+    "native/tests/test_ack_lifecycle.cpp": "33a5f3e292dd8b19da1ae3b54c4f11d6443dc48dcec796c3bd506d016b5f007f",
+    "native/tests/test_async_log.cpp": "d1854afc4adbe23c270e272b9e498f5804d1580a9f84b2191726691c6475d727",
+    "native/tests/test_attitude_runtime.cpp": "0788f5b8dd61d0d6b995c3ff433653528ba4aae3b9467ec54309be75f1b43a2a",
+    "native/tests/test_attitude_vertical.cpp": "f1369367727e026f56b016b3c7e07f576949a9e0db1812c3b8facfbd10c4aa61",
+    "native/tests/test_attitude_wire.cpp": "e049922dd63f2f62d8dd0af9b142d3a75c67abee9d07b2abc1ccab67e4efb8df",
+    "native/tests/test_authority_boundary.cpp": "3bda9209146de68f16099e6483177b5efe1b372d28a12a10e267489afeaca764",
+    "native/tests/test_authority_review.cpp": "c62bc312f50b17bc09671e8c71685af30835713b1c614e07b2ce5ec5506619bb",
+    "native/tests/test_authority_runtime.cpp": "20c94fe0cb7c1e8362bf699ced0da7691774a4ae22deec7776fb847151b47d22",
+    "native/tests/test_authority_telemetry.cpp": "81cf93af9b49452e52fbc95a95cc6c20e8c0a7f6e4aea910e54cb53287aa50b2",
+    "native/tests/test_c_m1_r2_regressions.cpp": "2fa9f3f5eed86ce49f6ef8fcb21019cc07c58f5f92fc87dd41e38931ae08451e",
+    "native/tests/test_control_diagnostics.cpp": "facb8d0dba3f991b0180510ff55114c8bc68ba1805217aa83c54847446e8b155",
+    "native/tests/test_m1_r3_interleavings.cpp": "2a9eece675c187af5a104eb3695b1d7d8c50250334a6f9d84143ef328ee673a6",
+    "native/tests/test_m1_r4_ack_isolation.cpp": "7490a3939558ece1865ec3b2c9febd64e5a31bcc01d42bd785bf2401b95eb007",
+    "native/tests/test_m1_r6_recovery.cpp": "4054a13c775d4d2115560253f727596e53914b2f6ca04a6e2a18d49894646140",
+    "native/tests/test_m1_s10_1hz_recovery.cpp": "d3dceb7684f715c261295b4bed6d37da04c01d50ecd4c611b635f05b0ba7d574",
+    "native/tests/test_m1_safety.cpp": "d8db62f3f8379e8cd6c7b2a72ade8499f73d51133995a202040f61afb48461f2",
+    "native/tests/test_offline_timing.cpp": "57c59f02cd7e8ca93e546c4aa4a4d61afd0e71be920f56701cfa75511528b9a0",
+    "native/tests/test_p0_attitude_audit.cpp": "83a0f374563a820bcfdd37c0a4b84fae443321950225ec6082b0c61943c10a17",
+    "native/tests/test_p0_tilt_trigger_evidence.cpp": "ca3be7fe3a0a5d920b45ae7af911c085e65261ac8843e8fc357c3ee08cee9444",
+    "native/tests/test_parent_lifetime.cpp": "76fe85df23c3f69ab63b58f144d2bc19d93aad320b8b78bbe1469c014f236134",
+    "native/tests/test_publication_boundary.cpp": "654fefacc71e77b8b9439f365140d668dbcf9ad3c83c016e2b06a7589c10ee1a",
+    "native/tests/test_publication_runtime.cpp": "b6a9b0b94366cf0a20d079655ca29788774fb306b0e2cd680b2a10bbf531c46f",
+    "native/tests/test_r62_armed_ground.cpp": "efe1905ea5ecf9528697a43eb8543008fb3a8c5e13d4af5e48bc9f4cb5955505",
+    "native/tests/test_r62_disarmed_prep_progress.cpp": "6a653842442e144695e0efdc686b7bf5ef88e1d581891cc325c5281898fb2eed",
+    "native/tests/test_r62b_ground_release.cpp": "92a56ad4b5a5fa395642dbb0564b5a2c630296de423373f964a2ef3fe1aa7b3d",
+    "native/tests/test_r62c_arm_only.cpp": "352d7c3a055df70baa1001dbaa1d2b6f4814603b16e46a9a05497bc317d528eb",
+    "native/tests/test_r62c_review2_disarm.cpp": "b957cfb5eb2089f63d1b9376899649f808fc43398591e159ed1e795e815cc882",
+    "native/tests/test_r62c_review2_recorded_trace.cpp": "351987d94cf896c67226cfd723c0b4e9fdfa84894481030a015c45fbf932b616",
+    "native/tests/test_r62c_review3_bench_grace.cpp": "d699b0ffa95d1d56a8ca0e35e456446a1c61c6ad718dab56157bb6d29a4de97d",
+    "native/tests/test_r62c_review4_post_disarm.cpp": "51b89b6cf184f74e034c4cdedf72934a57f878bfa0bafe2af7674b3f3a5cf31f",
+    "native/tests/test_r62c_review_admission.cpp": "348085833c4571437b7d4eaed1dce2295cd2209636716854147def61cfb699ac",
+    "native/tests/test_r62c_review_clock.cpp": "b49e8933be9a5e47331f98a9fab410d21f581493a2904e7ff818fed4316c166e",
+    "native/tests/test_r62c_review_diagnostics.cpp": "6fff258893257cda1d69c149d47bab06f9b035758072078a087de0e847564424",
+    "native/tests/test_r62c_review_exit.cpp": "ab9dcb3df479fa18fadc4b19b175ebd7817a6c634718518676f5ff65ed164357",
+    "native/tests/test_r62c_review_sample.cpp": "498a65acda70be62b85ea262e0bb9992706bb23b5ab3e3a2d7b5b0757e1da930",
+    "native/tests/test_r632_bounded_liftoff_reserve.cpp": "dbd00ed7546f9c43e030a83215893d9eb807627337c3cd905d9f64cf08318c41",
+    "native/tests/test_r632_height_tracking.cpp": "f2968eb9cb6d9bb2adb63ccd1e4a24196bea4921e636d48f6bf25cd07da5fa09",
+    "native/tests/test_r632_prompt_176_ack.cpp": "e025ea0f041b9459b3d45f66d673e2f083a2bf3259b9e9924357d335af4a43cd",
+    "native/tests/test_r632_ramp_height_guard.cpp": "1ff1edc40e0b0a6b1d02ef1340c55542692e3c2118305724d52aaab81fec5967",
+    "native/tests/test_r632_ramp_schedule.cpp": "87f605975065693a349685c99ba5f8813dda6d096ac6ea991aa61222a78648be",
+    "native/tests/test_r632_skewed_176_ack.cpp": "f7285fa758de1938054f1dcde2e834d276d392f0752149347a80eda9dbb9b398",
+    "native/tests/test_r632_takeoff_plant.cpp": "2d34feb85940db9becebd469a9e90a98822eb49749d4dc5a267d1c5bb1bd711b",
+    "native/tests/test_r63_normal_arm_evidence.cpp": "85d749b95f388f3f3e2d8ca16df54d02fcabad1161a42581996e580d1abca4fd",
+    "native/tests/test_r63_takeoff_candidate.cpp": "f9a777d3df4468cd9910579ea7b9c21a932041cda2ab4a5a4581cfb003c4fec2",
+    "native/tests/test_r6_1_recovery_custody.cpp": "2e365ccc5abcc9368fc6d000cba8a8e906c960f22ec97ff2412538da0cf9090f",
+    "native/tests/test_r6_partial_sinks.cpp": "884253cf329c59d907f9c14325a61ec15c85d1bbbcd0f7faf96472a235084ccc",
+    "native/tests/test_r6_publication_audit.cpp": "7d76d7440208c0a42fe2f69ae6ad69a0884c82ff372443dc3aef9c5bd92928cb",
+    "native/tests/test_rc_before_ready_recovery.cpp": "777cd3a086cae77835a7d253d89df636267a068468b9f4c67209eba024fe197c",
+    "native/tests/test_rc_interface.cpp": "0749d4aa3eaaf36c8a250bb79a3e72804402e919d0c80e4dcc397ab3b7f6b56b",
+    "native/tests/test_rc_navigation.cpp": "a081fec7d372aa5867d0b5988bf4419e8f82642994428229f80cf4e8de6bd32a",
+    "native/tests/test_rc_navigation_telemetry.cpp": "617c8384c709aba2e873d6237bbcab01a605513b5a0defe15fa781f32516601e",
+    "native/tests/test_rc_preparation_defer.cpp": "9ece46bfdb2ce7d09d59effa53d22bdd656e21b3ae4f2a3cfa63be3c22721105",
+    "native/tests/test_rc_recovery_boundaries.cpp": "b91485a5aa334c665064a5cccd363c92cc2c1203945eeb8a48a320d2974b6208",
+    "native/tests/test_rc_recovery_progress.cpp": "34cecc95ed9b7b60bca2b12ec575de8b8b8b77942b6c0b4308024ceaa223bdd2",
+    "native/tests/test_rc_reprepare_admission.cpp": "ea3e7ad9779772a4547fa738fc9bdfe5086cbc7092ef4cc17bace2d12739b083",
+    "native/tests/test_rc_reprepare_diagnostics.cpp": "14f58bc61f766ac021549beb66cac622ec9974e331409a3e88ca023c03685837",
+    "native/tests/test_rc_takeoff_stage.cpp": "8438746180f288501a5f580d15f5ad6f777eab1eddff21ebcce61ac90ce3e6f3",
+    "native/tests/test_rc_timing_recovery.cpp": "b724efc25a45973f30f663844ca0a2c875bab0832843ae496fe276ddcaa95249",
+    "native/tests/test_receive_events.cpp": "9205432ab0933192c8941fd4c4b8f2c7d57bdd437a994707337fa0c5b37c461a",
+    "native/tests/test_receive_schedule.cpp": "64a24d024e723703acc255ca8740da2bd874372a9112d9284efb87488e6e5486",
+    "native/tests/test_receive_schedule_safety.cpp": "5fd2c241338f37fabcb61e7222728d60eccd0aca92ddb94ccbeca15366177c0d",
+    "native/tests/test_socket.cpp": "93294556d6f20c741ec7d0adf610fa547d5c3e0c262cb5e177cdd8fdb0fa57a5",
+    "native/tests/test_socket_boundary.cpp": "fbac45e78ee75fa020498db72ad273c5a23bb546dd2c75c3892a8002a0901365",
+    "native/tests/test_takeoff_evidence.cpp": "66b8e2a3b2ba767c3471fa82da2b16cb6e1e1e0fd09ab38effd18bd38faad0b6",
+    "native/tests/test_velocity_command_input.cpp": "53b7d383da83240bf33705902616e0b07f30874d95c1830e721387dbe71c49db",
+    "native/tests/test_vertical_feedback_guard.cpp": "76b2fd080972a431c87de9370cb8dddf8f69c8a0deb9fba242e5b69fc4756d93",
+    "native/tests/test_vertical_feedback_regression.cpp": "d71b9c94b374665d5d75bf2a14237233b51ae420ef7879780ebb13397ab65407",
+    "native/tests/test_vertical_feedforward.cpp": "91372a693f2ca581b4d05638f18b5968c7d1db0ec182a6f9e93b08dc8557961b",
+    "native/tests/test_vertical_integral_reversal.cpp": "a3e5daba48692c86bfe18c52cafa48ba683d122ee03b0a8aa2a4ed649ef7efdd",
+    "native/tests/test_vertical_takeoff_ceiling.cpp": "c77a05207eab901be4ff5f0d1f0f52f4113f355aa6280deaaa7e3fbe71c4b8cc",
+    "native/tests/test_vision_navigation.cpp": "9e26e2107fa3d91f79bb92aeb572ab660e32f5c01b41b8fd5a750c2e2911e835",
+    "native/tests/test_visual_runtime.cpp": "7d1b0a32a4a5735e7ef4485f62e6e129dd0dfb06c964f10fc69597501c9ed795",
+    "native/tools/deploy.py": "98c1af524d0e5172d41aee9de9d4cd330d7bea1ad296a8bb3b72b4097b5546a2",
+    "native/tools/fcctl.py": "b253556a40d4277e6e3cd7c2ba5eb998d5a9d5d89d5eb571b1975656ce938ffb",
+    "native/tools/pc.py": "ca8ac56b7cd0f4f0afd54f0b555769ebc1c1d0e14dc2c65fe0e9d32150adf840",
+    "native/tools/r632_ack176_summary.py": "4d55c4baf0bc1625ef4a705b9dde76fadba03530ac1c8dece604425647a8feef",
+    "native/tools/r63_config_check.py": "3150a8e88a0becdb091694ed377ca946e8e9ea3cec6aafc1f3acf1e5e5c3a627",
+    "native/tools/r6_preflight_audit.py": "78568ee9c7479598231ffd56da2e30d28846327bdcacdba2b45a1c1513fff483",
+    "native/tools/replay_vertical_feedback.py": "c58d4e7bbc936c2d853b3e297a14d8e745789a2103312ad80d8c814ac23b2eec",
+    "native/tools/replay_vertical_refinement.py": "f0fa8baad54783bddd0d119559c763ff847afeb7d1b69a10ba857d234aa05d55",
+    "native/tools/s10_timeline.py": "6852a989550071d6e84f63a5b91592b9188401b09d664037204b73feebfa0990",
+    "native/tools/socket_safety.py": "ccde51fe06c9a82d97513373d2a0e88bd66121c1f7ff0f73b731da5aeb9c45c4",
+    "native/tools/start.py": "abe7c6dddcfdaa84dd33dba17b20ed975b947ec1154fd29315b57b0b0d090b2c",
+    "native/tools/update.py": "16e44c981776c5aeb6c121101d33e7d9904d6dc5ea67e71dd5931bb6231a7776",
+    "native/tools/velocity_command_diagnostic.py": "fcaa6ffe2aa6d45dc40bbd7e48fc466cae4e632d56835c86936eec5f96970024",
+    "native/tools/vision_odometry_adapter.py": "a328c287e8df58151b893918136f925f676dd939c6c3570009feded764dc2197",
+    "native/tools/vision_replay.cpp": "ed353ce1d6f91aafd99d231fb5bbb82534e302c694a0ce96febb5becd796b9aa",
+    "native/tools/vision_state_validation.py": "2aa77b838c349604a0d307b0a95845fc2a320467d73c7fcb8b0db26d5a0c6592",
+    "navigation_report.py": "9db6c0723da9b138e2ec4e7dfbd9e158543fde19849690408d059bb19f128d1f",
+    "navigation_service.py": "74cb97ae8216d674d5fdb5f1238bdbb02c037abaf80382376552a8a5d5e85f30",
+    "navigation_settings.json": "a3ecf4759adad9901bd0efbae4eff0a7860ad3e4a4a91afdb7c0b1fe8d516131",
+    "tests/ros_velocity_command_smoke.py": "d4c639d2ec17b70bafe02b9bdf378d7470ab930a3a6e8eaf3748340ef2af43ff",
+    "tests/ros_vision_smoke.py": "90436c0163a40047778750c06bcb6668043544ca6eddf74cc429e2f7705267c3",
+    "tests/test_navigation_build_evidence.py": "0cbc40264e2861d679a0434f7c618a18f0613fab910252388dbc96e845338e99",
+    "tests/test_navigation_diagnostics.py": "26a1106b134825a03fcc3d36f8df3e5854fbff1589dbc26a31b68792843e1f7d",
+    "tests/test_navigation_feedback_freshness.py": "6b0e45b9fd4babe113c0cdb80793d80f053069f605cc53cca0e9fc99f6f420c2",
+    "tests/test_navigation_report.py": "9223639193b083324b1f917c9b5d9f1dab9f07f97e8fc0030d1763fe735bfe9a",
+    "tests/test_navigation_service.py": "c0443747e48e9049228128b998b2b4749ed98aefe7784d7eaa0dc7a51c2c8b6d",
+    "tests/test_takeoff_configuration.py": "7cb45961f251a0218d2c0eaa5deec8f4ab6ba08c8031dbd5f4f97eb3d132b17c",
+    "tests/test_velocity_command_diagnostic.py": "db4bf543ed15b0f23c9d9cb6212c4dcbe1ffa0e04d9683026b3b5e090ddcf0cf",
+    "tests/test_vertical_diagnostic_bundle.py": "25e68873f20ea16b1469c956dfaab00784e9abb5f3537dca550bdbfa7981ce25",
+    "tests/test_vision_adapter.py": "3a9ebe26b57b2d6ad822a3205b446fb0d35794e0bae6483b12fa80dd7b34fa2d",
+    "tests/test_vision_settings.py": "5ab26f98cd0c804c4fc61ca32a226dbfd313c77adff19a51443d76b5f86a7d7a",
+    "tests/test_vision_state_validation.py": "684696ddd788b7059dc62bae897e45c54b08619c84a461d4fb715e0b13a49e6a",
+    "vision_settings.json": "64eb13852f432ac1f39142f7daff13d04e4edd20c1abdc4dae3c5722e5f6e361"
+  },
+  "changes": {
+    "velocity_command_diagnostic.py": "Four explicit receive stages; extracted stream-order and freshness helpers; expanded snapshot fields and Chinese lifecycle explanations",
+    "vision_state_validation.py": "Four-stage receive with named checks for identity, time, covariance, conversion, quality and continuity; descriptive math names and Chinese explanations",
+    "velocity_command_input.hpp": "Expanded statements and explicit blocks; descriptive private members; named required/optional field checks; Chinese units/frame/input/calculation comments",
+    "ground.yaml": "Pre-existing comment-only changes from prior authorized turn preserved without further edits; values/types match baseline"
+  },
+  "api_and_scope": {
+    "velocity_command_diagnostic": {
+      "public_api_and_dataclass_fields_identical": true,
+      "error_literal_multiset_identical": true,
+      "receive_lines_before": 125,
+      "receive_lines_after": 81
+    },
+    "vision_state_validation": {
+      "public_api_and_dataclass_fields_identical": true,
+      "error_literal_multiset_identical": true,
+      "receive_lines_before": 135,
+      "receive_lines_after": 60
+    },
+    "protected_files_unchanged_from_turn_start": 65,
+    "prior_ground_comments_preserved": true,
+    "ground_yaml_parameters_identical_to_head": true
+  },
+  "python": {
+    "passed": 215,
+    "failed": 0,
+    "module_case_counts": {
+      "test_velocity_command_diagnostic": 41,
+      "test_vision_state_validation": 41,
+      "test_vision_adapter": 19,
+      "test_vision_settings": 15,
+      "test_navigation_report": 9,
+      "test_takeoff_configuration": 4,
+      "test_navigation_service": 26,
+      "test_navigation_feedback_freshness": 8,
+      "test_navigation_diagnostics": 30,
+      "test_vertical_diagnostic_bundle": 9,
+      "test_navigation_build_evidence": 13
+    },
+    "counting": "41 receiver + 41 state + 111 compatibility + 22 packaging; repeated differential checks counted separately. Packaging ARM64 behavior uses fixtures, not actual ARM64 builds."
+  },
+  "native": {
+    "passed_programs": 11,
+    "failed_programs": 0,
+    "existing_safety_and_vision": {
+      "passed": true,
+      "programs": [
+        {
+          "name": "vision_navigation",
+          "source_sha256": "9e26e2107fa3d91f79bb92aeb572ab660e32f5c01b41b8fd5a750c2e2911e835",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "VISION_NAVIGATION_INBOX_CLOCKS_VALIDITY_XY_FEEDBACK_FOUR_AXES_FINAL_CURRENT_LANDING_LATCH_PASS\n",
+          "passed": true
+        },
+        {
+          "name": "visual_runtime",
+          "source_sha256": "7d1b0a32a4a5735e7ef4485f62e6e129dd0dfb06c964f10fc69597501c9ed795",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "VISUAL_RUNTIME_CONTROL_PASS\n",
+          "passed": true
+        },
+        {
+          "name": "attitude_runtime",
+          "source_sha256": "0788f5b8dd61d0d6b995c3ff433653528ba4aae3b9467ec54309be75f1b43a2a",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "attitude-altitude runtime tests: PASS (stage locks, ACK+status, faults, full flight lifecycle, sequential 400)\n",
+          "passed": true
+        },
+        {
+          "name": "authority_runtime",
+          "source_sha256": "20c94fe0cb7c1e8362bf699ced0da7691774a4ae22deec7776fb847151b47d22",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "authority Runtime admission/selection/phase locks/takeover/ground reset/pending400: PASS\n",
+          "passed": true
+        },
+        {
+          "name": "rc_navigation",
+          "source_sha256": "a081fec7d372aa5867d0b5988bf4419e8f82642994428229f80cf4e8de6bd32a",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "RC_GROUND_REFERENCE_OFFSETS_DRIFT_RECOVERY_PASS\nRC_GROUND_REFERENCE_RESET_TIMESTAMP_GUARDS_PASS\nRC_DIAGNOSTIC_VELOCITY_GROUND_RECOVERY_PASS\nRC_PRODUCTION_NO_VISION_1P5M_VERTICAL_ONLY_FLIGHT_ENABLED_FALSE_PASS\nRC_NAVIGATION_CONTRACT_PASS\n",
+          "passed": true
+        },
+        {
+          "name": "rc_before_ready_recovery",
+          "source_sha256": "777cd3a086cae77835a7d253d89df636267a068468b9f4c67209eba024fe197c",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "RC_ARM_OR_NAVIGATION_BEFORE_READY rebuilt=1 frozen_reason= current_block=RC_RECOVERY_NO_ENDED_FAULT\nRC_ARM_OR_NAVIGATION_BEFORE_READY rebuilt=1 frozen_reason= current_block=RC_RECOVERY_NO_ENDED_FAULT\nRC_ARM_SOURCE_BEFORE_READY rebuilt=1 frozen_reason=RC_RECOVERY_WAIT_NEW_STATUS current_block=RC_RECOVERY_NO_ENDED_FAULT\nRC_ARM_STATE_BEFORE_READY rebuilt=1 frozen_reason=RC_RECOVERY_WAIT_NEW_STATUS current_block=RC_RECOVERY_NO_ENDED_FAULT\nRC_BEFORE_READY_CAUSAL_GROUND_RECOVERY_PASS all\n",
+          "passed": true
+        },
+        {
+          "name": "publication_runtime",
+          "source_sha256": "b6a9b0b94366cf0a20d079655ca29788774fb306b0e2cd680b2a10bbf531c46f",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "runtime_to_final_boundary_stage_one_ready_with_four_gates_false_one_shot_and_disconnect: PASS\n",
+          "passed": true
+        },
+        {
+          "name": "receive_schedule_safety",
+          "source_sha256": "5fd2c241338f37fabcb61e7222728d60eccd0aca92ddb94ccbeca15366177c0d",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "Safety catch-up retains receive budgets, limits and clock/counter guards: PASS\n",
+          "passed": true
+        },
+        {
+          "name": "m1_safety",
+          "source_sha256": "d8db62f3f8379e8cd6c7b2a72ade8499f73d51133995a202040f61afb48461f2",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "M1 disarm final-sink TOCTOU and transaction evidence: PASS\nM1 nonzero commanded q 90-degree roll / yaw injection: PASS\nM1 Offboard release mode command is disarmed-ground-only: PASS\nM1 dwell, armed at_rest=false, no timer-only liftoff, jump abort: PASS\nM1 queued STOP / mode 176 ACK-status handshake / zero release: PASS\n",
+          "passed": true
+        },
+        {
+          "name": "authority_boundary",
+          "source_sha256": "3bda9209146de68f16099e6483177b5efe1b372d28a12a10e267489afeaca764",
+          "compile_exit": 0,
+          "compiler_diagnostics": "",
+          "run_exit": 0,
+          "output": "authority final Arm/nonzero sinks, both routes, lock identity and exact-zero regression: PASS\n",
+          "passed": true
+        }
+      ],
+      "flags": [
+        "-std=c++17",
+        "-O1",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-pthread",
+        "-I",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include"
+      ]
+    },
+    "preview": {
+      "source_sha256": {
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp": "034feaa450dc8cff2c3d06cf29c06e99f088f1f4068313e976e52f3a3cc69ef8",
+        "native/tests/test_velocity_command_input.cpp": "53b7d383da83240bf33705902616e0b07f30874d95c1830e721387dbe71c49db"
+      },
+      "strict_passed": true,
+      "ubsan_passed": true,
+      "checks_each": 458,
+      "flags": "-std=c++17 -O1 -Wall -Wextra -Werror -pedantic -pthread",
+      "ubsan_flags": "-g -fsanitize=undefined -fno-sanitize-recover=undefined",
+      "differential": {
+        "passed": true,
+        "seed": 20261111,
+        "trials": 3600,
+        "fault_variants": 60,
+        "exact_output_lines": 54000,
+        "comparison": "Full acceptance, first error and every Preview field, with doubles serialized as hexfloat; original and refactored binaries emit byte-identical output",
+        "output_sha256": "e5efa43022faa15ae959144e930e6740ee7ba739282ef88149c1d84b076ee8c6",
+        "sources": {
+          "/home/jikl62/.cache/fc01-readable-20261111/preview_readability_differential.cpp": "563ba4d1259a7fe6ba76023aa4b8b57c8a347fcfa65bdcf0d80026efc87fa003",
+          "/home/jikl62/.cache/fc01-readable-20261111/velocity_command_input.before.hpp": "851ff6a30a18219c15170118986624c14b6d7b17e505b12dbf66483e4898514d",
+          "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp": "034feaa450dc8cff2c3d06cf29c06e99f088f1f4068313e976e52f3a3cc69ef8"
+        }
+      },
+      "log_sha256": {
+        "preview_readable_strict.log": "47c5ca55034ed4af2631dc56143c37202489ded33243e4010326cf21f8e7c839",
+        "preview_readable_ubsan.log": "47c5ca55034ed4af2631dc56143c37202489ded33243e4010326cf21f8e7c839"
+      },
+      "public_api_unchanged": true,
+      "production_control_source_changed": false,
+      "new_behavior_fixes": []
+    }
+  },
+  "differential": {
+    "receiver": {
+      "passed": true,
+      "seed": 20261111,
+      "manual_scenario_count": 28,
+      "random_steps": 10000,
+      "compared_receiver_calls": 30528,
+      "writer_and_terminal_cases": 4,
+      "compared": [
+        "return values and exceptions",
+        "complete snapshots",
+        "complete ordered events",
+        "public counters and diagnostics after every operation",
+        "writer files including throttling/rotation and terminal snapshot"
+      ],
+      "original_sha256": "63d0b11df30b887b6ab6e580c35362ad6a4c188147596ebe6859dd6a4150509d",
+      "refactored_sha256": "fcaa6ffe2aa6d45dc40bbd7e48fc466cae4e632d56835c86936eec5f96970024"
+    },
+    "state": {
+      "passed": true,
+      "comparison_count": 23600,
+      "receive_calls": 8100,
+      "current_calls": 2700,
+      "covariance_calls": 2000,
+      "sessions": 180,
+      "seed": 20261111,
+      "mutation_names": [
+        "normal",
+        "quality",
+        "lost",
+        "reset",
+        "source",
+        "frame",
+        "duplicate",
+        "clock",
+        "stamp",
+        "covariance",
+        "version",
+        "confirmation",
+        "numeric",
+        "relocalization",
+        "missing",
+        "jump",
+        "unpaired",
+        "future"
+      ],
+      "source_sha256": {
+        "/home/jikl62/.cache/fc01-readable-20261111/vision_state_validation.before.py": "e627b187eae18df255a4f7b64d020b13d7402187e4e927fe1e555f21591b13a7",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tools/vision_state_validation.py": "2aa77b838c349604a0d307b0a95845fc2a320467d73c7fcb8b0db26d5a0c6592"
+      },
+      "note": "Complete public results, state copies, diagnostic counters/reasons/history size, and drained events compared after each operation; random cases are deterministic."
+    },
+    "preview": {
+      "passed": true,
+      "seed": 20261111,
+      "trials": 3600,
+      "fault_variants": 60,
+      "exact_output_lines": 54000,
+      "comparison": "Full acceptance, first error and every Preview field, with doubles serialized as hexfloat; original and refactored binaries emit byte-identical output",
+      "output_sha256": "e5efa43022faa15ae959144e930e6740ee7ba739282ef88149c1d84b076ee8c6",
+      "sources": {
+        "/home/jikl62/.cache/fc01-readable-20261111/preview_readability_differential.cpp": "563ba4d1259a7fe6ba76023aa4b8b57c8a347fcfa65bdcf0d80026efc87fa003",
+        "/home/jikl62/.cache/fc01-readable-20261111/velocity_command_input.before.hpp": "851ff6a30a18219c15170118986624c14b6d7b17e505b12dbf66483e4898514d",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp": "034feaa450dc8cff2c3d06cf29c06e99f088f1f4068313e976e52f3a3cc69ef8"
+      }
+    },
+    "limits": "Deterministic tested traces and numerical samples; not a formal equivalence proof for every possible input"
+  },
+  "build": {
+    "passed": true,
+    "type": "incremental ROS 2 Humble build and install over the previously clean-built workspace",
+    "build_base": "/home/jikl62/.cache/fc01-followup-20261111/root_e825481/build",
+    "install_base": "/home/jikl62/.cache/fc01-followup-20261111/root_e825481/install",
+    "observed_compiler_warnings": 0,
+    "installed_files": {
+      "passed": true,
+      "installed_tools_sha256": {
+        "velocity_command_diagnostic.py": "fcaa6ffe2aa6d45dc40bbd7e48fc466cae4e632d56835c86936eec5f96970024",
+        "vision_state_validation.py": "2aa77b838c349604a0d307b0a95845fc2a320467d73c7fcb8b0db26d5a0c6592",
+        "vision_odometry_adapter.py": "a328c287e8df58151b893918136f925f676dd939c6c3570009feded764dc2197"
+      },
+      "preview_header_sha256": "034feaa450dc8cff2c3d06cf29c06e99f088f1f4068313e976e52f3a3cc69ef8",
+      "state_helper_import": "/home/jikl62/.cache/fc01-followup-20261111/root_e825481/install/jikl_fc01_system/lib/jikl_fc01_system/vision_state_validation.py"
+    }
+  },
+  "real_ros": {
+    "installed_diagnostic": {
+      "domain_id": 204,
+      "localhost_only": true,
+      "control_authority": false,
+      "interface": {
+        "type": "jikl_fc01_system/msg/VelocityCommand",
+        "fields": {
+          "schema_version": "uint16",
+          "sequence": "uint64",
+          "stamp": "builtin_interfaces/Time",
+          "reset_counter": "uint32",
+          "source_id": "string",
+          "frame_id": "string",
+          "valid": "boolean",
+          "vx": "double",
+          "vy": "double",
+          "vz": "double"
+        },
+        "default_frame_id": "",
+        "serialization_round_trip": true
+      },
+      "checks": [
+        "startup_overrides_and_read_only_runtime_parameters",
+        "best_effort_type_and_payload",
+        "unconfigured_policy_does_not_qualify_cache",
+        "duplicate_and_out_of_order",
+        "invalid_and_retained_anomaly",
+        "reset_and_source_changes",
+        "source_count_and_reliable_to_best_effort",
+        "explicit_test_timeout",
+        "diagnostic_has_no_fmu_publishers",
+        "reliable_to_reliable",
+        "sigint_final_snapshot_and_forced_anomaly_flush"
+      ],
+      "test_timeout_sec": 1.0,
+      "timeout_is_test_fixture": true,
+      "diagnostic_publishers": [
+        [
+          "/parameter_events",
+          [
+            "rcl_interfaces/msg/ParameterEvent"
+          ]
+        ],
+        [
+          "/rosout",
+          [
+            "rcl_interfaces/msg/Log"
+          ]
+        ]
+      ],
+      "passed": true
+    },
+    "odometry_adapter_rerun_this_turn": false,
+    "note": "Original Odometry adapter byte-identical. It was verified previously; no new Odometry run is claimed here."
+  },
+  "protected_files": {
+    "reference": "working tree at start of this turn, including prior ground comment changes",
+    "count": 65,
+    "all_byte_identical": true,
+    "sha256": {
+      "native/config/R6_OFFLINE_DEV.yaml": "e96c45069866822d2a3b0e44162d9eda5a657fd5409d964c4b2ac92ddf75ca9c",
+      "native/config/R6_REAL_FC01_PENDING_REVIEW.yaml": "5585566ee278c2074568b49bcae60fe9f35802b7036626ebf29c299e6ba9a7e0",
+      "native/config/S10_1HZ_EXPERIMENTAL_SIM_ONLY.yaml": "04ea528b5f1632d3059488d816e86b1d599877bbc2a7b86f0a9c6c16f0b54286",
+      "native/config/attitude_altitude.yaml": "723ba74ade0a474a6221e79a57428fec7c0639805d5419775105873353b16783",
+      "native/config/attitude_altitude.yaml.bak": "dee48d6374ef73330993c4fecc5f52711eca35b9458b68ed9bff0560d63c093f",
+      "native/config/attitude_altitude.yaml.before_flight_params": "8abd5b7c32660f4e9594db71a9fe5e3a68719d0ce131ba03c99245fe44473a24",
+      "native/config/attitude_altitude.yaml.before_rc_confirm": "68813188937743c469d67c7f8c7ecf4666ad6d67319fb64f8a7d7ee5f0d404fa",
+      "native/config/diagnostic.yaml": "3084669f5fe8229439f6f36638221f956d640ae33d24adc6f9760e713b165898",
+      "native/config/flight.yaml": "d1c5196e4c9511e68be359b86d1913fa6eb2f8d25c0d93625c5d1f66752ebd30",
+      "native/config/flight_test.yaml": "2eaafe958cf7f8e8f2b0f2052e351e34ede7c8b29eaafe16fede3ebe40da1953",
+      "native/config/ground.yaml": "0dcaa0312038dadddf11cee3beb96548e0d35e9ef1de5e164bf2ac3be67fcd0e",
+      "native/config/historical/R5_CANDIDATES_GATES_CLOSED.yaml": "dccee1db3df9a05808e07af00939f00249ef61607d4a5aa620f45e4726d44316",
+      "native/config/sim.yaml": "36dcbacd1d393443724bfa6df0c7b5ec1806b081be71281910d3ea51fafd908f",
+      "native/src/jikl_fc01_system/CMakeLists.txt": "d34234a73f9abbb5e0c92955fddb4d1e4212a0ad9c072397037470cb69920b18",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp": "58814aa13575701a459118f8de6dc2c65c3bdb1fd2d5fda3735d4d8c94425762",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp": "ae9da5be415e4f4d722d3e5dd929dace970edd52cedcae41764bc38baae840d4",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_diagnostics.hpp": "80eccaeed44728327375937b3fa194e81d9faedaceccba0ea8707ca9abe45002",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp": "55d1f6e87bce01ea90ddf6827cabe24a357608ed66286fb9360e8ca995a11bd7",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp": "62f794fcede2788df0cf5c9ed0cd8c455b52d75d2f31e3918c1a7ebcf5443527",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp": "a43eb4f5cf69a6323d860d6222aa382174d4be12c845b7a506b2cdd0275b1231",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp": "d251f5d71c4a32362cea2f4a0294828f4df7b123aeefabb8b9ae3ccad5a0a121",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/authority.hpp": "59a7a1f9649f8132f0899e2b7671a7ccfdff129e5c28746a0694d36f50825d97",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp": "ff8460cb3f826ecdcf05b6d5ec8c00918af43439998cbd5dd798a4e504fd017f",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp.bak": "c2749b98938c3a5f8929eba8c1d4064b7c46cb8a5beba3d736abbca9b212b036",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/control_diagnostics.hpp": "fcc4b8a573c414fe13d72f45407dac288a001e221db964518e57adda6e2ea131",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp": "68e85125a24fce12319361869eea3dd383985eb4eacd5b4d8a2d313951dab586",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp": "2fecf8bec7959e5972e9b166726e986391a16a7219c0b40b7368b09c4a2c4588",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp": "b7a00429fc0cf6eeffbfc34be52ebc7d42f18e75dcf4cb09ad653f2c1e48f955",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp": "393ad2ccd9280d314bd4e4623ff5f0b567fe3739626d6f10899b7079f80f16e8",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_audit.hpp": "4d822fac8cb0d8b833eaf69704f99e9b00bf600cb99af4dc7dcebe03385ed276",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp": "332c0d3a4e742b400be1c535581c808b193b08d39fb9b261072940b339c12a0e",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp": "aed2651aeaed0adeea0a6b439851b5cdc371c10d515189b783736efcf277dc72",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp": "ed9da9ec30a02693f3fbf042dfe71b5c4f49bddc077662ac4da340c891d2f836",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp": "91986f4407d4f4d101c75ef761644af8b87b91aca46e130c8ea124e1c384dd0b",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp": "039a7dd6e34385424de8e5ea48b164d17607d2e389b36ee1866da6a732522562",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/ros_config.hpp": "725e6837661c3fd135605d5fc633ea40dc8e7e3027cce5009c682d0782349499",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp": "a88a8d760084c30846d2d8b20a26d38758b24390779b698de91d2fed30654a89",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp": "1d93123b5118426fb99968ba9f443cbcd95573be8cd6b39357ad6efe37682638",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp": "1f2e0c4ca84b71ab20cd63177dfbedd9a920591f5daf5b65be8604e128909b58",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp": "806ee5c76b2e415533d71fad76454147cd1329d42fe1031ab2edbf0814182efe",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/source_diagnostics.hpp": "6cb3cdb603d92a54d3231d17a6889a8a99588f16e2e1625536d2e0862de4d716",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp": "f905e6e3e7c29903ce169e4487496ac7ad8771ce550a61d2e76993621afdbf1c",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp": "e450d86a6b47fe06d596a2354083ead6231833dc661abe766e82f145f7258858",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp": "4b691b760e549494343bd4bb19f35aa4ee156e8e4b65e513d20065adf05b630f",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp": "5bd639a4baa304ba9d19adb51446bb0b00d00a2c055178a7cd84402bb938908f",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp": "44ec7c56ea688473a69db2b181cfaf7ee0e28f79f433d6d917bf8400ce1d8861",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp": "89ebae9dc8488ec501a86d3aeb33e661f107bd332600bed90fdea41cee6b5e16",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp": "96c65d94662ffc5cd67ff33150b0ea7e5973a74ef9a5cda56c22891bdaf4945a",
+      "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg": "ef65f15fa844c3e7b32b840546238038fe9c023cecf7ab5e0e987e8f2476b1d6",
+      "native/src/jikl_fc01_system/msg/NavigationCommand.msg": "966145eee8b2a6436f25ba6db9322d8123ccbff0f9ff13f2bc4f9b4f95fe6818",
+      "native/src/jikl_fc01_system/msg/VelocityCommand.msg": "c44f303ee7f229869472f23035fad2a97c3661a4fd9dd5bdc2274d4864ffb28a",
+      "native/src/jikl_fc01_system/msg/VisionHealth.msg": "3cc768b75c0d40ded488a7af0b396050863934646b3009c3490a3db6ebac5036",
+      "native/src/jikl_fc01_system/msg/VisionState.msg": "d677170f61e34e632c2ee4fede2128fc54e7b5bd4d7ac55b5c281767e2884def",
+      "native/src/jikl_fc01_system/src/fc01_config_check.cpp": "daa3a3fc63c275aaeb76ea0ffb755f7b625298814b5d0ef68711f5dc604703ff",
+      "native/src/jikl_fc01_system/src/fc01_system_node.cpp": "9fcf4339d1bbddd70064dd7b83026c181b064d6be5c8ce390754cddb1017fc75",
+      "native/src/jikl_fc01_system/src/fc01_system_node.cpp.before_message_version_fix": "06d8e7d5dc8c02e316d30cbc15041023dd195eeaba4702762926819375e45086",
+      "native/tools/vision_odometry_adapter.py": "a328c287e8df58151b893918136f925f676dd939c6c3570009feded764dc2197",
+      "navigation_service.py": "74cb97ae8216d674d5fdb5f1238bdbb02c037abaf80382376552a8a5d5e85f30",
+      "navigation_settings.json": "a3ecf4759adad9901bd0efbae4eff0a7860ad3e4a4a91afdb7c0b1fe8d516131",
+      "vision_settings.py": "910d813cc86f141c2ac2cb36f8069d095bfb611ffc7657d3bfd853b203d1fb3b",
+      "vision_settings.json": "64eb13852f432ac1f39142f7daff13d04e4edd20c1abdc4dae3c5722e5f6e361",
+      "navigation.py": "e88890ce4b94d54803a3d040d6a194ffbf0571d9cdd4f54961681380bd0cc6d0",
+      "navigation.sh": "a80617c17cd28caa3ea86521a58da1ffa9e167108c73b090b7e0d3776f0f3ebd",
+      "navigation_deploy.py": "81ed58802f9b11973745ba22dacefff93c603df21f9379421660c419bbe071db",
+      "navigation_install.py": "4a3bda4c53d6deca14ed44d7062fa40df8da11e7887ea6f01f94aa8a6dfd4497"
+    },
+    "ground_parameters_equal_to_baseline": true
+  },
+  "flight_invariants": {
+    "visual_navigation_enabled": false,
+    "target_height_m": 1.5,
+    "aa_hover_thrust": 0.5,
+    "aa_takeoff_reserve_thrust": 0.04,
+    "aa_thrust_max": 0.8,
+    "control_authority": false,
+    "production_controller_started": false,
+    "agent_started": false,
+    "serial_opened": false,
+    "systemd_changed": false,
+    "dist_regenerated": false
+  },
+  "independent_review": {
+    "completed": true,
+    "state_cross_review": {
+      "passed": true,
+      "scope": "Read-only independent diff review plus four direct conversion exception probes",
+      "exception_cases": [
+        {
+          "exception": "AttributeError",
+          "same_result_and_events": true,
+          "reasons": [
+            "MALFORMED_ODOMETRY_OR_HEALTH",
+            "AttributeError"
+          ]
+        },
+        {
+          "exception": "TypeError",
+          "same_result_and_events": true,
+          "reasons": [
+            "MALFORMED_ODOMETRY_OR_HEALTH",
+            "TypeError"
+          ]
+        },
+        {
+          "exception": "ValueError",
+          "same_result_and_events": true,
+          "reasons": [
+            "MALFORMED_ODOMETRY_OR_HEALTH",
+            "ValueError"
+          ]
+        },
+        {
+          "exception": "OverflowError",
+          "same_result_and_events": true,
+          "reasons": [
+            "MALFORMED_ODOMETRY_OR_HEALTH",
+            "OverflowError"
+          ]
+        }
+      ],
+      "new_findings": []
+    },
+    "preview_cross_review": "readable_state_validator independently reviewed public fields/signatures, short-circuit order, clocks/cache/first error and numerical operation sequence. No behavior findings; guide covariance/conversion order clarified.",
+    "unresolved_substantive_findings": []
+  },
+  "log_retention": {
+    "directory": "/home/jikl62/.cache/fc01-readable-20261111",
+    "archive": "/home/jikl62/.cache/fc01-readable-20261111/FC01_vision_readability_20261111_logs.zip",
+    "archive_sha256": "d86d1dccf26a1902d4a9017f40352ddbe2486a7cef47328f5ccaf18dff2b7af6",
+    "archive_bytes": 368793,
+    "archive_members": 50,
+    "key_original_outputs_embedded": true,
+    "includes_before_sources_and_actual_differential_drivers": true,
+    "binaries_in_archive": false
+  },
+  "raw_outputs": {
+    "receiver_unit.log": {
+      "sha256": "c3fdb3699282142ef234cde2e64f3d71429deba17205396bb3b3921a1e88499a",
+      "text": ".........................................\n----------------------------------------------------------------------\nRan 41 tests in 0.022s\n\nOK\n"
+    },
+    "state_unit.log": {
+      "sha256": "e5857a700bc0a63ef4a1c172f79aca514ba594d6938b35006a5b6f0472ccca5c",
+      "text": ".........................................\n----------------------------------------------------------------------\nRan 41 tests in 0.068s\n\nOK\n"
+    },
+    "compatibility.log": {
+      "sha256": "f4f23b937ee4d15e700bc805b155a9ddfdb586d71f90b313fc64fc3a959c1a8f",
+      "text": "Agent transport CONNECTED: UART /dev/ttyS2 115200; PID=16148\nWAITING: 控制器已启动，等待飞控反馈\nSTOPPING: clean_eof: 控制台连接已关闭；没有残缺消息\nWAITING: clean_eof: 控制台连接已关闭；没有残缺消息\nWAITING: clean_eof: 控制台连接已关闭；没有残缺消息；原生控制器退出，code=7\nWAITING: UART disappeared during reconnect；原生控制器退出，code=7\nSTOPPED: 后台待命已停止\nrobe,build}]\npython3 -m unittest: error: Flight Test 必须同时提供 --confirm-flight-test；不会隐式开启动作门\n......................................................\n----------------------------------------------------------------------\nRan 111 tests in 17.214s\n\nOK\n自动报告：/tmp/tmpqn6qhufw/FC01_navigation_report_20261111_185716_284681.zip\n自动报告：/tmp/tmpc2wi09g4/FC01_navigation_report_20261111_185716_288692.zip\n自动报告：/tmp/tmp25siiggq/FC01_navigation_report_20261111_185716_290875.zip\n自动报告：/tmp/tmp5p1s9l6t/FC01_navigation_report_20261111_185716_293805.zip\n自动报告：/tmp/tmp5moe4k51/FC01_navigation_report_20261111_185716_296882.zip\n自动报告：/tmp/tmp8n_lbi2m/FC01_navigation_report_20261111_185716_300386.zip\n自动报告：/tmp/tmpurkssm6h/FC01_navigation_report_20261111_185716_301857.zip\n自动报告：/tmp/tmp50215c_e/FC01_navigation_report_20261111_185716_304938.zip\n自动报告：/tmp/tmpv4e95mdr/FC01_navigation_report_20261111_185716_307906.zip\n"
+    },
+    "packaging.log": {
+      "sha256": "996d44aac0c4b95e59d0dec6ac6e42ef7f3368f573f5516f3476bcb41cd3fe9f",
+      "text": "............FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpffz_tlml/release/ARM64_BUILD_EVIDENCE.json'\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nFC01_ARM64_REBUILD_REQUIRED reason=CMake selected an unexpected dependency: px4_msgs\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n.FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpmgnatmmr/release/ARM64_BUILD_EVIDENCE.json'\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nFC01_ARM64_REBUILD_REQUIRED reason=installed generated library or support files differ from build evidence\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n.FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpd854kyaz/release/ARM64_BUILD_EVIDENCE.json'\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nFC01_ARM64_REBUILD_REQUIRED reason=binary or runtime library content differs from build evidence\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nFC01_ARM64_REBUILD_REQUIRED reason=binary or runtime library content differs from build evidence\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n.FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp1si2sbhr/release/ARM64_BUILD_EVIDENCE.json'\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nFC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n.FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp3ryhoqwk/release/ARM64_BUILD_EVIDENCE.json'\nFC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp3ryhoqwk/release/ARM64_BUILD_EVIDENCE.json'\n.FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpx36cvbvf/release/ARM64_BUILD_EVIDENCE.json'\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nFC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n.FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmppcdtgzg0/release/ARM64_BUILD_EVIDENCE.json'\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nFC01_ARM64_BUILD_REUSED input_sha256=ca2a570985afc86cc64438d433945f0e904c2e1780ad90c69eecd45938c592d1\n.FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpf2c6e1op/release/ARM64_BUILD_EVIDENCE.json'\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nFC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies\nFC01_OFFLINE_BUILD_STEP -S\nFC01_OFFLINE_BUILD_STEP --build\nFC01_OFFLINE_BUILD_STEP --install\nFC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n...\n----------------------------------------------------------------------\nRan 22 tests in 0.950s\n\nOK\n"
+    },
+    "preview_readable_strict.log": {
+      "sha256": "47c5ca55034ed4af2631dc56143c37202489ded33243e4010326cf21f8e7c839",
+      "text": "VELOCITY_COMMAND_INPUT_PREVIEW_ONLY_PASS checks=458 control_authority=false\n"
+    },
+    "preview_readable_ubsan.log": {
+      "sha256": "47c5ca55034ed4af2631dc56143c37202489ded33243e4010326cf21f8e7c839",
+      "text": "VELOCITY_COMMAND_INPUT_PREVIEW_ONLY_PASS checks=458 control_authority=false\n"
+    },
+    "build_install.log": {
+      "sha256": "fb853a473509415ffeeafa9d8abb2e2d20210c87025149ed67f35f45f4aaf9a4",
+      "text": "Starting >>> jikl_fc01_system\nFinished <<< jikl_fc01_system [0.27s]\n\nSummary: 1 package finished [0.42s]\n"
+    },
+    "ros_velocity.log": {
+      "sha256": "e8deeafb21e569b8a91c77c2f4891b24e04c3c8eb7613dfd1c6676388dfc8ffc",
+      "text": "REAL_ROS_VELOCITY_COMMAND_PASS {\"domain_id\": 204, \"localhost_only\": true, \"control_authority\": false, \"interface\": {\"type\": \"jikl_fc01_system/msg/VelocityCommand\", \"fields\": {\"schema_version\": \"uint16\", \"sequence\": \"uint64\", \"stamp\": \"builtin_interfaces/Time\", \"reset_counter\": \"uint32\", \"source_id\": \"string\", \"frame_id\": \"string\", \"valid\": \"boolean\", \"vx\": \"double\", \"vy\": \"double\", \"vz\": \"double\"}, \"default_frame_id\": \"\", \"serialization_round_trip\": true}, \"checks\": [\"startup_overrides_and_read_only_runtime_parameters\", \"best_effort_type_and_payload\", \"unconfigured_policy_does_not_qualify_cache\", \"duplicate_and_out_of_order\", \"invalid_and_retained_anomaly\", \"reset_and_source_changes\", \"source_count_and_reliable_to_best_effort\", \"explicit_test_timeout\", \"diagnostic_has_no_fmu_publishers\", \"reliable_to_reliable\", \"sigint_final_snapshot_and_forced_anomaly_flush\"], \"test_timeout_sec\": 1.0, \"timeout_is_test_fixture\": true, \"diagnostic_publishers\": [[\"/parameter_events\", [\"rcl_interfaces/msg/ParameterEvent\"]], [\"/rosout\", [\"rcl_interfaces/msg/Log\"]]], \"passed\": true}\n"
+    },
+    "receiver_behavior_comparison.log": {
+      "sha256": "0144628b12ea0cc5ed6126a7b11d828404f0ad6279912fd8bb0959130560efde",
+      "text": "{\n  \"passed\": true,\n  \"seed\": 20261111,\n  \"manual_scenario_count\": 28,\n  \"random_steps\": 10000,\n  \"compared_receiver_calls\": 30528,\n  \"writer_and_terminal_cases\": 4,\n  \"compared\": [\n    \"return values and exceptions\",\n    \"complete snapshots\",\n    \"complete ordered events\",\n    \"public counters and diagnostics after every operation\",\n    \"writer files including throttling/rotation and terminal snapshot\"\n  ],\n  \"original_sha256\": \"63d0b11df30b887b6ab6e580c35362ad6a4c188147596ebe6859dd6a4150509d\",\n  \"refactored_sha256\": \"fcaa6ffe2aa6d45dc40bbd7e48fc466cae4e632d56835c86936eec5f96970024\"\n}\n"
+    },
+    "state_differential.log": {
+      "sha256": "c598c07a38c995b9d0c60b88a8725619f91d53d7f383ac885ff6675390464f1e",
+      "text": "STATE_VALIDATOR_BEFORE_AFTER_EQUIVALENCE_PASS {\"comparison_count\": 23600, \"covariance_calls\": 2000, \"current_calls\": 2700, \"mutation_names\": [\"normal\", \"quality\", \"lost\", \"reset\", \"source\", \"frame\", \"duplicate\", \"clock\", \"stamp\", \"covariance\", \"version\", \"confirmation\", \"numeric\", \"relocalization\", \"missing\", \"jump\", \"unpaired\", \"future\"], \"note\": \"Complete public results, state copies, diagnostic counters/reasons/history size, and drained events compared after each operation; random cases are deterministic.\", \"passed\": true, \"receive_calls\": 8100, \"seed\": 20261111, \"sessions\": 180, \"source_sha256\": {\"/home/jikl62/.cache/fc01-readable-20261111/vision_state_validation.before.py\": \"e627b187eae18df255a4f7b64d020b13d7402187e4e927fe1e555f21591b13a7\", \"/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tools/vision_state_validation.py\": \"2aa77b838c349604a0d307b0a95845fc2a320467d73c7fcb8b0db26d5a0c6592\"}}\n"
+    }
+  },
+  "validation_commands": [
+    "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:tests /usr/bin/python3 -m unittest test_velocity_command_diagnostic",
+    "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:tests /usr/bin/python3 -m unittest test_vision_state_validation",
+    "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:tests /usr/bin/python3 -m unittest test_vision_adapter test_vision_settings test_navigation_report test_takeoff_configuration test_navigation_service test_navigation_feedback_freshness test_navigation_diagnostics",
+    "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:tests /usr/bin/python3 -m unittest test_vertical_diagnostic_bundle test_navigation_build_evidence",
+    "ROS_DOMAIN_ID=204 ROS_LOCALHOST_ONLY=1 PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 tests/ros_velocity_command_smoke.py --diagnostic /home/jikl62/.cache/fc01-followup-20261111/root_e825481/install/jikl_fc01_system/lib/jikl_fc01_system/velocity_command_diagnostic.py --report /home/jikl62/.cache/fc01-readable-20261111/ros_velocity.json"
+  ],
+  "limitations": [
+    "No ARM64 or Orange Pi acceptance, real sensor data or real flight.",
+    "No control output enabled or PX4 EKF injection.",
+    "No performance speedup or worst-case scheduling guarantee inferred from readability changes.",
+    "SIGKILL, power failure and unavailable storage cannot guarantee a terminal record."
+  ]
+}

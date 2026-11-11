@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Observe VelocityCommand without creating any flight-control output.
+"""只读接收视觉目标速度：检查消息、保存诊断，不向飞控发送控制量。
 
-ROS imports live in main; the receiver and bounded file writer need no ROS graph.
-Zero-valued limits mean unconfigured, never an implicit flight qualification.
+阅读顺序：Receiver.receive() 处理新消息，snapshot() 判断缓存是否仍可用，
+DiagnosticWriter 保存快照和日志，main() 只负责连接 ROS 订阅与这些纯计算对象。
+阈值为 0 表示尚未配置；即使诊断通过，control_authority 也始终为 false。
 """
 from collections import OrderedDict, deque
 from dataclasses import dataclass
@@ -46,6 +47,7 @@ def _text(value):
 
 @dataclass(frozen=True)
 class DiagnosticConfig:
+    """诊断策略；数值阈值与发送来源必须由接口双方明确配置。"""
     timeout_sec: float = 0.0
     max_speed_mps: float = 0.0
     max_source_age_sec: float = 0.0
@@ -63,10 +65,10 @@ class DiagnosticConfig:
 
 
 class Receiver:
-    """Diagnostic observations only; accepted means format/order checks passed.
+    """保存三个不同事实：最新收到的消息、当前候选、最后一次异常。
 
-    No observation from this class authorizes movement. The original message and
-    the latest anomaly remain separate so good traffic cannot erase an incident.
+    accepted 只表示通过当时已配置的检查，不表示允许飞机运动。
+    正常新消息可以恢复候选，但不能覆盖此前的异常证据。
     """
     def __init__(self, config=None):
         self.config = config or DiagnosticConfig()
@@ -80,11 +82,12 @@ class Receiver:
         self.latest_errors = []
         self.publisher_count = None
         self._identity = None
+        # 每个 (source_id, reset_counter) 的可信序号与时间水位，防止旧包重放。
         self._watermarks = OrderedDict()
         self._sequence = 0
         self._stamp = 0
-        self._last_valid = None
-        self._candidate = None
+        self._last_valid = None  # 历史上最后一次接受的消息，过期后仍保留供查错。
+        self._candidate = None   # 当前候选；无效、过期或来源异常时立即撤销。
         self._last_observation_steady = None
         self._last_observation_ros = None
         self._timeout_reported = False
@@ -108,9 +111,8 @@ class Receiver:
         return errors
 
     def _observe_receive_timeout(self, now, ros_now_ns):
-        # A healthy callback may arrive after an executor pause. Observe the
-        # old lifetime before replacing its receipt time, so the gap remains
-        # evidence even when no periodic snapshot ran during the interruption.
+        # 必须先检查旧消息，再接收新消息。否则执行器停顿后恰好收到正常包，
+        # 就会覆盖旧接收时间，让断流在定时快照尚未运行时消失。
         if (self._last_valid is None or not self.config.timeout_sec
                 or now - self._last_valid['received_at'] < self.config.timeout_sec):
             return
@@ -123,9 +125,8 @@ class Receiver:
                         last_valid_sequence=self._last_valid['sequence'])
 
     def _observe_candidate_expiry(self, now, ros_now_ns):
-        # Both callbacks and snapshots observe the old candidate before any
-        # new packet can replace it. Source lifetime may be shorter than the
-        # receive timeout, so the two clocks need independent checks.
+        # 收到新包和查询快照都走这里。接收年龄与源测量年龄是两个条件：
+        # 刚收到的包也可能早已过时，不能只看它何时到达本机。
         errors = []
         if self._candidate is None:
             return errors
@@ -189,13 +190,18 @@ class Receiver:
                            previous_count=previous, publisher_count=count)
 
     def receive(self, message, received_at, ros_now_ns, publisher_count):
+        """按“旧缓存→本帧字段→消息顺序→候选更新”的顺序处理一帧。"""
         if not _finite(received_at) or received_at < 0 or not _integer(ros_now_ns, 2**64 - 1):
             raise ValueError('independent receive clocks must be finite and nonnegative')
+
+        # 1. 先记录旧缓存的失效和来源变化，不能让后面的正常数据抹掉空窗。
         clock_errors = self._observe_clocks(received_at, ros_now_ns)
         self._observe_receive_timeout(received_at, ros_now_ns)
         self._observe_candidate_expiry(received_at, ros_now_ns)
         self.observe_publishers(publisher_count, received_at, ros_now_ns)
         self.counters['received'] += 1
+
+        # 2. 原始字段用于检查；日志中的文本会截断，但不能用截断值替代检查。
         stamp = getattr(message, 'stamp', None)
         sec, nanosec = getattr(stamp, 'sec', None), getattr(stamp, 'nanosec', None)
         stamp_ok = _integer(sec, 2**31 - 1) and _integer(nanosec, 999999999)
@@ -245,6 +251,29 @@ class Receiver:
         elif self.config.max_source_age_sec or self.config.future_tolerance_sec:
             errors.append('ROS_CLOCK_UNAVAILABLE')
 
+        # 3. 检查来源、reset、序号与测量时间；不合格数据不得推进可信水位。
+        self._check_stream_order(source, reset, sequence, stamp_ns, valid, errors,
+                                 received_at, ros_now_ns)
+
+        # 4. 只有本帧全部检查通过，才建立新的当前候选。
+        # last_message 保存本次观测；last_anomaly 由 _event 单独保存。
+        accepted = not errors
+        if accepted:
+            self.counters['accepted'] += 1
+            self._last_valid = sample.copy()
+            self._candidate = sample.copy()
+            self._timeout_reported = False
+        else:
+            self._candidate = None
+            self.counters['invalid'] += 1
+        self.last_message = _json_safe(sample)
+        self.latest_errors = errors
+        return self._event('message', errors, received_at, ros_now_ns,
+                           accepted=accepted, sample=sample)
+
+    def _check_stream_order(self, source, reset, sequence, stamp_ns, valid, errors,
+                           received_at, ros_now_ns):
+        """追加顺序错误，并仅在本帧可信时更新防重放记录。"""
         identity_valid = (_integer(reset, 2**32 - 1) and isinstance(source, str)
                           and bool(source.strip()) and len(source) <= MAX_TEXT)
         if identity_valid:
@@ -266,9 +295,8 @@ class Receiver:
             source_matches = not self.config.expected_source_id or source == self.config.expected_source_id
             if (source_matches and identity not in self._watermarks
                     and len(self._watermarks) >= STREAM_HISTORY_CAPACITY):
-                # Retain replay evidence rather than evicting an old stream.
-                # A new standalone diagnostic process can start a fresh audit;
-                # existing identities may still deliver healthy new samples.
+                # 历史满后拒绝新会话，不淘汰旧水位，否则旧包可能重新有效。
+                # 已记录会话仍可继续接收，不需要重启飞机或清除飞行故障。
                 errors.append('STREAM_HISTORY_CAPACITY_REACHED')
             if _integer(sequence, 2**64 - 1) and sequence:
                 if sequence == self._sequence:
@@ -281,9 +309,7 @@ class Receiver:
                     source_stamp = max((watermark[1] for key, watermark in self._watermarks.items()
                                         if key[0] == source), default=0)
                     if source_stamp > self._stamp and stamp_ns and stamp_ns <= source_stamp:
-                        # reset_counter restarts the sender epoch, not the
-                        # agreed ROS/system measurement clock. Preserve the
-                        # same-source stamp across its bounded epoch history.
+                        # reset 可重启序号，不能让同一发送源的测量时钟倒退。
                         errors.append('SOURCE_STAMP_NOT_ADVANCING_ACROSS_RESET')
                     self._sequence = sequence
                     if stamp_ns and stamp_ns <= self._stamp:
@@ -293,28 +319,46 @@ class Receiver:
                             self.counters['clock_regression'] += 1
                     if stamp_ns:
                         self._stamp = max(self._stamp, stamp_ns)
-                # Rejected clocks, schemas, frames or numeric payloads must not
-                # poison trusted sequence/stamp watermarks. A well-formed false
-                # validity flag is an explicit withdrawal, so its identity is
-                # consumed and cannot be replayed as a valid command later.
+                # 错误包不能污染可信序号或时间。
+                # 唯一例外是其余字段全对的 valid=false：它明确撤销该条指令，
+                # 也要消耗序号，防止之后用同一序号重放为 valid=true。
                 advance = not errors or (errors == ['COMMAND_INVALID'] and valid is False)
                 if advance and source_matches:
                     self._watermarks[identity] = (self._sequence, self._stamp)
-        accepted = not errors
-        if accepted:
-            self.counters['accepted'] += 1
-            self._last_valid = sample.copy()
-            self._candidate = sample.copy()
-            self._timeout_reported = False
-        else:
-            self._candidate = None
-            self.counters['invalid'] += 1
-        self.last_message = _json_safe(sample)
-        self.latest_errors = errors
-        return self._event('message', errors, received_at, ros_now_ns,
-                           accepted=accepted, sample=sample)
+
+    def _receive_freshness(self, age):
+        """只判断接收年龄；不据此推断源测量仍然新鲜。"""
+        if not self.config.timeout_sec:
+            return 'UNCONFIGURED'
+        if age is None:
+            return 'NO_SAMPLE'
+        if age < 0:
+            return 'CLOCK_REGRESSION'
+        if age >= self.config.timeout_sec:
+            return 'EXPIRED'
+        return 'WITHIN_RECEIVE_LIMIT'
+
+    def _message_freshness(self, receive_freshness, last_message):
+        """综合最新消息的错误、接收年龄和源年龄，供诊断窗口展示。"""
+        if receive_freshness in ('EXPIRED', 'CLOCK_REGRESSION', 'NO_SAMPLE'):
+            return receive_freshness
+        if self.latest_errors:
+            return 'LATEST_MESSAGE_INVALID'
+        time_limits_configured = all((self.config.timeout_sec, self.config.max_source_age_sec,
+                                      self.config.future_tolerance_sec))
+        if not time_limits_configured or last_message is None:
+            return 'UNCONFIGURED'
+        source_age = last_message['source_age_sec']
+        if source_age is None:
+            return 'ROS_CLOCK_UNAVAILABLE'
+        if source_age >= self.config.max_source_age_sec:
+            return 'EXPIRED'
+        if source_age < -self.config.future_tolerance_sec:
+            return 'SOURCE_STAMP_IN_FUTURE'
+        return 'CURRENT'
 
     def snapshot(self, now, ros_now_ns, publisher_count=None):
+        """重新检查当前缓存，返回独立的诊断快照；历史数据不会自动续期。"""
         if not _finite(now) or now < 0 or not _integer(ros_now_ns, 2**64 - 1):
             raise ValueError('snapshot clocks must be finite and nonnegative')
         self._observe_clocks(now, ros_now_ns)
@@ -323,16 +367,7 @@ class Receiver:
         if publisher_count is not None:
             self.observe_publishers(publisher_count, now, ros_now_ns)
         age = now - self._last_valid['received_at'] if self._last_valid else None
-        if not self.config.timeout_sec:
-            receive_freshness = 'UNCONFIGURED'
-        elif age is None:
-            receive_freshness = 'NO_SAMPLE'
-        elif age < 0:
-            receive_freshness = 'CLOCK_REGRESSION'
-        elif age >= self.config.timeout_sec:
-            receive_freshness = 'EXPIRED'
-        else:
-            receive_freshness = 'WITHIN_RECEIVE_LIMIT'
+        receive_freshness = self._receive_freshness(age)
         last = dict(self.last_message) if self.last_message is not None else None
         if last is not None:
             last['receive_age_sec'] = now - last['received_at']
@@ -346,44 +381,39 @@ class Receiver:
             candidate_errors.append('SOURCE_BINDING_UNCONFIGURED')
         if self.publisher_count != 1:
             candidate_errors.append('PUBLISHER_COUNT_NOT_ONE')
-        freshness = 'UNCONFIGURED'
-        if receive_freshness in ('EXPIRED', 'CLOCK_REGRESSION', 'NO_SAMPLE'):
-            freshness = receive_freshness
-        elif self.latest_errors:
-            freshness = 'LATEST_MESSAGE_INVALID'
-        elif all((self.config.timeout_sec, self.config.max_source_age_sec,
-                  self.config.future_tolerance_sec)) and last is not None:
-            source_age = last['source_age_sec']
-            if source_age is None:
-                freshness = 'ROS_CLOCK_UNAVAILABLE'
-            elif source_age >= self.config.max_source_age_sec:
-                freshness = 'EXPIRED'
-            elif source_age < -self.config.future_tolerance_sec:
-                freshness = 'SOURCE_STAMP_IN_FUTURE'
-            else:
-                freshness = 'CURRENT'
-        return _json_safe(dict(schema_version=1, kind='velocity_command_diagnostic',
-                               message_type=MESSAGE_TYPE, control_authority=False,
-                               qualification='DIAGNOSTIC_ONLY',
-                               limits={name: getattr(self.config, name) or None for name in LIMIT_NAMES},
-                               expected_source_id=self.config.expected_source_id or None,
-                               stream_history_size=len(self._watermarks),
-                               stream_history_capacity=STREAM_HISTORY_CAPACITY,
-                               cache_scope='DIAGNOSTIC_ONLY', cache_usable=not candidate_errors,
-                               cache_errors=candidate_errors,
-                               current_candidate=self._candidate if not candidate_errors else None,
-                               historical_last_accepted_message=self._last_valid,
-                               observed_at=now, ros_now_ns=ros_now_ns,
-                               publisher_count=self.publisher_count, freshness=freshness,
-                               receive_freshness=receive_freshness,
-                               last_valid_age_sec=age, last_valid_is_historical=True, last_message=last,
-                               latest_errors=list(self.latest_errors),
-                               last_anomaly=self.last_anomaly, last_event=self.last_event,
-                               counters=dict(self.counters)))
+        freshness = self._message_freshness(receive_freshness, last)
+        return _json_safe({
+            'schema_version': 1,
+            'kind': 'velocity_command_diagnostic',
+            'message_type': MESSAGE_TYPE,
+            'control_authority': False,
+            'qualification': 'DIAGNOSTIC_ONLY',
+            'limits': {name: getattr(self.config, name) or None for name in LIMIT_NAMES},
+            'expected_source_id': self.config.expected_source_id or None,
+            'stream_history_size': len(self._watermarks),
+            'stream_history_capacity': STREAM_HISTORY_CAPACITY,
+            'cache_scope': 'DIAGNOSTIC_ONLY',
+            'cache_usable': not candidate_errors,
+            'cache_errors': candidate_errors,
+            'current_candidate': self._candidate if not candidate_errors else None,
+            'historical_last_accepted_message': self._last_valid,
+            'observed_at': now,
+            'ros_now_ns': ros_now_ns,
+            'publisher_count': self.publisher_count,
+            'freshness': freshness,
+            'receive_freshness': receive_freshness,
+            'last_valid_age_sec': age,
+            'last_valid_is_historical': True,
+            'last_message': last,
+            'latest_errors': list(self.latest_errors),
+            'last_anomaly': self.last_anomaly,
+            'last_event': self.last_event,
+            'counters': dict(self.counters),
+        })
 
 
 class DiagnosticWriter:
-    """Atomic snapshot plus a bounded, rate-limited observation log."""
+    """写入完整快照，并限制日志频率、单文件大小与备份数量。"""
     def __init__(self, output_dir='', log_max_bytes=262144, log_backup_count=1,
                  log_min_interval_sec=0.2):
         if not _integer(log_max_bytes, 16 * 1024 * 1024) or log_max_bytes < 1024:
@@ -402,6 +432,7 @@ class DiagnosticWriter:
             self.directory.mkdir(parents=True, exist_ok=True)
 
     def record(self, event, now):
+        """普通事件允许节流；异常先保存在内存，稍后合并写出。"""
         if self.directory is None:
             return False
         if self._pending_anomaly is not None:
@@ -421,6 +452,7 @@ class DiagnosticWriter:
         return self._write(event, now)
 
     def flush(self, now, *, force=False):
+        """写出待处理异常；正常退出用 force 跳过节流，写入成功后才清除。"""
         if self._pending_anomaly is None:
             return False
         if not force and self.last_logged_at is not None and 0 <= now - self.last_logged_at < self.min_interval:
@@ -453,6 +485,7 @@ class DiagnosticWriter:
         return True
 
     def snapshot(self, value):
+        # 先写临时文件再原子替换，避免读者拿到写了一半的 JSON。
         if self.directory is None:
             return
         data = json.dumps(_json_safe(value), ensure_ascii=False, allow_nan=False, indent=2) + '\n'
@@ -467,13 +500,11 @@ class DiagnosticWriter:
 
 
 def finalize_diagnostic(receiver, writer, topic, now, system_now_ns):
-    """Persist final evidence without querying a possibly stopped ROS context.
+    """退出前保存最后异常和停止快照，不再查询可能已经关闭的 ROS 上下文。
 
-    The caller supplies the independent steady/system observations. Keep the
-    last observed ROS time for cache checks: system time is not interchangeable
-    with a simulated or otherwise separate ROS clock. The receiver also keeps
-    its last graph observation. File failures are reported after the remaining
-    output operations have been attempted.
+    now 是本机单调时间，system_now_ns 是退出时系统时间；缓存检查继续使用
+    最后观察到的 ROS 时间，不能把系统时间冒充模拟时钟或另一独立时钟。
+    日志写入失败后仍尝试保存快照，最后再把第一个文件错误交给调用者。
     """
     if not _integer(system_now_ns, 2**64 - 1):
         raise ValueError('shutdown system time must be a nonnegative integer')
@@ -518,6 +549,7 @@ def main(args=None):
             super().__init__('fc01_velocity_command_diagnostic')
 
             def parameter(name, default):
+                # 参数仅在启动时读取；运行期明确拒绝修改，避免显示值与实际值不同。
                 return self.declare_parameter(name, default, descriptor=ParameterDescriptor(
                     read_only=True, description='Startup-only diagnostic configuration; restart to change.')).value
 
@@ -538,6 +570,7 @@ def main(args=None):
             qos = QoSProfile(depth=depth, durability=DurabilityPolicy.VOLATILE,
                              reliability=ReliabilityPolicy.RELIABLE if reliable else ReliabilityPolicy.BEST_EFFORT)
             self.subscription = self.create_subscription(VelocityCommand, self.topic, self.receive, qos)
+            # ROS 接收与定时快照共用同一 Receiver；没有任何飞控 publisher。
             self.timer = self.create_timer(period, self.snapshot)
             self.get_logger().info('Diagnostic only; control_authority=false type=' + MESSAGE_TYPE +
                                    ' topic=' + self.topic + ' zero limits are UNCONFIGURED')
@@ -578,8 +611,7 @@ def main(args=None):
                 finalize_diagnostic(node.receiver, node.writer, node.topic,
                                     time.monotonic(), time.time_ns())
             except Exception as error:
-                # The logger and DDS context may already have shut down.
-                # A storage failure must not replace the original exception.
+                # 此时 ROS logger 可能已经关闭；写盘失败也不能掩盖原运行异常。
                 print('FC01_DIAGNOSTIC_FINALIZE_FAILED ' + repr(error), file=sys.stderr)
             finally:
                 node.destroy_node()

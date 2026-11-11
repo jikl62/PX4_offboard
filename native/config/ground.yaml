@@ -1,10 +1,25 @@
+# 地面检查配置。正式导航服务的自动起飞使用 flight_test.yaml。
+# 下方的范围与速度参数属于通用速度控制路径；1.5 m 自动起飞目标不在此处设置。
 fc01_system:
   ros__parameters:
+    # 使用本机实际时钟；当前节点不接受 use_sim_time=true。
     use_sim_time: false
+
+    # ground 模式拒绝通用 TAKEOFF 请求，配置校验要求 flight_enabled=false。
     profile: ground
     flight_enabled: false
+
+    # 通用速度控制的活动范围，单位：m。原点在该路径接受起飞任务时记录。
+    # 高度表示相对原点向上距离；半径表示距原点的水平距离。
+    # 这两个值是范围上限，不是起飞目标。
     max_height_m: 5.0
     max_radius_m: 3.0
+
+    # 通用速度指令上限，单位：m/s。
+    # 水平限制作用于合速度大小；垂直限制作用于上下速度的绝对值。
+    # max_z_speed 同时用于该路径的起飞爬升速度。
     max_xy_speed: 0.3
     max_z_speed: 0.3
+
+    # 通用偏航角速度指令的绝对值上限，单位：rad/s（0.5 约为 28.6 度/秒）。
     max_yaw_rate: 0.5

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Pure, diagnostic-only validation around the existing Odometry conversion.
+"""视觉实际状态的离线校验：先检查来源和时间，再检查测量，最后提交可信缓存。
 
-No ROS imports, publishers, controller calls, clock estimation, or covariance
-frame transforms live here. An accepted sample is an offline data observation,
-never permission to control an aircraft.
+输入是严格配对的 Odometry 和 VisionHealth，表示飞机“实际在哪里、如何运动”。
+目标速度不经过这里。本模块复用原坐标转换，不创建 ROS 节点或飞控发布者，
+也不估算时钟偏移、变换协方差。accepted 只表示通过本次离线检查，不授予飞行权限。
 """
 from collections import Counter, deque
 from copy import deepcopy
@@ -16,7 +16,7 @@ from typing import Optional
 
 
 def _load_adapter():
-    # Source-tree and installed sibling layouts both keep the actual converter.
+    # 源码目录和安装目录都将转换器放在旁边，始终复用同一份转换实现。
     name = '_fc01_state_validation_odometry_adapter'
     if name not in sys.modules:
         spec = importlib.util.spec_from_file_location(
@@ -54,7 +54,8 @@ def _stamp(value):
 
 @dataclass(frozen=True)
 class ClockPolicy:
-    # local ROS time = source measurement time + offset_ns, if confirmed.
+    """显式时间对应：本机 ROS 时间 = 视觉测量时间 + offset_ns。"""
+    # confirmed=True 之前不应用偏移；已确认同一时钟时也要显式填写 0。
     offset_ns: Optional[int] = None
     confirmed: bool = False
 
@@ -69,6 +70,7 @@ class ClockPolicy:
 
 @dataclass(frozen=True)
 class ValidationConfig:
+    """校验策略。None 表示该条件尚未确认，不能用猜测值填补。"""
     adapter: AdapterConfig
     clock: ClockPolicy = field(default_factory=ClockPolicy)
     receive_timeout_sec: Optional[float] = None
@@ -79,10 +81,10 @@ class ValidationConfig:
     max_position_step_m: Optional[float] = None
     max_velocity_step_mps: Optional[float] = None
     max_attitude_step_rad: Optional[float] = None
-    # Upper bounds are raw Odometry variances, in their declared raw frames.
+    # 原始 Odometry 坐标系中六个方差的上限，不是转换后坐标系的协方差。
     max_pose_variance: Optional[tuple] = None
     max_twist_variance: Optional[tuple] = None
-    # Resource bound, not a flight tuning value. Never evict retired epochs.
+    # 历史容量只限制资源使用；满后拒绝新周期，不淘汰旧周期的防回放证据。
     epoch_history_capacity: int = 128
 
     def __post_init__(self):
@@ -117,7 +119,7 @@ class ValidationConfig:
 
 @dataclass(frozen=True)
 class SampleMetadata:
-    # These are explicit local adapter declarations, not new ROS message fields.
+    """本地明确提供的声明，不增加 ROS 消息字段。"""
     pose_covariance_valid: bool = False
     twist_covariance_valid: bool = False
     relocalization_id: str = ''
@@ -130,10 +132,11 @@ class SampleMetadata:
 
 
 def covariance_diagnostic(values, declared, upper=None):
-    """Check the raw 6x6 matrix; do not assign transformed covariance validity.
+    """检查原始 6×6 协方差：有限值、方差、对称性、半正定性和显式上限。
 
-    The scaled tolerance below handles numerical roundoff in symmetry/PSD. It
-    is a matrix arithmetic tolerance, not a flight uncertainty threshold.
+    半正定表示任意方向的方差都不为负；只检查六个对角线还不够。
+    下面的 tolerance 只容许矩阵计算舍入误差，不是飞机可接受的不确定性。
+    检查通过也不会把输出标记为“已完成协方差坐标变换”。
     """
     if not declared:
         return dict(status='UNKNOWN', reasons=[], variances=None, transformed_valid=False)
@@ -148,28 +151,30 @@ def covariance_diagnostic(values, declared, upper=None):
     if any(x < 0 for x in diagonal):
         reasons.append('COVARIANCE_NEGATIVE_VARIANCE')
     scale = max((abs(x) for x in entries), default=0.)
-    # Normalize each axis by its own standard deviation. A single very large
-    # variance must not hide an indefinite block in other physical units.
+    # 每个元素分别除以两个轴的标准差，得到无量纲相关矩阵。
+    # 这样某一轴的极大方差不能掩盖其他轴中的错误；分两次除法避免乘积溢出。
     residual = [[0.]*6 for _ in range(6)]
     tolerance = 1.e-10
     if not reasons:
-        roots = tuple(math.sqrt(x) for x in diagonal)
+        standard_deviations = tuple(math.sqrt(x) for x in diagonal)
         for i in range(6):
             for j in range(6):
                 value = entries[i*6+j]
-                if roots[i] == 0 or roots[j] == 0:
+                if standard_deviations[i] == 0 or standard_deviations[j] == 0:
                     if value != 0:
                         reasons.append('COVARIANCE_NOT_POSITIVE_SEMIDEFINITE')
                     continue
-                normalized = (value/max(roots[i], roots[j]))/min(roots[i], roots[j])
+                larger_deviation = max(standard_deviations[i], standard_deviations[j])
+                smaller_deviation = min(standard_deviations[i], standard_deviations[j])
+                normalized = (value/larger_deviation)/smaller_deviation
                 if not math.isfinite(normalized) or abs(normalized) > 1.+tolerance:
                     reasons.append('COVARIANCE_NOT_POSITIVE_SEMIDEFINITE')
                 residual[i][j] = normalized
         if any(abs(residual[i][j]-residual[j][i]) > tolerance for i in range(6) for j in range(i)):
             reasons.append('COVARIANCE_NOT_SYMMETRIC')
     if not reasons:
-        # Pivoted semidefinite Cholesky on a copy. A zero pivot may have no
-        # residual cross terms; merely testing the six diagonals is insufficient.
+        # 在副本上做带主元的半正定 Cholesky 检查：逐列消去已解释的相关项。
+        # 剩余方差不能为负；若主元为零，剩余整块也必须接近零。
         for column in range(6):
             pivot = max(range(column, 6), key=lambda i: residual[i][i])
             residual[column], residual[pivot] = residual[pivot], residual[column]
@@ -203,6 +208,7 @@ def covariance_diagnostic(values, declared, upper=None):
 
 @dataclass(frozen=True)
 class ValidationResult:
+    """对外返回副本，调用方修改结果不能污染内部可信基线或缓存。"""
     state: ConvertedState
     accepted: bool
     diagnostics: dict
@@ -210,10 +216,11 @@ class ValidationResult:
 
 
 class Validator:
-    """A bounded receiver for exact Odometry/Health pairs, with recoverable cache.
+    """校验实际状态并维护可恢复的当前缓存，以及独立的可信历史。
 
-    Unknown identity/frame changes remain rejected by the configured converter.
-    Epoch diagnostics never automatically infer a new coordinate transform.
+    epoch 是来源、坐标、reset 和重定位身份组成的测量周期。新周期允许重建
+    连续性基线，但不能绕过来源/坐标配置或使已确认的测量时钟倒退。
+    拒绝、过期只撤销当前缓存，保留可信基线和历史，避免异常样本洗成正常数据。
     """
     def __init__(self, config):
         if not isinstance(config, ValidationConfig):
@@ -224,15 +231,14 @@ class Validator:
         self.last_anomaly = None
         self._events = deque(maxlen=128)
         self._event_id = 0
-        self._epoch = None
-        self._accepted_epoch = None
-        self._trusted_epochs = set()
+        self._epoch = None            # 最近观察的周期，可能来自被拒绝的消息。
+        self._accepted_epoch = None   # 最近真正接受的周期，用于序号和连续性检查。
+        self._trusted_epochs = set()  # 已接受过的所有周期，防止回放退役周期。
         self._sequence = 0
-        # A pose/reset epoch may restart a producer sequence, never the
-        # confirmed measurement clock. Only accepted samples advance this.
+        # 周期切换可以重启序号；测量时间只能由真正接受的样本推进。
         self._source_stamp = 0
         self._last_receive = self._last_ros = None
-        self._baseline = self._cache = None
+        self._baseline = self._cache = None  # 可信连续性基线 / 此刻可用的样本。
         self._last_reasons = ('NO_SAMPLE',)
         self._previously_rejected = False
 
@@ -255,6 +261,7 @@ class Validator:
         return values
 
     def _observe_clocks(self, now, ros_now_ns):
+        # 接收和查询共享时钟水位；一次倒退不能把后续比较基准一起拉回去。
         reasons = []
         if self._last_receive is not None and now < self._last_receive:
             reasons.append('RECEIVE_CLOCK_REGRESSION')
@@ -326,25 +333,9 @@ class Validator:
         self._epoch = epoch
         return epoch
 
-    def receive(self, raw, health, received_at, ros_now_ns, metadata=None):
-        metadata = metadata or SampleMetadata()
-        if not isinstance(metadata, SampleMetadata):
-            raise ValueError('SampleMetadata required')
-        if not _number(received_at) or received_at < 0 or not _integer(ros_now_ns, 2**64-1):
-            raise ValueError('independent receive clocks must be finite and nonnegative')
-        self.counters['received'] += 1
-        reasons = self._observe_clocks(received_at, ros_now_ns)
-        if not reasons:
-            expired, _ = self._cache_age_errors(received_at, ros_now_ns)
-            if expired:
-                # Existing-cache lifetime depends on the observed clocks, not
-                # the new packet's identity. Record a proven gap even when the
-                # incoming epoch will be rejected and clear that cache below.
-                self._cache = None
-                self._previously_rejected = True
-                self._event('expired', expired, observed_at=received_at, observed_on_receive=True)
-        epoch = self._observe_epoch(raw, health, metadata)
-        same_epoch = epoch is not None and epoch == self._accepted_epoch
+    def _epoch_errors(self, epoch, same_epoch):
+        """只检查周期是否允许；真正接受样本后才将其加入可信历史。"""
+        reasons = []
         if epoch is None:
             reasons.append('EPOCH_IDENTITY_INVALID')
         elif not same_epoch:
@@ -352,9 +343,11 @@ class Validator:
                 reasons.append('RETIRED_EPOCH_REPLAY')
             elif len(self._trusted_epochs) >= self.config.epoch_history_capacity:
                 reasons.append('EPOCH_HISTORY_CAPACITY_REACHED')
-        raw_stamp = _stamp(getattr(getattr(raw, 'header', None), 'stamp', None))
-        health_stamp = _stamp(getattr(health, 'stamp', None))
-        seq = getattr(health, 'sequence', None)
+        return reasons
+
+    def _health_and_sequence_errors(self, health, sequence, same_epoch):
+        """检查健康消息字段和本周期序号，不推进任何可信水位。"""
+        reasons = []
         if type(getattr(health, 'schema_version', None)) is not int or health.schema_version != 1:
             reasons.append('HEALTH_VERSION_INVALID')
         if not _integer(getattr(health, 'reset_counter', None), 2**32-1):
@@ -368,13 +361,18 @@ class Validator:
                      'velocity_valid', 'attitude_valid', 'angular_velocity_valid')
             if any(hasattr(health, name) and type(getattr(health, name)) is not bool for name in flags):
                 reasons.append('HEALTH_CONFIRMATION_NOT_BOOL')
-        if not _integer(seq, 2**64-1) or not seq:
+        if not _integer(sequence, 2**64-1) or not sequence:
             reasons.append('SEQUENCE_INVALID')
         elif same_epoch:
-            if seq == self._sequence:
+            if sequence == self._sequence:
                 reasons.append('DUPLICATE_SEQUENCE')
-            elif seq < self._sequence:
+            elif sequence < self._sequence:
                 reasons.append('SEQUENCE_REGRESSION')
+        return reasons
+
+    def _measurement_time(self, raw_stamp, health_stamp, ros_now_ns):
+        """将测量时间映射到本机 ROS 时域，保留配对和年龄检查的原因。"""
+        reasons = []
         if raw_stamp is None or health_stamp is None or raw_stamp != health_stamp:
             reasons.append('INVALID_OR_UNPAIRED_STAMP')
         elif raw_stamp <= self._source_stamp:
@@ -397,8 +395,12 @@ class Validator:
                 reasons.append('SOURCE_SAMPLE_IN_FUTURE')
         elif clock.confirmed:
             reasons.append('SOURCE_CLOCK_UNAVAILABLE')
+        return mapped_stamp, source_age, reasons
 
+    def _check_covariances(self, raw, metadata):
+        """只有调用方显式声明有效时，才检查原始位姿/速度协方差。"""
         covariance = {}
+        reasons = []
         for name, declared, upper in (
             ('pose', metadata.pose_covariance_valid, self.config.max_pose_variance),
             ('twist', metadata.twist_covariance_valid, self.config.max_twist_variance)):
@@ -408,7 +410,11 @@ class Validator:
             reasons.extend(name.upper()+'_'+x for x in value['reasons'])
             if not declared and upper is not None:
                 reasons.append(name.upper()+'_COVARIANCE_UNKNOWN_WITH_LIMIT')
+        return covariance, reasons
 
+    def _convert_measurement(self, raw, health, raw_stamp, health_stamp, mapped_stamp):
+        """复用既有转换器；时间偏移只写入副本，不修改输入消息。"""
+        reasons = []
         converted = ConvertedState(source_id=self.config.adapter.source_id)
         if raw_stamp is not None and health_stamp == raw_stamp:
             try:
@@ -423,24 +429,82 @@ class Validator:
                 converted.reason = type(error).__name__
         if converted.valid_fields & adapter.REQUIRED != adapter.REQUIRED:
             reasons.append(converted.reason)
+        return converted, reasons
+
+    def _tracking_status(self, health, converted):
+        """区分丢失、未分类、正常和降级；质量最低要求由显式策略决定。"""
+        reasons = []
         tracking = 'UNKNOWN'
         if getattr(health, 'tracking', None) is False:
             tracking = 'LOST'
         elif converted.valid_fields & adapter.QUALITY:
             threshold = self.config.nominal_quality_min
-            tracking = ('TRACKING_UNCLASSIFIED' if threshold is None else
-                        ('NORMAL' if converted.quality >= threshold else 'DEGRADED'))
+            if threshold is None:
+                tracking = 'TRACKING_UNCLASSIFIED'
+            elif converted.quality >= threshold:
+                tracking = 'NORMAL'
+            else:
+                tracking = 'DEGRADED'
             if self.config.min_quality is not None and converted.quality < self.config.min_quality:
                 reasons.append('QUALITY_BELOW_EXPLICIT_MINIMUM')
-        if same_epoch and self._baseline is not None and converted.valid_fields & adapter.REQUIRED == adapter.REQUIRED:
-            for name, value, limit in (
-                ('POSITION', math.dist(converted.position, self._baseline.position), self.config.max_position_step_m),
-                ('VELOCITY', math.dist(converted.velocity, self._baseline.velocity), self.config.max_velocity_step_mps),
-                ('ATTITUDE', 2*math.acos(min(1., abs(sum(a*b for a, b in zip(converted.attitude, self._baseline.attitude))))),
-                 self.config.max_attitude_step_rad)):
-                if limit is not None and value > limit:
-                    reasons.append(name+'_CONTINUITY_LIMIT_EXCEEDED')
+        return tracking, reasons
+
+    def _continuity_errors(self, converted, same_epoch):
+        """同一可信周期内比较位置、速度和姿态；新周期重新建立基线。"""
+        if not same_epoch or self._baseline is None:
+            return []
+        if converted.valid_fields & adapter.REQUIRED != adapter.REQUIRED:
+            return []
+        # 四元数 q 和 -q 表示同一姿态，所以点积取绝对值后再计算转角。
+        attitude_dot = sum(a*b for a, b in zip(converted.attitude, self._baseline.attitude))
+        changes = (
+            ('POSITION', math.dist(converted.position, self._baseline.position), self.config.max_position_step_m),
+            ('VELOCITY', math.dist(converted.velocity, self._baseline.velocity), self.config.max_velocity_step_mps),
+            ('ATTITUDE', 2*math.acos(min(1., abs(attitude_dot))), self.config.max_attitude_step_rad),
+        )
+        return [name+'_CONTINUITY_LIMIT_EXCEEDED' for name, distance, limit in changes
+                if limit is not None and distance > limit]
+
+    def receive(self, raw, health, received_at, ros_now_ns, metadata=None):
+        """按顺序校验一对实际状态消息；所有检查结束后才更新可信数据。"""
+        metadata = metadata or SampleMetadata()
+        if not isinstance(metadata, SampleMetadata):
+            raise ValueError('SampleMetadata required')
+        if not _number(received_at) or received_at < 0 or not _integer(ros_now_ns, 2**64-1):
+            raise ValueError('independent receive clocks must be finite and nonnegative')
+        self.counters['received'] += 1
+
+        # 1. 先观察旧缓存的寿命。即使新包身份非法或随后恢复正常，旧超时也不能漏记。
+        reasons = self._observe_clocks(received_at, ros_now_ns)
+        if not reasons:
+            expired, _ = self._cache_age_errors(received_at, ros_now_ns)
+            if expired:
+                self._cache = None
+                self._previously_rejected = True
+                self._event('expired', expired, observed_at=received_at, observed_on_receive=True)
+
+        # 2. 校验来源周期、健康字段、序号及测量时间。这里只观察，不提交可信历史。
+        epoch = self._observe_epoch(raw, health, metadata)
+        same_epoch = epoch is not None and epoch == self._accepted_epoch
+        reasons.extend(self._epoch_errors(epoch, same_epoch))
+        raw_stamp = _stamp(getattr(getattr(raw, 'header', None), 'stamp', None))
+        health_stamp = _stamp(getattr(health, 'stamp', None))
+        sequence = getattr(health, 'sequence', None)
+        reasons.extend(self._health_and_sequence_errors(health, sequence, same_epoch))
+        mapped_stamp, source_age, time_errors = self._measurement_time(raw_stamp, health_stamp, ros_now_ns)
+        reasons.extend(time_errors)
+
+        # 3. 检查测量内容。协方差只检查原始坐标，实际状态通过既有转换器对齐。
+        covariance, covariance_errors = self._check_covariances(raw, metadata)
+        reasons.extend(covariance_errors)
+        converted, conversion_errors = self._convert_measurement(raw, health, raw_stamp, health_stamp, mapped_stamp)
+        reasons.extend(conversion_errors)
+        tracking, tracking_errors = self._tracking_status(health, converted)
+        reasons.extend(tracking_errors)
+        reasons.extend(self._continuity_errors(converted, same_epoch))
         reasons = list(dict.fromkeys(reasons))
+
+        # 4. 拒绝只撤销当前缓存，保留最后可信基线。通过后一次性提交新可信数据。
         if reasons:
             self._cache = None
             self._previously_rejected = True
@@ -454,7 +518,7 @@ class Validator:
         self._previously_rejected = False
         self._accepted_epoch = epoch
         self._trusted_epochs.add(epoch)
-        self._sequence, self._source_stamp = seq, raw_stamp
+        self._sequence, self._source_stamp = sequence, raw_stamp
         self._baseline = deepcopy(converted)
         self._cache = (deepcopy(converted), received_at, tracking, deepcopy(covariance))
         self._last_reasons = ()
@@ -463,6 +527,7 @@ class Validator:
                             source_age_sec=source_age, raw_stamp_ns=raw_stamp, freshness='CURRENT')
 
     def current(self, now, ros_now_ns):
+        """重新检查当前缓存；历史接受过不等于此刻仍然有效。"""
         if not _number(now) or now < 0 or not _integer(ros_now_ns, 2**64-1):
             raise ValueError('independent current clocks must be finite and nonnegative')
         clock_errors = self._observe_clocks(now, ros_now_ns)
