@@ -88,7 +88,47 @@ class DeploymentLog:
         self.path = folder / (stamp + '_' + str(os.getpid()) + '_' + action + '.log')
         self.output = self.path.open('x', buffering=1)
         self.summary = home / 'FC01_navigation/install.log'
-        self.record('BEGIN ' + action + ' entry=' + str(entry))
+        try:
+            self.record('BEGIN ' + action + ' entry=' + str(entry))
+        except BaseException as error:
+            # 构造未完成时，调用者拿不到实例；已经打开的文件仍由本构造路径负责关闭。
+            self._close_after_error(error)
+            raise
+
+    def _close_after_error(self, primary):
+        """写入失败后仍尝试关闭自有文件；原异常优先，关闭错误保留在可见异常链中。
+
+        只释放日志，不停止/重启服务或子进程。关闭本身失败并不等于文件已释放；
+        Python 3.10 没有 ExceptionGroup，故沿原 cause/context 链尾追加次生错误。
+        """
+        try:
+            self.output.close()
+        except BaseException as cleanup:
+            seen = set()
+
+            def tail(error):
+                # 清理抛错时通常自动指回正在处理的首错；先去回边，避免追加后形成异常环。
+                while True:
+                    seen.add(id(error))
+                    following = error.__cause__
+                    if following is None and not error.__suppress_context__:
+                        following = error.__context__
+                    if following is None:
+                        return error
+                    if id(following) in seen:
+                        if error.__cause__ is following:
+                            error.__cause__ = None
+                        if error.__context__ is following:
+                            error.__context__ = None
+                        error.__suppress_context__ = False
+                        return error
+                    error = following
+
+            last = tail(primary)
+            if id(cleanup) not in seen:
+                tail(cleanup)
+                last.__context__ = cleanup
+                last.__suppress_context__ = False
 
     # 追加单行阶段消息，UTC用于人类跨记录对齐，不作为控制单调时间。
     def record(self, message):
@@ -135,13 +175,17 @@ class DeploymentLog:
     # 记录最终结果并关闭本次日志；失败也打印日志路径，便于现场发送原始证据。
     def finish(self, result, error=None):
         # result/error 只组织最终诊断；成功关闭 output 并打印，无返回值。
-        # 日志/摘要写入错误仍会传播；原实现不是逐项容错清理器，不承诺写失败后全部步骤均完成。
+        # 日志/摘要失败仍须关闭本次日志；保留原写入错误，不把清理成功误报为部署成功。
         message = result + ' stage=' + self.stage + ' log=' + str(self.path)
         if error is not None:
             message += ' error=' + str(error)
-        self.record(message)
-        with self.summary.open('a') as summary:
-            summary.write(datetime.now(timezone.utc).isoformat() + ' ' + message + '\n')
+        try:
+            self.record(message)
+            with self.summary.open('a') as summary:
+                summary.write(datetime.now(timezone.utc).isoformat() + ' ' + message + '\n')
+        except BaseException as failure:
+            self._close_after_error(failure)
+            raise
         self.output.close()
         print(message, flush=True)
 
