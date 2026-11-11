@@ -1,3 +1,5 @@
+// RC 独立地面恢复进度回归：不同源频率不必一一配对，仍须各自推进并覆盖完整连续安全窗。
+// status测试0.5/1/2 Hz、land1 Hz、local/RC20 Hz；stamp为固定epoch微秒，time为合成单调秒。
 #include "authority_test_support.hpp"
 #include <cmath>
 #include <iostream>
@@ -27,6 +29,7 @@ static a::Feedback safe_feedback(){
   s.rc_source_selected=s.rc_axes_safe=s.rc_aux_switches_safe=true;
   s.rc_arm_switch=s.rc_kill_switch=3;s.rc_mode_slot=1;return s;
 }
+// 先锁存真实类别位置不一致故障；input按各自采样相位量化源戳，finish要求所有恢复观察完全静默。
 struct Recovery {
   a::Core core; a::Feedback s{safe_feedback()};
   explicit Recovery(a::Config c=recovery_config()):core(c){core.block("VERTICAL_POSITION_RATE_INCONSISTENT");}
@@ -43,6 +46,7 @@ struct Recovery {
     need(!out.publish&&out.command==a::Command::None,"ground recovery must remain completely output silent");
   }
 };
+// 不同status频率和相位均应自然在2至3 s恢复；诊断必须披露每路独立新样本数。
 static void independent_fresh_sources_recover_at_each_supported_rate(){
   for(double hz:{.5,1.,2.})for(double phase:{0.,.05,.45}){
     Recovery f;double recovered=-1;
@@ -58,6 +62,7 @@ static void independent_fresh_sources_recover_at_each_supported_rate(){
       "diagnostics must expose independent source counts and the full elapsed window");
   }
 }
+// 冻结任一路或短检测burst均不能制造dwell，并给出精确缺进度来源。
 static void frozen_sources_and_bursts_cannot_manufacture_dwell(){
   for(unsigned frozen=0;frozen<3;++frozen){
     Recovery f;
@@ -73,6 +78,7 @@ static void frozen_sources_and_bursts_cannot_manufacture_dwell(){
     if(frozen==1)need(d.local_samples==1&&d.block_reason=="RC_RECOVERY_WAIT_LOCAL_PROGRESS","frozen local data needs a precise progress diagnostic");
   }
 }
+// 十类过期/不安全/reset/回退撤销旧窗口；恢复健康后必须完整新窗，不能拿前半窗拼接。
 static void failures_restart_a_complete_ground_window(){
   for(unsigned failure=0;failure<10;++failure){
     Recovery f;
@@ -103,6 +109,7 @@ static void failures_restart_a_complete_ground_window(){
   const auto d=gap.core.rc_recovery_diagnostics();
   need(!d.ready&&d.land_samples==1&&d.elapsed_s==0,"a detector/local gap must seed a new proof rather than join old observations");
 }
+// 逐路只推进status、land、local、RC，核对每个故障后新水位等待原因。
 static void fault_baselines_require_new_evidence_from_every_source(){
   auto c=recovery_config();a::Core core(c);auto s=safe_feedback();
   s.status_stamp=s.land_stamp=s.local_stamp=s.vertical_sample_stamp=s.rc_switch_sample_stamp=stamp(0);
@@ -118,6 +125,7 @@ static void fault_baselines_require_new_evidence_from_every_source(){
     if(source==3)++s.rc_switch_sample_stamp;
   }
 }
+// 同周期坏landed后好尾帧仍不可恢复，必须保持event_blocked并清窗口。
 static void queued_bad_events_cannot_be_erased_by_a_benign_tail(){
   Recovery f;f.input(0,2);f.observe(0);f.input(.05,2);
   f.core.begin_safety_observation();auto bad=f.s;bad.landed=false;
@@ -128,6 +136,7 @@ static void queued_bad_events_cannot_be_erased_by_a_benign_tail(){
     d.block_reason=="RC_RECOVERY_QUEUED_EVENT_RC_RECOVERY_LANDED_AT_REST_REQUIRED",
     "queued unsafe evidence must remain visible and veto this cycle even behind healthy data");
 }
+// 仅Vz与位置导数速度差诊断，且Vz仍在地面速度包络内时，不应反复清安全地面窗。
 static void healthy_rate_diagnostics_do_not_block_ground_recovery(){
   auto c=recovery_config();c.feedback_guard.rate_tolerance_mps=.05;Recovery f(c);f.s.vz=.09;
   for(unsigned tick=0;tick<=50;++tick){
@@ -137,6 +146,7 @@ static void healthy_rate_diagnostics_do_not_block_ground_recovery(){
   }
   need(f.core.rc_restart_allowed(f.s),"healthy queued observations and velocity-only warnings must not reset recovery");
 }
+// 第一根因与最新故障分开；执行完整性/未知故障继续要求重启，不可由正常地面帧抹掉。
 static void fault_history_and_integrity_rules_remain_distinct(){
   Recovery f;f.core.block("BATTERY_NOT_READY");
   auto d=f.core.rc_recovery_diagnostics();

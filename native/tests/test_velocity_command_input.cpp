@@ -1,3 +1,6 @@
+// 视觉目标速度只读预览回归：自身状态与机体目标各自独立合同，预览始终没有真实控制权限。
+// 状态NED，目标body_frd前/右/下m/s；使用完整FRD→NED四元数旋转，不用仅yaw近似代替。
+// ROS源戳ns、接收寿命单调s同时有效；state/command reset分别表示估计器和制导重置，不能混淆。
 #include "jikl_fc01_system/velocity_command_input.hpp"
 #include <iostream>
 #include <limits>
@@ -34,6 +37,7 @@ static vi::Preview preview(vi::Session& session,double now=10,std::uint64_t ros_
   const auto out=session.preview(vi::Mode::VelocityPreview,now,ros_now,yaw);
   need(!out.control_authority,"offline preview must never carry aircraft authority");return out;
 }
+// 检查wire字段/纳秒边界与显式策略；未配置速度和时限不得输出默认可用预览，缺首帧仅等待。
 static void wire_contract_and_unconfigured_policy(){
   struct Stamp {std::int32_t sec{100};std::uint32_t nanosec{};};
   struct Wire {
@@ -59,6 +63,7 @@ static void wire_contract_and_unconfigured_policy(){
   vi::Session oversized(policy());auto huge=state();huge.source_id=std::string(257,'s');
   need(!oversized.state(huge,10,epoch),"oversize source identity is not cached");
 }
+// 误差=目标减实际；不同reset合法保留，Disabled无可用姿态且不清离线缓存，消息无yaw则保持可信参考。
 static void actual_target_separation_and_modes(){
   vi::Session session(policy());auto measured=state();measured.velocity={.1,-.05,.02};
   feed(session,measured);auto out=preview(session);
@@ -74,6 +79,7 @@ static void actual_target_separation_and_modes(){
   out=preview(session,10,epoch,pi/2);
   need(near(v::detail::yaw(out.attitude_preview),pi/2)&&near(out.yaw_reference,pi/2),"message has no yaw: trusted reference is preserved");
 }
+// 分别用yaw/pitch/roll验证完整三维旋转，再检查XY向量速度、垂向、加速度和倾角上限与零速度制动。
 static void full_three_dimensional_body_rotation_and_limits(){
   const double half=std::sqrt(.5);
   for(const auto& q:{fc01::attitude::Quaternion{half,0,0,half},fc01::attitude::Quaternion{half,0,half,0},
@@ -109,6 +115,7 @@ static void full_three_dimensional_body_rotation_and_limits(){
   measured.sequence=4;measured.stamp_ns+=50000000;measured.attitude={0,1,0,0};
   need(!changing.state(measured,10.15,epoch+150000000)&&!preview(changing,10.15,epoch+150000000).valid,"unannounced orientation jump invalidates preview");
 }
+// 十二类错误目标锁存首因，正常尾帧不能掩盖；只有显式新离线attempt清全部旧缓存。
 static void bad_command_never_recovers_through_good_tail(){
   for(int fault=0;fault<12;++fault){
     vi::Session session(policy());feed(session);need(preview(session).valid,"fault fixture starts valid");
@@ -134,6 +141,7 @@ static void bad_command_never_recovers_through_good_tail(){
     feed(session);need(preview(session).valid,"new explicit offline attempt can recover");
   }
 }
+// 有限输入也可能在相减/乘增益/范数溢出；不可由限幅洗成可用零制动，拒绝预览字段维持NaN。
 static void intermediate_overflow_is_not_hidden_by_limits(){
   auto wanted=target();wanted.body_velocity={0,0,0};
   for(const auto& velocity:{vi::Vec3{1.2e308,1.2e308,0},
@@ -177,6 +185,7 @@ static void intermediate_overflow_is_not_hidden_by_limits(){
          "ordinary limiting preserves acceleration direction");
   }
 }
+// 跟踪/质量/无效/帧/来源/reset/跳变/协方差与来源数量瞬变都保持异常，正常图尾帧不能清锁。
 static void bad_states_and_graph_events_are_sticky(){
   for(int fault=0;fault<12;++fault){
     vi::Session session(policy());feed(session);auto bad=state();bad.sequence=2;bad.stamp_ns+=50000000;
@@ -201,6 +210,7 @@ static void bad_states_and_graph_events_are_sticky(){
     session.observe_publishers(1,1);need(!preview(session).valid,"temporary missing/conflicting source survives healthy graph tail");
   }
 }
+// 相同姿态和整体变号真转角应为零；1e-10 rad门两侧真实小转角仍分别判断，不能用固定容差放水。
 static void attitude_step_remains_accurate_for_small_rotations() {
   auto precise_policy = policy();
   precise_policy.max_attitude_step_rad = 1e-10;
@@ -247,6 +257,7 @@ static void attitude_step_remains_accurate_for_small_rotations() {
     }
   }
 }
+// 同帧重放不续TTL、同序号改payload锁故障；ROS/steady倒退、源与姿态偏时、过期后新帧都要显式新attempt。
 static void clocks_sequences_and_duplicate_leases(){
   for(bool measured:{false,true}){
     vi::Session session(policy());feed(session);

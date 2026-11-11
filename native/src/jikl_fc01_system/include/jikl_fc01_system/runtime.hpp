@@ -1,4 +1,6 @@
 #pragma once
+// 任务与命令事务中间层：按profile连接地面测试、通用速度Core或姿态高度Core，并追踪ACK及独立PX4状态。
+// ROS适配器负责真实收发与最终sink，Runtime不持有ROS节点。planned、sink committed、ACK和物理状态是四种不同事实。
 #include "jikl_fc01_system/source_clock.hpp"
 #include "jikl_fc01_system/ground_link.hpp"
 #include "jikl_fc01_system/velocity_core.hpp"
@@ -14,28 +16,35 @@
 namespace fc01 {
 namespace v = jikl_velocity;
 namespace g = jikl_fc01_ground_link;
+// 每个数据源的严格递增源µs时间与主机接收单调秒分开记录；一次源回退锁存，不能被后续正常信封洗掉。
 struct Stamp {
   std::uint64_t value{};
   double received{-1};
   bool regressed{};
+  // 只接受非零且严格新的源stamp；更新received只在接受成功时发生，重复旧帧不能续新鲜度。
   bool accept(std::uint64_t next, double now) {
     if(next && value && next < value) regressed=true;
     if(!next || next<=value || regressed) return false;
     value=next;received=now;return true;
   }
+  // 检查接收年龄及主机时间不回退；原始采样年龄由节点另查，不能单靠此方法证明测量新鲜。
   bool fresh(double now,double limit) const {
     return !regressed&&received>=0&&now>=received&&now-received<limit;
   }
 };
+// 统一profile及启动身份；flight_enabled只用于通用路线，姿态高度采用独立动作门。
 struct Config {
   std::string profile{"ground"};
   // Provenance metadata from the selected candidate profile. These fields
   // describe the launch; they never grant flight authority by themselves.
+  // 部署来源元数据只用于报告真实加载路径，不授予解锁/导航权。
   std::string runtime_mode{},entry_version{"unknown"},config_path{},config_source_path{};
   bool flight_enabled{};
   attitude::Config attitude;
+  // 通用路线的受限默认配置；生产1.5m目标来自attitude.rc_target_height，不从这个height推导。
   v::Config control=[](){v::Config c;c.height=1;c.max_height=5;c.max_radius=3;
     c.xy_speed=.3;c.z_speed=.3;c.climb_speed=.3;return c;}();
+  // diagnostic必须关闭所有动作/确认门；RC只能走attitude_altitude，通用flight门不能跨路线偷开。
   void validate() const {
     if(!runtime_mode.empty()&&runtime_mode!="diagnostic"&&runtime_mode!="flight-test")
       throw std::invalid_argument("FC01_RUNTIME_MODE_INVALID");
@@ -59,6 +68,7 @@ struct Config {
       throw std::invalid_argument("command timeout/lease timeout must be 0.5/3 seconds");
   }
 };
+// 节点同轮整合的实际反馈及来源/电池/控制循环事实；Runtime只读这一快照，不在运算中插入回调。
 struct Snapshot {
   v::Feedback feedback{};
   attitude::Feedback attitude;
@@ -67,9 +77,11 @@ struct Snapshot {
   bool status_fresh{},land_fresh{},local_fresh{},at_rest{};
   // Pure-core fixtures historically supply an explicit armed/disarmed bool.
   // The real adapter MUST set this from the fixed raw arming-state enum.
+  // 纯Core旧fixture默认值仅为兼容；实机必须由PX4固定枚举确认，未知arming state不能当未解锁。
   bool arming_state_known{true};
   // PX4 VehicleStatus armed_time uses its own boot-relative clock; compare it
   // ONLY to a previous armed_time from the same PX4 source, never to ROS stamp.
+  // PX4启动相对µs时钟，只与同一PX4的旧armed_time比较，禁止与ROS stamp或steady秒跨域比较。
   std::uint64_t armed_time{};
   std::uint8_t latest_arming_reason{};
   bool battery_fresh{},battery_connected{},power_valid{},manual_fresh{},manual_lost{};
@@ -77,22 +89,30 @@ struct Snapshot {
   bool stabilized_selectable{true};
   int battery_warning{},nav_state{4},system{1},component{1};
   double stationary_seconds{};
+  // 分别表示最近输出/心跳是否仍活及完整性故障；地面恢复必须证明输出停止，不只看Core阶段。
   bool attitude_output_active{},offboard_heartbeat_active{},publication_fault_latched{};
   // Adapter supplies the completed current-cycle deadline check. Recovery
   // observations cannot accrue through repeated overruns, even without sinks.
+  // 节点在整个周期结束后更新的时限事实；恢复窗口不能跨越重复超时周期累积。
   bool control_cycle_fresh{true};
 };
+// 控制台请求的接受/拒绝及原因；accepted只说明请求准入，不等于PX4已执行动作。
 struct Reply {bool accepted{};std::string message;};
+// 三路线的拟发布结果；ROS节点仍须逐sink校验当前上下文并回报提交事实。
 struct Output {v::Output flight{};attitude::Output attitude;bool send_ground{};};
+// MAV_CMD 400的本地意图：None无事务，Arm解锁，Disarm上锁；ACK编号本身不包含该意图。
 enum class Command400Kind {None,Arm,Disarm};
+// 审计阶段区分计划、提交、ACK、独立状态、歧义/未知结果与终态；枚举名不是新的PX4协议。
 enum class CommandStage {None,Planned,CommittedAwaitAck,AckAcceptedAwaitState,Rejected,TimedOut,FinalSinkRejected,StateVerifiedAwaitAck,VerifiedTerminal,
   AckInProgress,Ambiguous400Ack,StateOnlyTerminal,UnknownAckResult,
   StateAckContradictory,StateAckObservedUnresolved,AckCandidateAwaitState};
+// 保持Arm/Disarm审计字符串稳定，不能用日志名称当作wire关联nonce。
 inline const char* command400_name(Command400Kind kind){switch(kind){
   case Command400Kind::None:return "NONE";
   case Command400Kind::Arm:return "ARM";
   case Command400Kind::Disarm:return "DISARM";
 }return "UNKNOWN";}
+// 把本地事务阶段映射到诊断文本；状态确认和ACK确认在文本中明确区分。
 inline const char* command_stage_name(CommandStage stage){switch(stage){
   case CommandStage::None:return "NONE";
   case CommandStage::Planned:return "PLANNED";
@@ -112,17 +132,22 @@ inline const char* command_stage_name(CommandStage stage){switch(stage){
   case CommandStage::AckCandidateAwaitState:return "ACK_CANDIDATE_AWAIT_NEW_OFFBOARD_STATE";
 }return "UNKNOWN";}
 // Exact PX4 v1.16/MAV_RESULT names. FAILED(4) is not DENIED(2).
+// 按PX4/MAV_RESULT原枚举显示：FAILED=4与DENIED=2不同，未观测=-1不等于拒绝。
 inline const char* ack_result_name(int result){switch(result){
   case -1:return "NOT_OBSERVED";case 0:return "ACCEPTED";
   case 1:return "TEMPORARILY_REJECTED";case 2:return "DENIED";
   case 3:return "UNSUPPORTED";case 4:return "FAILED";
   case 5:return "IN_PROGRESS";case 6:return "CANCELLED";
 }return "UNKNOWN_RESULT";}
+// 一条176/400/21事务的当前证据；源时间µs与接收/提交steady秒分开保存。
 struct Pending {
   // sent: ACK-eligible wire publish (or synthetic runtime-only tests).
   // requested: core asked for command; published: final node sink succeeded.
+  // requested是Core意图；published是最终sink成功；sent才允许处理ACK，sink_denied保留本地拒绝。
   bool sent{},accepted{},rejected{},timed_out{},requested{},published{},sink_denied{};
+  // result=-1尚未ACK；sent_at是主机单调秒，baseline/last_ack是源µs水位。
   int result{-1};double sent_at{};std::uint64_t baseline{},last_ack{};
+  // 实际命令源域时间、提交时status/land及PX4 armed_time快照用于因果核对，不能只依赖ACK到达顺序。
   std::uint64_t wire_stamp{},status_at_wire{},land_at_wire{},armed_time_at_wire{};
   double rejected_at{-1},ack_received_at{-1};
   Command400Kind command400_kind{Command400Kind::None};
@@ -133,27 +158,36 @@ struct Pending {
   // generation is a LOCAL audit ordinal, never a wire nonce. Once 400 has
   // been reused, *all* its ACK results are observations, not attributed ACKs,
   // even if an earlier ACK + state was seen (duplicates can still arrive).
+  // generation是本进程审计序号而非wire nonce；400复用后所有ACK结果都不可归属到特定Arm/Disarm。
   unsigned generation{},ack_observations{};
   bool ack_ambiguous{},previous400_unresolved{};
+  // 记录适配器是否采用已检查同步域，不因提交后遥测过期就遗忘已经发出的命令时间下界。
   bool source_clock_validated{};
   std::uint64_t causal_floor{};
   unsigned unattributed_clock_acks{};
   // Only the first, actually committed normal-flight Offboard entry may use
   // a skewed 176 ACK candidate. It never directly authorizes Core or Arm.
+  // 仅首个正常Offboard事务可使用时钟偏斜ACK候选，还要独立新模式证明；候选不直接授权Arm。
   bool ack_candidate{},ack_confirmed_by_state{},exclusive_at_wire{};
   const char* ack_disposition{"NOT_OBSERVED"};
 };
+// 同一控制线程拥有所有Core与事务状态；跨任务重建只清任务，不清进程级ACK歧义与提交代数。
 class Runtime {
  public:
+  // 先构造各纯计算Core再执行统一配置验证；不启动飞控或发布任何消息。
   explicit Runtime(Config c={}):config_(std::move(c)),core_(config_.control),attitude_core_(config_.attitude){config_.validate();}
   v::Phase phase() const{return core_.phase();}
+  // 按所选profile回答是否仍有托管任务；恢复降落也算active，不能提前关闭控制生命周期。
   bool active() const{return config_.profile=="attitude_altitude"?attitude_core_.active():core_.active()||recover_land_;}
   bool shutting_down() const{return shutdown_latched_;}
+  // 停止请求锁存一次并沿原LAND入口处理，不允许关闭后开启新任务。
   void begin_shutdown(const Snapshot& s,double now){
     if(shutdown_latched_)return;
     shutdown_latched_=true;request("LAND",{},s,now);
   }
+  // 最终发布或适配器拒绝转交Core故障锁存，保持具体原因。
   void abort_attitude(const std::string& reason){attitude_core_.block(reason);message_=reason;}
+  // 仅枚举过的deadline拒绝、无命令且未解锁地面准备可走窄恢复；非零/未知部分发布仍是完整性故障。
   bool abort_rc_preparation_timing(const std::string& reason,const Snapshot& s){
     // The adapter calls this ONLY for a typed deadline refusal (no throwing
     // sink), an exact-zero plan and no command. Unknown/nonzero partial pairs
@@ -171,16 +205,21 @@ class Runtime {
     last_attitude_output_active_=false;message_=reason;
     return true;
   }
+  // 每轮扫离散安全队列前初始化本轮观察；后续任意不安全payload均保留否决。
   void begin_attitude_safety_observation(){queued_safety_wait_=false;attitude_core_.begin_safety_observation();}
+  // 逐事件检查而非只看最新连续缓存；queued_safety_wait_用逻辑或保留整轮拒绝。
   void observe_attitude_safety_event(const attitude::Feedback& feedback,
       attitude::Core::SafetyEvent source,double now){
     if(config_.profile!="attitude_altitude")return;
     queued_safety_wait_=attitude_core_.observe_safety_event(feedback,source,now)||queued_safety_wait_;message_=attitude_core_.reason();
   }
+  // 实际sink前重核视觉状态/命令寿命，目标不能仅凭计算时有效就获得发布。
   bool visual_output_current(const Snapshot& s,double now)const{return attitude_core_.visual_current(attitude_snapshot(s),now);}
+  // 视觉输入过期后进入原下降控制并更新原因，不直接发零推力或丢掉仍armed的托管。
   void request_visual_land(const Snapshot& s,double now,const std::string& reason){
     attitude_core_.visual_land(attitude_snapshot(s),now,reason);message_=attitude_core_.reason();
   }
+  // 以下只读API供节点诊断/发布上下文使用；读取不推进任务、ACK或地面计数。
   const attitude::Core& attitude_core() const{return attitude_core_;}
   const char* phase_name() const{return config_.profile=="attitude_altitude"?attitude::name(attitude_core_.phase()):v::name(core_.phase());}
   g::State ground_state() const{return ground_?ground_->state():g::State::Waiting;}
@@ -192,10 +231,13 @@ class Runtime {
   std::uint64_t rc_attempts_completed()const{return rc_attempts_completed_;}
   // Enable in the production ROS adapter. Pure-core fixtures intentionally
   // retain their historical implicit publication model.
+  // 生产节点启用真实sink模式；旧纯Core测试的隐式提交模型只留在未显式要求的fixture里。
   void require_attitude_sink_commit(){if(config_.profile=="attitude_altitude")
     attitude_sink_commit_required_=true;}
+  // 只有节点报告真实配对结果才计零流提交，不用out.publish计划值代替。
   void confirm_rc_output(bool allowed,double now){attitude_core_.note_rc_publication(allowed,now);}
   bool rc_restart_allowed(const Snapshot& s)const{return attitude_core_.rc_restart_allowed(attitude_snapshot(s));}
+  // 未发生任何旧事务、输出或故障的未解锁RC准备才可延期；原wire水位一个也不清。
   bool defer_rc_preparation(const Snapshot& s,double now,const std::string& reason){
     if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled||
        shutdown_latched_||maintenance_||ground_||s.publication_fault_latched||s.time_regressed||
@@ -209,6 +251,7 @@ class Runtime {
   }
   // Read-only admission uses exactly the same gates as reprepare_rc(). This
   // distinguishes task recovery from transport/command integrity blockers.
+  // 只读准入与实际reprepare共用同一门槛，按停止/维护/时间/输出/核心/事务给出具体阻塞原因。
   std::string rc_reprepare_block_reason(const Snapshot& s,double now)const{
     if(config_.profile!="attitude_altitude"||!config_.attitude.rc_navigation_enabled)return "RC_RECOVERY_DISABLED";
     if(shutdown_latched_)return "RC_SHUTDOWN_IN_PROGRESS";
@@ -225,6 +268,7 @@ class Runtime {
       const auto& p=pending_[index(command)];
       if(!p.requested)continue;
       const bool newer_status=s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor});
+      // 事务可由已验证物理状态或无歧义拒绝等结束；未决400不能因开关复位被忽略。
       const bool terminal=p.state_verified||(!p.ack_ambiguous&&p.rejected)||
         (p.command400_kind==Command400Kind::None&&p.accepted&&newer_status);
       if(!terminal&&!ended_rc_disarm_terminal(p,s))
@@ -232,6 +276,7 @@ class Runtime {
     }
     return {};
   }
+  // 只重建已结束任务的姿态Core；全局提交次数、ACK水位和历史记录继续存活，防迟到ACK污染新任务。
   bool reprepare_rc(const Snapshot& s,double now){
     // The end-of-cycle check includes reporting and final snapshot work.
     // An early healthy observation must not survive an eventual overrun.
@@ -240,6 +285,7 @@ class Runtime {
     if(!rc_reprepare_block_reason(s,now).empty())return false;
     // Rebuild only task state. Wire generations and ACK watermarks outlive
     // every RC attempt, including accepted/state-only Disarm transactions.
+    // 已结束任务的新上锁地面停留可证明Disarm物理结果，但不把迟到400 ACK认领为本次成功。
     for(auto& p:pending_)if(p.requested&&!p.state_verified&&ended_rc_disarm_terminal(p,s)){
       // The ended task's independent NEW ground/disarmed dwell settles the
       // physical outcome, without attributing a delayed 400 ACK to Disarm.
@@ -254,6 +300,7 @@ class Runtime {
     message_="RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET";
     return true;
   }
+  // 节点最终动作sink回报；wire_stamp与actual取自真实提交附近，重复完成不能再提交或增加代数。
   void confirm_attitude_command_publication(attitude::Command command,bool allowed,
       std::uint64_t wire_stamp,const Snapshot& actual,double now){
     if(command==attitude::Command::None)return;
@@ -262,6 +309,7 @@ class Runtime {
     auto& p=pending_[index(cmd)];
     if(!p.requested)return;
     if(p.published)return; // Duplicate local completion cannot commit twice.
+    // 同编号400仍要校验当前意图，不能把旧Arm追踪器当成新Disarm提交。
     if(cmd==400&&p.command400_kind!=
       (command==attitude::Command::Arm?Command400Kind::Arm:Command400Kind::Disarm)){
       // Same Command 400 number does not identify its param1. Never commit
@@ -276,6 +324,7 @@ class Runtime {
     attitude_core_.note_command_publication(command,allowed,
       source_clock?std::max(actual.land_stamp,causal_floor):actual.land_stamp,
       source_clock?std::max(actual.status_stamp,causal_floor):actual.status_stamp);
+    // 成功提交后才记录wire/因果下界及物理前状态，并分配本进程generation。
     if(allowed){p.published=true;p.sent=true;p.sent_at=now;p.wire_stamp=wire_stamp;
       p.source_clock_validated=source_clock;
       p.causal_floor=causal_floor;
@@ -289,6 +338,8 @@ class Runtime {
     else {p.published=false;p.sent=false;p.sink_denied=true;p.rejected=true;p.rejected_at=now;
       p.result=-1;p.stage=CommandStage::FinalSinkRejected;}
   }
+  // 按当前快照重建最终发布合同，包含参考/reset、权限、RC证据、事务和输出类别。
+  // 调用者必须在每个sink前重新采样，不能复用Core计算时的一份上下文。
   attitude::BoundaryContext publication_context(const Snapshot& s,double now,bool connected,bool control_fresh,bool shutdown=false) const{
     attitude::BoundaryContext c;c.profile=config_.profile;c.phase=attitude_core_.phase();
     c.config=config_.attitude;c.feedback=attitude_snapshot(s);c.shutdown=shutdown||shutdown_latched_;
@@ -323,6 +374,7 @@ class Runtime {
     c.px4_land_command_committed=attitude_core_.px4_land_command_committed();
     // Boundary replay protection follows the ACTUAL sink audit, not the
     // historical implicit-publication model used by old pure-Core fixtures.
+    // 边界重放保护只认真实pending.published，不采用旧fixture的隐式发送状态。
     c.disarm_command_committed=pending_[index(400)].command400_kind==Command400Kind::Disarm&&
       pending_[index(400)].published;
     c.touchdown_baseline=attitude_core_.touchdown_baseline();
@@ -331,6 +383,7 @@ class Runtime {
     c.visual_target_q=attitude_core_.visual_result().q;
     c.shutdown=c.shutdown||s.publication_fault_latched;return c;
   }
+  // 诊断序列化只展示权限与地面证据；无效数写null，不能把默认0当真实测量。
   std::string authority_json(const Snapshot& s) const{
     const auto& state=attitude_core_.authority_state();const auto a=attitude_snapshot(s);
     const auto in=attitude::authority_inputs(config_.attitude,a);
@@ -386,14 +439,17 @@ class Runtime {
       ",\"last_authority_ground_land_stamp\":"+std::to_string(ground.land_stamp)+
       ",\"last_authority_ground_local_stamp\":"+std::to_string(ground.local_stamp);
   }
+  // 地面模式测试未创建时显示NOT_RUN，不伪造测试通过。
   std::string ground_name() const{return ground_?g::name(ground_->state()):"NOT_RUN";}
   std::string ground_reason() const{return ground_?ground_->reason():"NOT_RUN";}
+  // IPC命令统一入口：先有限值与参数个数，再按profile/RC/关闭/维护权限分派，空参也必须匹配合同。
   Reply request(const std::string& op,const std::vector<double>& a,const Snapshot& s,double now){
     for(double n:a)if(!std::isfinite(n))return refuse("NONFINITE_ARGUMENT");
     const std::size_t arity=op=="TAKEOFF"?1:op=="VEL"?4:0;
     if(a.size()!=arity)return refuse("ARGUMENT_COUNT");
     if(op=="STATUS")return {true,"STATUS"};
     if(op=="AUTHORITY_STATUS")return config_.profile=="attitude_altitude"?Reply{true,"AUTHORITY_STATUS"}:refuse("AUTHORITY_REQUIRES_ATTITUDE_PROFILE");
+    // 生产人工RC路线控制台只读，唯一动作请求为LAND/STOP；不能通过命令行自动Arm或TAKEOFF。
     if(config_.attitude.rc_navigation_enabled&&op!="LAND"&&op!="STOP")
       return refuse("RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES");
     if(shutdown_latched_&&op!="PING"&&op!="LAND"&&op!="STOP"&&op!="UPDATE_CHECK")
@@ -406,6 +462,7 @@ class Runtime {
       if(op=="PING"){attitude_core_.ping(now);return {true,"ALIVE"};}
       if(op=="INTERACTIVE"){attitude_core_.live_console(now);return {true,"LIVE_CONSOLE_SESSION"};}
       const bool outputs_active=last_attitude_output_active_||s.attitude_output_active||s.offboard_heartbeat_active;
+      // 独立状态终止不消除ACK歧义；当前安全地面/无输出仍由Core重新证明。
       const auto outstanding=[](const Pending& p){
         // A state-only safe Disarm terminal ends physical recovery, not ACK
         // ambiguity. Core's reset admission independently rechecks CURRENT
@@ -429,6 +486,7 @@ class Runtime {
         if(command400_commits_>0)return refuse("COMMAND_400_REUSE_REQUIRES_SAFE_GROUND_RESTART");
         why=attitude_core_.arm_only(feedback,now);
       }
+      // 程序起飞禁止复用本进程400，避免永远不可归属的新Arm ACK；人工RC不调用此分支。
       else if(op=="TAKEOFF"){
         // A new mission must not commit an Arm whose ACK can never be
         // attributed. Ordinary ground reset cannot erase protocol history.
@@ -450,6 +508,7 @@ class Runtime {
       if(now>=velocity_until_)core_.receive({},now);
       return {true,"ALIVE"};
     }
+    // 维护授权要求无活动任务、唯一新鲜反馈、未解锁着地静止且非Offboard；检查成功才锁maintenance。
     if(op=="UPDATE_CHECK"){
       if(active()||(ground_&&!ground_->finished()))return refuse("TASK_ACTIVE");
       if(!s.status_fresh||!s.land_fresh||s.time_regressed)return refuse("GROUND_TELEMETRY_REQUIRED");
@@ -464,6 +523,7 @@ class Runtime {
       return permit.accepted?Reply{true,"STOP_ALLOWED"}:permit;
     }
     if(maintenance_&&op!="LAND")return refuse("MAINTENANCE_RESTART_REQUIRED");
+    // 地面模式握手与飞行互斥，必须当前未解锁地面；只创建测试Core，不直接改变飞控。
     if(op=="MODE"){
       if(active()||(ground_&&!ground_->finished()))return refuse("TASK_ACTIVE");
       if(s.time_regressed)return refuse("TIME_REGRESSION_RESTART_ON_GROUND");
@@ -473,6 +533,7 @@ class Runtime {
       ground_=std::make_unique<g::Core>();ground_origin_=now;
       return {true,"MODE_PENDING_ACK_AND_NEW_STATUS"};
     }
+    // 通用路线请求降落先清旧速度；当前armed但无活动Core时也保留恢复托管与真实模式观察。
     if(op=="LAND"){
       if(ground_&&!ground_->finished())return refuse("GROUND_MODE_TEST_ACTIVE");
       if(!s.status_fresh||s.time_regressed||!s.feedback.exclusive)
@@ -486,6 +547,7 @@ class Runtime {
       if(!core_.accepts_motion())return refuse("HOLD_REQUIRES_ACTIVE_FLIGHT");
       last_ping_=now;velocity_until_=now;core_.receive({},now);return {true,"BRAKE_THEN_HOLD"};
     }
+    // 仅已稳定起飞的通用路线允许四轴目标；当前反馈与命令包络同时检查，目标租约仅0.5秒。
     if(op=="VEL"){
       if(!core_.accepts_motion())return refuse("VELOCITY_REQUIRES_SETTLED_TAKEOFF");
       if(!s.feedback.fresh||!s.feedback.valid||!s.feedback.heading_ok||!s.feedback.exclusive)
@@ -496,6 +558,7 @@ class Runtime {
       const bool ok=core_.receive({a[0],a[1],a[2],a[3]},now);
       return ok?Reply{true,"VELOCITY_ACCEPTED_0.5S"}:refuse("VELOCITY_REJECTED");
     }
+    // 通用/仿真路线另有XY、VXY、航向与辅助定位门，不与姿态高度生产路线混用。
     if(op=="TAKEOFF"){
       if(!config_.flight_enabled||config_.profile=="ground")return refuse("FLIGHT_DISABLED");
       if(active()||(ground_&&!ground_->finished()))return refuse("TASK_ACTIVE");
@@ -515,6 +578,7 @@ class Runtime {
     }
     return refuse("UNKNOWN_COMMAND");
   }
+  // ACK接收：核对目标系统/组件、真实提交、源时钟与事务水位，再按结果分类；from_external不是关联键。
   void ack(const g::Ack& a,double now){
     if(ground_&&!ground_->finished())ground_->ack(a,now-ground_origin_);
     if(a.command!=176&&a.command!=400&&a.command!=21)return;
@@ -529,6 +593,7 @@ class Runtime {
       disposition("NO_COMMITTED_COMMAND");return;}
     const bool skew_candidate=a.command==176&&normal_offboard_candidate_scope(p)&&
       a.timestamp<=p.wire_stamp;
+    // 已同步域里同时核对因果下界和本地接收年龄上界；偏斜仅允许首个正常176的窄候选策略。
     if(p.source_clock_validated){
       if(!std::isfinite(now)||now<p.sent_at){disposition("INVALID_LOCAL_RECEIPT_TIME");return;}
       const double receipt_upper=double(p.wire_stamp)+(now-p.sent_at)*1e6+double(source_clock_skew_budget_us);
@@ -550,6 +615,7 @@ class Runtime {
           "BELOW_ACK_CLOCK_FLOOR":"ABOVE_ACK_RECEIPT_BUDGET");return;
       }
     }
+    // 复用400的所有结果只记观察，不会授权完成、拒绝重试或新任务；物理结果由独立新状态证明。
     if(a.command==400&&config_.profile=="attitude_altitude"&&p.ack_ambiguous){
       if(!std::isfinite(now)||now<p.sent_at||a.timestamp<=p.baseline||
          a.timestamp<=p.last_ack||a.timestamp<=p.status_at_wire)return;
@@ -562,6 +628,7 @@ class Runtime {
       p.stage=p.state_verified?CommandStage::StateOnlyTerminal:CommandStage::Ambiguous400Ack;
       return;
     }
+    // 已终结/过期事务不能被迟到ACK复活；重复或更旧源stamp也拒绝。
     if(p.accepted||p.rejected||p.timed_out){disposition("TRANSACTION_ALREADY_TERMINAL");return;}
     if(now<p.sent_at){disposition("INVALID_LOCAL_RECEIPT_TIME");return;}
     if(a.timestamp<=p.baseline){disposition("AT_OR_BELOW_TRANSACTION_BASELINE");return;}
@@ -571,6 +638,7 @@ class Runtime {
       p.stage=CommandStage::TimedOut;disposition("ACK_RECEIVED_AFTER_TIMEOUT");return;}
     p.last_ack=a.timestamp;p.ack_stamp=a.timestamp;p.ack_received_at=now;p.result=a.result;++p.ack_observations;
     p.ack_candidate=false;disposition("ACK_OBSERVED");
+    // ACCEPTED与IN_PROGRESS分别处理，1/2/3/4/6是明确拒绝类；未知400结果保留不确定，不猜测拒绝。
     switch(a.result){
       case 0:
         if(skew_candidate){p.ack_candidate=true;p.stage=CommandStage::AckCandidateAwaitState;
@@ -593,12 +661,14 @@ class Runtime {
         break;
     }
   }
+  // 断开控制台即撤销旧目标与租约，已有任务沿原降落路线；不能因UI退出就遗弃恢复。
   void disconnect(const Snapshot& s,double now){
     if(config_.profile=="attitude_altitude"){attitude_core_.disconnect(attitude_snapshot(s),now);message_=attitude_core_.reason();return;}
     last_ping_=-1;velocity_until_=now;core_.invalidate();
     if(core_.active())core_.land(s.feedback,now,"operator console disconnected");
     message_="CONSOLE_DISCONNECTED_OLD_MOTION_CLEARED";
   }
+  // 控制周期按顺序处理时限恢复、离散安全事件、地面测试、姿态主链或通用路线；只一个路线生成计划。
   Output step(const Snapshot& s,double now){
     Output out;
     if(rc_preparation_timing_fault_){
@@ -611,6 +681,7 @@ class Runtime {
         last_attitude_output_active_=false;queued_safety_wait_=false;return out;
       }
     }
+    // 同轮坏地面事件阻止正常尾帧推进准备/完成；仍armed的触地反弹允许原下降控制接续。
     if(queued_safety_wait_){
       queued_safety_wait_=false;
       const auto phase=attitude_core_.phase();
@@ -639,6 +710,7 @@ class Runtime {
       out.send_ground=ground_->tick(now-ground_origin_,traffic);
       message_=ground_->reason();return out;
     }
+    // 姿态主链先形成候选状态证据供Core判断，再等Core同轮健康/reset/权限都过才锁定事务完成。
     if(config_.profile=="attitude_altitude"){
       const bool mode_candidate_state=offboard_candidate_state_evidence(s,now);
       auto& command400=pending_[index(400)];
@@ -650,6 +722,7 @@ class Runtime {
         if(!command400.state_verified)command400.stage=command400.ack_ambiguous?
           CommandStage::Ambiguous400Ack:CommandStage::TimedOut;
       }
+      // 把ACK和独立状态分别装入Transaction；Core仍需检查当前阶段及物理事实，不是这里直接起飞。
       auto terminal=[this,disarm_state,normal_arm_state,mode_candidate_state](unsigned cmd){const auto& p=pending_[index(cmd)];
         return attitude::Transaction{p.accepted||(cmd==176&&mode_candidate_state),p.rejected,p.timed_out,p.ack_ambiguous,
           cmd==400&&(disarm_state||normal_arm_state)};};
@@ -709,6 +782,7 @@ class Runtime {
           CommandStage::VerifiedTerminal:command400.rejected?CommandStage::StateAckContradictory:
           command400.ack_observations?CommandStage::StateAckObservedUnresolved:CommandStage::StateVerifiedAwaitAck;
       }
+      // Core的新动作若与未决同编号事务冲突则拒绝输出；不能靠覆盖pending消失旧事务。
       if(out.attitude.command!=attitude::Command::None){
         const unsigned cmd=(out.attitude.command==attitude::Command::Offboard||
           out.attitude.command==attitude::Command::ReleaseOffboard)?176:
@@ -721,6 +795,7 @@ class Runtime {
           // precondition fails we cannot justify publishing either command.
           attitude_core_.block("INDISTINGUISHABLE_OUTSTANDING_COMMAND");out.attitude={};
         }else {
+          // 新事务继承旧ACK/status最大水位，旧400只进有界审计历史；新的请求不会清零旧wire因果关系。
           const auto watermark=std::max({p.baseline,p.last_ack,p.status_at_wire});
           const bool unresolved=cmd==400&&p.sent&&
             (p.ack_ambiguous||!p.accepted||!p.state_verified);
@@ -732,6 +807,7 @@ class Runtime {
       last_attitude_output_active_=out.attitude.publish;
       message_=attitude_core_.reason();return out;
     }
+    // 通用路线失去上层任务后仍观察真实降落/上锁；失联/接管/超时则明确释放给PX4/操作员。
     if(recover_land_){
       if(s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed){recover_land_=false;message_="LANDED_AND_DISARMED_CONFIRMED";return out;}
       if(!s.status_fresh||!s.feedback.exclusive||s.feedback.failsafe||s.time_regressed||now-recover_started_>60){recover_land_=false;message_="RECOVERY_RELEASED_TO_PX4_OPERATOR";return out;}
@@ -775,6 +851,7 @@ class Runtime {
     return out;
   }
  private:
+  // 只保留最近128笔展示审计；当前pending、全局提交次数、generation及ACK下界不参与淘汰。
   void archive_command400(const Pending& transaction){
     // 这里只保留最近128笔审计记录，避免常驻服务每次任务结束后无限增加内存。
     // 全进程提交次数、每笔generation及ACK因果水位独立保存，不能随展示缓存淘汰而清零。
@@ -784,12 +861,14 @@ class Runtime {
     }
     command400_history_.push_back(transaction); // 复制旧事务证据；该缓存不授予控制权，也不参与ACK匹配。
   }
+  // 已结束RC任务的新安全地面可终结Disarm物理结果；仍要求实际提交且status/land晚于因果下界。
   bool ended_rc_disarm_terminal(const Pending& p,const Snapshot& s)const{
     return attitude_core_.rc_fault_recovery_ready()&&p.command400_kind==Command400Kind::Disarm&&
       p.sent&&p.published&&!p.sink_denied&&s.arming_state_known&&
       s.status_stamp>std::max({p.baseline,p.status_at_wire,p.causal_floor})&&
       s.land_stamp>std::max(p.land_at_wire,p.causal_floor);
   }
+  // 仅本进程首个真实提交且唯一来源的普通176进入偏斜候选；bench/地面测试不能借用。
   bool normal_offboard_candidate_scope(const Pending& p) const{
     return config_.profile=="attitude_altitude"&&config_.attitude.flight_actions_enabled&&
       !config_.attitude.bench_arm_only_enabled&&!ground_&&
@@ -798,6 +877,7 @@ class Runtime {
       p.source_clock_validated&&p.wire_stamp>0&&p.causal_floor>0&&
       p.generation==1&&command176_commits_==1;
   }
+  // 候选ACK之后仍要当前权限、健康、新Offboard且未解锁地面，严格晚于ACK及命令水位。
   bool offboard_candidate_state_evidence(const Snapshot& s,double now) const{
     const auto& p=pending_[index(176)];
     return normal_offboard_candidate_scope(p)&&p.ack_candidate&&p.result==0&&
@@ -822,6 +902,8 @@ class Runtime {
   // The normal health, authority, estimator and final-publication boundary
   // still run inside Core::step and the node.  This cannot admit a command
   // with an old/contradictory ACK, an uncommitted sink, or a late armed event.
+  // 程序普通TAKEOFF首个400的窄后备：真实提交、新external解锁事件、RC解锁OFF、唯一来源及完整新状态。
+  // 这不用于人工RC路线，也不声称armed reason能在wire上唯一认领发送者。
   bool normal_takeoff_arm_state_evidence(const Snapshot& s,double now) const{
     const auto& p=pending_[index(400)];
     return config_.profile=="attitude_altitude"&&
@@ -845,6 +927,7 @@ class Runtime {
       s.attitude.rc_arm_switch==3&&!s.attitude.kill&&!s.attitude.operator_takeover&&
       !s.time_regressed&&s.feedback.preflight;
   }
+  // 上锁状态必须在真实Disarm后，仍处原健康/权限/参考包络并有新地面证据；不据当前armed=false单独完成。
   bool disarm_state_evidence(const Snapshot& s,double now) const{
     const auto& p=pending_[index(400)];
     if(!p.sent||p.sink_denied||!s.arming_state_known||p.command400_kind!=Command400Kind::Disarm||
@@ -860,10 +943,12 @@ class Runtime {
         (std::isfinite(c.reference_z)&&std::abs(c.reference_z-c.feedback.z)<=config_.attitude.height_tolerance&&
          std::abs(c.feedback.vz)<=config_.attitude.speed_tolerance));
   }
+  // 只有首次提交为事务分配generation；本进程复用后永久标记ACK歧义，地面任务重建不清它。
   void record400_commit(Pending& p){
     if(p.generation)return;
     p.ack_ambiguous=command400_commits_>0;p.generation=++command400_commits_;
   }
+  // 把通用快照事实统一填到姿态Feedback，实际arming未知则status_fresh=false；电池还需电压/连接/警告都健康。
   attitude::Feedback attitude_snapshot(const Snapshot& s) const{
     auto a=s.attitude;a.status_fresh=s.status_fresh&&s.arming_state_known;a.land_fresh=s.land_fresh;a.local_fresh=s.local_fresh;
     a.status_stamp=s.status_stamp;a.land_stamp=s.land_stamp;a.stationary_seconds=s.stationary_seconds;
@@ -877,7 +962,9 @@ class Runtime {
     a.auto_land_selected=s.nav_state==18;
     return a;
   }
+  // 固定三事务槽：176模式→0，400解上锁→1，21降落→2；调用处已限定合法命令。
   static std::size_t index(unsigned cmd){return cmd==176?0:cmd==400?1:2;}
+  // 通用LAND等待ACK和真实Land/上锁状态；有ACK无模式仍是未完成，超时明确释放而不重复命令。
   std::string land_handshake_failure(const Snapshot& s,double now){
     auto& p=pending_[2];
     if(!p.sent||(s.status_fresh&&s.feedback.landing)||(s.status_fresh&&s.land_fresh&&!s.feedback.armed&&s.feedback.landed))return {};
@@ -888,6 +975,7 @@ class Runtime {
     }
     return {};
   }
+  // 先记录意图与基线；生产sink模式sent=false，等confirm实际提交后才允许ACK影响事务。
   void track(unsigned cmd,const Snapshot& s,double now,
       attitude::Command intent=attitude::Command::None){auto& p=pending_[index(cmd)];
     p.requested=true;p.sent=!(attitude_sink_commit_required_&&config_.profile=="attitude_altitude");
@@ -902,7 +990,9 @@ class Runtime {
     }
     if(p.sent&&intent!=attitude::Command::None)attitude_core_.note_command_publication(intent,true,s.land_stamp);
   }
+  // 统一保存拒绝原因供控制台/状态报告，不改变物理飞行状态。
   Reply refuse(const std::string& why){message_=why;return {false,why};}
+  // 通用路线先看来源冲突和HIL/校准；真实flight还要求电池与人工接管信号，sim例外仅属该profile。
   std::string hardware_gate(const Snapshot& s) const {
     if(!s.feedback.exclusive)return "SOURCE_OR_CONTROL_CONFLICT";
     if(s.calibration||s.hil)return "CALIBRATION_OR_HIL_ACTIVE";
@@ -912,6 +1002,7 @@ class Runtime {
     }
     return {};
   }
+  // 单实例持有互斥路线及地面握手；下面的单调秒租约、进程事务计数与任务Core生命周期分离。
   Config config_;v::Core core_;attitude::Core attitude_core_;std::unique_ptr<g::Core> ground_;
   double last_ping_{-1},velocity_until_{-1},ground_origin_{},recover_started_{};
   bool recover_land_{},maintenance_{},shutdown_latched_{};

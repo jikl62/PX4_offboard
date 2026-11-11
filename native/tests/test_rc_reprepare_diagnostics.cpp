@@ -1,8 +1,11 @@
+// Runtime 重准备只读诊断回归：Core地面证据就绪与命令/发布/时钟完整性阻塞分别可见。
+// 通过真实已加入RC任务外部模式退出触发OPERATOR_TAKEOVER_LATCHED，再建立新未解锁地面窗。
 // Exercise Runtime admission against a genuinely ended RC task. No ROS/DDS.
 #define main existing_rc_navigation_test_main
 #include "test_rc_navigation.cpp"
 #undef main
 
+// 构造真实结束任务和安全开关复位，而非直接修改Core内部阶段；先核对合法基准无阻塞。
 static void safe_ground_after_takeover(Flight& q){
   q.join();q.s.feedback.offboard=false;q.s.nav_state=15;
   q.s.attitude.rc_mode_slot=1;++q.s.attitude.operator_switch_generation;q.tick();
@@ -13,6 +16,7 @@ static void safe_ground_after_takeover(Flight& q){
   need(q.r.rc_restart_allowed(q.s),"independent new ground evidence qualifies task recovery");
   need(q.r.rc_reprepare_block_reason(q.s,q.t).empty(),"healthy ended task has no admission blocker");
 }
+// 发布故障、倒时、周期过期、输出仍活动、当前armed等各有精确原因，查询本身不改历史或造锁。
 static void current_runtime_blockers_are_visible_and_do_not_clear_history(){
   Flight q;safe_ground_after_takeover(q);
   for(unsigned failure=0;failure<6;++failure){auto s=q.s;const char* expected="";
@@ -30,6 +34,7 @@ static void current_runtime_blockers_are_visible_and_do_not_clear_history(){
   q.warm();need(q.r.attitude_core().phase()==a::Phase::RcWaitArm&&q.arm_commands==0&&q.mode_commands==0,
     "recovery returns to waiting for new manual arm without automatic commands");
 }
+// 176/400/21超时仍是不确定，诊断不能当终态；只有独立state_verified才可消除对应阻塞且保留wire记录。
 static void unresolved_command_outcomes_remain_blocking(){
   for(unsigned command:{176U,400U,21U}){
     Flight q;safe_ground_after_takeover(q);
@@ -46,6 +51,7 @@ static void unresolved_command_outcomes_remain_blocking(){
       "rebuild retains settled command history");
   }
 }
+// 后续未知部分发布故障必须可见且不可恢复，不能躲在最初接管标签后被清掉。
 static void later_fatal_fault_does_not_hide_behind_takeover(){
   Flight q;safe_ground_after_takeover(q);
   q.r.abort_attitude("PARTIAL_OR_FAILED_SETPOINT_PUBLICATION_UNKNOWN_EXCEPTION");q.tick();

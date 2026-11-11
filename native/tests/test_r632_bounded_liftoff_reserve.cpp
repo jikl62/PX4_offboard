@@ -1,3 +1,5 @@
+// R6.3.2 有界起飞储备回归：显式开启后才在悬停斜坡结束后渐加储备，不凭推力证明离地。
+// 使用原Runtime合成夹具；归一化悬停0.50、储备0.04、slew0.4/s都是测试参数，FRD z输出取负。
 // R6.3.2 focused synthetic test; never publishes to PX4.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type"
@@ -10,6 +12,7 @@ static f::Config r63_config(){
   auto c=cfg(true);c.attitude.vertical.hover=.50;
   c.attitude.bench_arm_only_enabled=false;c.validate();return c;
 }
+// 前2 s不得超过悬停值，后续只能按原slew爬到0.54；检测/高度证据缺失时仍ThrustRamp。
 static void bounded_reserve_is_opt_in_and_only_after_hover(){
   auto cfg=r63_config();
   cfg.attitude.takeoff_reserve_thrust=.04;
@@ -51,6 +54,7 @@ static void bounded_reserve_is_opt_in_and_only_after_hover(){
   assert(s.feedback.landed&&r.attitude_core().phase()==a::Phase::ThrustRamp);
   std::cout<<"R632_BOUNDED_RESERVE_WITHOUT_FALSE_LIFTOFF_PASS\n";
 }
+// 持续未离地最终走已有PoweredGround减推恢复，不允许因储备已用完就伪造Ascend。
 static void bounded_reserve_no_liftoff_still_recovers(){
   auto c=r63_config();c.attitude.takeoff_reserve_thrust=.04;
   c.attitude.ramp_seconds=2.;c.attitude.vertical.slew=.4;c.validate();
@@ -80,6 +84,7 @@ static void bounded_reserve_no_liftoff_still_recovers(){
   assert(saw_ramp && recovered);
   std::cout<<"R632_LIFTOFF_TIMEOUT_GUARDED_POWER_REMOVAL_PASS\n";
 }
+// 负储备、超0.06、NaN或超过物理最大推力的组合在配置校验时拒绝。
 static void invalid_reserve_must_fail_closed(){
   for(double x:{-.01,.061,static_cast<double>(NAN)}){
     auto c=r63_config();c.attitude.takeoff_reserve_thrust=x;
@@ -94,6 +99,7 @@ static void invalid_reserve_must_fail_closed(){
   assert(rejected);
   std::cout<<"R632_INVALID_RESERVE_DENIAL_PASS\n";
 }
+// 储备默认0保持原路径；其它原流程由独立既有回归覆盖，不在此暗改默认。
 static void bench_and_original_path_unchanged(){
   auto c=r63_config(); // zero reserve defaults to prior R6.3.1
   assert(c.attitude.takeoff_reserve_thrust==0.);

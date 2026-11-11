@@ -1,3 +1,6 @@
+// 离线时间合同回归：分开源时钟、原始采样、回调到达寿命、主机跳时和当前控制周期。
+// epoch为任意固定同步微秒域，不要求日历准确；elapsed/receipt/cycle均以独立单调秒计算。
+// Mode/Target仅保留字段形状；测试用sink计数确定目标已发而心跳被拒绝的部分发布。
 #include "jikl_fc01_system/source_diagnostics.hpp"
 #include "jikl_fc01_system/runtime.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
@@ -12,6 +15,7 @@ namespace a=fc01::attitude;
 constexpr std::uint64_t epoch=1794000000000000ULL;
 static void close(double actual,double expected){assert(std::abs(actual-expected)<1e-9);}
 
+// 稳定但不准确的日历同样可算年龄；精确检查空戳、未来戳、raw晚于envelope与过期各自原因。
 static void offline_epoch_and_precise_reasons(){
   // A stable, inaccurate calendar has exactly the same elapsed-time rules.
   for(std::uint64_t host:std::array<std::uint64_t,3>{1000000ULL,1234000000000ULL,epoch}){
@@ -50,6 +54,7 @@ static void offline_epoch_and_precise_reasons(){
   std::cout<<"OFFLINE_STABLE_ARBITRARY_CALENDAR_AND_EXACT_SOURCE_REASONS PASS\n";
 }
 
+// RMW接收时间不可用时必须保留unavailable，不能显示0延迟；有测量时保留其真实正负差。
 static void callback_observations_do_not_invent_measurements(){
   const auto unavailable=f::observe_source_receipt(epoch-489000,epoch-490000,true,epoch,7.);
   assert(!unavailable.middleware_callback_age.available);
@@ -68,6 +73,7 @@ static void callback_observations_do_not_invent_measurements(){
   std::cout<<"OPTIONAL_RMW_RECEIPT_UNAVAILABLE_IS_NOT_ZERO_DELAY PASS\n";
 }
 
+// 比较wall增量与steady增量识别前跳/后跳；诊断不能通过增补偏移把旧数据重新合法化。
 static void host_jumps_are_separate_from_source_delay(){
   f::HostClockMonitor monitor;
   monitor.observe(epoch,10.);
@@ -93,6 +99,7 @@ static void host_jumps_are_separate_from_source_delay(){
   std::cout<<"OFFLINE_FORWARD_BACKWARD_HOST_JUMPS_REMAIN_FAIL_CLOSED PASS\n";
 }
 
+// 新外壳不能续期冻结raw；时间回退锁存不被正常尾帧或新进程中的错误时钟域绕过。
 static void raw_lifetime_and_regression_latches_are_preserved(){
   struct Estimate{std::uint64_t timestamp{},timestamp_sample{};};
   Estimate held{},input{epoch,epoch};
@@ -142,6 +149,7 @@ static a::BoundaryContext prepared(){
   return c;
 }
 
+// 仅local/attitude源年龄过期且实际到达/raw进展新鲜才能归入窄准备重试；这仍不允许过期输出。
 static void preparation_expiry_classification_never_legalizes_stale_output(){
   constexpr double timeout=.5;
   const auto local=std::size_t(f::SourceSlot::Local);
@@ -232,6 +240,7 @@ static void preparation_expiry_classification_never_legalizes_stale_output(){
   std::cout<<"PREPARATION_RETRY_ONLY_FOR_FRESH_RECEIPT_AND_RAW_PROGRESS_WITH_SOURCE_AGE_EXPIRY PASS\n";
 }
 
+// 第三次上下文采样跨过500 ms源寿命时，必须保留target已发事实并抑制heartbeat、抛出部分发布。
 static void source_expiry_after_target_suppresses_heartbeat(){
   a::Output output;output.publish=true;
   unsigned reads=0,targets=0,heartbeats=0;bool partial=false;
@@ -251,6 +260,7 @@ static void source_expiry_after_target_suppresses_heartbeat(){
   std::cout<<"SOURCE_049_TO_051_AFTER_TARGET_PRESERVES_FINAL_HEARTBEAT_REFUSAL PASS\n";
 }
 
+// 336 ms控制周期超过300 ms截止；目标前拒绝不触sink，目标后拒绝必须报告部分提交。
 static void current_cycle_stall_is_refused_before_or_after_target(){
   for(bool after_target:{false,true}){
     f::CurrentControlCycle cycle;cycle.begin(10.);cycle.callbacks_done(10.01);

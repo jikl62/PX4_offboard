@@ -1,8 +1,11 @@
+// 台架第二轮上锁复核：旋翼转动导致at_rest=false时，独立新地面证据与事务隔离仍须完整。
+// R2Bench继承真实Runtime最终sink夹具；仅输入观测合成，计划上锁不等于飞控已经执行。
 #include "review_bench_support.hpp"
 #include <functional>
 #include <string>
 
 // Drive real Runtime and final sinks; only PX4 observations are synthetic.
+// plan_disarm故意暂不提交返回的命令，以便在Core计划与最终sink之间注入竞态。
 struct R2Bench : B {
   R2Bench():B(true){}
   a::Output tick(bool newland=true, bool newlocal=true) {
@@ -20,6 +23,7 @@ struct R2Bench : B {
   }
 };
 
+// 新证据可计划一次上锁，复用400的ACK仍歧义；实际未解锁后还要新的静止地面窗才释放模式。
 static void spinning_bench_completes_without_at_rest_or_attributed_ack(){
   R2Bench h;h.spinning();const double armed_at=h.t;
   auto o=h.plan_disarm();
@@ -48,6 +52,7 @@ static void spinning_bench_completes_without_at_rest_or_attributed_ack(){
   std::cout<<"REVIEW2_SPINNING_BENCH_ONE_ARM_ONE_DISARM_AND_NEW_REST_RELEASE PASS\n";
 }
 
+// 冻结land/local/status或仅首帧后冻结都不能生成上锁证明，须显示台架等待超时。
 static void missing_new_observations_never_disarm(){
   for(int which=0;which<3;++which){
     R2Bench h;h.spinning();const auto status=h.s.status_stamp;
@@ -72,6 +77,7 @@ static void missing_new_observations_never_disarm(){
   std::cout<<"REVIEW2_FROZEN_LAND_LOCAL_OR_STATUS_CANNOT_AUTHORIZE_DISARM PASS\n";
 }
 
+// 在最后一刻逐项改地面/新鲜度/时钟/reset/权限/基线/提交状态，任一攻击都不能调用上锁sink。
 static void final_sink_rechecks_actual_ground_and_authority(){
   R2Bench h;h.spinning();const auto o=h.plan_disarm();
   const auto original=h.r.publication_context(h.s,h.t,true,true);
@@ -123,6 +129,7 @@ static void final_sink_rechecks_actual_ground_and_authority(){
   std::cout<<"REVIEW2_DISARM_SINK_RACES_AND_NO_BLIND_400_RETRY PASS\n";
 }
 
+// 上锁验证窗中重新armed锁存独立Safety，后续再次未解锁不能复用旧dwell自动释放。
 static void rearm_during_post_disarm_verification_is_latched(){
   R2Bench h;h.spinning();h.commit(h.plan_disarm());
   h.s.feedback.armed=false;h.s.at_rest=true;h.s.stationary_seconds=3;

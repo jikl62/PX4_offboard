@@ -1,8 +1,11 @@
+// 实测负5.643 ms模式ACK反事实回归：候选ACK只能与发送后因果新模式共同确认，不能直接授权。
+// Recorded176保存实测wire、水位和ACK绝对µs，其他反馈合成；普通测试关闭Arm/Takeoff以隔离模式入口。
 // FC01 2026-10-16: replay the actual -5.643ms ACK and post-command mode evidence.
 #include "review_clock_support.hpp"
 #include <cmath>
 #include <limits>
 
+// options区分普通/bench路线；构造器要求实际假sink提交才可能建立ACK候选，未提交命令不具线因果。
 struct Recorded176 {
   static constexpr std::uint64_t wire=1792143533524121ULL;
   static constexpr std::uint64_t watermark=1792143533329254ULL;
@@ -62,6 +65,7 @@ struct Recorded176 {
   void settle(){for(int i=0;i<12&&r.attitude_core().phase()==a::Phase::RequestOffboard;++i)tick();}
 };
 
+// 负偏差ACK本身仍未接受，只有新Offboard状态超过wire+100 ms才共同证明；不能因此打开起飞门。
 static void recorded_negative_ack_needs_new_state(){
   Recorded176 h;h.ack();
   assert(!h.r.pending(176).accepted);
@@ -78,6 +82,7 @@ static void recorded_negative_ack_needs_new_state(){
   std::cout<<"REAL_MINUS_5_643MS_ACK_REQUIRES_NEW_DISARMED_OFFBOARD_STATE PASS\n";
 }
 
+// 缓存状态或等于因果floor都不足，必须严格更新后才ready。
 static void cached_or_pre_floor_state_is_insufficient(){
   for(auto stamp:{Recorded176::watermark,Recorded176::wire+50000,Recorded176::wire+100000}){
     Recorded176 h;h.ack();h.mode();h.s.status_stamp=stamp;
@@ -89,6 +94,7 @@ static void cached_or_pre_floor_state_is_insufficient(){
   std::cout<<"CACHED_AND_100MS_FLOOR_STATUS_CANNOT_CONFIRM_CANDIDATE PASS\n";
 }
 
+// 旧水位、超偏差、远未来、错误身份/命令、错误接收时刻均不合法，不能借新模式补救。
 static void invalid_ack_cannot_use_fresh_mode(){
   using Ack=f::g::Ack;
   const Ack cases[]={
@@ -114,6 +120,7 @@ static void invalid_ack_cannot_use_fresh_mode(){
   std::cout<<"OLD_OUT_OF_BUDGET_WRONG_TARGET_AND_LOCAL_RECEIPT_ACKS_REFUSED PASS\n";
 }
 
+// 先前已见ACK和重复ACK不能重新绑定新候选，观察计数保持真实。
 static void prior_ack_and_duplicate_are_not_new_candidates(){
   Recorded176 old(true,false,Recorded176::ack_stamp);
   old.ack();old.mode();old.settle();assert(!old.r.pending(176).accepted);
@@ -123,6 +130,7 @@ static void prior_ack_and_duplicate_are_not_new_candidates(){
   std::cout<<"PREVIOUSLY_OBSERVED_ACK_AND_DUPLICATE_CANNOT_REBIND PASS\n";
 }
 
+// 十四类当前健康/身份/地面条件及Core stall仍否决候选确认。
 static void candidate_cannot_override_current_safety_conditions(){
   for(int fault=0;fault<14;++fault){
     Recorded176 h;h.ack();h.mode();
@@ -154,6 +162,7 @@ static void candidate_cannot_override_current_safety_conditions(){
   std::cout<<"CANDIDATE_CANNOT_BYPASS_CURRENT_HEALTH_GROUND_AUTHORITY_OR_STALL PASS\n";
 }
 
+// 候选5 s超时、未最终提交或后续明确拒绝均阻止ready，不自动复活。
 static void candidates_expire_and_uncommitted_commands_cannot_complete(){
   Recorded176 h;h.ack();
   for(int i=0;i<110&&h.r.attitude_core().phase()!=a::Phase::Safety;++i)h.tick();
@@ -169,6 +178,7 @@ static void candidates_expire_and_uncommitted_commands_cannot_complete(){
   std::cout<<"TIMEOUT_SAFETY_FINAL_SINK_AND_REFUSAL_REMAIN_EFFECTIVE PASS\n";
 }
 
+// 原正8.794/13.518 ms、bench state-only和释放176路线各自保持原合同。
 static void fast_positive_acks_and_other_paths_are_preserved(){
   for(auto delta:{8794,13518}){
     Recorded176 h;h.ack(Recorded176::wire+delta);h.mode();h.settle();
@@ -188,6 +198,7 @@ static void fast_positive_acks_and_other_paths_are_preserved(){
   std::cout<<"POSITIVE_8_794_13_518MS_ACKS_BENCH_AND_RELEASE_PATHS_PRESERVED PASS\n";
 }
 
+// 测试偏差边缘与准备期间STOP；确认入模式后才能规划新释放176，不能叠事务。
 static void skew_budget_edges_and_preparation_stop(){
   for(auto offset:{0,1,99999}){
     Recorded176 h;h.ack(Recorded176::wire-offset);h.mode();h.settle();
@@ -206,6 +217,7 @@ static void skew_budget_edges_and_preparation_stop(){
   std::cout<<"SKEW_BUDGET_EDGES_AND_STOP_DURING_PREPARATION PASS\n";
 }
 
+// 未选择权限或当前RC证据丢失不得确认，恢复当前完整RC事实后才可完成。
 static void candidate_requires_current_selected_authority(){
   Recorded176 unset(true,false,0,0);unset.ack();unset.mode();unset.settle();
   assert(!unset.r.pending(176).accepted);
@@ -223,6 +235,7 @@ static void candidate_requires_current_selected_authority(){
   std::cout<<"CANDIDATE_REQUIRES_CURRENT_LOCKED_AUTHORITY_AND_RC_TELEMETRY PASS\n";
 }
 
+// 接管请求仍等待待决Offboard的ACK/因果状态完成，然后才用零流释放模式，不能覆盖尚未解决的176。
 static void takeover_waits_for_pending_offboard_before_release(){
   for(bool skewed:{true,false})for(bool causal:{false,true}){
     Recorded176 h;h.ack(skewed?Recorded176::ack_stamp:Recorded176::wire+8794);h.mode();

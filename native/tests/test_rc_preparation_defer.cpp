@@ -1,3 +1,5 @@
+// 未解锁准备年龄过期延期回归：尚无Arm意图且任何sink都未发时，可丢弃准备重走完整零流。
+// 只有local/attitude源年龄过期可由适配器分类进入本窄门；未知异常、partial pair和命令历史都不能套用。
 #include "authority_test_support.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
 #include <iostream>
@@ -20,6 +22,7 @@ struct Target {
   std::array<float,4> q_d{};std::array<float,3> thrust_body{};
   bool reset_integral{},fw_control_yaw_wheel{};
 };
+// 真实Runtime+双重采样最终sink，任何准备tick都断言无自动命令及严格零推力。
 struct Preparation {
   f::Config c{rc_config()};f::Runtime r{c};f::Snapshot s{sample()};
   double now{};f::Output out;unsigned targets{},heartbeats{};
@@ -55,6 +58,7 @@ struct Preparation {
     value.local_fresh=value.attitude.attitude_fresh=false;return value;
   }
 };
+// 第一上下文即过期时两sink不可达；延期清预发送次数和z0，却保留不相关ACK水位，然后完整重建READY。
 static void refuse_before_sinks_restarts_the_complete_zero_prestream(){
   for(bool wait_arm:{false,true}){
     Preparation q;if(wait_arm)q.ready();else q.tick();
@@ -89,6 +93,7 @@ static void refuse_before_sinks_restarts_the_complete_zero_prestream(){
       "complete recovery waits for new manual consent and cannot automatically arm");
   }
 }
+// 故障期间出现过Arm ON，后来的OFF不能抹除历史意图去冒充“从未有Arm”的准备延期。
 static void latest_safe_controls_cannot_erase_a_historical_arm_edge(){
   Preparation q;q.ready();
   q.s.attitude.rc_arm_switch=1;q.s.attitude.source_clock_valid=false;
@@ -103,6 +108,7 @@ static void latest_safe_controls_cannot_erase_a_historical_arm_edge(){
   need(!matched.r.defer_rc_preparation(matched.age_expired(),matched.now,expired),
     "a captured arm edge cannot be reset while waiting for complementary evidence");
 }
+// 34类当前不安全/不确定条件拒绝延期且保持原阶段与提交数，拒绝不能偷偷修改状态。
 static void independent_guards_reject_defer_without_mutating_preparation(){
   Preparation q;q.ready();
   const auto phase=q.r.attitude_core().phase();
@@ -150,6 +156,7 @@ static void independent_guards_reject_defer_without_mutating_preparation(){
       "rejected defer must preserve the original state and evidence");
   }
 }
+// 终态命令历史也在窄延期范围外；目标后心跳年龄过期为部分发布，必须保留原严重故障。
 static void any_command_history_and_a_partial_publication_block_recovery(){
   for(unsigned command:{176U,400U,21U}){
     Preparation q;q.ready();

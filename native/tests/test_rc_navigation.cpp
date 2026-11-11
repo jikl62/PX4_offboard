@@ -1,3 +1,7 @@
+// 人工RC主起飞合同回归：真实Runtime、姿态高度Core与最终发布边界的整条可复现离线生命周期。
+// 人工解锁开关与新PX4 armed事件、导航档位与新Offboard模式分别配对，任一单独事实都不能起飞。
+// Flight.s为合成PX4反馈，t为单调秒；NED z/vz下正，relative_height=地面z0-z向上为正。
+// 旧0.5 m快速夹具用于边界；production_no_vision_rc_config专门保持原1.5 m目标和实际推力/时间/安全包络。
 #include "authority_test_support.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
 #include <iostream>
@@ -24,6 +28,7 @@ struct RcTarget {
   std::array<float,4> q_d{};std::array<float,3> thrust_body{};
   bool reset_integral{},fw_control_yaw_wheel{};
 };
+// 持有真实Runtime与独立假sink计数；tick可只做策略判定而不提交，防止“计划次数”等同“预发送提交次数”。
 struct Flight {
   f::Config c;f::Runtime r;f::Snapshot s{sample()};
   double t{};f::Output o;unsigned published{},arm_commands{},mode_commands{},target_commits{},heartbeat_commits{};
@@ -39,6 +44,7 @@ struct Flight {
     s.attitude.z_deriv=s.attitude.vz=0;
     r.require_attitude_sink_commit();
   }
+  // 每轮源戳独立推进，先step计划再过最终sink；只有真提交才confirm_rc_output续预发送证明。
   void tick(bool commit=true,double dt=.05){
     t+=dt;s.status_stamp+=50000;s.land_stamp+=50000;
     s.attitude.local_stamp+=50000;s.attitude.vertical_sample_stamp+=50000;
@@ -57,17 +63,20 @@ struct Flight {
     }
   }
   void warm(bool commit=true){for(int i=0;i<75;++i)tick(commit);}
+  // 可交换armed状态和物理开关的到达顺序；均保留同一armed_time和RC_SWITCH原因，不发送Arm命令。
   void manual_arm(bool status_first=false){
     if(status_first){s.feedback.armed=true;s.armed_time=10;s.latest_arming_reason=2;s.at_rest=false;tick();}
     s.attitude.rc_arm_switch=1;++s.attitude.operator_switch_generation;tick();
     s.feedback.armed=true;s.armed_time=10;s.latest_arming_reason=2;s.at_rest=false;tick();
   }
+  // 物理导航档变化不是已进入Offboard，actual=true才补独立PX4模式反馈。
   void navigation(bool actual=true){
     s.attitude.rc_mode_slot=c.attitude.rc_navigation_mode_slot;++s.attitude.operator_switch_generation;tick();
     if(actual){s.feedback.offboard=true;s.nav_state=14;tick();}
   }
   void join(){warm();manual_arm();navigation();need(r.attitude_core().phase()==a::Phase::ArmedGround,"authorized RC path joins ArmedGround");}
 };
+// 完整人工路线先零预发送、人工Arm证据、导航与模式，再ArmedGround/斜坡；176/400事务都不得凭空出现。
 static void valid_path_without_automatic_commands(){
   Flight q;q.warm();need(q.r.attitude_core().phase()==a::Phase::RcWaitArm,"prestream becomes ready");
   need(q.published>=20,"actual prestream commits");
@@ -83,10 +92,12 @@ static void valid_path_without_automatic_commands(){
   need(q.arm_commands==0&&q.mode_commands==0,"RC route never asks PX4 to arm or enter Offboard");
   need(!q.r.pending(400).requested&&!q.r.pending(176).requested,"no fabricated command transactions");
 }
+// 支持状态先于开关到达，消息传输顺序不应制造永久等待。
 static void status_switch_reordering(){
   Flight q;q.warm();q.manual_arm(true);q.navigation();
   need(q.r.attitude_core().phase()==a::Phase::ArmedGround,"status-first RC arm arrival is supported");
 }
+// 500 ms互补证据延迟期间只允许连续严格零流；证据配齐前既不证明人工Arm也不承担飞行任务。
 static void delayed_arm_evidence_keeps_continuous_zero_commits(){
   for(bool status_first:{false,true}){
     Flight q;q.warm();const auto before=q.published;
@@ -109,6 +120,7 @@ static void delayed_arm_evidence_keeps_continuous_zero_commits(){
     need(q.arm_commands==0&&q.mode_commands==0,"reordering never creates pilot commands");
   }
 }
+// 档位1/6均需对应本轮新边沿；错误档位实际进入Offboard仍不能加入，参数只允许1至6。
 static void configured_navigation_slots_require_matching_new_edge(){
   for(std::int64_t slot:{1,6}){
     Flight q(slot);q.join();
@@ -128,6 +140,7 @@ static void configured_navigation_slots_require_matching_new_edge(){
     need(rejected,"navigation mode slot outside 1 through 6 is rejected");
   }
 }
+// 首个互补证据开启固定配对截止，重复新消息不能续租；最终sink在Core下一tick前也须拒绝过期。
 static void missing_arm_evidence_has_an_unrenewable_deadline(){
   for(bool status_first:{false,true}){
     Flight q;q.warm();
@@ -144,6 +157,7 @@ static void missing_arm_evidence_has_an_unrenewable_deadline(){
       q.arm_commands==0&&q.mode_commands==0,"timeout cannot launch or synthesize commands");
   }
 }
+// 暂时零流许可仍复核当前身份、armed episode、地面、RC、reset和健康；double极小非零也拒绝。
 static void pending_permission_rechecks_current_safety_and_exact_zero(){
   Flight q;q.warm();q.s.feedback.armed=true;q.s.armed_time=10;q.s.latest_arming_reason=2;q.s.at_rest=false;q.tick();
   for(int k=0;k<20;++k){
@@ -186,6 +200,7 @@ static void pending_permission_rechecks_current_safety_and_exact_zero(){
   need(q.r.attitude_core().phase()==a::Phase::Safety&&q.r.attitude_core().reason()=="RC_ARM_REASON_NOT_RC_SWITCH",
     "wrong armed reason latches before producing output");
 }
+// Arm事件在计划和sink之间刚到可维持零流，但目标后Kill变化必须阻断心跳并报告部分发布。
 static void sink_resampling_handles_new_arm_observations_and_vetoes_changes(){
   for(bool status_first:{false,true}){
     Flight q;q.warm();
@@ -212,6 +227,7 @@ static void sink_resampling_handles_new_arm_observations_and_vetoes_changes(){
     need(threw&&targets==1&&heartbeats==0,"changed safety after target commit vetoes heartbeat independently");
   }
 }
+// Offboard/导航档位任一先到都可在固定窗口零流等另一项，不能跳过人工Arm证明。
 static void delayed_navigation_evidence_keeps_continuous_zero_commits(){
   for(bool offboard_first:{false,true}){
     Flight q;q.warm();q.manual_arm();
@@ -230,6 +246,7 @@ static void delayed_navigation_evidence_keeps_continuous_zero_commits(){
     need(!a::nonzero(q.o.attitude.thrust)&&q.arm_commands==0&&q.mode_commands==0,"navigation pairing grants no immediate thrust or automatic pilot commands");
   }
 }
+// Arm互补证据超过2.5 s才到不能复活过期任务，先检查截止再授证。
 static void late_complementary_arm_evidence_cannot_revive_expired_attempt(){
   for(bool status_first:{false,true}){
     Flight q;q.warm();
@@ -243,6 +260,7 @@ static void late_complementary_arm_evidence_cannot_revive_expired_attempt(){
       "complementary arm evidence at 2.55s is rejected before proof is granted");
   }
 }
+// 导航配对截止同样不可重复续期；超时分别显示模式档不匹配或确认缺失。
 static void navigation_pairing_deadline_cannot_be_renewed_or_crossed(){
   for(bool offboard_first:{false,true}){
     for(bool late_complement:{false,true}){
@@ -261,6 +279,7 @@ static void navigation_pairing_deadline_cannot_be_renewed_or_crossed(){
     }
   }
 }
+// 撤回已观察导航、源戳旧、跨armed episode、极小非零均撤销暂时许可。
 static void navigation_pending_rejects_withdrawal_stale_sources_and_nonzero(){
   for(bool offboard_first:{false,true}){
     Flight q;q.warm();q.manual_arm();
@@ -295,6 +314,7 @@ static void navigation_pending_rejects_withdrawal_stale_sources_and_nonzero(){
   need(!a::attitude_publication_policy(q.r.publication_context(q.s,q.t+.02,true,true),q.o.attitude).allowed,
     "navigation pending permission cannot cross an armed episode");
 }
+// 源事件实际发生在READY之前，即使延迟送达时本机已ready也不可授权；真正post-ready传输延迟仍支持。
 static void delayed_pre_ready_source_events_cannot_authorize(){
   // Extra clock member lets this regression execute against the pre-fix
   // admission implementation, which ignored host time entirely.
@@ -334,6 +354,7 @@ static void delayed_pre_ready_source_events_cannot_authorize(){
   s.offboard=true;s.stabilized_selected=false;valid_step();
   need(valid.phase()==a::RcStartPhase::Joined,"post-ready delayed reordered events still join");
 }
+// 十二类开机不合格条件/未实际提交预发送都不能宣称READY、产生推力或合成遥控动作。
 static void unavailable_evidence_never_launches(){
   for(int k=0;k<12;++k){
     Flight q;
@@ -355,6 +376,7 @@ static void unavailable_evidence_never_launches(){
     need(q.arm_commands==0&&q.mode_commands==0,"startup never synthesizes pilot actions");
   }
 }
+// 提前导航、非RC原因、离地、漂移/reset、摇杆不安全或模式确认超时都锁存为拒绝。
 static void arm_and_navigation_faults_latch(){
   for(int k=0;k<6;++k){
     Flight q;q.warm();
@@ -375,6 +397,7 @@ static void arm_and_navigation_faults_latch(){
   for(int i=0;i<170;++i)timeout.tick();
   need(timeout.r.attitude_core().phase()==a::Phase::Safety,"manual arm navigation timeout latches");
 }
+// 只有未解锁时可刷新地面z0；人工Arm意图后冻结，后续导航不可重新归零掩盖运动。
 static void reference_is_disarmed_only(){
   Flight q;q.warm();q.s.attitude.z=2.03;q.tick();
   const auto before=q.r.attitude_core().reference_z();need(std::abs(before-2.03)<1e-9,"disarmed anchor refreshes");
@@ -382,6 +405,7 @@ static void reference_is_disarmed_only(){
   need(q.r.attitude_core().reference_z()==before,"armed anchor never recaptures");
   q.navigation();need(q.r.attitude_core().reference_z()==before,"navigation keeps pre-arm anchor");
 }
+// 小静态EKF偏置和缓慢一致地面漂移可用独立新地面窗建立本轮参考；Arm后漂移保留精确触发证据。
 static void task_ground_reference_uses_fresh_disarmed_evidence(){
   // Offsets are diagnostic EKF-frame scenarios, not a larger flight envelope.
   for(double offset:{.09,.16}){
@@ -446,6 +470,7 @@ static void task_ground_reference_uses_fresh_disarmed_evidence(){
     "recovery builds next task's current reference without auto-arm or auto-launch");
   std::cout<<"RC_GROUND_REFERENCE_OFFSETS_DRIFT_RECOVERY_PASS\n";
 }
+// 未解锁reset/时间不连续废弃READY重建；已解锁reset仍致命，重复缓存不能靠fresh布尔制造dwell。
 static void ground_reference_resets_and_timestamps_need_a_new_window(){
   for(int kind=0;kind<8;++kind){
     auto c=rc_config();c.attitude.feedback_guard.enabled=true;Flight q(c);q.warm();
@@ -497,6 +522,7 @@ static void ground_reference_resets_and_timestamps_need_a_new_window(){
     "cached source timestamps cannot manufacture a reference proof even with fresh flags");
   std::cout<<"RC_GROUND_REFERENCE_RESET_TIMESTAMP_GUARDS_PASS\n";
 }
+// 控制台TAKEOFF/ARM_ONLY/权限选择和伪造phase不能绕过人工RC路线，配置也禁止混开自动Arm。
 static void final_boundary_and_interface_reject_bypasses(){
   Flight boot;
   need(!boot.r.request("MODE",{},boot.s,boot.t).accepted,"RC role cannot invoke legacy ground Offboard test at boot");
@@ -519,6 +545,7 @@ static void final_boundary_and_interface_reject_bypasses(){
   c.feedback.rc_axes_safe=false;
   need(!a::attitude_publication_policy(c,invalid).allowed,"resampled unsafe axes veto join output");
 }
+// RC请求离开模式期间保留原受控恢复，实际新模式离开才停本机输出；shutdown和估计器故障保持原策略。
 static void exits_and_faults_preserve_existing_policy(){
   Flight q;q.join();for(int i=0;i<16;++i)q.tick();
   q.s.attitude.rc_mode_slot=1;++q.s.attitude.operator_switch_generation;q.tick();
@@ -532,6 +559,7 @@ static void exits_and_faults_preserve_existing_policy(){
   Flight bad;bad.join();bad.s.attitude.z_reset++;bad.tick();
   need(bad.r.attitude_core().phase()==a::Phase::Safety&&!bad.o.attitude.publish,"flight estimator guard unchanged");
 }
+// 完整起飞保持降落两轮，落地后新人工授权才能重来；重准备只清任务，保留400历史与复用ACK歧义。
 static void full_height_hold_land_and_safe_reset(){
   Flight q;q.join();for(int i=0;i<16;++i)q.tick();
   double height=0;
@@ -619,6 +647,7 @@ static void full_height_hold_land_and_safe_reset(){
 }
 // Values in the selected Flight Test runtime profile. Unlike the historical
 // .5 m fixtures above, this keeps the deployed ramp, PID, limits and guards.
+// 以下为原实际1.5 m无视觉配置副本：目标、推力/PID/slew/安全门用作回归比较，不能随本轮注释改动。
 static f::Config production_no_vision_rc_config(){
   auto c=config();c.runtime_mode="flight-test";c.flight_enabled=false;
   auto& p=c.attitude;
@@ -638,6 +667,7 @@ static f::Config production_no_vision_rc_config(){
   c.validate();return c;
 }
 
+// 故意令XY/VXY/heading不可用，仅垂向与姿态有效；仍需完成真实离地、1.5 m稳定、下降触地与新未解锁证据。
 static void production_no_vision_rc_1p5m_lifecycle_uses_vertical_only(){
   auto c=production_no_vision_rc_config();
   bool rejected=false;auto invalid=c;invalid.flight_enabled=true;
@@ -736,6 +766,7 @@ static void production_no_vision_rc_1p5m_lifecycle_uses_vertical_only(){
   std::cout<<"RC_PRODUCTION_NO_VISION_1P5M_VERTICAL_ONLY_FLIGHT_ENABLED_FALSE_PASS\n";
 }
 
+// 位移与导数矛盾仍是真故障；任务结束后须新安全地面窗且同周期坏事件可撤销ready，恢复只到等人工Arm。
 static void ended_fault_needs_new_safe_ground_cycle(){
   auto c=rc_config();c.attitude.feedback_guard.enabled=true;c.validate();Flight q(c);
   q.join();for(int i=0;i<16;++i)q.tick();
@@ -803,6 +834,7 @@ static void ended_fault_needs_new_safe_ground_cycle(){
   q.navigation();need(q.r.attitude_core().phase()==a::Phase::ArmedGround,
     "new manual arm and new Offboard evidence can join a subsequent task");
 }
+// Vz与z_deriv速度差只诊断，不反复清本来健康地面窗；位置变化、数据无效和地面不安全仍各自拒绝。
 static void diagnostic_velocity_difference_allows_safe_ground_and_recovery(){
   auto c=rc_config();c.attitude.feedback_guard.enabled=true;
   c.attitude.feedback_guard.rate_tolerance_mps=.05;c.validate();
@@ -868,6 +900,7 @@ static void diagnostic_velocity_difference_allows_safe_ground_and_recovery(){
     "recovery with a persistent velocity warning returns only to fresh manual-arm readiness");
   std::cout<<"RC_DIAGNOSTIC_VELOCITY_GROUND_RECOVERY_PASS\n";
 }
+// 进程冷启动不续接已armed/Offboard或未知飞机状态，避免把重启当成重新获得飞行权。
 static void cold_start_never_resumes_armed_or_unknown_flight(){
   for(int condition=0;condition<4;++condition){Flight q;
     if(condition==0){q.s.feedback.armed=true;q.s.feedback.offboard=true;q.s.nav_state=14;
@@ -880,6 +913,7 @@ static void cold_start_never_resumes_armed_or_unknown_flight(){
     need(q.arm_commands==0&&q.mode_commands==0,"process restart creates no arm or Offboard command");
   }
 }
+// 时钟回退、执行stall、部分发布、意图冲突及来源冲突不可由正常地面或后发轻原因洗掉。
 static void integrity_faults_stay_latched_after_safe_ground(){
   for(const char* reason:{"TELEMETRY_TIME_REGRESSION","ROS_ADAPTER_CONTROL_LOOP_STALL",
       "ATTITUDE_PUBLICATION_PARTIAL_PAIR","COMMAND_400_INTENT_MISMATCH",
@@ -894,6 +928,7 @@ static void integrity_faults_stay_latched_after_safe_ground(){
       "a recoverable-looking later reason cannot replace the original fault");
   }
 }
+// 独立地面终态只能解决真正提交过的Disarm，不能抹去尚未提交计划；wire戳与generation原样保留。
 static void fault_after_disarm_preserves_and_resolves_only_committed_history(){
   for(bool committed:{false,true}){Flight q;q.join();q.s.at_rest=true;
     need(q.r.request("LAND",{},q.s,q.t).accepted,"ground task can request its existing guarded finish");

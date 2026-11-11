@@ -1,8 +1,11 @@
+// RC 恢复边界复核：首个队列不安全事件、单调回退、后发故障水位和未加入准备重试分别处理。
+// 复用Recovery真实Core夹具，只读观察不产生心跳、推力或命令；新健康尾帧不能擦除同周期否决。
 // Reuse the real Core fixture while keeping this boundary audit independent.
 #define main existing_rc_recovery_progress_main
 #include "test_rc_recovery_progress.cpp"
 #undef main
 
+// 同周期首个坏payload保留可见阻塞原因，后续坏/好消息都不能替换；下一健康周期才重新显示当前等待。
 static void first_unsafe_queued_observation_remains_the_visible_blocker(){
   Recovery q;q.input(0,2);q.observe(0);q.input(.05,2);
   q.core.begin_safety_observation();auto first=q.s;first.landed=false;
@@ -22,6 +25,7 @@ static void first_unsafe_queued_observation_remains_the_visible_blocker(){
   need(!d.event_blocked&&d.window_active&&d.block_reason.find("QUEUED_EVENT")==std::string::npos,
     "a new healthy cycle must report its current wait rather than the old queued blocker");
 }
+// 窗口已ready后单调时间回退也必须清所有进度，新窗口可重建但不能继承旧时长。
 static void time_rewind_inside_the_window_cannot_reuse_progress(){
   Recovery q;
   for(unsigned tick=0;tick<=44;++tick){q.input(tick*.05,2);q.observe(tick*.05);}
@@ -35,6 +39,7 @@ static void time_rewind_inside_the_window_cannot_reuse_progress(){
   for(unsigned tick=83;tick<=105;++tick){q.input(tick*.05,2);q.observe(tick*.05);}
   need(q.core.rc_restart_allowed(q.s),"window reset after rewind introduces no permanent new fault latch");
 }
+// 后发电池故障立即清ready/计数，保存第一根因与最新故障，并逐路要求越过新status/land/local/RC水位。
 static void later_fault_invalidates_ready_counts_and_requires_new_source_watermarks(){
   Recovery q;
   for(unsigned tick=0;tick<=44;++tick){q.input(tick*.05,2);q.observe(tick*.05);}
@@ -57,6 +62,7 @@ static void later_fault_invalidates_ready_counts_and_requires_new_source_waterma
   need(q.core.rc_recovery_diagnostics().block_reason=="RC_RECOVERY_WAIT_NEW_RC_SWITCHES",
     "secondary fault needs a genuinely new safe switch observation");
 }
+// 坏观测清窗口时仍保存已见最新因果水位，避免下一故障沿用同一帧作新证明。
 static void unsafe_feedback_keeps_causal_watermarks_after_clearing_the_window(){
   for(bool queued:{false,true}){
     Recovery q;
@@ -74,6 +80,7 @@ static void unsafe_feedback_keeps_causal_watermarks_after_clearing_the_window(){
     need(q.core.rc_restart_allowed(q.s),"secondary fault with a cleared proof still recovers after new observations");
   }
 }
+// 独立按当前未解锁/触地/静止/Vz累计实际静止时间，再驱动完整零流准备。
 struct PreparationAudit {
   a::Config config{recovery_config()};a::Core core{config};a::Feedback s{safe_feedback()};
   double now{},rest_since{-1};
@@ -89,6 +96,7 @@ struct PreparationAudit {
   }
   void warm(){for(unsigned i=0;i<100;++i)tick();need(core.phase()==a::Phase::RcWaitArm,"fixture reaches actual manual readiness");}
 };
+// 未解锁短暂撤回at_rest只废弃参考回Idle等待，不制造永锁；之后须重建静止和独立地面零点。
 static void transient_rest_loss_rebuilds_reference_without_creating_a_fault(){
   PreparationAudit q;q.warm();q.s.at_rest=false;q.tick();
   need(q.core.phase()==a::Phase::Idle&&!q.core.rc_ground_reference_qualified()&&
@@ -101,6 +109,7 @@ static void transient_rest_loss_rebuilds_reference_without_creating_a_fault(){
        q.core.rc_recovery_diagnostics().first_fault_reason.empty(),
     "fresh rest and a new independent ground reference restore readiness without fault/reset history");
 }
+// 人工Arm已证明但尚未加入任务时撤回授权，使用原准备重试分类；不能混同已结束任务的完整恢复窗。
 static void withdrawn_arm_retry_and_ended_task_recovery_use_distinct_gates(){
   PreparationAudit q;q.warm();q.s.rc_arm_switch=1;q.s.armed=true;
   q.s.armed_time=1;q.s.latest_arming_reason=2;q.s.at_rest=false;q.tick();

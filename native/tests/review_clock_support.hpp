@@ -1,10 +1,13 @@
 #pragma once
+// 同步时钟审查夹具：用固定 epoch 的 µs 源戳与独立单调秒驱动真实 Runtime。
+// epoch 只建立可比较的合成 wall/ROS 域，不是 PX4 启动时间；每次源反馈比 wire 时间落后 200 ms。
 // Offline audit probe; compile against the untouched R6.2c baseline.
 #include "jikl_fc01_system/runtime.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
 #include <cassert>
 #include <iostream>
 namespace f=fc01;namespace a=fc01::attitude;
+// 配置保留真实级别的 .3 s stall、2.5 s低频反馈及 .5 s本地时限，bench 模式只额外关起飞。
 f::Config config(bool bench_mode=false){
   f::Config c;c.profile="attitude_altitude";auto& p=c.attitude;
   p.flight_actions_enabled=p.arm_enabled=p.takeoff_enabled=p.parameters_confirmed=true;
@@ -25,6 +28,7 @@ f::Config config(bool bench_mode=false){
 struct Harness {
   f::Runtime r{config()};f::Snapshot s;double t=1.;
   static constexpr std::uint64_t epoch=1700000000000000ULL;
+  // 将模拟单调经过时间映射到固定同步 epoch，用于构造命令因果水位；单位 µs。
   std::uint64_t wire() const{return epoch+std::uint64_t(t*1e6);}
   Harness(bool bench_mode=false):r(config(bench_mode)){
     r.require_attitude_sink_commit();
@@ -40,6 +44,7 @@ struct Harness {
     assert(r.request("AUTHORITY_AUTONOMOUS",{},s,t).accepted);
     assert(r.request("ATTITUDE_READY",{},s,t).accepted);
   }
+  // 每 50 ms 推进源戳并确认假命令提交，使后续 ACK 必须越过真正 wire stamp。
   a::Output tick(){
     t+=.05;s.status_stamp=s.land_stamp=wire()-200000;
     s.attitude.local_stamp=wire()-200000;
@@ -47,6 +52,7 @@ struct Harness {
     if(o.command!=a::Command::None)r.confirm_attitude_command_publication(o.command,true,wire(),s,t);
     return o;
   }
+  // ACK 必须超过 wire+同步偏差预算；之后观察新的 Offboard 状态才算准备完成。
   void ready(){
     for(int i=0;i<60&&r.attitude_core().phase()!=a::Phase::RequestOffboard;++i)tick();
     assert(r.attitude_core().phase()==a::Phase::RequestOffboard);

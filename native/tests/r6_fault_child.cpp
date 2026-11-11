@@ -1,3 +1,5 @@
+// 进程信号离线子夹具：验证监督进程/信号失效时原 Runtime 的恢复输出责任。
+// 只使用假反馈和本地 sink；故意 SIGABRT 用于父级崩溃测试，不连接真实飞控。
 // OS signals exercise an OFFLINE Runtime/boundary fixture. No ROS/FC01/PX4.
 #include "authority_test_support.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
@@ -5,6 +7,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+// 信号处理器只写 sig_atomic_t 标志，不在异步信号上下文调用 Runtime 或 IO。
 volatile std::sig_atomic_t r6_stop=0;
 static void stop(int){r6_stop=1;}
 struct M {std::uint64_t timestamp{};bool attitude{},position{},velocity{};};
@@ -14,6 +17,7 @@ int main(int argc,char** argv){
   auto c=authority_test::config();c.attitude.autonomous_failsafe_confirmed=true;
   c.attitude.descent_timeout=.3;c.attitude.recovery_seconds=1;c.attitude.saturation_seconds=100;
   fc01::Runtime r(c);auto s=authority_test::sample();double now{};
+  // 先进入合成已解锁地面，随后置为离地并请求 LAND，测试已承担下降责任后的关闭。
   authority_test::armed(r,s,now,"AUTHORITY_AUTONOMOUS");
   s.feedback.landed=false;s.at_rest=false;s.attitude.z=1.8;s.attitude.vz=0;
   r.request("LAND",{},s,now);
@@ -22,10 +26,12 @@ int main(int argc,char** argv){
   if(argc>1&&std::string(argv[1])=="crash")std::raise(SIGABRT);
   // Fixed OFFLINE observation window, not the production Node shutdown rule.
   // SIGINT/TERM retain healthy custody past the recovery completion deadline.
+  // 固定 40 次观察窗是测试策略，不能当成生产节点必须在该时刻退出的规则。
   for(int i=0;i<40;++i){
     if(r6_stop)r.begin_shutdown(s,now);
     auto o=authority_test::tick(r,s,now).attitude;
     bool target=false,mode=false;
+    // 每个合成目标/心跳仍通过真实最终边界，日志只证明本地调用，px4_fallback_verified 始终 false。
     if(o.publish){auto d=fc01::attitude::publish_attitude_at_boundary<M,T>(
       r.publication_context(s,now,!r.shutting_down(),true),o,std::uint64_t(now*1e6),
       [&](const T&){target=true;},[&](const M&){mode=true;});assert(d.allowed);}

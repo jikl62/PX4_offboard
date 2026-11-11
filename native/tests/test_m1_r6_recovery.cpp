@@ -1,3 +1,6 @@
+// R6 恢复托管回归：正常下降超时和有序关闭不能悄悄撤掉仍健康的已解锁 Offboard 输出。
+// RecoveryFixture 以50 ms单调步长和独立递增源戳驱动真实Runtime；目标/心跳sink均是本地计数器。
+// 所有推力为FRD z负升力，真实位置沿NED下正；这些合成测试不证明实际PX4已执行目标。
 // Positive regression against the actual R5 Armed+Offboard timeout defect.
 // Synthetic offline observations, never physical controller calibration.
 #include "authority_test_support.hpp"
@@ -10,6 +13,7 @@ struct ModeR6 {std::uint64_t timestamp{};bool attitude{},position{},velocity{};}
 struct TargetR6 {std::uint64_t timestamp{};float yaw_sp_move_rate{};
   std::array<float,4> q_d{};std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
 static void check(bool ok,const char* message){if(!ok)throw std::runtime_error(message);}
+// 夹具先完成假解锁，再设置离地反馈并请求LAND；config仅延长测试饱和预算，不用于部署。
 struct RecoveryFixture {
   f::Config c;f::Runtime r;f::Snapshot s;double now{};
   unsigned targets{},heartbeats{};
@@ -33,6 +37,7 @@ struct RecoveryFixture {
     return o;
   }
 };
+// 超过下降时限后仍逐轮要求两sink连续、推力有界且符合slew；空中不得常规Disarm。
 static void timeout_retains_both_sinks(bool shutdown){
   RecoveryFixture h;if(shutdown)h.r.begin_shutdown(h.s,h.now);
   double previous=0;
@@ -46,6 +51,7 @@ static void timeout_retains_both_sinks(bool shutdown){
   }
   std::cout<<(shutdown?"R6_GRACEFUL_SHUTDOWN":"R6_DESCENT_TIMEOUT")<<" positive dual-sink continuity PASS\n";
 }
+// 重复LAND和后来的shutdown不能延后首次恢复绝对截止；过期需披露未验证交接并保留健康下降责任。
 static void recovery_budget_cannot_be_renewed(){
   RecoveryFixture h;
   double deadline=-1;
@@ -74,6 +80,7 @@ static void recovery_budget_cannot_be_renewed(){
 }
 static f::Config fallback_config(){auto c=RecoveryFixture::config();
   c.attitude.px4_land_fallback_confirmed=true;c.attitude.px4_land_evidence_id="OFFLINE_SYNTHETIC_ONLY";return c;}
+// Land21后备需预先确认合同与当前XY/VXY/模式可选性，缺项仅拒绝后备，不能杀死原下降。
 static void land21_contract_and_current_sensors(){
   for(int missing=0;missing<5;++missing){
     auto c=missing==0?RecoveryFixture::config():fallback_config();RecoveryFixture h(c);
@@ -85,6 +92,7 @@ static void land21_contract_and_current_sensors(){
   }
   std::cout<<"R6_LAND21 current position and prior contract required PASS\n";
 }
+// 接受/拒绝/缺失ACK都不能代替PX4真正离开Offboard；后备命令只提交一次，不盲目重试。
 static void land21_unresolved_never_releases(int ack_case){
   RecoveryFixture h(fallback_config());h.r.require_attitude_sink_commit();
   h.s.attitude.xy_valid=h.s.attitude.vxy_valid=h.s.attitude.land_selectable=true;
@@ -107,6 +115,7 @@ static void land21_unresolved_never_releases(int ack_case){
   check(h.r.attitude_core().phase()==a::Phase::RecoveryDescent,"21 ACK fabricated mode handoff");
   std::cout<<"R6.1_LAND21 ack_case="<<ack_case<<" (accept/reject/missing) without new mode retains stream past budget; no retry PASS\n";
 }
+// 提交后的新Land模式才算观察到接管；模式名本身仍不能证明PX4任务工作正常。
 static void land21_requires_post_commit_status(){
   RecoveryFixture h(fallback_config());h.r.require_attitude_sink_commit();
   h.s.attitude.xy_valid=h.s.attitude.vxy_valid=h.s.attitude.land_selectable=true;
@@ -122,6 +131,7 @@ static void land21_requires_post_commit_status(){
     std::cout<<"R6_LAND21 new mode is observed ownership, task still unverified PASS\n";return;
   }}throw std::runtime_error("21 not planned");
 }
+// 八类真实健康失败必须停输出并进入Safety，不能继续使用ControlledDescent标签伪造仍受控。
 static void failures_never_fabricate_control(){
   for(int which=0;which<8;++which){RecoveryFixture h;for(int i=0;i<220;++i)h.tick();
     if(which==0)h.s.local_fresh=false;
@@ -139,6 +149,7 @@ static void failures_never_fabricate_control(){
   }
   std::cout<<"R6_UNHEALTHY 8 injected control failures release with no command PASS\n";
 }
+// 已提交Disarm后本地高度失效仍应诚实标记未知责任，不能因为有过命令就声称安全落地。
 static void submitted_disarm_fault_is_not_guarded_recovery(){
   auto c=RecoveryFixture::config();f::Runtime r(c);auto s=authority_test::sample();double now{};
   authority_test::armed(r,s,now,"AUTHORITY_AUTONOMOUS");
@@ -156,6 +167,7 @@ static void submitted_disarm_fault_is_not_guarded_recovery(){
     }
   }throw std::runtime_error("ground Disarm not planned");
 }
+// 故障后的外部上锁地面终态也需要连续独立新样本，超过land gap的两个孤立观测不能拼成dwell。
 static void external_ground_terminal_needs_contiguous_new_evidence(){
   auto cfg=RecoveryFixture::config();cfg.attitude.land_sample_max_gap=1.25;
   RecoveryFixture h(cfg);

@@ -1,14 +1,19 @@
 #pragma once
+// 姿态/高度配置入口：将 ROS 参数逐项写入 Core 的配置结构，不直接执行飞行动作。
+// 本函数与 ros_config.hpp 共同供实际节点和安装前校验器使用，避免两者解释不同配置。
+// 时间单位 s，高度/距离 m，速度 m/s，推力为归一化幅值；aa_* 保留既有名称和默认策略。
 #include "jikl_fc01_system/attitude_altitude_core.hpp"
 #include <rclcpp/rclcpp.hpp>
 namespace fc01 {
 inline attitude::Config attitude_parameters(rclcpp::Node& node){
   attitude::Config c;
+  // 视觉、RC 起飞和动作门分开声明：打开视觉开关不能代替解锁/起飞/人工确认合同。
   c.visual.enabled=node.declare_parameter<bool>("visual_navigation_enabled",false);
   c.rc_navigation_enabled=node.declare_parameter<bool>("rc_navigation_enabled",false);
   c.rc_target_height=node.declare_parameter<double>("rc_target_height",c.rc_target_height);
   c.rc_navigation_mode_slot=node.declare_parameter<std::int64_t>("rc_navigation_mode_slot",6);
   c.rc_arm_to_navigation_timeout=node.declare_parameter<double>("rc_arm_to_navigation_timeout",8.);
+  // 四类动作/确认参数各自独立，缺省拒绝；人工 RC 解锁路线仍由原 Core 检查。
   c.flight_actions_enabled=node.declare_parameter<bool>("flight_actions_enabled",false);
   c.bench_arm_only_enabled=node.declare_parameter<bool>("bench_arm_only_enabled",false);
   c.arm_enabled=node.declare_parameter<bool>("arm_enabled",false);
@@ -20,6 +25,7 @@ inline attitude::Config attitude_parameters(rclcpp::Node& node){
   c.px4_land_evidence_id=node.declare_parameter<std::string>("px4_land_evidence_id","");
   c.feedback_guard.enabled=node.declare_parameter<bool>("aa_vertical_feedback_guard_enabled",true);
   c.loop_hz=node.declare_parameter<double>("control_loop_hz",20.);
+  // 表内每项把参数名绑定到对应 double 成员地址，循环只负责声明/读取，不改变物理量计算。
   struct Entry {const char* name;double* value;};
   for(const auto& e:{
       Entry{"visual_state_timeout",&c.visual.state_timeout},
@@ -32,6 +38,7 @@ inline attitude::Config attitude_parameters(rclcpp::Node& node){
       {"visual_max_vertical_speed",&c.visual.max_vertical_speed},{"visual_max_radius",&c.visual.max_radius},
       {"visual_max_height",&c.visual.max_height},{"visual_min_quality",&c.visual.min_quality},
       {"visual_max_position_jump",&c.visual.max_position_jump},{"visual_max_velocity_jump",&c.visual.max_velocity_jump},
+      // 以下是原起飞、离地证据、样本新鲜度、推力和降落/恢复包络；它们不是视觉目标参数。
       Entry{"aa_armed_dwell_seconds",&c.armed_dwell_seconds},
       {"aa_feedback_rate_tolerance_mps",&c.feedback_guard.rate_tolerance_mps},
       {"aa_feedback_dwell_seconds",&c.feedback_guard.dwell_seconds},
@@ -63,6 +70,7 @@ inline attitude::Config attitude_parameters(rclcpp::Node& node){
       {"aa_recovery_seconds",&c.recovery_seconds},{"aa_px4_land_ack_seconds",&c.px4_land_ack_seconds},
       {"aa_saturation_seconds",&c.saturation_seconds},{"aa_max_flight_seconds",&c.max_flight_seconds}})
     *e.value=node.declare_parameter<double>(e.name,*e.value);
+  // 仅在显式高度下界为正时传递给垂向控制器；未设值沿用控制器原默认边界。
   c.vertical.ground_lower_margin=c.height_lower_margin_m>0?c.height_lower_margin_m:c.vertical.ground_lower_margin;
   return c;
 }

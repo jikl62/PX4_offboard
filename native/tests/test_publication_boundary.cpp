@@ -1,3 +1,5 @@
+// 最终发布策略矩阵回归：准备零流与动力飞行分离，权限/阶段/反馈在sink前重新确认。
+// Mode/Target为字段假类型，目标/心跳使用计数器；全部参数仅为合成测试而非部署配置。
 #if __has_include("jikl_fc01_system/publication_boundary.hpp")
 #include "jikl_fc01_system/publication_boundary.hpp"
 #include "jikl_fc01_system/runtime.hpp"
@@ -7,6 +9,7 @@
 namespace a=fc01::attitude;
 struct Mode {std::uint64_t timestamp{};bool position{},velocity{},acceleration{},attitude{},body_rate{},thrust_and_torque{},direct_actuator{};};
 struct Target {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
+// flight=false构造四动作门关闭的零推力准备；true明确填全部动力合同，并设置独立权限模式。
 static a::BoundaryContext context(bool flight=false){
   a::BoundaryContext c;c.profile="attitude_altitude";c.phase=flight?a::Phase::RequestArm:a::Phase::Prestream;
   c.session_connected=c.control_fresh=c.reference_ready=true;c.flight_started=flight;c.operator_lease_live=flight;
@@ -24,6 +27,7 @@ static a::BoundaryContext context(bool flight=false){
   p.height_lower_margin_m=.25;p.z_jump_limit_m=1.2;p.vz_jump_limit_mps=2.0;
   }return c;
 }
+// 对每个拒绝条件同时断言目标和心跳都未执行，不能只检查返回reason。
 static void pair_denied(const a::BoundaryContext& c,const a::Output& o,const char* reason=nullptr){
   int target=0,heartbeat=0;
   const auto d=a::publish_attitude_at_boundary<Mode,Target>(c,o,123,[&](const Target&){++target;},[&](const Mode&){++heartbeat;});
@@ -34,6 +38,7 @@ static void arm_denied(const a::BoundaryContext& c,const char* reason){
   int sent=0;const auto d=a::publish_arm_at_boundary(c,[&]{++sent;});
   assert(!d.allowed&&sent==0&&std::string(a::name(d.reason))==reason);
 }
+// 所有准备阶段逐轴注入正负/denormal非零推力均拒绝；合法零需编码为无负零的规范值。
 static void stage_one(){
   a::Output o;o.publish=true;
   for(auto phase:{a::Phase::Idle,a::Phase::SelfCheck,a::Phase::Prestream,a::Phase::RequestOffboard,a::Phase::OffboardReady}){
@@ -53,6 +58,7 @@ static void stage_one(){
   }
   std::cout<<"stage_one_zero_thrust_allowed_with_four_gates_false: PASS\n";
 }
+// 四动作门逐个关、会话/租约/地面/阶段/健康变化均不能到达Arm sink，完整基准只允许一次。
 static void arm(){
   const char* reasons[]={"FLIGHT_ACTIONS_DISABLED","ARM_DISABLED","TAKEOFF_DISABLED","FLIGHT_PARAMETERS_NOT_CONFIRMED"};
   const char* tests[]={"arm_blocked_if_flight_actions_false","arm_blocked_if_arm_enabled_false","arm_blocked_if_takeoff_enabled_false","arm_blocked_if_parameters_confirmed_false"};
@@ -71,6 +77,7 @@ static void arm(){
   c=context(true);int sent=0;auto d=a::publish_arm_at_boundary(c,[&]{++sent;});assert(d.allowed&&sent==1);
   std::cout<<"arm_phase_shutdown_lease_disarmed_health_and_all_inputs_policy_only: PASS\n";
 }
+// 检查动力门真值表和所有非法阶段/输入；原有紧急下降在会话丢失后仍由既有策略托管。
 static void thrust_and_supervision(){
   auto c=context(true);c.phase=a::Phase::Ascend;c.feedback.armed=true;
   a::Output o;o.publish=true;o.thrust={0,0,-.4};

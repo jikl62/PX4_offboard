@@ -1,3 +1,5 @@
+// Runtime到最终sink整链回归：缺XY与动力准备条件时，仅原有第一阶段零推力准备可工作。
+// sample的z=2 m是NED参考；故意缺XY/VXY/heading/电池RC动力就绪，确保准备不会隐式升级到Arm。
 #include "jikl_fc01_system/runtime.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
 #include <cassert>
@@ -5,6 +7,7 @@
 namespace a=fc01::attitude;
 struct Mode {std::uint64_t timestamp{};bool position{},velocity{},acceleration{},attitude{},body_rate{},thrust_and_torque{},direct_actuator{};};
 struct Target {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
+// 构造可信未解锁、接地静止和Z/Vz/姿态，保留无视觉垂向准备的实际依赖范围。
 static fc01::Snapshot sample(){
   fc01::Snapshot s;s.status_fresh=s.land_fresh=s.local_fresh=true;s.stationary_seconds=3;
   s.status_stamp=s.land_stamp=1000;s.feedback.exclusive=s.feedback.landed=s.at_rest=true;
@@ -17,6 +20,7 @@ int main(){
   fc01::Config c;c.profile="attitude_altitude";fc01::Runtime r(c);auto s=sample();
   assert(r.request("ATTITUDE_READY",{},s,0).accepted);
   int targets=0,heartbeats=0;bool requested=false;
+  // 按50 ms推进并用正确176 ACK与新Offboard状态完成准备；每个真实假sink都核对推力严格零。
   for(int i=0;i<=30;++i){
     const double t=i*.05;s.status_stamp+=1000;s.land_stamp+=1000;
     auto out=r.step(s,t);
@@ -36,6 +40,7 @@ int main(){
     }
   }
   assert(requested&&r.attitude_core().phase()==a::Phase::OffboardReady&&targets==heartbeats&&targets>0);
+  // 断开会话后的旧准备输出要在最终边界拒绝，再由Runtime走原零推力模式释放，不偷偷Arm。
   auto out=r.step(s,1.55);auto ctx=r.publication_context(s,1.55,false,true);
   auto denied=a::publish_attitude_at_boundary<Mode,Target>(ctx,out.attitude,124,[&](const Target&){++targets;},[&](const Mode&){++heartbeats;});
   assert(!denied.allowed&&denied.reason==a::BoundaryReason::SessionDisconnected);

@@ -1,6 +1,9 @@
+// 原1.5 m平台与视觉权限阶段回归：视觉有效输入也不能跳过人工RC起飞、实测离地和目标稳定。
+// current_visual为合成NED/FRD有效状态与目标；本测试显式开启视觉测试合同，部署默认仍false。
 #include "vision_test_support.hpp"
 #include <iostream>
 using namespace vision_test;
+// 状态是自身估计，command是目标，两者有独立source/sequence/stamp；设定位置均在明确NED帧。
 static v::Input current_visual(double now){
   v::Input in;in.ros_now_ns=1000000000000ULL+std::uint64_t(now*1e9);
   in.state_publishers=in.command_publishers=1;
@@ -13,6 +16,7 @@ static v::Input current_visual(double now){
   c.position_valid=true;c.position={.2,0,-1.5};c.sticks_valid=true;c.sticks={0,0,0,0};
   return in;
 }
+// 从未加入到ThrustRamp/Ascend期间视觉不得主动发起任务；目标1.5 m达到后还要完整稳定窗。
 static void rc_navigation_at_one_point_five_waits_for_measured_liftoff_and_settling(){
   auto c=config();c.attitude.rc_target_height=1.5;VisionFlight q(c);
   q.set_visual(current_visual(.05));q.tick();
@@ -53,6 +57,7 @@ static void rc_navigation_at_one_point_five_waits_for_measured_liftoff_and_settl
     "the RC task preserves z0 and never emits automatic Arm or Offboard commands");
   // The final sink resamples feedback after planning. A detector contradiction
   // at that boundary must block an already planned visual target too.
+  // 最终sink后采样见landed矛盾必须撤销已规划视觉目标；Core随后走原受监督下降，不声称安全地面或空中Disarm。
   auto contradictory=q.s;contradictory.feedback.landed=true;
   const auto boundary=a::attitude_publication_policy(q.r.publication_context(contradictory,q.t,true,true),q.o.attitude);
   need(!boundary.allowed,"a post-plan landed contradiction must revoke visual publication");

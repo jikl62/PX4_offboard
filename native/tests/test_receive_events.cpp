@@ -1,3 +1,6 @@
+// 接收安全事件整链回归：最新连续缓存与不可丢的中间危险payload分离，额外补读不得掩盖原安全判断。
+// Status/Land/Flags/Battery/Local/Attitude是假消息形状；不创建ROS或PX4发布者。
+// Local为NED下正m、m/s，timestamp与timestamp_sample独立µs；四元数Hamilton wxyz表示FRD到NED。
 #include "jikl_fc01_system/receive_events.hpp"
 #include "jikl_fc01_system/receive_schedule.hpp"
 #include "jikl_fc01_system/discrete_event_latch.hpp"
@@ -37,6 +40,7 @@ struct Attitude {
   std::array<double,4> q{1,0,0,0};std::uint8_t quat_reset_counter{};
 };
 
+// 同一spin_some中坏姿态后正常尾帧仍保存首坏payload到step；固定队列满时保留溢出故障。
 static void discrete_event_latch_keeps_first_bad_sample_until_step(){
   f::DiscreteEventLatch<Attitude,4> latch;
   f::attitude::Config config;config.max_tilt_deg=10.;
@@ -68,6 +72,7 @@ template<class Change>static void status_transition(Change change){
   assert(f::status_receive_event(before,after));
   assert(f::status_receive_event(after,before));
 }
+// 身份/解锁事件/模式/失效/预检/电源/landed/rest改变及电池异常应触发事件，纯戳推进不是业务边沿。
 static void status_and_ground_transitions(){
   status_transition([](auto& s){s.system_id=2;});
   status_transition([](auto& s){s.component_id=2;});
@@ -105,6 +110,7 @@ template<class Change>static void authority_transition(Change change){
   f::AuthorityTelemetry::Facts before,after=before;change(after);
   assert(f::authority_receive_key(before)!=f::authority_receive_key(after));
 }
+// 权限事实和开关代数改变需要事件；只诊断的轻微数值油门差不应制造新安全事件。
 static void authority_events_do_not_compare_numeric_stick_motion(){
   authority_transition([](auto& s){s.rc_link_ready=true;});
   authority_transition([](auto& s){s.rc_switches_ready=true;});
@@ -132,6 +138,7 @@ template<class Change>static void local_transition(const f::attitude::Config& co
   Local before,after=before;change(after);
   assert(f::local_receive_event(before,after,config));
 }
+// reset/无效/NaN/Inf/突跳与速度差往返边沿保留；正常连续运动可补读，不能把分离短差窗拼成长差窗。
 static void reset_invalid_and_continuous_estimates(){
   f::attitude::Config config;config.z_jump_limit_m=1.;config.vz_jump_limit_mps=1.;
   config.ground_vz_tolerance=1.;
@@ -179,6 +186,7 @@ static void reset_invalid_and_continuous_estimates(){
   assert(!f::local_receive_event(before,after,config));
 }
 
+// 明确vertical_only且横向无效时允许忽略不可用横向NaN；若声称有效或垂向NaN仍是坏样本。
 static void unavailable_horizontal_fields_do_not_strand_vertical_feedback(){
   f::attitude::Config config;
   Local before,after;
@@ -206,6 +214,7 @@ static f::Config receive_flight_config(f::Config config){
   config.attitude.autonomous_failsafe_confirmed=true; // synthetic fixture only
   return config;
 }
+// 真实Runtime先完成Arm再提供只读needs预判；observe将上正高度/速度转换为本轮NED。
 struct ReceiveFlight {
   f::Config c;f::Runtime runtime;f::Snapshot sample{authority_test::sample()};
   double now{};f::Output output;
@@ -243,6 +252,7 @@ static Local local_sample(const ReceiveFlight& flight){
 }
 
 template<class Change,class Check>
+// 模拟有界补读，在首个影响Core判定的样本立刻停止额外轮次，让真实step先看到它。
 static void drain_preserves_first_unsafe_sample(const ReceiveFlight& flight,unsigned expected,
     Change change,Check check){
   f::ReceivePassSchedule schedule;std::uint64_t callbacks=0,events=0;
@@ -258,6 +268,7 @@ static void drain_preserves_first_unsafe_sample(const ReceiveFlight& flight,unsi
   assert(consumed==expected&&schedule.reason()==f::ReceivePassStop::Event);
   check(held); // Existing Core sees this sample before the returning callback.
 }
+// 绝对高度/速度包络及相对Core上次样本的累计跳变都要保留，不能只比较相邻回调漏中间峰值。
 static void absolute_flight_envelope_and_control_step_baseline(){
   auto config=authority_test::config();config.attitude.z_jump_limit_m=1.;
   config.attitude.vz_jump_limit_mps=1.;config.attitude.ground_vz_tolerance=2.;
@@ -296,6 +307,7 @@ static void absolute_flight_envelope_and_control_step_baseline(){
   drain_preserves_first_unsafe_sample(jumps,2,[&](auto& s,unsigned i){s.vz=s.z_deriv=values[i];},
     [&](const auto& s){assert(s.vz>config.attitude.vz_jump_limit_mps);});
 }
+// 地面稳定、台架不对称包络、斜坡首次跨高度与运动证据撤回都要及时交给控制。
 static void ground_guards_and_ramp_rise_survive_extra_passes(){
   ReceiveFlight ground;
   assert(!ground.needs(.01,.01));
@@ -324,6 +336,7 @@ static void ground_guards_and_ramp_rise_survive_extra_passes(){
   f::attitude::Core idle;
   assert(!idle.local_requires_control_step(50000,100.,0.,0.));
 }
+// 复制一致性监测器做只读预演，不能推进真实积分/样本窗口；真正step才拥有故障状态转换。
 static void feedback_preview_preserves_position_window_and_real_state(){
   auto config=authority_test::config();config.attitude.feedback_guard.enabled=true;
   ReceiveFlight flight(config);flight.ramp();
@@ -347,6 +360,7 @@ static void feedback_preview_preserves_position_window_and_real_state(){
   assert(flight.core().phase()==f::attitude::Phase::Safety);
   assert(flight.core().reason()=="VERTICAL_POSITION_RATE_INCONSISTENT");
 }
+// 已人工Arm等待导航的地面参考及下降触地dwell不可被补读覆盖。
 static void rc_anchor_and_touchdown_dwell_are_preserved(){
   vision_test::VisionFlight join;join.warm();join.manual_arm();
   assert(join.r.attitude_core().phase()==f::attitude::Phase::RcWaitNavigation);
@@ -370,6 +384,7 @@ static void rc_anchor_and_touchdown_dwell_are_preserved(){
   assert(!require_candidate(0,0));
 }
 
+// 姿态reset/零/NaN无效必须事件；正常yaw变化和合法大倾角本身沿既有连续反馈策略处理。
 static void attitude_reset_invalid_and_real_tilt(){
   f::attitude::Config config;config.max_tilt_deg=10.;
   Attitude before,after=before;after.quat_reset_counter=1;

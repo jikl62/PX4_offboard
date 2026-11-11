@@ -1,3 +1,6 @@
+// 命令400审计缓存容量长期回归：320次真实人工RC任务取消与恢复跨越128条淘汰边界。
+// 最近审计尾部可淘汰，但wire generation、因果水位、当前待决事务及ACK复用歧义必须终身保留。
+// 每轮重新地面参考/预发送、人工Arm与新Offboard；命令sink合成，零真实飞控连接。
 // 复用真实Runtime、RC状态机与最终零推力边界；所有发布者都是本进程内的测试替身。
 #define main existing_rc_navigation_contract_main
 #include "test_rc_navigation.cpp"

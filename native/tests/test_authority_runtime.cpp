@@ -1,9 +1,12 @@
+// Runtime 权限生命周期回归：选择、准备锁定、接管、待决命令和正常完成后的显式重置。
+// 检查所有飞行阶段保持同一个 attempt_mode；输入恢复健康不自动重新取得控制权。
 // Mutations caught: upstream UNSET admission; unsafe selection; unlocking during
 // preparation; clearing pending Arm; reacting to healthy inputs by reacquiring.
 #include "authority_test_support.hpp"
 #include <iostream>
 #include <set>
 using namespace authority_test;
+// UNSET 即使旧 manual gate 健康也不能起飞；选择必须在活动交互、未解锁且无输出的安全地面。
 static void default_and_selection(){
   auto c=config();c.attitude.autonomous_failsafe_confirmed=true;f::Runtime r(c);auto s=sample();double t=0;
   s.manual_fresh=true; // satisfy the old ambiguous gate to isolate the new UNSET requirement
@@ -33,6 +36,7 @@ static void default_and_selection(){
   idle.request("INTERACTIVE",{},s,t);
   assert(idle.request("AUTHORITY_RESET",{},s,t).accepted);
 }
+// RC三项合同与自主失效合同分别测试，避免一个确认替另一路线放行。
 static void route_admission(){
   for(int failure=0;failure<4;++failure){auto c=config();auto s=sample();double t=0;
     c.attitude.rc_takeover_confirmed=failure!=1;
@@ -48,6 +52,7 @@ static void route_admission(){
     assert(!s.manual_fresh&&!s.attitude.rc_link_ready&&!s.attitude.rc_switches_ready);
   }
 }
+// 七种接管/失效刺激后恢复健康反馈，仍不得重新Arm/Offboard；安全 reset 只返回 UNSET。
 static void takeover_and_no_reacquire(){
   for(int failure=0;failure<7;++failure){auto c=config();c.attitude.rc_takeover_confirmed=true;
     f::Runtime r(c);auto s=sample();s.attitude.rc_link_ready=s.attitude.rc_switches_ready=true;
@@ -82,6 +87,7 @@ static void takeover_and_no_reacquire(){
   s.feedback.offboard=false;auto out=tick(r,s,t);
   assert(state(r,s,t).takeover_latched&&!out.attitude.publish&&out.attitude.command==a::Command::None);
 }
+// 未解决 Arm 事务阻止 reset；普通安全故障不能被 STOP 或重新选择权限掩盖。
 static void pending_and_faults(){
   auto c=config();c.attitude.autonomous_failsafe_confirmed=true;f::Runtime r(c);auto s=sample();double t=0;
   ready(r,s,t,"AUTHORITY_AUTONOMOUS");r.request("TAKEOFF",{1},s,t);tick(r,s,t);
@@ -96,6 +102,7 @@ static void pending_and_faults(){
   assert(fault.request("STOP",{},s,t).accepted);
   assert(!fault.request("AUTHORITY_RESET",{},s,t).accepted); // STOP cannot erase a safety fault
 }
+// 完整任务每阶段尝试改权限均拒绝；上锁还未释放Offboard时也不能提前重选。
 static void completion_and_all_phases(){
   auto c=config();c.attitude.autonomous_failsafe_confirmed=true;f::Runtime r(c);auto s=sample();double t=0;
   ready(r,s,t,"AUTHORITY_AUTONOMOUS");assert(r.request("TAKEOFF",{1},s,t).accepted);

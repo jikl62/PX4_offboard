@@ -1,3 +1,6 @@
+// ROS 接收调度 A/B 探针：比较 spin_some/持久executor/重复补读/spin_all 的消费时延。
+// 仅用 /fc01_offline_repro/source 的 Int64MultiArray 测试消息，不发布任何 /fmu/in 控制。
+// 数据载荷为序号、外壳 wall ns、raw wall ns；源判定前转 µs，CSV 记录 ms 时延与 50 ms 周期。
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/int64_multi_array.hpp>
 #include "jikl_fc01_system/source_clock.hpp"
@@ -23,6 +26,7 @@ int main(int argc,char**argv){
   const double callback_ms=argc>7?std::stod(argv[7]):0;
   rclcpp::init(argc,argv);auto node=std::make_shared<rclcpp::Node>("fc01_executor_ab_"+mode);
   const auto qos=rclcpp::SensorDataQoS().keep_last(10);
+  // 发布端先等唯一订阅者，按 hz 生成 wall stamp，可显式加入 raw_lag_ms 检验“外壳新而 raw 旧”。
   if(mode=="pub"){
     auto publisher=node->create_publisher<Msg>("/fc01_offline_repro/source",qos);
     const double wait_until=steady()+4.;
@@ -36,6 +40,7 @@ int main(int argc,char**argv){
   }
   std::uint64_t count=0,envelope_valid=0,raw_valid=0;std::int64_t sequence=0;
   double callback_age_ms=-1,rmw_ms=-1,raw_age_ms=-1,first=-1;
+  // 回调记录源/原始年龄和 RMW 到回调差；callback_ms 可人为阻塞，不能把本探针当生产实时保证。
   auto subscription=node->create_subscription<Msg>("/fc01_offline_repro/source",qos,[&](Msg::ConstSharedPtr msg,const rclcpp::MessageInfo& info){
     if(first<0)first=steady();
     ++count;sequence=msg->data[0];const auto now=wall();
@@ -55,6 +60,7 @@ int main(int argc,char**argv){
     std::size_t passes=1;
     if(mode=="some")rclcpp::spin_some(node);
     else if(mode=="persistent_some")executor.spin_some(std::chrono::milliseconds(std::int64_t(budget_ms)));
+    // 重复补读最多十轮，只有一轮结束后才能检查预算；单回调仍不可抢占。
     else if(mode=="repeated"){
       const double budget_end=start+budget_ms*1e-3;
       for(passes=0;passes<10;){
@@ -67,6 +73,7 @@ int main(int argc,char**argv){
     }
     else executor.spin_all(std::chrono::milliseconds(std::int64_t(budget_ms)));
     max_passes=std::max(max_passes,passes);
+    // 分别记录 spin 耗时、实际周期间隔、单周期回调数和队列年龄，避免只看平均吞吐漏掉抖动。
     const double spin_ms=(steady()-start)*1e3;max_spin_ms=std::max(max_spin_ms,spin_ms);total_spin_ms+=spin_ms;
     ++total_cycles;
     if(first>=0){++cycles;const auto n=count-before;max_callbacks=std::max(max_callbacks,std::size_t(n));zero_cycles+=n==0;
@@ -76,6 +83,7 @@ int main(int argc,char**argv){
     }
     previous=start;deadline+=std::chrono::milliseconds(50);std::this_thread::sleep_until(deadline);
   }
+  // 输出统计值用于比较观察，缺首帧时返回失败；不推断 PX4 链路或 ARM64 性能。
   const double elapsed=first<0?0:steady()-first;
   std::cout<<std::setprecision(10)<<"{\"mode\":\""<<mode<<"\",\"producing_hz\":"<<hz<<",\"count\":"<<count
     <<",\"elapsed_s\":"<<elapsed<<",\"consumed_hz\":"<<(elapsed?count/elapsed:0)<<",\"cycles\":"<<cycles

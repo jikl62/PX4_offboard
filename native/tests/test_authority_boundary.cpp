@@ -1,3 +1,5 @@
+// 最终控制权边界回归：同时攻击 Arm 与非零姿态 sink，防止只在上游检查授权。
+// complete 故意准备其它条件都健康，再只改变权限合同；所有 sink 为本地计数器。
 // Mutations caught: removing authority checks at either real final sink;
 // trusting manual_ready, one confirmation, or a changed/unlocked attempt.
 #include "jikl_fc01_system/publication_boundary.hpp"
@@ -7,6 +9,7 @@
 namespace a=fc01::attitude;
 struct Mode {std::uint64_t timestamp{};bool position{},velocity{},acceleration{},attitude{},body_rate{},thrust_and_torque{},direct_actuator{};};
 struct Target {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
+// 构造健康 RequestArm 基础上下文，不默认选择 authority，让 UNSET 拒绝可单独验证。
 static a::BoundaryContext complete(){
   a::BoundaryContext c;c.profile="attitude_altitude";c.phase=a::Phase::RequestArm;
   c.session_connected=c.control_fresh=c.reference_ready=c.flight_started=c.operator_lease_live=true;
@@ -22,6 +25,7 @@ static a::BoundaryContext complete(){
   p.height_lower_margin_m=.25;p.z_jump_limit_m=1.2;p.vz_jump_limit_mps=2.0;
   return c;
 }
+// 同一坏上下文先试 Arm 再试 Ascend 非零推力，均要求两个假 sink 一次也不可达。
 static void denied(a::BoundaryContext c,const char* expected){
   int arms=0,targets=0,modes=0;
   auto d=a::publish_arm_at_boundary(c,[&]{++arms;});
@@ -38,6 +42,7 @@ int main(){
 #if __has_include("jikl_fc01_system/authority.hpp")
   namespace auth=fc01::authority;
   auto c=complete();
+  // 自主路线缺失效合同即拒绝；完整合同不要求 RC，避免混淆两路线。
   c.authority={auth::Mode::AutonomousNoRc,auth::Mode::AutonomousNoRc,true,false};
   denied(c,"AUTONOMOUS_FAILSAFE_UNCONFIRMED");
   c.config.autonomous_failsafe_confirmed=true;
@@ -47,6 +52,7 @@ int main(){
   const auto published=a::publish_attitude_at_boundary<Mode,Target>(c,o,1,[&](const Target&){++targets;},[&](const Mode&){++modes;});
   assert(published.allowed);
   assert(targets==1&&modes==1&&!c.feedback.rc_link_ready&&!c.feedback.rc_switches_ready);
+  // RC 路线逐一补链路、接管确认、开关遥测，任缺一项都无权限。
   c=complete();c.authority={auth::Mode::RcTakeover,auth::Mode::RcTakeover,true,false};
   denied(c,"RC_LINK_REQUIRED");
   c.feedback.rc_link_ready=true;denied(c,"RC_TAKEOVER_CONTRACT_UNCONFIRMED");
@@ -63,12 +69,14 @@ int main(){
   c.feedback.operator_takeover=false;c.feedback.offboard_signal_lost=true;
   denied(c,"OPERATOR_TAKEOVER_LATCHED");
   c.feedback.offboard_signal_lost=false;
+  // 四动作门任一关闭仍否决，控制权合同完整不能覆盖动作门。
   for(int gate=0;gate<4;++gate){auto x=c;
     bool* flags[]={&x.config.flight_actions_enabled,&x.config.arm_enabled,&x.config.takeoff_enabled,&x.config.parameters_confirmed};
     *flags[gate]=false;denied(x,nullptr);
   }
   c=complete();c.phase=a::Phase::Prestream;c.authority={};c.config={};c.flight_started=false;c.feedback.offboard=false;
   o.thrust={0,0,0};assert(a::attitude_publication_policy(c,o).allowed);
+  // double 最小非零负推力转 float 可能归零，最终策略仍须按原double拒绝第一阶段非零。
   o.thrust[2]=-std::numeric_limits<double>::denorm_min();
   assert(a::attitude_publication_policy(c,o).reason==a::BoundaryReason::StageOneNonzero);
   c=complete();c.authority.mode=static_cast<auth::Mode>(999);c.authority.attempt_mode=c.authority.mode;c.authority.locked=true;

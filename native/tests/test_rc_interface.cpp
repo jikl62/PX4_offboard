@@ -1,3 +1,5 @@
+// PX4 手动源接口回归：选中真实RC、推进raw与独立开关共同形成就绪事实，不能互相替代。
+// Manual/Switches为假消息，timeout2.5 s；枚举沿固定PX4来源和ON/OFF定义，不把未知值解释为安全。
 #include "authority_test_support.hpp"
 #include "jikl_fc01_system/authority_telemetry.hpp"
 #include <cassert>
@@ -16,6 +18,7 @@ struct Switches {
 static void advance(Manual& m,std::uint64_t us=1000){m.timestamp+=us;m.timestamp_sample+=us;}
 static void advance(Switches& s,std::uint64_t us=1000){s.timestamp+=us;s.timestamp_sample+=us;}
 int main(){
+  // 逐场景测试无消息、invalid、MAVLink源、冻结raw、长gap后首帧、缺独立开关和Kill锁存。
   constexpr double timeout=2.5;
   {
     f::AuthorityTelemetry o;
@@ -58,6 +61,7 @@ int main(){
     sw.kill_switch=3;advance(sw);o.switches(sw,10.01,timeout);assert(!o.facts(10.01,timeout,true,false,1,1).kill);
   }
   {
+    // sticks_moving只诊断，必须来自新鲜选中RC；它不能替代开关/接管确认，也不单独等于已接管。
     // sticks_moving is diagnostic-only in 0.4.3: it must come from a fresh,
     // valid, selected RC sample and must not itself satisfy switch/confirmation gates.
     f::AuthorityTelemetry o;Manual m;m.sticks_moving=true;
@@ -75,6 +79,7 @@ int main(){
     assert(j.find("\"rc_takeover_ready\":false")!=std::string::npos);
   }
   {
+    // 自主无RC合同明确确认后可走自己的准备路线，不能误要求另一权限路线的遥测。
     auto c=config();c.attitude.autonomous_failsafe_confirmed=true;f::Runtime r(c);auto s=sample();double t=0;
     assert(r.request("INTERACTIVE",{},s,t).accepted);
     assert(r.request("AUTHORITY_AUTONOMOUS",{},s,t).accepted);

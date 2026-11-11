@@ -1,3 +1,5 @@
+// RC BEFORE_READY 真实恢复回归：过早开关/解锁拒绝后能以新安全地面重新准备，始终不自动Arm。
+// 四类BeforeReady来自真实状态机触发，不用block伪造；原始源戳为µs、主机与静止窗为单调s。
 // Exercise the real Runtime/Core and final zero-publication boundary.
 #define main existing_rc_navigation_contract_main
 #include "test_rc_navigation.cpp"
@@ -12,6 +14,7 @@ static const char* before_ready_reason(BeforeReady which){
 static bool needs_full_ground_proof(BeforeReady which){
   return which==BeforeReady::ArmSource||which==BeforeReady::ArmedState;
 }
+// advance模拟节点先扫所有独立安全事件，再step与真实零流最终sink；故障观察绝不发命令。
 struct BeforeReadyRetry {
   Flight q{production_no_vision_rc_config()};
   bool resting{true};double rest_since{-3};
@@ -46,6 +49,7 @@ struct BeforeReadyRetry {
     need(!q.r.pending(176).requested&&!q.r.pending(400).requested,
       "no command transaction may be manufactured by recovery or preparation");
   }
+  // 区分预发送早开关与READY因果余量内早到的Arm源/状态；后二者保留完整新地面恢复证明要求。
   void trigger(BeforeReady which){
     advance();need(q.r.attitude_core().phase()==a::Phase::RcPrestream,
       "fresh safe ground begins an actual zero-only prestream");
@@ -76,6 +80,7 @@ struct BeforeReadyRetry {
     q.s.attitude.z=2.4;
   }
 };
+// 仍armed或源冻结都不能恢复；新安全窗完成后只重建任务状态，保存故障历史且不继承z0/Arm授权。
 static void before_ready_fault_requires_new_safe_task(BeforeReady which){
   BeforeReadyRetry f;f.trigger(which);f.reset_controls(true);
   for(unsigned i=0;i<10;++i){
@@ -122,6 +127,7 @@ static void before_ready_fault_requires_new_safe_task(BeforeReady which){
   need(d.first_fault_reason.empty()&&d.latest_fault_reason.empty()&&!d.ready&&d.status_samples==0&&
     !f.q.r.attitude_core().rc_manual_arm_proven()&&!f.q.r.attitude_core().reference_ready(),
     "the rebuilt task must inherit neither the old fault proof, anchor nor arm authorization");
+  // 恢复后还要新预发送与新地面参考2.4 m，最终停在等待本轮人工Arm，而不是立即起飞。
   for(unsigned i=0;i<100&&f.q.r.attitude_core().phase()!=a::Phase::RcWaitArm;++i)f.advance();
   need(f.q.r.attitude_core().phase()==a::Phase::RcWaitArm&&
     std::abs(f.q.r.attitude_core().reference_z()-2.4)<1e-9&&

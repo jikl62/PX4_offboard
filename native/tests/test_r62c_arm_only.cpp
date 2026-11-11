@@ -1,9 +1,12 @@
+// R6.2c 仅解锁台架回归：显式bench合同下只允许规范零推力和一次Arm/Disarm，不允许起飞。
+// BH用真实Runtime、最终边界和最终提交回报；land仍为1 Hz。参数仅属拆桨离线合同，不作为部署建议。
 // R6.2c offline Arm-only bench path. No ROS or physical hardware.
 #define main existing_s10_not_invoked
 #include "c_s10_independent/C_S10_SAFETY_ATTACKS.cpp"
 #undef main
 static f::Config bench_config(){auto c=config();c.attitude.bench_arm_only_enabled=true;
   c.attitude.takeoff_enabled=false;c.validate();return c;}
+// 保存各类假sink次数，每次发布逐项断言推力为零，命令先过对应最终策略再记wire提交。
 struct BH{
  f::Runtime r{bench_config()};f::Snapshot s{snapshot()};double t{};
  int arms{},disarms{},modes{},targets{},heartbeats{};
@@ -40,6 +43,7 @@ struct BH{
    s.feedback.offboard=true;s.nav_state=14;tick();
    assert(r.attitude_core().phase()==a::Phase::OffboardReady);
  }
+ // 先准备，再验证TAKEOFF被台架策略禁止；ARM_ONLY经ACK和新armed状态才能BenchArmedGround。
  void armed(){ready();auto no=r.request("TAKEOFF",{.5},s,t);
    assert(!no.accepted&&no.message=="TAKEOFF_FORBIDDEN_IN_ARM_ONLY_BENCH_MODE");
    auto yes=r.request("ARM_ONLY",{},s,t);assert(yes.accepted);
@@ -49,6 +53,7 @@ struct BH{
    assert(r.attitude_core().phase()==a::Phase::BenchArmedGround);
  }
 };
+// 正常台架可进入PoweredGround并计划唯一上锁，整个期间不得出现ThrustRamp/Ascend/HeightHold。
 void positive(){BH h;h.armed();bool saw_powered=false;
  for(int i=0;i<300&&!h.disarms;++i){auto o=h.tick();
   assert(!a::nonzero(o.thrust));auto p=h.r.attitude_core().phase();
@@ -59,11 +64,13 @@ void positive(){BH h;h.armed();bool saw_powered=false;
  for(int i=0;i<20;++i){h.tick();assert(h.disarms==1);}
  std::cout<<"R62C_BENCH_AUTO_DISARM_NO_RAMP PASS\n";
 }
+// 冻结land时不能仅按控制时间发上锁；保持无非零推力并披露等待。
 void detector_freeze(){BH h;h.armed();for(int i=0;i<85;++i)h.tick(false);
  assert(h.r.attitude_core().phase()==a::Phase::BenchArmedGround);
  assert(h.disarms==0&&h.arms==1);
  std::cout<<"R62C_BENCH_FROZEN_DETECTOR_NO_DISARM PASS\n";
 }
+// 台架Vz超限仍须Safety并保存精确16位原因，不能盲目Disarm。
 void ground_failure(){BH h;h.armed();h.s.attitude.vz=.251;
  auto o=h.tick();assert(!o.publish);
  assert(h.r.attitude_core().reason()=="BENCH_ARMED_GROUND_NOT_STABLE");
@@ -71,6 +78,7 @@ void ground_failure(){BH h;h.armed();h.s.attitude.vz=.251;
  assert(h.disarms==0&&h.arms==1);
  std::cout<<"R62C_BENCH_VZ_FAILURE_BLOCKED PASS\n";
 }
+// 恶意非零输出即使Core错误也被最终sink拒绝；LAND在非静止地面只先进入原减推恢复。
 void stop_and_boundary(){
  BH h;h.armed();
  auto c=h.r.publication_context(h.s,h.t,true,true);
@@ -85,6 +93,7 @@ void stop_and_boundary(){
  assert(h.disarms==0);
  std::cout<<"R62C_BENCH_NO_NONZERO_AT_FINAL_SINK_OR_BLIND_LAND PASS\n";
 }
+// 默认bench关闭；将bench与takeoff同时打开是非法配置，构造前须拒绝。
 void defaults(){Harness h;h.ready();auto no=h.r.request("ARM_ONLY",{},h.s,h.t);
  assert(!no.accepted&&no.message=="ARM_ONLY_BENCH_MODE_DISABLED");
  auto c=config();c.attitude.bench_arm_only_enabled=true;

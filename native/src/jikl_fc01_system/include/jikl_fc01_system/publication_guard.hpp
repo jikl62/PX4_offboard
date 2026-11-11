@@ -1,10 +1,14 @@
 #pragma once
+// 飞控最终发布策略：对每一条真实 sink 调用独立检查当前健康、状态和权限。
+// 这是无 ROS/DDS、无副作用的拒绝优先策略；不夹紧输出、不重置故障、不推进飞行状态机。
+// BoundaryContext 是当次发布的不可变快照，生产节点在目标和心跳前分别重取，不能复用过期的通过结论。
 #include "jikl_fc01_system/attitude_altitude_core.hpp"
 #include <string>
 
 namespace fc01::attitude {
 // Immutable per-publication view, sampled again by the ROS adapter at the sink.
 // No ROS/DDS dependencies, side effects, clamping, or state transitions here.
+// 包括当前配置/反馈、Core 阶段、地面参考、租约、事务证据与视觉计划；这些字段均由本机状态生成。
 struct BoundaryContext {
   std::string profile;
   Phase phase{Phase::Idle};
@@ -12,6 +16,7 @@ struct BoundaryContext {
   Feedback feedback;
   bool shutdown{},session_connected{},operator_lease_live{},control_fresh{};
   bool preparation_lease_valid{true},flight_started{},reference_ready{};
+  // PX4 NED z 地面零点，单位 m，向下为正；飞行高度由 reference_z-feedback.z 得到，向上为正。
   double reference_z{};
   std::uint8_t reference_z_reset{},reference_vz_reset{},reference_quat_reset{};
   authority::State authority;
@@ -19,6 +24,7 @@ struct BoundaryContext {
   bool ground_confirmed{},arm_confirmed{},ground_release_pending{},arm_cancel_pending{};
   bool disarm_command_committed{};
   bool bench_arm_only_active{},bench_disarm_proven{},arm_command_committed{};
+  // 台架释放阶段仍对最新单帧 z/vz 不连续性检查；不能在 flight_started 清除后失去最后一层保护。
   bool bench_sample_guard_ready{};
   double bench_sample_z{},bench_sample_vz{};
   std::uint64_t bench_arm_status_baseline{},bench_arm_local_baseline{};
@@ -26,10 +32,12 @@ struct BoundaryContext {
   bool px4_land_command_committed{};
   std::uint64_t touchdown_baseline{};
   double yaw_reference{};
+  // 仅已有 HeightHold 视觉计划及同一当前输入可置真；绝非新 VelocityCommand 诊断入口的权限。
   bool visual_motion_allowed{};
   Quaternion visual_target_q{1,0,0,0};
   bool rc_manual_arm_proven{},rc_arm_evidence_pending{},rc_navigation_zero_allowed{};std::uint64_t rc_manual_armed_time{};
 };
+// 拒绝原因按物理健康、权限、阶段和输出分别表达；序列化字符串保持旧协议不变。
 enum class BoundaryReason {
   Allowed,WrongProfile,Shutdown,SessionDisconnected,OperatorLease,ControlStall,
   OutputDisabled,InvalidOutput,StageOneNonzero,WrongOutputPhase,FlightActions,
@@ -99,6 +107,7 @@ inline const char* name(BoundaryReason reason){
 struct Decision {bool allowed{};BoundaryReason reason{BoundaryReason::InvalidOutput};};
 inline Decision deny(BoundaryReason reason){return {false,reason};}
 inline Decision allow(){return {true,BoundaryReason::Allowed};}
+// 将统一 authority 合同映射为发布原因，不能在最终 sink 使用比 Core 更宽松的授权。
 inline Decision boundary_authority(const BoundaryContext& c){
   switch(authority::evaluate(c.authority,authority_inputs(c.config,c.feedback))){
     case authority::Reason::Allowed:return allow();
@@ -113,9 +122,11 @@ inline Decision boundary_authority(const BoundaryContext& c){
     case authority::Reason::Invalid:return deny(BoundaryReason::InvalidAuthority);
   }return deny(BoundaryReason::InvalidAuthority);
 }
+// RC 准备三阶段都只允许零推力；stage_one 还包括未解锁的普通 Offboard 准备阶段。
 inline bool rc_stage(Phase p){return p==Phase::RcPrestream||p==Phase::RcWaitArm||p==Phase::RcWaitNavigation;}
 inline bool stage_one(Phase p){return p==Phase::Idle||p==Phase::SelfCheck||p==Phase::Prestream||p==Phase::RequestOffboard||p==Phase::OffboardReady||rc_stage(p);}
 inline bool nonzero(const std::array<double,3>& thrust){return thrust[0]!=0||thrust[1]!=0||thrust[2]!=0;}
+// 检查动作总门、程序/人工解锁路线、起飞/台架门和参数确认；异常配置统一拒绝。
 inline Decision flight_gates(const Config& c){
   if(!c.flight_actions_enabled)return deny(BoundaryReason::FlightActions);
   if(!c.arm_enabled&&!c.rc_navigation_enabled)return deny(BoundaryReason::ArmEnabled);
@@ -124,8 +135,10 @@ inline Decision flight_gates(const Config& c){
   try{c.validate();}catch(const std::invalid_argument&){return deny(BoundaryReason::InvalidFlightConfig);}
   return allow();
 }
+// 先处理关闭/周期时效/接管/时钟，再检查源独占及各反馈；按原次序返回首个原因。
 inline Decision boundary_health(const BoundaryContext& c){
   if(c.profile!="attitude_altitude")return deny(BoundaryReason::WrongProfile);
+  // 关闭期间只保留已定义的受控下降、地面上锁/释放及取消处置阶段，不重新开放起飞。
   if(c.shutdown&&!(c.phase==Phase::RequestArm&&c.arm_cancel_pending)&&c.phase!=Phase::Descent&&
      c.phase!=Phase::RecoveryDescent&&c.phase!=Phase::Px4LandPending&&c.phase!=Phase::PoweredGround&&c.phase!=Phase::Landed&&
      c.phase!=Phase::RequestDisarm&&c.phase!=Phase::ReleaseOffboard&&
@@ -134,6 +147,7 @@ inline Decision boundary_health(const BoundaryContext& c){
     return deny(BoundaryReason::Shutdown);
   if(!c.control_fresh)return deny(BoundaryReason::ControlStall);
   const auto& s=c.feedback;
+  // 任何已锁存接管、Kill、飞控接管或已观察 Offboard 后的信号丢失都否决输出。
   if(c.authority.takeover_latched||s.kill||s.operator_takeover||
      ((c.offboard_observed||c.flight_started||c.phase==Phase::OffboardReady)&&s.offboard_signal_lost))
     return deny(BoundaryReason::OperatorTakeover);
@@ -141,6 +155,7 @@ inline Decision boundary_health(const BoundaryContext& c){
   if(s.time_regressed)return deny(BoundaryReason::TimeRegression);
   if(!s.source_clock_valid)return deny(BoundaryReason::SourceClock);
   const bool bench_release=c.bench_arm_only_active&&c.arm_confirmed&&c.phase==Phase::ReleaseOffboard;
+  // 已活动任务或仍解锁时，z/vz/姿态 reset 不得悄悄改变既定参考。
   if(c.reference_ready&&(c.flight_started||s.armed||bench_release)&&
      (s.z_reset!=c.reference_z_reset||s.vz_reset!=c.reference_vz_reset||
       s.quat_reset!=c.reference_quat_reset))return deny(BoundaryReason::EstimatorReset);
@@ -160,6 +175,7 @@ inline Decision boundary_health(const BoundaryContext& c){
     return deny(BoundaryReason::FlightEnvelope);
   return allow();
 }
+// 程序解锁只允许 RequestArm 的当前未解锁地面状态；RC 导航模式明确禁止程序解锁。
 inline Decision arm_publication_policy(const BoundaryContext& c){
   if(c.config.rc_navigation_enabled)return deny(BoundaryReason::ArmEnabled);
   const auto healthy=boundary_health(c);if(!healthy.allowed)return healthy;
@@ -176,6 +192,7 @@ inline Decision arm_publication_policy(const BoundaryContext& c){
   if(!s.battery_ready||!s.preflight)return deny(BoundaryReason::BatteryPreflight);
   return allow();
 }
+// 程序上锁只在新鲜、比 touchdown 基线更新的地面证据成立时允许；不凭历史 landed 上锁。
 inline Decision disarm_publication_policy(const BoundaryContext& c){
   if(c.phase!=Phase::RequestDisarm)return deny(BoundaryReason::DisarmPhase);
   // rclcpp::publish is a local commit, not proof of PX4 receipt/execution.
@@ -185,6 +202,7 @@ inline Decision disarm_publication_policy(const BoundaryContext& c){
   const auto gates=flight_gates(c.config);if(!gates.allowed)return gates;
   const auto authority=boundary_authority(c);if(!authority.allowed)return authority;
   const auto& s=c.feedback;
+  // 台架例外必须有专门解锁后新状态/本地/land 因果水位，不能泛化为任意地面上锁旁路。
   const bool bench=c.config.bench_arm_only_enabled&&c.bench_arm_only_active&&
     c.bench_disarm_proven&&c.arm_command_committed&&
     s.status_stamp>c.bench_arm_status_baseline&&s.local_stamp>c.bench_arm_local_baseline&&
@@ -202,6 +220,7 @@ inline Decision disarm_publication_policy(const BoundaryContext& c){
     return deny(BoundaryReason::DisarmGround);
   return allow();
 }
+// PX4 Land 后备需用户确认合同、证据编号、当前水平定位/速度及可选模式，且仅提交一次。
 inline Decision land_fallback_publication_policy(const BoundaryContext& c){
   const auto health=boundary_health(c);if(!health.allowed)return health;
   const auto gates=flight_gates(c.config);if(!gates.allowed)return gates;
@@ -218,12 +237,14 @@ inline Decision land_fallback_publication_policy(const BoundaryContext& c){
 // say disarmed/landed/at_rest, and boundary_health checks current Z/Vz, resets
 // of time, telemetry freshness and sole publication ownership. Flight paths
 // retain the original reference-height requirement.
+// 只识别从未开始飞行且未确认解锁的准备取消；该状态的旧地面零点漂移不应阻塞退出。
 inline bool unarmed_preparation_release(const BoundaryContext& c){
   return !c.flight_started&&!c.arm_confirmed;
 }
 // A fresh external mode change can overtake a planned Command 176 between
 // Core::step and the final ROS sink. Cancel, never publish a second mode
 // request into a PX4 mode that is already under operator control.
+// 地面准备时外部已切出 Offboard，则取消原计划的模式请求，避免向操作者新模式再发送一次切换。
 inline bool external_ground_mode_departure(const BoundaryContext& c){
   const auto& s=c.feedback;
   return c.profile=="attitude_altitude"&&c.phase==Phase::ReleaseOffboard&&
@@ -233,6 +254,7 @@ inline bool external_ground_mode_departure(const BoundaryContext& c){
     !s.armed&&!s.offboard&&s.landed&&s.at_rest&&
     s.z_valid&&s.vz_valid&&std::isfinite(s.z)&&std::isfinite(s.vz);
 }
+// 释放阶段重验未解锁、接地静止、Offboard 和可切 Stabilized；只有尚未飞行准备才可忽略旧零点漂移。
 inline Decision release_publication_policy(const BoundaryContext& c){
   if(c.phase!=Phase::ReleaseOffboard)return deny(BoundaryReason::ReleasePhase);
   const auto health=boundary_health(c);if(!health.allowed)return health;
@@ -247,6 +269,7 @@ inline Decision release_publication_policy(const BoundaryContext& c){
     !c.config.takeoff_enabled&&!c.flight_started&&c.ground_confirmed;
   // Core has already completed the separate new Disarmed/rest dwell. The
   // final release sink rechecks that live state without the old Armed z0.
+  // 台架用新的未解锁地面观测，飞行结束仍按原高度/速度容差；二者不能共享旧 Armed z0 假设。
   const bool vertical=bench?bench_disarmed_ground_observation(c.config,s):
     ((unarmed_preparation_release(c)||std::abs(c.reference_z-s.z)<=ground_height_tolerance)&&
      std::abs(s.vz)<=ground_speed_tolerance);
@@ -256,6 +279,7 @@ inline Decision release_publication_policy(const BoundaryContext& c){
      !vertical)return deny(BoundaryReason::ReleasePhase);
   return allow();
 }
+// 姿态目标必须先通过原始 double 推力检查，避免转 float 下溢把微小非零错误伪装成零推力。
 inline Decision attitude_publication_policy(const BoundaryContext& c,const Output& output){
   if(!output.publish)return deny(BoundaryReason::OutputDisabled);
   for(double x:output.thrust)if(!std::isfinite(x)||x<-1||x>1)return deny(BoundaryReason::InvalidOutput);
@@ -266,6 +290,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
     return deny(BoundaryReason::StageOneNonzero);
   if(!normalized(output.q))return deny(BoundaryReason::InvalidOutput);
   const auto healthy=boundary_health(c);if(!healthy.allowed)return healthy;
+  // 状态白名单只是必要条件；后续仍分别检查参考、目标姿态、RC 条件和非零推力阶段。
   switch(c.phase){
     case Phase::Prestream:case Phase::RequestOffboard:case Phase::OffboardReady:
     case Phase::RequestArm:case Phase::ArmedGround:case Phase::BenchArmedGround:case Phase::ThrustRamp:case Phase::Ascend:
@@ -281,6 +306,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
   const auto commanded=normalized(output.q);
   if(!commanded||!std::isfinite(c.yaw_reference))return deny(BoundaryReason::CommandedAttitude);
   Quaternion level{std::cos(c.yaw_reference/2),0,0,std::sin(c.yaw_reference/2)};
+  // 视觉运动只在明确开启且已离地 HeightHold 时允许，并与当前视觉计划四元数及倾角相符。
   if(output.visual_motion){
     if(!c.config.visual.enabled||c.phase!=Phase::HeightHold||!c.flight_started||!c.visual_motion_allowed||c.feedback.landed)
       return deny(BoundaryReason::VisualInput);
@@ -290,10 +316,12 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
     if(std::acos(cosine)*180/3.14159265358979323846>std::min(c.config.visual.max_tilt_deg,c.config.max_tilt_deg)+1e-8)
       return deny(BoundaryReason::VisualAttitude);
   }
+  // 四元数点积绝对值给出最短转角；普通定高目标要接近锁定 yaw 的水平姿态，视觉目标采用更严同计划容差。
   double dot=0;for(unsigned k=0;k<4;++k)dot+=(*commanded)[k]*level[k];
   const double angle=2*std::acos(std::clamp(std::abs(dot),0.,1.));
   if(!std::isfinite(angle)||angle>(output.visual_motion?1e-5:2.*3.14159265358979323846/180.))
     return deny(output.visual_motion?BoundaryReason::VisualAttitude:BoundaryReason::CommandedAttitude);
+  // RC 准备仍要来源同步、中杆低油门、辅助开关安全、飞行前检查；允许的待证零推力不等于解锁确认。
   if(rc_stage(c.phase)){
     const auto& s=c.feedback;
     if(!c.config.rc_navigation_enabled||thrust_nonzero)return deny(BoundaryReason::StageOneNonzero);
@@ -305,6 +333,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
     if(!s.landed||std::abs(c.reference_z-s.z)>c.config.height_tolerance||std::abs(s.vz)>c.config.ground_vz_tolerance)
       return deny(BoundaryReason::ArmGround);
     if(!s.stabilized_selected&&!s.offboard)return deny(BoundaryReason::ArmedOffboard);
+    // 等待新的人工解锁证据期间可维持原零心跳；必须仍在非 Offboard、非导航档，不能借此直接起飞。
     const bool pending_zero=c.rc_arm_evidence_pending&&!c.rc_manual_arm_proven&&!c.flight_started&&
       (c.phase==Phase::RcWaitArm||c.phase==Phase::RcWaitNavigation)&&
       !s.offboard&&s.rc_mode_slot!=c.config.rc_navigation_mode_slot;
@@ -322,6 +351,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
       return deny(BoundaryReason::OperatorTakeover);
     return boundary_authority(c);
   }
+  // 释放只允许零推力并委托专门地面策略；不是绕开飞行动作门的动力入口。
   if(c.phase==Phase::ReleaseOffboard){
     if(thrust_nonzero)return deny(BoundaryReason::StageOneNonzero);
     // A disarmed-ground release retains zero heartbeat until PX4 switches
@@ -329,6 +359,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
     // required here because release also serves closed-gate preparation.
     return release_publication_policy(c);
   }
+  // 未解锁准备使用准备租约，动作门关闭仍可预发送零心跳；任何已解锁状态都被拒绝。
   if(stage_one(c.phase)){
     const bool cancelled_ground_mode=c.phase==Phase::RequestOffboard&&c.ground_release_pending&&
       unarmed_preparation_release(c)&&!c.feedback.armed&&c.feedback.landed&&c.feedback.at_rest;
@@ -348,11 +379,13 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
        s.armed_time!=c.rc_manual_armed_time||s.latest_arming_reason!=2)return deny(BoundaryReason::RcTelemetry);
   }
   if(!c.flight_started||!c.feedback.offboard)return deny(BoundaryReason::FlightReference);
+  // RequestArm/ArmedGround/RequestDisarm 的零目标可在前述健康和授权完整时发出；非零目标继续检查。
   if(!thrust_nonzero)return allow(); // RequestArm/ArmedGround/RequestDisarm use zero.
   if(c.phase!=Phase::ThrustRamp&&c.phase!=Phase::Ascend&&c.phase!=Phase::HeightHold&&c.phase!=Phase::Descent&&
      c.phase!=Phase::RecoveryDescent&&c.phase!=Phase::Px4LandPending&&c.phase!=Phase::PoweredGround&&c.phase!=Phase::Landed)
     return deny(BoundaryReason::FlightPhase);
   if(!c.feedback.armed)return deny(BoundaryReason::ArmedOffboard);
+  // 多旋翼升力只使用 FRD 负 z，水平机体推力必须为 0，幅值不得超过现有垂向上限。
   if(output.thrust[0]!=0||output.thrust[1]!=0||output.thrust[2]>0||-output.thrust[2]>c.config.vertical.maximum)
     return deny(BoundaryReason::InvalidThrust);
   if(!c.feedback.battery_ready)return deny(BoundaryReason::BatteryPreflight);
@@ -361,10 +394,12 @@ inline Decision attitude_publication_policy(const BoundaryContext& c,const Outpu
     if(!c.session_connected)return deny(BoundaryReason::SessionDisconnected);
     if(!c.operator_lease_live)return deny(BoundaryReason::OperatorLease);
   }
+  // 相对高度包络向上为正；允许原地面下界余量，但不改变最大飞行高度。
   if(!std::isfinite(c.reference_z)||c.reference_z-c.feedback.z>c.config.vertical.max_height||
      c.reference_z-c.feedback.z< -c.config.height_lower_margin_m)return deny(BoundaryReason::FlightEnvelope);
   return allow();
 }
+// 仅把动作门序列化到诊断，不依据输出 JSON 的显示状态改变任何权限。
 inline std::string flight_gates_json(const Config& c){
   auto boolean=[](bool b){return b?"true":"false";};
   return std::string("\"flight_actions_enabled\":")+boolean(c.flight_actions_enabled)+

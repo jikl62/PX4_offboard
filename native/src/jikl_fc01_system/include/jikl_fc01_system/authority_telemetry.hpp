@@ -1,7 +1,11 @@
 #pragma once
+// PX4 遥控遥测适配：把选中的手动控制源和独立开关消息整理为控制权事实。
+// 源 stamp 使用 PX4/Agent 同步后的微秒域；now 为本机单调秒，两类时钟分别验证。
+// Facts 是观测结果而非执行命令；Kill 的已知 ON 不可被缺失、过期或无效时钟的 OFF 擦除。
 #include "jikl_fc01_system/runtime.hpp"
 #include <type_traits>
 namespace fc01 {
+// 编译期判断消息是否含四轴字段；旧/简化类型缺字段时不能伪造安全中杆和低油门。
 template<class M,class=void>struct HasRcAxes:std::false_type{};
 template<class M>struct HasRcAxes<M,std::void_t<decltype(std::declval<M>().roll),decltype(std::declval<M>().pitch),
   decltype(std::declval<M>().yaw),decltype(std::declval<M>().throttle)>>:std::true_type{};
@@ -12,6 +16,7 @@ template<class M>struct HasRcAxes<M,std::void_t<decltype(std::declval<M>().roll)
 // observation; staleness/unknown data must not turn a known Kill into OFF.
 class AuthorityTelemetry {
  public:
+  // ready 与 fresh、源选择和源时钟分别记录，方便诊断具体哪条授权证据缺失。
   struct Facts {
     bool rc_link_ready{},rc_switches_ready{},kill{};
     bool manual_seen{},manual_valid{},rc_source_selected{},sticks_moving{};
@@ -79,6 +84,7 @@ void manual(const Manual& message, double now,std::uint64_t host_stamp=0,double 
     data_source_ = message.data_source;
     source_rc_ = true;
     sticks_moving_ = message.sticks_moving;
+    // 归一化 roll/pitch/yaw 需在 ±0.15 内；throttle 需接近 -1（低油门），才满足地面重准备轴安全。
     if constexpr(HasRcAxes<M>::value){
       throttle_=message.throttle;
       axes_safe_=std::isfinite(message.roll)&&std::isfinite(message.pitch)&&std::isfinite(message.yaw)&&
@@ -120,6 +126,7 @@ void switches(const Switches& message,
     sample_timestamp_ = sample;
     sample_previous_received_ = previous_sample;
 
+    // 保存模式/解锁/返航/盘旋/Offboard/Kill 的原始档位，generation 保留同周期 A→B→A 变化证据。
     const std::array<std::uint8_t, 6> next{
         message.mode_slot,
         message.arm_switch,
@@ -141,6 +148,7 @@ void switches(const Switches& message,
     switch_clock_rejected_=false;
     kill_ = message.kill_switch;
 
+    // ON 立即锁存；只有严格推进、与 envelope 足够接近的新 OFF 样本可以清除遥测层 Kill。
     if (kill_ == 1) {
         kill_latched_ = true;
     }
@@ -151,6 +159,7 @@ void switches(const Switches& message,
     }
 }
 
+  // 组合当前来源数量、失联标志、双时间戳和连续两帧进展；返回快照不改变内部缓存。
   Facts facts(double now,double timeout,bool flags_fresh,bool manual_lost,
       std::size_t manual_publishers,std::size_t switch_publishers,std::uint64_t host_stamp=0) const{
     auto recent=[timeout](std::uint64_t envelope,std::uint64_t raw){
@@ -167,6 +176,7 @@ void switches(const Switches& message,
       source_sample_in_clock(manual_timestamp_,manual_sample_stamp_.value,host_stamp,timeout));
     const bool switch_clock=!switch_clock_rejected_&&(!host_stamp||
       source_sample_in_clock(switch_timestamp_,sample_timestamp_,host_stamp,timeout));
+    // 外壳时间新鲜不代表摇杆原始采样新鲜；两个跟踪器和前帧进展窗口须同时通过。
     const bool manual_fresh=manual_stamp_.fresh(now,timeout)&&manual_sample_stamp_.fresh(now,timeout)&&
       progressed(manual_previous_received_)&&recent(manual_timestamp_,manual_sample_stamp_.value);
     out.manual_seen=manual_seen_;
@@ -192,6 +202,7 @@ void switches(const Switches& message,
     return out;
   }
  private:
+  // 分别记录选中源 envelope/raw 和开关 envelope/raw，避免一条新消息替另一来源续期。
   Stamp manual_stamp_,manual_sample_stamp_,switch_stamp_,sample_stamp_;
   std::uint64_t manual_timestamp_{},switch_timestamp_{},sample_timestamp_{},generation_{};
   double manual_previous_received_{-1},sample_previous_received_{-1};

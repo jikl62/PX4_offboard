@@ -1,5 +1,8 @@
+// 台架退出与异常竞态回归：断线/关闭不能跳过地面新证据，也不能转入普通动力控制。
+// 复用B真实Runtime与最终sink夹具；所有消息和命令本地合成，不操作飞控。
 #include "review_bench_support.hpp"
 #include <string>
+// 已解锁台架退出时保留零流，冻结land不能盲上锁；新地面证据到达后仅一次Disarm。
 static void exit_retains_zero_until_new_safe_ground(){
   for(bool shutdown:{false,true}){
     B h;h.armed();h.s.at_rest=false;
@@ -17,6 +20,7 @@ static void exit_retains_zero_until_new_safe_ground(){
   }
   std::cout<<"REVIEW2_BENCH_EXIT_FROZEN_LAND_WAIT_THEN_NEW_GROUND_DISARM PASS\n";
 }
+// Core计划上锁后、真正提交前任一估计器reset必须同时拒绝姿态对和上锁命令。
 static void reset_between_plan_and_commit_is_denied(){
   B h;h.armed();a::Output o;
   for(int i=0;i<300;++i){o=h.next(true,true,false);if(o.command==a::Command::Disarm)break;h.commit(o);}
@@ -37,6 +41,7 @@ static void reset_between_plan_and_commit_is_denied(){
   }
   std::cout<<"REVIEW_FINAL_SINK_Z_VZ_QUAT_RESET_RACE_DENIED PASS\n";
 }
+// 会话断开后迟来Offboard实际模式仍要原零流释放握手，不能失去对已提交176的责任。
 static void pending_offboard_disconnect_can_release_late_mode(){
   B h;
   for(int i=0;i<60&&h.r.attitude_core().phase()!=a::Phase::RequestOffboard;++i)h.next();
@@ -54,6 +59,7 @@ static void pending_offboard_disconnect_can_release_late_mode(){
   o=h.next(false);assert(!o.publish&&h.r.attitude_core().phase()==a::Phase::Idle);
   std::cout<<"REVIEW_PENDING_OFFBOARD_DISCONNECT_SAFE_GROUND_RELEASE PASS\n";
 }
+// 外部未解锁需要新地面证明，既不多发400，也不把外部状态归因给本机命令。
 static void external_bench_disarm_requires_new_ground_proof(){
   B h;h.armed();h.s.feedback.armed=false;
   auto o=h.next();
@@ -65,6 +71,7 @@ static void external_bench_disarm_requires_new_ground_proof(){
   assert(h.r.attitude_core().reason()=="BENCH_EXTERNAL_DISARM_NEW_SAFE_GROUND_EVIDENCED");
   std::cout<<"REVIEW_EXTERNAL_BENCH_DISARM_NO_EXTRA_400_OR_FALSE_COMMAND_SUCCESS PASS\n";
 }
+// 取消后晚来的armed若地面未确认，bench不得启用普通垂向下降控制器，只能报告人工介入。
 static void late_cancelled_bench_arm_never_enters_vertical_control(){
   B h;h.planned_arm();h.r.request("LAND",{},h.s,h.t);
   h.s.feedback.armed=true;h.s.feedback.landed=false;h.s.at_rest=false;h.s.attitude.z=1.8;
@@ -73,6 +80,7 @@ static void late_cancelled_bench_arm_never_enters_vertical_control(){
   assert(h.r.attitude_core().reason()=="BENCH_LATE_ARM_GROUND_UNCONFIRMED_OPERATOR_INTERVENTION_REQUIRED");
   std::cout<<"REVIEW_CANCELLED_BENCH_ARM_NEVER_RUNS_NORMAL_DESCENT_CONTROLLER PASS\n";
 }
+// 真实Stamp接收器不接受同戳续期，2.5 s后land过期，不能在冻结期间伪造上锁许可。
 static void real_frozen_stamp_expires_without_disarm(){
   B h;h.armed();f::Stamp detector;assert(detector.accept(h.s.land_stamp,h.t));
   bool expired=false;
@@ -86,6 +94,7 @@ static void real_frozen_stamp_expires_without_disarm(){
   assert(expired&&h.r.attitude_core().phase()==a::Phase::Safety);
   std::cout<<"REVIEW_REAL_FROZEN_LAND_STAMP_EXPIRES_NO_FALSE_GROUND_PROOF PASS\n";
 }
+// 健康但无新地面证据时披露等待超时；不能因时长到而盲上锁。
 static void overdue_wait_is_disclosed_without_blind_disarm(){
   B h;h.armed();h.s.at_rest=false;
   for(int i=0;i<80&&h.r.attitude_core().phase()!=a::Phase::PoweredGround;++i)h.next();

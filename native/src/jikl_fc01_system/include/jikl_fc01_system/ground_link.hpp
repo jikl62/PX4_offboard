@@ -1,9 +1,13 @@
 #pragma once
+// 地面链路单次请求验证：只在未解锁、接地静止条件下测试 Stabilized 模式请求。
+// Status/Land/Ack 来自 PX4 消息；now 为自测试开始计的单调秒，源 timestamp 单位 µs。
+// 本 Core 不发解锁、推力或起飞命令；tick 返回 true 仅表示应发送一次 Command 176。
 #include <cstddef>
 #include <cstdint>
 #include <string>
 
 namespace jikl_fc01_ground_link {
+// 保存源身份、模式和地面前提；system/component 必须指向预期飞控 1/1。
 struct Status {
   std::uint64_t timestamp{};
   bool disarmed{}, failsafe{}, calibration{}, hil{}, stabilized_selectable{};
@@ -20,6 +24,7 @@ struct Ack {
   int result{}, system{}, component{};
   bool external{};
 };
+// Waiting 等地面稳定，Sent 等 ACK/新状态；其它值都是本轮终态，不能再次发请求。
 enum class State { Waiting, Sent, Pass, Rejected, ModeUnconfirmed, AckTimeout, Blocked };
 inline const char *name(State s) {
   switch (s) {
@@ -35,6 +40,7 @@ inline const char *name(State s) {
 }
 class Core {
 public:
+  // 收到已解锁或倒退时间戳立即 Block；只有发送之后的新状态才能证明模式变化。
   void status(const Status &s, double now) {
     if (finished()) return;
     if (!s.disarmed) { block("NOT_DISARMED"); return; }
@@ -50,6 +56,7 @@ public:
     status_ = s;
     if (s.timestamp == 0) status_seen_ = false;
   }
+  // 着陆检测独立更新其到达寿命；时间戳为零撤销 seen，不能拿旧 landed 状态续期。
   void land(const Land &l, double now) {
     if (finished()) return;
     if (l.timestamp != 0 && l.timestamp < land_.timestamp) {
@@ -59,6 +66,7 @@ public:
     land_ = l;
     if (l.timestamp == 0) land_seen_ = false;
   }
+  // ACK 必须属于命令 176、请求者身份和当前水位；from_external 只诊断，不能误当 PX4 必然置真的字段。
   bool ack(const Ack &a, double now) {
     // PX4 v1.16 Commander::answer_command() targets the ACK to the requester's
     // source system/component but leaves VehicleCommandAck::from_external at
@@ -82,6 +90,7 @@ public:
     else if (a.result != 5) { state_ = State::Rejected; reason_ = "PX4_REJECTED_REQUEST"; }
     return true;
   }
+  // 先查来源/命令独占和当前地面条件；连续 2 s 稳定后只返回一次发送许可。
   bool tick(double now, const Traffic &t) {
     if (finished()) return false;
     if (t.status_publishers > 1 || t.land_publishers > 1 || t.ack_publishers > 1
@@ -104,6 +113,7 @@ public:
         }
         reason_ = "GROUND_CONDITIONS_STABILIZING";
       }
+      // 准备阶段最多 15 s；发送后最多 5 s，同时需要接受 ACK 和发送后的新 Stabilized 状态。
       if (now >= 15) block(why.empty() ? "GROUND_STABLE_WINDOW_TIMEOUT" : why);
     } else {
       if (!why.empty()) { block(why); return false; }
@@ -126,6 +136,7 @@ public:
   const std::string &reason() const { return reason_; }
 private:
   void block(const std::string &reason) { state_ = State::Blocked; reason_ = reason; }
+  // 地面验证缺任何一个来源或新鲜状态都拒绝，不把“无消息”当作安全。
   std::string guard(double now, const Traffic &t) const {
     if (t.status_publishers != 1 || t.land_publishers != 1 || t.ack_publishers != 1
         || t.command_subscribers != 1 || t.command_publishers != 1) return "SOURCE_MISSING";

@@ -1,4 +1,7 @@
 #pragma once
+// 爬升/推力斜坡测试夹具：用真实 Runtime 和合成高度反馈重放候选垂向流程。
+// 保留既有测试参数：悬停 .50、最大 .80、储备 .04；不把此夹具当目标机参数加载入口。
+// observe 接受上正 height/up_speed，写入 PX4 NED z/vz/z_deriv 时分别变为 2-height 与负速度。
 // Real Runtime state machine, synthetic feedback only. No ROS/PX4 output.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type"
@@ -12,6 +15,7 @@
 static void require_guard(bool ok,const char* message){
   if(!ok){std::cerr<<"RAMP_GUARD_FAIL: "<<message<<'\n';std::exit(1);}
 }
+// 配置有限的推力斜率、上升/下降速度及离地/落地 dwell，便于断言目标与实际运动关系。
 static f::Config guard_config(){
   auto c=cfg(true);auto& p=c.attitude;
   p.vertical.hover=.50;p.vertical.minimum=.12;p.vertical.maximum=.80;p.vertical.slew=.4;
@@ -24,6 +28,7 @@ static f::Config guard_config(){
   p.land_sample_max_gap=1.25;p.max_tilt_deg=10.;p.max_flight_seconds=30.;
   c.validate();return c;
 }
+// 构造一路到 ThrustRamp，保存其开始时刻；推进不伪造 land/local 源戳，调用者可单独冻结任一来源。
 struct GuardFlight {
   f::Config c{guard_config()};f::Runtime r{c};f::Snapshot s{sample()};
   double t{},ramp_start{};f::Output o;
@@ -39,6 +44,7 @@ struct GuardFlight {
     require_guard(r.attitude_core().phase()==a::Phase::ThrustRamp,"ground dwell then ramp");
     ramp_start=t;
   }
+  // 将 dt 转为 µs 累计到各自待发样本，只有 new_land/new_local 真时才提交对应源进展。
   void advance(double dt=.05,bool new_land=true,bool new_local=true){
     require_guard(r.request("PING",{},s,t).accepted,"console lease");
     const auto increment=static_cast<std::uint64_t>(std::llround(dt*1e6));
@@ -52,6 +58,7 @@ struct GuardFlight {
   }
   void observe(double height,double up_speed){s.attitude.z=2.-height;s.attitude.vz=-up_speed;s.attitude.z_deriv=-up_speed;}
   double thrust()const{return -o.attitude.thrust[2];}
+  // 仅经过时间不得证明离地；本函数明确断言仍停在 ThrustRamp。
   void ground_ramp(double seconds=4.2){
     for(int i=0;i<int(seconds/.05);++i)advance();
     require_guard(r.attitude_core().phase()==a::Phase::ThrustRamp,"ground time cannot prove liftoff");

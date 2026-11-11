@@ -1,3 +1,5 @@
+// 部分发布异常回归：目标与心跳是两个独立sink，异常必须保留已提交事实并阻止后续命令。
+// throwing_sink=0表示目标先失败，1表示目标返回后心跳失败；审计只能证明本地调用。
 #include "authority_test_support.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
 #include "jikl_fc01_system/publication_audit.hpp"
@@ -8,6 +10,7 @@ struct M {std::uint64_t timestamp{};bool attitude{},position{},velocity{};};
 struct T {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};
   std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
 int main(){
+  // 两个异常位置分别要求target_count为0/1、mode_count恒0，不能把部分发布写成未发生。
   for(int throwing_sink=0;throwing_sink<2;++throwing_sink){
     auto c=authority_test::config();c.attitude.autonomous_failsafe_confirmed=true;
     fc01::Runtime r(c);auto s=authority_test::sample();double now{};
@@ -23,6 +26,7 @@ int main(){
     }catch(const std::exception&){audit.failed();r.abort_attitude("PARTIAL_SINK_FAILURE");}
     assert(!completed&&audit.mode_count==0);
     assert(audit.target_count==unsigned(throwing_sink==1));
+    // 异常经Runtime锁Safety后下一tick不能再发布或新发命令，健康尾帧也不能清故障。
     auto next=authority_test::tick(r,s,now).attitude;
     assert(!next.publish&&next.command==fc01::attitude::Command::None);
     assert(r.attitude_core().phase()==fc01::attitude::Phase::Safety);

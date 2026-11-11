@@ -1,3 +1,5 @@
+// Arm/Disarm 异步交错回归：取消发生在最终提交后时仍保留原安全责任与协议不确定性。
+// 特别验证晚解锁、新上锁状态与缺失/复用ACK之间的先后关系，所有sink均为假调用。
 // R3 synthetic-only state/command/sink interleavings. No ROS graph or FC01.
 #include "authority_test_support.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
@@ -8,6 +10,7 @@ namespace a=f::attitude;
 struct Mode {std::uint64_t timestamp{};bool position{},velocity{},acceleration{},attitude{},body_rate{},thrust_and_torque{},direct_actuator{};};
 struct Target {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
 static f::Config config(){auto c=authority_test::config();c.attitude.autonomous_failsafe_confirmed=true;return c;}
+// 对恢复输出再次走真实最终边界，要求目标与心跳都可提交，不只检查Core.publish。
 static void final_heartbeat(const f::Runtime& r,const f::Snapshot& s,double t,const a::Output& out,bool shutdown=false,bool connected=true){
   auto c=r.publication_context(s,t,connected,true,shutdown);
   int target=0,mode=0;
@@ -15,6 +18,7 @@ static void final_heartbeat(const f::Runtime& r,const f::Snapshot& s,double t,co
     [&](const Target&){target++;},[&](const Mode&){mode++;});
   assert(decision.allowed&&target==1&&mode==1);
 }
+// Arm真提交后LAND/关闭/断线/接管均不能假设没执行；保留零心跳，迟来armed进入PoweredGround。
 static void arm_cancel_after_final_sink(const char* action){
   f::Runtime r(config());auto s=authority_test::sample();double t=0;
   authority_test::ready(r,s,t,"AUTHORITY_AUTONOMOUS");r.require_attitude_sink_commit();
@@ -50,6 +54,7 @@ static void arm_cancel_after_final_sink(const char* action){
   final_heartbeat(r,s,t,out.attitude,true,false);
   std::cout<<"R3_ARM_COMMITTED_"<<action<<" heartbeat_after_cancel=1 late_arm_recovery=1 sink_pair=1\n";
 }
+// 明确拒绝+新地面可释放；ACK缺失但新armed仍承担减推/上锁，不能让命令400冲突造成断流。
 static void arm_timeout_and_refusal(){
   {f::Runtime r(config());auto s=authority_test::sample();double t=0;
     authority_test::ready(r,s,t,"AUTHORITY_AUTONOMOUS");r.require_attitude_sink_commit();
@@ -85,6 +90,7 @@ static void arm_timeout_and_refusal(){
     std::cout<<"R3_ARM_MISSING_ACK_STATUS_RECONCILED_DISARM_TRACKED=1\n";
   }
 }
+// Disarm后弹跳恢复下降；复用400的ACK无法区分旧Arm，禁止重发，只有新地面未解锁状态结束。
 static void disarm_bounce_after_commit(){
   f::Runtime r(config());auto s=authority_test::sample();double t=0;
   authority_test::armed(r,s,t,"AUTHORITY_AUTONOMOUS");r.require_attitude_sink_commit();
@@ -125,6 +131,7 @@ static void disarm_bounce_after_commit(){
   assert(r.pending(400).state_verified&&r.pending(400).stage==f::CommandStage::StateOnlyTerminal);
   std::cout<<"R3_DISARM_BOUNCE_R4_STATE_ONLY_NO_REPEAT=1\n";
 }
+// 未关联FAILED不能给第二次Disarm授权；generation保持且新地面状态可作state-only终态。
 static void disarm_bounce_rejected(){
   f::Runtime r(config());auto s=authority_test::sample();double t=0;
   authority_test::armed(r,s,t,"AUTHORITY_AUTONOMOUS");
@@ -149,6 +156,7 @@ static void disarm_bounce_rejected(){
   assert(r.pending(400).command400_kind==f::Command400Kind::Disarm);
   std::cout<<"R3_POST_BOUNCE_R4_AMBIGUOUS_FAILED_NO_NEW_DISARM=1\n";
 }
+// 新status但land仍冻结在提交样本不能完成上锁；必须看到提交后的新land。
 static void disarm_post_commit_sensor_freeze(){
   f::Runtime r(config());auto s=authority_test::sample();double t=0;
   authority_test::armed(r,s,t,"AUTHORITY_AUTONOMOUS");r.require_attitude_sink_commit();
@@ -174,6 +182,7 @@ static void disarm_post_commit_sensor_freeze(){
   assert(r.pending(400).state_verified);
   std::cout<<"R3_POST_COMMIT_FROZEN_LAND_CANNOT_RELEASE_UNTIL_NEW_SAMPLE=1\n";
 }
+// ACK超时仅表示结果不确定，维持有保护的心跳，不盲目发送第二次400。
 static void disarm_ack_timeout_no_blind_repeat(){
   f::Runtime r(config());auto s=authority_test::sample();double t=0;
   authority_test::armed(r,s,t,"AUTHORITY_AUTONOMOUS");r.require_attitude_sink_commit();

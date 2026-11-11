@@ -1,3 +1,5 @@
+// 垂向反馈监测纯函数回归：Vz与z_deriv差只诊断，位置积分残差及数据无效仍是独立硬故障。
+// z为PX4 NED下正m，vz和z_deriv均下正m/s；source sample为µs，窗口和TTL为s。
 #include "jikl_fc01_system/vertical_feedback_guard.hpp"
 #include "jikl_fc01_system/vertical_controller.hpp"
 #include <cstdlib>
@@ -8,6 +10,7 @@ static void check(bool ok,const char* message){
   if(!ok){std::cerr<<"FEEDBACK_GUARD_FAIL: "<<message<<'\n';std::exit(1);}
 }
 static a::VerticalFeedbackGuard monitor(){a::VerticalFeedbackConfig c;c.enabled=true;return a::VerticalFeedbackGuard(c);}
+// 用梯形积分构造一致加减速轨迹，应无误报警；原数学和采样间隔保持不变。
 static void nominal_motion(){
   auto g=monitor();double z=0,v=0;std::uint64_t stamp=1000000;
   for(int i=0;i<240;++i){
@@ -17,6 +20,7 @@ static void nominal_motion(){
       "consistent accelerating climb/descent must remain healthy without a rate warning");
   }
 }
+// 持续速度差只保留suspect/warning与持续时间/样本数，healthy仍true；新一致样本清诊断不重置控制器。
 static void persistent_rate_error_is_diagnostic(){
   auto g=monitor();std::uint64_t stamp=1000000;
   for(int i=0;i<24;++i){
@@ -42,6 +46,7 @@ static void persistent_rate_error_is_diagnostic(){
   check(sparse.observe(1650000,0,-.4,0,1.).rate_warning,
     "three independent samples and the configured dwell may report a warning");
 }
+// 短差burst不构成长告警；相同raw sample既不增计数也不延长已存在的告警时长。
 static void transient_and_cached(){
   auto g=monitor();std::uint64_t stamp=1000000;
   for(int i=0;i<40;++i){
@@ -64,6 +69,7 @@ static void transient_and_cached(){
       "cached samples also leave an established warning duration and count unchanged");
   }
 }
+// 两种速度彼此一致却与固定z的历史矛盾仍锁位置硬故障，只显式新任务reset才清。
 static void coherent_rates_wrong_displacement(){
   auto g=monitor();std::uint64_t stamp=1000000;bool stopped=false;
   for(int i=0;i<15;++i){
@@ -77,6 +83,7 @@ static void coherent_rates_wrong_displacement(){
   g.reset();check(g.observe(stamp+50000,0,0,0,.5).healthy,
     "an explicit monitor reset clears a hard fault for a new task");
 }
+// 位置残差必须对z_deriv积分，不能以物理意义不同的vz替代从而引入伪残差。
 static void position_check_uses_position_derivative(){
   auto g=monitor();std::uint64_t stamp=1000000;
   // PX4 vz and z_deriv have distinct meanings. A subthreshold difference
@@ -88,6 +95,7 @@ static void position_check_uses_position_derivative(){
       check(e.position_rate_error_mps<1e-10,"coherent z and z_deriv must have zero displacement residual");
   }
 }
+// NaN/缺戳/回退/大gap/非法TTL各自保留明确硬原因，坏监测参数构造即拒绝。
 static void invalid_inputs(){
   for(int k=0;k<8;++k){
     auto g=monitor();g.observe(1000000,0,0,0,.5);
@@ -108,6 +116,7 @@ static void invalid_inputs(){
     check(refused,"invalid guard thresholds must be rejected");
   }
 }
+// 显式冻结积分不禁制动或slew；释放冻结后恢复正常负积分，诊断速度差本身不负责冻结。
 static void explicit_integral_freeze_preserves_braking(){
   a::VerticalConfig c;c.hover=.475;c.minimum=.12;c.maximum=.75;c.slew=.4;
   c.height_gain=.5;c.velocity_gain=.15;c.integral_gain=.03;c.integral_limit=.08;

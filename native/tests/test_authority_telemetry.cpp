@@ -1,3 +1,5 @@
+// 选中 RC 遥测回归：只凭真实推进采样及独立开关源建立可接管事实。
+// Manual/Switches 是假消息，时间 µs；facts 的 now 为单调秒，.5s 为测试新鲜度窗口。
 // Mutations caught: invalid/non-RC manual source admission, refreshed duplicate
 // envelopes, stale raw sample disguised by a fresh envelope, missing switch DDS,
 // and unmapped Kill clearing.
@@ -14,6 +16,7 @@ struct Switches {std::uint64_t timestamp{1000000},timestamp_sample{1000000};
 int main(){
   fc01::AuthorityTelemetry observer;auto manual=Manual{};auto sw=Switches{};
   auto facts=[&](double now=0,bool flags=true,bool lost=false,int manual_sources=1,int switches=1){return observer.facts(now,.5,flags,lost,manual_sources,switches);};
+  // 初始无消息和仅首帧都不 ready，连续raw推进后才允许；flag失联/多来源可立即撤销。
   assert(!facts().rc_link_ready&&!facts().rc_switches_ready);
   observer.manual(manual,0);observer.switches(sw,0,.5);
   assert(!facts().rc_link_ready&&!facts().rc_switches_ready&&!facts().kill);
@@ -24,21 +27,25 @@ int main(){
   assert(!facts(.01,true,false,2).rc_link_ready&&!facts(.01,true,false,1,2).rc_switches_ready);
   manual.timestamp+=1000;sw.timestamp+=1000;observer.manual(manual,.4);observer.switches(sw,.4,.5); // duplicate raw timestamps
   assert(!facts(.52).rc_link_ready&&!facts(.52).rc_switches_ready);
+  // 无效valid、未知/MAVLink控制源及raw晚于外壳都不得冒充RC。
   for(int failure=0;failure<4;++failure){fc01::AuthorityTelemetry x;auto bad=Manual{};
     switch(failure){case 0:bad.valid=false;break;case 1:bad.data_source=Manual::SOURCE_UNKNOWN;break;
       case 2:bad.data_source=Manual::SOURCE_MAVLINK_0;break;case 3:bad.timestamp_sample=bad.timestamp+1;break;}
     x.manual(bad,0);bad.timestamp+=1000;bad.timestamp_sample+=1000;x.manual(bad,.01);
     assert(!x.facts(.01,.5,true,false,1,1).rc_link_ready);
   }
+  // Kill只有明确OFF=3可使开关ready；其它值均不能解释成安全OFF，ON=1还要锁存。
   for(std::uint8_t kill:{0,1,2,4}){fc01::AuthorityTelemetry x;auto bad=sw;bad.kill_switch=kill;
     x.switches(bad,0,.5);bad.timestamp+=1000;bad.timestamp_sample+=1000;x.switches(bad,.01,.5);
     auto f=x.facts(.01,.5,true,false,1,1);assert(!f.rc_switches_ready&&f.kill==(kill==1));
   }
+  // 只在真实开关值/计数改变时推进generation；新时间戳但开关不变不算介入。
   fc01::AuthorityTelemetry changes;auto sw2=Switches{};changes.switches(sw2,0,.5);assert(changes.facts(0,.5,true,false,1,1).switch_generation==0);
   sw2.timestamp+=1000;sw2.timestamp_sample+=1000;++sw2.mode_slot;changes.switches(sw2,.05,.5);
   assert(changes.facts(.05,.5,true,false,1,1).switch_generation==1);
   sw2.timestamp+=1000;sw2.timestamp_sample+=1000;changes.switches(sw2,.1,.5);
   assert(changes.facts(.1,.5,true,false,1,1).switch_generation==1);
+  // 已ON后未知档或重复raw的OFF不得清除，只有严格推进的新鲜OFF可撤销遥测Kill。
   fc01::AuthorityTelemetry killed;auto sw3=Switches{};sw3.kill_switch=1;killed.switches(sw3,0,.5);
   sw3.timestamp+=1000;sw3.timestamp_sample+=1000;sw3.kill_switch=0;killed.switches(sw3,.05,.5);
   assert(killed.facts(.05,.5,true,false,1,1).kill);

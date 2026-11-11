@@ -1,3 +1,5 @@
+// 复用Command400 ACK隔离正向回归：区分Arm/Disarm、线上提交、ACK结果与新状态证据。
+// 覆盖旧反例C11/C12全部结果矩阵，验证重复/错误目标/乱序ACK既不能完成也不能触发自动重发。
 // R4 positive safety properties. Real Runtime/Core/final boundary; offline sinks only.
 // Mutations caught: accepting reused-400 ACKs, failure-led retries, ACK-only success,
 // duplicate final Disarm, stale status/land completion, and recovery heartbeat loss.
@@ -9,6 +11,7 @@
 namespace f=fc01;namespace a=f::attitude;
 template<class T,class=void>struct HasArmingTrust:std::false_type{};
 template<class T>struct HasArmingTrust<T,std::void_t<decltype(std::declval<T&>().arming_state_known)>>:std::true_type{};
+// 原始arming枚举只有已知DISARMED/ARMED可转换为可信布尔；未知不能被!armed误认为地面上锁。
 template<class T>static void raw_arming_state(T& s,int raw){
   s.feedback.armed=raw==2;
   if constexpr(HasArmingTrust<T>::value)s.arming_state_known=raw==1||raw==2;
@@ -16,6 +19,7 @@ template<class T>static void raw_arming_state(T& s,int raw){
 struct Mode {std::uint64_t timestamp{};bool position{},velocity{},acceleration{},attitude{},body_rate{},thrust_and_torque{},direct_actuator{};};
 struct Target {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
 static f::Config config(){auto c=authority_test::config();c.attitude.autonomous_failsafe_confirmed=true;return c;}
+// 记录真实最终假sink次数和Runtime确认；hold要求恢复心跳连续且Arm/Disarm各仅一次。
 struct Harness {
   f::Runtime r{config()};f::Snapshot s{authority_test::sample()};double t{};
   int arms{},disarms{},targets{},modes{};bool connected{true};
@@ -46,6 +50,7 @@ struct Harness {
     const auto stamp=std::max(r.pending(400).baseline,r.pending(400).last_ack)+offset;
     r.ack({stamp,400,result,system,component,false},t+.01);
   }
+  // 实际走准备、Arm、取消减推和Disarm，不直接改内部phase；可交换ACK与armed状态顺序。
   void reach_disarm(int arm_result=-1,bool state_first=false){
     assert(r.request("TAKEOFF",{1},s,t).accepted);assert(tick().command==a::Command::Arm);
     assert(arms==1&&r.pending(400).published);
@@ -62,6 +67,7 @@ struct Harness {
     assert(targets==n+count&&disarms==1&&arms==1&&s.feedback.armed&&s.feedback.offboard&&s.nav_state==14);
   }
 };
+// 复用400接受ACK仍歧义，只能由新地面未解锁反馈形成state-only终态。
 static void c11(){
   Harness h;h.reach_disarm();h.ack(0);
   std::cout<<"R4_C11 accepted="<<h.r.pending(400).accepted<<" stage="<<f::command_stage_name(h.r.pending(400).stage)<<std::endl;
@@ -72,6 +78,7 @@ static void c11(){
   assert(h.r.pending(400).stage!=f::CommandStage::VerifiedTerminal);
   std::cout<<"R4_C11 state_only_terminal=1 false_ACK_verification=0 arm_sinks="<<h.arms<<" disarm_sinks="<<h.disarms<<"\n";
 }
+// 同旧结果换新时间戳或重复LAND都不能重发；再直接攻击最终Disarm边界也必须拒绝。
 static void c12(int result){
   for(int prior:{-1,0}){Harness h;h.reach_disarm(prior);h.ack(result);
     std::cout<<"R4_C12 prior_arm_result="<<prior<<" observed_result="<<result<<" rejected="<<h.r.pending(400).rejected<<std::endl;
@@ -92,6 +99,7 @@ static void c12(int result){
     std::cout<<"R4_C12 result="<<result<<" duplicate_sink_calls="<<repeat<<" disarm_sinks="<<h.disarms<<" healthy_heartbeat_continuous=1\n";
   }
 }
+// status与land须各自更新，任一冻结都阻止完成；不依赖ACK也需新鲜独立物理状态证据。
 static void missing_ack_and_stamps(){
   Harness h;h.reach_disarm();h.s.feedback.armed=false;
   auto o=h.tick(true,false);assert(o.publish&&!h.r.pending(400).state_verified);
@@ -104,6 +112,7 @@ static void missing_ack_and_stamps(){
   assert(!frozen_status.tick().publish&&frozen_status.r.pending(400).state_verified);
   std::cout<<"R4_ACK_MISSING new_disarmed_ground_state_completes=1 frozen_land_blocks=1 disarm_sinks="<<h.disarms<<"\n";
 }
+// 上锁后弹跳+FAILED再叠加断线/关闭/接管，恢复心跳仍连续，不能产生第二次Disarm。
 static void bounce_and_cancel(const std::string& action){
   Harness h;h.reach_disarm(0,true);h.s.feedback.landed=false;h.s.at_rest=false;
   assert(h.tick().publish&&h.r.attitude_core().phase()==a::Phase::Descent);
@@ -116,6 +125,7 @@ static void bounce_and_cancel(const std::string& action){
   assert(h.r.attitude_core().phase()==a::Phase::SafeDisarmed&&h.disarms==1);
   std::cout<<"R4_BOUNCE_"<<action<<" failure_ACK_no_retry=1 heartbeat_continuous=1\n";
 }
+// ACK本身不证明armed；错误ACK与新armed矛盾时仍接受实际状态并保留恢复输出。
 static void first_arm_results(int result){
   Harness h;assert(h.r.request("TAKEOFF",{1},h.s,h.t).accepted);h.tick();h.ack(result);
   // Any ACK alone leaves the physical armed state unconfirmed.
@@ -130,6 +140,7 @@ static void first_arm_results(int result){
   assert(h.arms==1);
   std::cout<<"R4_FIRST_ARM result="<<result<<" ACK_only_no_completion=1 new_armed_heartbeat=1\n";
 }
+// 真正首次Arm拒绝后只需地面模式释放，不额外发Disarm；释放完成才允许安全reset。
 static void rejected_arm_ground_release(int result){
   Harness h;assert(h.r.request("TAKEOFF",{1},h.s,h.t).accepted);h.tick();h.ack(result);
   assert(h.r.request("LAND",{},h.s,h.t).accepted);
@@ -143,6 +154,7 @@ static void rejected_arm_ground_release(int result){
   assert(h.r.request("AUTHORITY_RESET",{},h.s,h.t).accepted);
   std::cout<<"R4_ARM_REFUSAL_RELEASE completed_ground_mode_and_reset=1 no_Disarm=1\n";
 }
+// 未最终提交或sink拒绝的Arm不能被ACK确认；错误system/component也不能污染当前结果。
 static void sink_and_target(){
   Harness h;assert(h.r.request("TAKEOFF",{1},h.s,h.t).accepted);
   h.t+=.05;h.s.status_stamp+=1000;h.s.land_stamp+=1000;
@@ -154,6 +166,7 @@ static void sink_and_target(){
   assert(live.r.pending(400).result==-1);live.hold(4);
   std::cout<<"R4_SINK_REJECT_AND_OTHER_TARGET ACK_cannot_authorize=1\n";
 }
+// 安全reset清权限但保留400历史和ACK歧义，未外部静默前不能重用Arm事务。
 static void safe_reset_retains_protocol_uncertainty(){
   Harness h;h.reach_disarm(0);h.s.feedback.armed=false;
   assert(!h.tick().publish&&h.r.attitude_core().phase()==a::Phase::SafeDisarmed);
@@ -178,6 +191,7 @@ static void safe_reset_retains_protocol_uncertainty(){
   assert(h.tick().command!=a::Command::Arm&&h.arms==1);
   std::cout<<"R4_RESET history_retained=1 new_arm_blocked_until_external_quiescence=1\n";
 }
+// 先新armed后ACK的矩阵也保存旧Arm历史，终态后晚FAILED只记观察不重启恢复。
 static void state_first_matrix(){
   for(int result:{-1,0,1,2,3,4,5,6}){
     Harness h;h.reach_disarm(result,true);
@@ -193,6 +207,7 @@ static void state_first_matrix(){
     std::cout<<"R4_ARM_STATE_BEFORE_ACK result="<<result<<" history_retained=1 progress_then_success_unattributed=1 late_failure_no_retry=1\n";
   }
 }
+// 过期/空中/冲突/Kill/倒时/离地偏移不能把false armed判成安全终态。
 static void unhealthy_and_airborne_state(){
   for(int fault=0;fault<8;++fault){
     Harness h;h.reach_disarm();h.s.feedback.armed=false;
@@ -211,6 +226,7 @@ static void unhealthy_and_airborne_state(){
     std::cout<<"R4_UNTRUSTED_DISARMED_STATE fault="<<fault<<" no_safe_terminal=1 no_repeat_400=1\n";
   }
 }
+// 0/3/255等未知枚举无上锁证明且停输出，只有原始已知DISARMED才允许state_verified。
 static void unknown_arming_enum(){
   for(int raw:{0,3,255}){
     Harness h;h.reach_disarm();raw_arming_state(h.s,raw);
@@ -223,6 +239,7 @@ static void unknown_arming_enum(){
   assert(!known.tick().publish&&known.r.pending(400).state_verified);
   std::cout<<"R4_RAW_ARMING_STATE known_DISARMED_only_safe_terminal=1\n";
 }
+// 估计器reset或Core stall不仅是表层字段变化，仍必须阻止上锁终态验证。
 static void core_reference_faults_cannot_verify_terminal(){
   for(int fault=0;fault<4;++fault){
     Harness h;h.reach_disarm();h.s.feedback.armed=false;

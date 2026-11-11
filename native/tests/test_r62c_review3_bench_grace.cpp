@@ -1,3 +1,5 @@
+// 台架第三轮包络复核：容忍已验证有限向下估计漂移，同时保留真实离地/速度/冻结/reset保护。
+// 只有五个reported样本来自测量；更长的漂移、落地和静止响应均是合成，单位m、m/s、s。
 #include "review_bench_support.hpp"
 #include <functional>
 #include <string>
@@ -24,6 +26,7 @@ struct GraceBench : B {
   }
 };
 
+// 五个实测尾样本只覆盖0.2 s，足以验证不误停，却绝不能伪造完整两秒上锁dwell。
 static void reported_five_samples_survive(){
   GraceBench h;h.s.attitude.z=.274003655;h.powered();
   const double z[]={.380003422,.383861989,.388992816,.393225074,.398496389};
@@ -39,6 +42,7 @@ static void reported_five_samples_survive(){
   std::cout<<"REVIEW3_FIVE_MEASURED_VALUES_ACCEPTED_WITHOUT_INVENTING_DWELL PASS\n";
 }
 
+// 连续向下漂移仍在台架有限包络时可完成一次Arm/Disarm；实际未解锁后要新at_rest证据再模式释放。
 static void downward_drift_completes_entire_closed_loop(){
   GraceBench h;h.spinning();const double start=h.t;
   const double anchor=h.r.attitude_core().reference_z();
@@ -71,6 +75,7 @@ static void downward_drift_completes_entire_closed_loop(){
   std::cout<<"REVIEW3_1HZ_DOWNWARD_DRIFT_ONE_ARM_ONE_DISARM_NEW_REST_TO_IDLE PASS\n";
 }
 
+// Core与最终Disarm边界必须使用相同窄台架包络，越界/失联/缺证据都不能触sink。
 static void final_sink_uses_same_bounded_bench_envelope(){
   GraceBench h;h.powered();
   h.s.attitude.z=h.r.attitude_core().reference_z()+.30;h.s.attitude.vz=.20;
@@ -101,6 +106,7 @@ static void final_sink_uses_same_bounded_bench_envelope(){
   std::cout<<"REVIEW3_FINAL_SINK_GRACE_RECHECKS_NO_BLIND_RETRY PASS\n";
 }
 
+// 向上离地、高度向下越界、正负超速或landed丢失仍立即Safety，不因台架漂移而放行。
 static void above_ground_and_excessive_motion_still_stop(){
   for(int phase=0;phase<2;++phase)for(int which=0;which<5;++which){
     GraceBench h;if(phase)h.powered();else h.spinning();
@@ -118,6 +124,7 @@ static void above_ground_and_excessive_motion_still_stop(){
   std::cout<<"REVIEW3_UPWARD_HEIGHT_DOWNWARD_LIMIT_SPEED_AND_LANDED_LOSS_BLOCKED PASS\n";
 }
 
+// 更宽高度包络不能让冻结land/local/status积累地面证明。
 static void frozen_streams_do_not_acquire_ground_dwell(){
   for(int which=0;which<3;++which){
     GraceBench h;h.powered();h.s.attitude.z=h.r.attitude_core().reference_z()+.2;
@@ -130,6 +137,7 @@ static void frozen_streams_do_not_acquire_ground_dwell(){
   std::cout<<"REVIEW3_WIDE_ENVELOPE_FROZEN_LAND_LOCAL_STATUS_NO_DISARM PASS\n";
 }
 
+// PoweredGround的坏Vz应冻结对应帧源戳和值，便于区别触发证据与后续显示。
 static void powered_fault_preserves_trigger_sample(){
   GraceBench h;h.powered();h.s.attitude.vz=.26;h.next();
   assert(h.r.attitude_core().phase()==a::Phase::Safety);
@@ -140,6 +148,7 @@ static void powered_fault_preserves_trigger_sample(){
   std::cout<<"REVIEW3_POWERED_GROUND_EXACT_FAULT_SAMPLE_CAPTURED PASS\n";
 }
 
+// 0/负值/NaN/Inf和超过已测最大包络的参数都拒绝；合法更紧参数必须实际生效。
 static void grace_parameters_reject_invalid_or_unbounded_values(){
   for(int which=0;which<2;++which)for(const double value:std::array<double,5>{0.,-.1,NAN,INFINITY,1.001}){
     auto c=bench();
@@ -164,6 +173,7 @@ static void grace_parameters_reject_invalid_or_unbounded_values(){
   std::cout<<"REVIEW3_GRACE_PARAMETERS_VALIDATED_AND_SMALLER_LIMITS_HONORED PASS\n";
 }
 
+// 外部未解锁也不能绕过单帧估计器跳变门，尚未有地面证明时不释放。
 static void external_disarm_cannot_bypass_estimator_jump_check(){
   GraceBench h;h.spinning();h.s.feedback.armed=false;h.s.at_rest=true;
   h.s.attitude.z=h.r.attitude_core().reference_z()+.49;
@@ -174,6 +184,7 @@ static void external_disarm_cannot_bypass_estimator_jump_check(){
   std::cout<<"REVIEW3_EXTERNAL_DISARM_CANNOT_HIDE_SINGLE_SAMPLE_ESTIMATOR_JUMP PASS\n";
 }
 
+// 连续小步漂移后外部未解锁可走新静止地面窗；不得把外部动作归因于本机Command400。
 static void external_disarm_after_continuous_drift_can_release_without_400(){
   GraceBench h;h.spinning();const auto anchor=h.r.attitude_core().reference_z();
   // Each step is below z_jump_limit; all remain inside the bench envelope.

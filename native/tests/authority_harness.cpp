@@ -1,3 +1,6 @@
+// 控制权综合离线夹具：驱动真实 Runtime/Core/最终发布策略，输出各场景的 JSON 结果。
+// 所有反馈、ACK 和 sink 都是本机合成值/计数器，无 ROS、串口、PX4 或真实动力学。
+// 重点同时覆盖未选权限、两类权限路线、接管请求与真实交接、断线/关闭和不可盲目重获。
 // G2 supplement: actual delivered Runtime/Core/final sinks, synthetic cached
 // facts and fake ACK/status transport. No ROS, sockets, devices or dynamics.
 #include "authority_test_support.hpp"
@@ -9,6 +12,7 @@ using namespace authority_test;
 struct Mode {std::uint64_t timestamp{};bool position{},velocity{},acceleration{},attitude{},body_rate{},thrust_and_torque{},direct_actuator{};};
 struct Target {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
 static void require(bool value,const char* message){if(!value)throw std::runtime_error(message);}
+// r/s/t 分别为真实 Runtime、合成反馈与单调模拟秒；sink 计数区分解锁、非零目标和心跳。
 class Harness {
  public:
   explicit Harness(bool confirmed=true):c(configuration(confirmed)),r(c),s(sample()){}
@@ -17,6 +21,7 @@ class Harness {
   std::string block_reason;std::vector<std::string> phases;
   static f::Config configuration(bool confirmed){auto c=config();
     c.attitude.autonomous_failsafe_confirmed=c.attitude.rc_takeover_confirmed=confirmed;return c;}
+  // 每 50 ms 推进并发送控制台 PING；Core 计划仍必须经最终策略，拒绝后锁存本地结果。
   void tick(){
     t+=.05;s.status_stamp+=1000;s.land_stamp+=1000;
     if(connected)r.request("PING",{},s,t);
@@ -35,6 +40,7 @@ class Harness {
       if(!d.allowed)block(d);}
     if(phases.empty()||phases.back()!=r.phase_name())phases.push_back(r.phase_name());
   }
+  // 先建立交互/权限选择/零推力预发送，再以 ACK+新 Offboard 状态证明准备完成。
   void ready(const char* choice=nullptr){
     require(r.request("INTERACTIVE",{},s,t).accepted,"live session");
     if(choice)require(r.request(choice,{},s,t).accepted,"selection");
@@ -45,12 +51,14 @@ class Harness {
     s.feedback.offboard=true;s.nav_state=14;tick();
     require(r.attitude_core().phase()==a::Phase::OffboardReady,"ready ACK+status");
   }
+  // 仅在测试合同完整时尝试假 Arm；ACK 后还要新 armed 状态，不把 ACK 当作物理执行。
   void arm(const char* choice){
     ready(choice);require(r.request("TAKEOFF",{1},s,t).accepted,"policy Arm admission");
     tick();require(arms==1,"final synthetic Arm sink");
     r.ack({r.pending(400).baseline+1,400,0,1,191,false},t+.001);
     s.feedback.armed=true;tick();require(r.attitude_core().phase()==a::Phase::ArmedGround,"Arm ACK+new status");
   }
+  // 把输入恢复健康后验证不会重新解锁/切入 Offboard；地面释放只允许成对规范零心跳。
   void stopped(){
     const int old_targets=targets,old_modes=modes,old_offboard=offboard;
     const int old_nonzero=nonzero,old_arms=arms;
@@ -95,6 +103,7 @@ int main(){
     require(h.arms==1&&h.nonzero>0,"complete RC policy allows fake sinks");});
   add("autonomous_without_rc_synthetic_arm_and_thrust",[](Harness& h){h.arm("AUTHORITY_AUTONOMOUS");for(int i=0;i<8;++i)h.tick();
     require(!h.s.manual_fresh&&!h.s.attitude.rc_link_ready&&h.arms==1&&h.nonzero>0,"complete autonomous allows without RC");});
+  // 分别刺激模式离开、操作请求、RC丢失、Kill、Failsafe、心跳丢失与开关代数变化。
   for(int event=0;event<7;++event){const char* names[]={"nav_departure","operator_event","rc_loss","kill","failsafe","heartbeat_loss","switch_change"};
     add(std::string("takeover_")+names[event],[event](Harness& h){
       h.s.attitude.rc_link_ready=h.s.attitude.rc_switches_ready=true;h.arm("AUTHORITY_RC");
@@ -122,12 +131,14 @@ int main(){
     require(h.offboard==1&&h.arms==1,"landing does not reacquire or rearm");});
   add("shutdown_blocks_both_sinks",[](Harness& h){h.ready("AUTHORITY_AUTONOMOUS");h.r.begin_shutdown(h.s,h.t);h.tick();h.stopped();});
   add("loop_stall_no_reacquire",[](Harness& h){h.arm("AUTHORITY_AUTONOMOUS");h.t+=.4;h.tick();h.stopped();});
+  // 显式安全地面 reset 只恢复 UNSET，不继承上一任务的飞行权限。
   add("takeover_ground_reset_to_unset",[](Harness& h){h.arm("AUTHORITY_AUTONOMOUS");h.s.attitude.kill=true;h.tick();h.stopped();
     require(h.r.request("AUTHORITY_RESET",{},h.s,h.t).accepted,"explicit safe reset");
     require(h.r.attitude_core().authority_state().mode==auth::Mode::Unset,"reset cannot carry flight authority");h.tick();});
   add("pending400_prevents_ground_reset",[](Harness& h){h.ready("AUTHORITY_AUTONOMOUS");h.r.request("TAKEOFF",{1},h.s,h.t);h.tick();
     h.s.attitude.operator_takeover=true;h.tick();h.s.attitude.operator_takeover=false;
     require(!h.r.request("AUTHORITY_RESET",{},h.s,h.t).accepted,"unresolved Arm blocks reset");});
+  // 汇总保留每场景原异常与 sink 次数；任何失败使进程非零退出，JSON 不声称硬件授权。
   int failed=0;
   std::cout<<"{\"schema_version\":1,\"release\":\"0.4.4-offboard-flight-dev-r2\",\"hardware_authorized\":false,\"real_dds\":\"UNKNOWN\",\"scenarios\":[";
   for(std::size_t i=0;i<results.size();++i){const auto& x=results[i];if(!x.pass)++failed;if(i)std::cout<<',';

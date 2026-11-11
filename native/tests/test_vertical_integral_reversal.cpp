@@ -1,3 +1,5 @@
+// 垂向积分反向抗饱和回归：输出或slew约束下只允许旧积分回退到零，不可穿零累积反向。
+// 先用小高度误差建立正/负真实积分，再用反向速度大误差分别触物理饱和或slew限制。
 #include "jikl_fc01_system/vertical_controller.hpp"
 #include <cmath>
 #include <cstdlib>
@@ -11,6 +13,7 @@ static a::VerticalConfig config(){
   c.height_gain=.5;c.velocity_gain=.15;c.integral_gain=.03;c.integral_limit=.08;
   c.max_height=5;c.max_climb=.3;c.max_descent=.2;return c;
 }
+// sign对称覆盖两方向；受限时unwind只到0并冻结后续反向积分，推力仍遵守原slew。
 static void reversal_does_not_wind_through_zero(double sign,bool output_saturation){
   auto c=config();if(output_saturation)c.slew=100;
   a::VerticalController ctl(c);ctl.reset(.475);

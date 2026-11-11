@@ -1,3 +1,5 @@
+// 有界完整补读调度回归：每轮spin完整执行，额外轮次在无工作、事件、预算或轮数门停止。
+// 预算5 ms是协作检查，单个回调不可抢占；当前300 ms飞控截止独立包含整个回调时间。
 #include "jikl_fc01_system/receive_schedule.hpp"
 #include "jikl_fc01_system/authority_telemetry.hpp"
 #include "jikl_fc01_system/control_diagnostics.hpp"
@@ -8,6 +10,7 @@
 namespace f=fc01;
 using Stop=f::ReceivePassStop;
 
+// 首次完整轮后无新回调即停，本轮停后新工作留下一周期；永远有工作也最多十轮。
 static void idle_and_stable_buffered_work(){
   f::ReceivePassSchedule schedule;
   assert(!schedule.next_pass(1.,0,0));
@@ -30,6 +33,7 @@ static void idle_and_stable_buffered_work(){
   assert(consumed==10&&schedule.pass_count()==10&&schedule.reason()==Stop::PassLimit);
 }
 
+// 即使setup已超预算仍保留原首次完整轮；慢回调真实耗时不能从控制截止漏掉。
 static void cooperative_budget_keeps_full_pass_and_control_guard(){
   f::ReceivePassSchedule schedule;f::CurrentControlCycle cycle;
   // The existing full first pass remains available after setup consumes 5ms.
@@ -48,6 +52,7 @@ static void cooperative_budget_keeps_full_pass_and_control_guard(){
   assert(!cycle.current(3.337,.3));
 }
 
+// NaN/Inf/负时间、坏预算、时间/计数回退或新安全事件均在本周期粘性停止。
 static void invalid_clocks_and_generations_stop_until_new_cycle(){
   const double nan=std::numeric_limits<double>::quiet_NaN();
   const double inf=std::numeric_limits<double>::infinity();
@@ -90,6 +95,7 @@ struct Switches {
   std::uint8_t mode_slot{1},arm_switch{3},return_switch{3},loiter_switch{3},offboard_switch{3},kill_switch{3};
   std::uint32_t switch_changes{};
 };
+// Kill/Arm/不安全摇杆脉冲先触事件，必须先交step看，再由下一周期读取OFF，不能正常尾帧覆盖。
 static void rc_pulses_reach_control_before_later_valid_samples(){
   for(int pulse=0;pulse<3;++pulse){
     f::AuthorityTelemetry rc;Manual manual;Switches switches;
@@ -135,6 +141,7 @@ static void rc_pulses_reach_control_before_later_valid_samples(){
   }
 }
 
+// 补读只改变回调消耗，不修改raw真实年龄；外壳新仍不能续原始测量寿命或清回退锁。
 static void extra_receipt_passes_do_not_retime_old_samples(){
   struct Estimate{std::uint64_t timestamp{},timestamp_sample{};};
   f::Stamp envelope;f::SourceSampleProgress raw;Estimate held;

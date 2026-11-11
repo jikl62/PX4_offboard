@@ -1,3 +1,5 @@
+// socket路径边界回归：不确定活性socket不得删除/连接，锁文件符号链接不得跟随。
+// mknod仅构造socket inode以检查类型与保留，不证明传输或活性；无法创建时明确UNKNOWN。
 #include "jikl_fc01_system/unix_server.hpp"
 #include <cassert>
 #include <filesystem>
@@ -7,6 +9,7 @@ int main(){
   const std::string path=std::string(directory)+"/control.sock";
   // A real socket filesystem inode without socket()/bind() (sandbox forbids
   // those). This proves type handling/retention, not transport or liveness.
+  // 现有socket返回LIVENESS_UNKNOWN时保留原inode，测试只清理自己拥有的夹具。
   if(mknod(path.c_str(),S_IFSOCK|0600,0)!=0){
     std::cout<<"socket filesystem fixture: SKIP (UNKNOWN)\n";
   }else {
@@ -20,11 +23,13 @@ int main(){
     std::cout<<"server_stale_looking_socket_refused_without_connect_or_delete: PASS\n";
   }
   {
+    // 同一路径只能有一个进程租约；释放第一锁后才清本夹具lock。
     fc01::SocketPathLease first(path);bool refused=false;
     try{fc01::SocketPathLease second(path);}catch(const std::runtime_error&){refused=true;}
     assert(refused&&first.identity_matches());
   }
   const auto lock=path+".lock";assert(unlink(lock.c_str())==0);
+  // lock为符号链接时拒绝且保留链接，防跟随到未知目标或破坏外部文件。
   assert(symlink("missing",lock.c_str())==0);bool refused=false;
   try{fc01::SocketPathLease bad(path);}catch(const std::runtime_error&){refused=true;}
   struct stat st{};assert(refused&&lstat(lock.c_str(),&st)==0&&S_ISLNK(st.st_mode));

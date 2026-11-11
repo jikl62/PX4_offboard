@@ -1,3 +1,6 @@
+// 低频着陆检测回归：20 Hz控制循环必须与1 Hz独立land样本的证明窗口正确配合。
+// Harness只在new_land时推进land戳；普通tick推进其它反馈，防止缓存重复被误算成新离地证据。
+// z为NED下正m、vz下正m/s；rising时减少z模拟爬升，测试不含真实动力学。
 // Agent B r5: synthetic 1Hz PX4 land detector / supervision regression.
 // No ROS graph, flight hardware, commands to FC01, or real parameters.
 #include "authority_test_support.hpp"
@@ -8,6 +11,7 @@
 namespace a=fc01::attitude;
 namespace f=fc01;
 
+// 持有真实Runtime和合成状态；固定1.25 s land间隔上限用于容纳1 Hz源且仍拒绝长期冻结。
 struct Harness {
   f::Config config;
   f::Runtime runtime;
@@ -53,6 +57,7 @@ struct Harness {
   }
 };
 
+// 两次独立新land且高度/速度/接触条件一致后才从斜坡进入Ascend，控制tick本身不证明离地。
 static void positive_1hz_is_not_impossible(){
   Harness h;
   h.advance_ticks(25); // Repeat detector message at 20 Hz for >1s.
@@ -70,6 +75,7 @@ static void positive_1hz_is_not_impossible(){
   assert(h.runtime.attitude_core().reason()==std::string("ASCEND"));
   std::cout<<"S10_R5_1HZ_TAKEOFF two independent land stamps => ASCEND: PASS\n";
 }
+// 冻结超过允许间隔后第一次新样本只能重新播种窗口，第二个连续新样本才可完成。
 static void held_detector_cannot_fake_liftoff(){
   Harness h;h.ramp();h.evidence_airborne();
   h.new_land();
@@ -83,6 +89,7 @@ static void held_detector_cannot_fake_liftoff(){
   assert(h.runtime.attitude_core().phase()==a::Phase::Ascend);
   std::cout<<"S10_R5_FROZEN_STAMP long gap requires TWO new samples: PASS\n";
 }
+// 超长gap或landed弹跳各自重置离地证明，正常尾帧不能复用旧窗口。
 static void separated_and_bouncing_evidence(){
   Harness h;h.ramp();h.evidence_airborne();
   h.new_land();
@@ -97,6 +104,7 @@ static void separated_and_bouncing_evidence(){
   assert(h.runtime.attitude_core().phase()==a::Phase::Ascend);
   std::cout<<"S10_R5_GAP_AND_BOUNCE resets liftoff proof: PASS\n";
 }
+// 有高度但不向上、或向上但高度不足都不能证明离地，两个独立物理条件须同时成立。
 static void height_and_speed_both_required(){
   for(int variant=0;variant<2;++variant){
     Harness h;h.ramp();h.s.feedback.landed=false;
@@ -107,6 +115,7 @@ static void height_and_speed_both_required(){
   }
   std::cout<<"S10_R5_HEIGHT_SPEED negative gates: PASS\n";
 }
+// 回退再回到旧戳仍不是两次新证据；实际适配器还会额外锁存时钟回退。
 static void timestamp_regression_cannot_revalidate_old_evidence(){
   Harness h;h.ramp();h.evidence_airborne();
   h.new_land();
@@ -126,6 +135,7 @@ static void timestamp_regression_cannot_revalidate_old_evidence(){
   assert(h.runtime.attitude_core().phase()==a::Phase::Ascend);
   std::cout<<"S10_R5_STAMP_REGRESSION old samples do not authorize liftoff: PASS\n";
 }
+// 爬升超时进入受监督下降；固定预算过期不能伪造PX4接管，也不能在不确定状态发起新起飞。
 static void ascend_timeout_retains_guarded_custody_after_budget(){
   Harness h;h.ascend();
   const double since=h.now;

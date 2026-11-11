@@ -1,9 +1,12 @@
+// M1 安全边界回归：分别攻击上锁、指令姿态、模式释放、离地时序和停止握手。
+// flight_context构造只读发布快照；假sink只能验证本地策略，绝不连接飞控或电机。
 // M1 safety regression: fully synthetic, never touches devices or ROS graph.
 #include "authority_test_support.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
 #include <cassert>
 #include <iostream>
 namespace a=fc01::attitude;
+// 构造足够健康的新地面RequestDisarm基准，使每个反例只改变被测安全项。
 static a::BoundaryContext flight_context(){
   auto c=authority_test::config();c.attitude.autonomous_failsafe_confirmed=true;fc01::Runtime r(c);
   auto s=authority_test::sample();auto b=r.publication_context(s,0,true,true);
@@ -19,6 +22,7 @@ static a::BoundaryContext flight_context(){
   b.feedback.land_stamp=2000;b.feedback.status_stamp=3000;
   return b;
 }
+// 在Core计划后改变触地/静止/新鲜度/高度/权限，最终Disarm边界仍须逐项否决，防检查后使用竞态。
 static void disarm_sink_toctou(){
   const auto good=flight_context();int sink=0;
   assert(a::publish_disarm_at_boundary(good,[&]{++sink;}).allowed&&sink==1);
@@ -48,6 +52,7 @@ static void disarm_sink_toctou(){
   {auto c=good;c.shutdown=true;assert(a::disarm_publication_policy(c).allowed);} // planned grounded shutdown
   std::cout<<"M1 disarm final-sink TOCTOU and transaction evidence: PASS\n";
 }
+// 非零推力请求中的90°横滚或偏航注入必须在两个sink之前拒绝，不能只验证实际反馈姿态。
 static void commanded_quaternion_attack(){
   auto c=flight_context();c.phase=a::Phase::HeightHold;c.feedback.landed=false;
   c.feedback.at_rest=false;c.reference_z=2;c.feedback.z=1.;
@@ -66,6 +71,7 @@ static void commanded_quaternion_attack(){
   c.shutdown=true;assert(!a::attitude_publication_policy(c,out).allowed);
   std::cout<<"M1 nonzero commanded q 90-degree roll / yaw injection: PASS\n";
 }
+// ReleaseOffboard仅允许可信未解锁地面；哪怕零流阶段混入极小非零推力也不可通过。
 static void ground_only_release(){
   auto c=flight_context();c.config=a::Config{};
   c.phase=a::Phase::ReleaseOffboard;c.feedback.armed=false;c.flight_started=false;
@@ -88,6 +94,7 @@ static void ground_only_release(){
   {auto x=c;x.phase=a::Phase::Descent;denied(x);}
   std::cout<<"M1 Offboard release mode command is disarmed-ground-only: PASS\n";
 }
+// 已解锁且不静止不能仅靠时间当已离地；无离地超时先减推地面恢复，高度突跳则独立Safety。
 static void armed_dwell_no_fake_liftoff_and_jump(){
   auto c=authority_test::config();c.attitude.autonomous_failsafe_confirmed=true;
   fc01::Runtime runtime(c);auto s=authority_test::sample();double now=0;
@@ -124,6 +131,7 @@ static void armed_dwell_no_fake_liftoff_and_jump(){
   assert(broken.attitude_core().fault_class()==a::FaultClass::UnknownAirborne);
   std::cout<<"M1 dwell, armed at_rest=false, no timer-only liftoff, jump abort: PASS\n";
 }
+// STOP发生在176待决时保留零心跳与释放握手；新ACK加实际新模式退出后才能Idle。
 static void pending_offboard_stop_release_ack(){
   fc01::Runtime r(authority_test::config());auto s=authority_test::sample();
   s.stabilized_selectable=true;double now=0;

@@ -1,4 +1,6 @@
 #pragma once
+// 人工RC起飞准入：先证明未解锁安全地面和零推力预发送，再配对新的解锁开关、真实PX4解锁及导航模式。
+// 此对象只能给准入/零推力许可，不构造Arm命令、不计算非零推力；Joined后才由原姿态高度Core接管1.5m起飞。
 #include "jikl_fc01_system/attitude_reference.hpp"
 #include "jikl_fc01_system/vertical_feedback_guard.hpp"
 #include <algorithm>
@@ -7,7 +9,9 @@
 #include <optional>
 
 namespace fc01::attitude {
+// WaitGround等地面，Prestream积累零输出，WaitArm等人工解锁，WaitNavigation等导航，Joined证据汇合，Blocked终止本轮。
 enum class RcStartPhase {WaitGround,Prestream,WaitArm,WaitNavigation,Joined,Blocked};
+// 仅列举可以重新准备的任务原因；不是清除任意发布、时钟或执行完整性故障的通用开关。
 inline bool rc_preparation_retry_reason(const std::string& reason){
   return reason=="RC_MANUAL_ARM_EVIDENCE_TIMEOUT"||reason=="RC_NAVIGATION_SELECTION_TIMEOUT"||
     reason=="RC_NAVIGATION_CONFIRMATION_TIMEOUT"||reason=="RC_NAVIGATION_MODE_SLOT_MISMATCH"||
@@ -16,8 +20,10 @@ inline bool rc_preparation_retry_reason(const std::string& reason){
     reason=="RC_ARM_AUTHORIZATION_WITHDRAWN"||reason=="RC_UNEXPECTED_MODE_BEFORE_NAVIGATION";
 }
 // Admission only. This object cannot construct an ARM command or nonzero thrust.
+// 保存一次人工授权过程的地面锚点、输入边沿及源时间水位，避免乱序回调把旧开关当成新同意。
 class RcNavigationStart {
  public:
+  // 以下只读查询暴露准入阶段/拒绝原因及锚点；q0为wxyz姿态，z0为PX4 NED向下位置m。
   RcStartPhase phase() const{return phase_;}
   const std::string& reason() const{return reason_;}
   bool anchor_valid() const{return anchor_;}
@@ -26,9 +32,11 @@ class RcNavigationStart {
   std::uint8_t z_reset()const{return z_reset_;}
   std::uint8_t vz_reset()const{return vz_reset_;}
   std::uint8_t quat_reset()const{return quat_reset_;}
+  // 地面参考合格要求不同源各自推进并覆盖静止窗口，不是只看landed=true。
   bool ground_reference_qualified()const{return ground_qualified_;}
   unsigned ground_reference_samples()const{return ground_samples_;}
   double ground_reference_seconds()const{return ground_since_<0?0:ground_last_at_-ground_since_;}
+  // 接收调度提前识别相对本窗口的高度离开；即使随后回调回到原高度也不能吞掉这次变化。
   bool ground_reference_height_changed(double z,double tolerance)const{
     return ground_since_>=0&&std::abs(z-ground_window_z_)>tolerance;
   }
@@ -37,19 +45,23 @@ class RcNavigationStart {
   std::uint64_t manual_armed_time()const{return manual_armed_time_;}
   // A latest arm-OFF sample is not proof that this attempt never observed
   // arming intent. Keep that history even when health() resets preparation.
+  // “当前开关OFF”不证明此前从未观察到解锁意图；全部历史证据均为空才能采用未解锁准备重试。
   bool no_arm_intent_observed()const{return !arm_intent_observed_&&!manual_arm_proven_&&
     !manual_armed_time_&&!arm_edge_&&!navigation_edge_&&!pending_armed_time_&&
     arm_since_<0&&navigation_since_<0&&!navigation_offboard_observed_;}
+  // 只记录最终sink成功的零目标/心跳配对；计划数不算发送数，失败/大间隔会重启连续流证明。
   void note_commit(bool success,double now){
     if(!success){stream_first_=stream_last_=-1;commits_=0;return;}
     if(phase_==RcStartPhase::WaitGround||phase_==RcStartPhase::Blocked||phase_==RcStartPhase::Joined)return;
     if(stream_last_<0||now<stream_last_||now-stream_last_>.3){stream_first_=now;commits_=0;}
     stream_last_=now;++commits_;
   }
+  // 同时要求最近提交未过期、持续时长和按loop_hz计算的最低提交量；不能靠空等主机时间READY。
   template<class C>bool stream_ready(const C& c,double now)const{
     return stream_first_>=0&&stream_last_>=0&&now>=stream_last_&&now-stream_last_<=c.stall_seconds&&
       now-stream_first_>=c.prestream_seconds&&commits_>=unsigned(std::ceil(c.loop_hz*c.prestream_seconds*.8));
   }
+  // 选中且新鲜的RC源与开关时钟都有效，Kill必须明确OFF；遥控话题存在本身不等于可人工接管。
   template<class F>static bool rc_live(const F& s){
     return s.rc_link_ready&&s.rc_switches_ready&&s.rc_source_selected&&
       s.rc_source_clock_valid&&s.rc_switch_clock_valid&&!s.kill&&s.rc_kill_switch==3;
@@ -57,13 +69,16 @@ class RcNavigationStart {
   // A READY stream may bridge independently delivered arm observations. This
   // permission is zero-only, expires without matching evidence, and is checked
   // again with the actual sink snapshot; it never proves manual arming.
+  // 独立消息可在固定短窗内配对；只允许精确零输出维持流，不把部分armed或开关单帧升级为人工解锁证明。
   template<class C,class F>bool pending_zero_allowed(const C& c,const F& s,double now)const{
     if(!anchor_||manual_arm_proven_||!ready_source_floor_||
        (phase_!=RcStartPhase::WaitArm&&phase_!=RcStartPhase::WaitNavigation)||
        !std::isfinite(now)||observed_at_<0||now<observed_at_||now-observed_at_>c.stall_seconds||
        !stream_ready(c,now))return false;
+    // 过了状态配对期限或整段解锁到导航期限即撤销桥接，不因为新的半边回调重新续期。
     if(phase_==RcStartPhase::WaitNavigation&&(arm_since_<0||now<arm_since_||
        now-arm_since_>c.status_timeout||now-arm_since_>c.rc_arm_to_navigation_timeout))return false;
+    // 这里两种零输出桥接均要求同步源、RC安全轴/辅助开关、电池预检、同一参考和地面包络。
     if(!s.source_clock_validated||!s.source_clock_valid||!s.source_host_stamp||!rc_live(s)||
        !s.rc_axes_safe||s.rc_sticks_moving||!s.rc_aux_switches_safe||!s.battery_ready||!s.preflight||
        !s.stabilized_selected||s.offboard||s.rc_mode_slot==0||s.rc_mode_slot>6||
@@ -75,9 +90,11 @@ class RcNavigationStart {
     const auto q=normalized(s.q);
     if(!q||std::acos(std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.))*
        180/3.141592653589793>c.max_tilt_deg)return false;
+    // 解锁开关使用PX4值1=ON，3=OFF；桥接前必须确保该边沿晚于READY源水位。
     const bool arm_on=s.rc_arm_switch==1;
     if(arm_on&&(s.rc_switch_sample_stamp<=ready_source_floor_||
        (!arm_edge_&&(last_arm_switch_!=3||s.rc_switch_sample_stamp<=last_switch_stamp_))))return false;
+    // 真实解锁反馈还必须具有RC开关原因、新status及新的同源armed_time；不得混配其他解锁事件。
     if(s.armed){
       return s.latest_arming_reason==2&&s.status_stamp>ready_source_floor_&&
         s.status_stamp>disarmed_status_&&s.armed_time>disarmed_armed_time_&&
@@ -87,6 +104,7 @@ class RcNavigationStart {
   }
   // Manual arming must already be proven. Independent mode/slot deliveries
   // may pair only within one fixed navigation window, still at exact zero.
+  // 已证明人工解锁后，允许模式与档位短时异步到达；仍只给零输出，并要求同一次armed_time。
   template<class C,class F>bool navigation_zero_allowed(const C& c,const F& s,double now)const{
     if(phase_!=RcStartPhase::WaitNavigation||!manual_arm_proven_||!anchor_||
        !std::isfinite(now)||observed_at_<0||now<observed_at_||now-observed_at_>c.stall_seconds||
@@ -103,6 +121,7 @@ class RcNavigationStart {
     const auto q=normalized(s.q);
     if(!q||std::acos(std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.))*
        180/3.141592653589793>c.max_tilt_deg)return false;
+    // 导航档位是否选中必须按候选槽位判断；它与PX4实际Offboard状态分别到达，需要两者都成立。
     const bool nav=s.rc_mode_slot==c.rc_navigation_mode_slot;
     if((navigation_edge_&&!nav)||(navigation_offboard_observed_&&!s.offboard))return false;
     if(nav&&(s.rc_switch_sample_stamp<=arm_edge_||s.rc_switch_sample_stamp<=ready_source_floor_||
@@ -111,29 +130,38 @@ class RcNavigationStart {
        s.status_stamp<=arm_edge_||s.status_stamp<=ready_source_floor_||s.offboard_signal_lost))return false;
     return true;
   }
+  // 准入主步：c为原配置，s为同一当前快照，now为单调秒，health为上层已核对的健康拒绝原因。
+  // 返回true仅表示本阶段允许拟发零输出；Joined返回false后外层切换到原ArmedGround，不在这里输出起飞推力。
   template<class C,class F>bool step(const C& c,const F& s,double now,const std::string& health){
     if(phase_==RcStartPhase::Blocked||phase_==RcStartPhase::Joined)return false;
+    // 一旦看到解锁意图就永久记录在本轮，后续健康失败不能重置历史来绕过准入。
     if(s.armed||s.rc_arm_switch==1)arm_intent_observed_=true;
+    // 终止本轮准入并保留具体原因；是否能新任务重建由外层地面恢复判断。
     const auto block=[this](const std::string& why){phase_=RcStartPhase::Blocked;reason_=why;return false;};
+    // 主机非有限时间或回退先于任何计时更新拒绝，防止负窗口或错误累计。
     if(!std::isfinite(now)||(observed_at_>=0&&now<observed_at_))return block("RC_TIME_REGRESSION");
     observed_at_=now;
     const bool nav=s.rc_mode_slot==c.rc_navigation_mode_slot;
     const bool arm_on=s.rc_arm_switch==1;
     const bool intent=arm_since_>=0;
+    // 按原优先级补充来源、轴、安全辅助开关与预检失败；已有health原因不能被后面的正常数据覆盖。
     std::string why=health;
     if(why.empty()&&(!s.source_clock_validated||!s.source_host_stamp||!rc_live(s)))why="RC_FRESH_SELECTED_SOURCE_REQUIRED";
     if(why.empty()&&(!s.rc_axes_safe||s.rc_sticks_moving))why="RC_MINIMUM_THROTTLE_CENTERED_STICKS_REQUIRED";
     if(why.empty()&&!s.rc_aux_switches_safe)why="RC_OTHER_MODE_SWITCH_ACTIVE";
     if(why.empty()&&(!s.battery_ready||!s.preflight))why="BATTERY_PREFLIGHT_REQUIRED";
     const auto q=normalized(s.q);
+    // 从规范化姿态算地面倾角；人工RC地面准入沿用独立倾角门，不影响自主高度主链的实测姿态反馈。
     if(why.empty()&&q){const double tilt=std::acos(std::clamp(1-2*((*q)[1]*(*q)[1]+(*q)[2]*(*q)[2]),-1.,1.))*180/3.141592653589793;
       // Manual RC ground admission remains independently guarded; this is not
       // the autonomous measured-attitude takeoff path.
       if(tilt>c.max_tilt_deg)why="RC_GROUND_TILT_EXCEEDED";}
+    // 出现健康失败时，有解锁意图则Blocked；尚无解锁意图才回到等待地面重新积累。
     if(!why.empty()){
       if(intent||s.armed)return block(why);
       reset(why);return false;
     }
+    // 必须未解锁、Stabilized、解锁/导航开关OFF、着地静止，才能开始零预发送及新的地面证明。
     if(phase_==RcStartPhase::WaitGround){
       if(s.armed||arm_on||nav||s.offboard||!s.stabilized_selected||!s.landed||!s.at_rest||
          s.rc_arm_switch!=3||s.rc_mode_slot==0||s.rc_mode_slot>6||
@@ -145,33 +173,40 @@ class RcNavigationStart {
       // its callbacks may have changed estimator frame or repeated old data.
       phase_=RcStartPhase::Prestream;
     }
+    // READY之前提前操作解锁或导航会阻止本轮；预发送不构成授权，地面变化需重新积累。
     if(phase_==RcStartPhase::Prestream){
       if(s.armed||arm_on||nav||s.offboard)return block("RC_ARM_OR_NAVIGATION_BEFORE_READY");
       if(!s.stabilized_selected||!s.landed||!s.at_rest||std::abs(s.vz)>c.ground_vz_tolerance){
         reset("RC_PRESTREAM_GROUND_CHANGED");return false;}
+      // 地面位置/导数证据与真实输出提交并行累计；两者均满足且PX4未报丢流才READY。
       const bool qualified=observe_ground_reference(c,s,now);
       capture(s);
       if(qualified&&stream_ready(c,now)&&!s.offboard_signal_lost){
         // Include the same 100ms future-source allowance as the clock guard:
         // an event generated before readiness cannot arrive later as consent.
+        // 加上源时钟允许的100ms未来容差，保证READY前生成、后来才到达的开关不能算新授权。
         ready_source_floor_=s.source_host_stamp+100000;
         phase_=RcStartPhase::WaitArm;reason_="RC_READY_WAIT_CH5_MANUAL_ARM";
       }
       else reason_=qualified?"RC_PRESTREAM_WAIT_COMMITS_AND_PX4_SIGNAL":"RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE";
       return true;
     }
+    // 只有严格新的开关采样才更新边沿；重复缓存不能制造第二次解锁/导航动作。
     const bool new_switch=s.rc_switch_sample_stamp>last_switch_stamp_;
     if(new_switch){
+      // OFF→ON边沿必须晚于READY；记录源采样时间而非主机接收时间。
       if(last_arm_switch_==3&&arm_on){
         if(s.rc_switch_sample_stamp<=ready_source_floor_)return block("RC_ARM_SOURCE_BEFORE_READY");
         arm_edge_=s.rc_switch_sample_stamp;
       }
+      // 导航边沿必须在解锁边沿之后，防止提前放在导航档而自动接管。
       if(last_mode_slot_!=c.rc_navigation_mode_slot&&nav){
         if(!arm_edge_||s.rc_switch_sample_stamp<=arm_edge_)return block("RC_NAVIGATION_BEFORE_MANUAL_ARM");
         navigation_edge_=s.rc_switch_sample_stamp;
       }
       last_arm_switch_=s.rc_arm_switch;last_mode_slot_=s.rc_mode_slot;last_switch_stamp_=s.rc_switch_sample_stamp;
     }
+    // 尚未解锁时继续独立地面观察；估计原点变动会退回预发送重新建立参考。
     if(phase_==RcStartPhase::WaitArm){
       if(nav||s.offboard)return block("RC_NAVIGATION_BEFORE_MANUAL_ARM");
       if(!s.armed&&!arm_on){
@@ -182,13 +217,16 @@ class RcNavigationStart {
         }
         capture(s);reason_="RC_READY_WAIT_CH5_MANUAL_ARM";return true;
       }
+      // 从首次观察到解锁意图开始固定配对期限；不是每收到一条消息就刷新。
       arm_since_=now;phase_=RcStartPhase::WaitNavigation;
     }
+    // 先拒绝超时，再尝试拼配解锁/模式证据，迟到的健康尾帧不得复活已过期任务。
     if(phase_==RcStartPhase::WaitNavigation){
       if(now-arm_since_>c.rc_arm_to_navigation_timeout)return block("RC_NAVIGATION_SELECTION_TIMEOUT");
       // Expiry precedes pairing: evidence received on an overdue tick cannot
       // turn an expired attempt into a proven arm or navigation admission.
       if(!manual_arm_proven_&&now-arm_since_>c.status_timeout)return block("RC_MANUAL_ARM_EVIDENCE_TIMEOUT");
+      // 人工解锁到导航之间仍绑定原地面参考；估计器重置或高度/速度变化不能在armed状态重建锚点。
       if(s.z_reset!=z_reset_||s.vz_reset!=vz_reset_||s.quat_reset!=quat_reset_)
         return block("RC_ARMED_ESTIMATOR_RESET");
       if(!ground_qualified_||!s.landed||std::abs(z0_-s.z)>c.height_tolerance||std::abs(s.vz)>c.ground_vz_tolerance)
@@ -198,11 +236,13 @@ class RcNavigationStart {
       if(s.armed&&s.status_stamp<=ready_source_floor_)return block("RC_ARM_STATE_BEFORE_READY");
       if(s.armed&&(s.status_stamp<=disarmed_status_||s.armed_time<=disarmed_armed_time_||
          (pending_armed_time_&&s.armed_time!=pending_armed_time_)))return block("RC_ARM_STATE_NOT_NEW_MATCHING_EPISODE");
+      // 首次armed帧锁定这一事件的PX4启动相对armed_time，其后帧必须仍属于同一事件。
       if(s.armed&&!pending_armed_time_)pending_armed_time_=s.armed_time;
       if(s.armed&&arm_edge_&&arm_on&&s.status_stamp>disarmed_status_&&s.armed_time>disarmed_armed_time_){
         if(!manual_arm_proven_)manual_armed_time_=s.armed_time;
         manual_arm_proven_=true;
       }
+      // 已经证明的人工授权一旦撤销就阻断本轮，不能等它再次变ON而悄悄继续。
       if(manual_arm_proven_&&(!s.armed||!arm_on))return block("RC_ARM_AUTHORIZATION_WITHDRAWN");
       if(!manual_arm_proven_){
         reason_="RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS";
@@ -212,6 +252,7 @@ class RcNavigationStart {
         return block(nav?"RC_NAVIGATION_CONFIRMATION_TIMEOUT":"RC_NAVIGATION_MODE_SLOT_MISMATCH");
       if(navigation_offboard_observed_&&!s.offboard)return block("RC_NAVIGATION_MODE_WITHDRAWN");
       if(navigation_edge_&&!nav)return block("RC_NAVIGATION_SELECTION_WITHDRAWN");
+      // 实际Offboard反馈必须晚于先前Stabilized、解锁及READY水位，防止旧模式消息误授权。
       if(s.offboard){
         if(!last_stabilized_status_||s.status_stamp<=last_stabilized_status_||
            s.status_stamp<=arm_edge_||s.status_stamp<=ready_source_floor_)
@@ -219,6 +260,7 @@ class RcNavigationStart {
         navigation_offboard_observed_=true;
       }else last_stabilized_status_=s.status_stamp;
       if((nav||s.offboard)&&navigation_since_<0)navigation_since_=now;
+      // 档位、导航边沿、真实新Offboard状态和连续流全部配对后才Joined。
       if(nav&&navigation_edge_&&s.offboard&&s.status_stamp>navigation_edge_&&
          stream_ready(c,now)&&!s.offboard_signal_lost){
         phase_=RcStartPhase::Joined;reason_="RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED";return false;
@@ -230,12 +272,14 @@ class RcNavigationStart {
     return false;
   }
  private:
+  // 丢失地面连续性时只清本轮证据窗口/导数观察器；外层命令因果水位不在本对象中。
   void clear_ground_reference(){
     ground_qualified_=false;ground_since_=ground_last_at_=ground_land_at_=-1;
     ground_samples_=ground_land_samples_=ground_status_samples_=0;
     ground_local_=ground_status_=ground_land_=ground_switch_=ground_vertical_=0;
     ground_guard_.reset();
   }
+  // 独立地面证明：仅未解锁/静止/非Offboard的可信新样本可积累，绝不在空中重设高度零点。
   template<class C,class F>bool observe_ground_reference(const C& c,const F& s,double now){
     // Only disarmed, resting, non-Offboard, safe-RC observations reach here.
     // In particular, neither arm intent nor landed=true in flight can rebase.
@@ -247,6 +291,7 @@ class RcNavigationStart {
        (c.feedback_guard.enabled&&(!s.vertical_sample_stamp||!std::isfinite(s.z_deriv)))){
       clear_ground_reference();return false;
     }
+    // 重置、时间回退、同stamp改数、样本大间隔及高度离开均切断连续证据，不允许正常尾帧掩盖。
     const bool discontinuity=ground_since_>=0&&(
       s.z_reset!=ground_z_reset_||s.vz_reset!=ground_vz_reset_||s.quat_reset!=ground_quat_reset_||
       s.local_stamp<ground_local_||s.status_stamp<ground_status_||s.land_stamp<ground_land_||
@@ -265,10 +310,12 @@ class RcNavigationStart {
       ground_z_reset_=s.z_reset;ground_vz_reset_=s.vz_reset;ground_quat_reset_=s.quat_reset;
       ground_guard_.emplace(c.feedback_guard);
     }
+    // 地面也用同一位置/导数合同；速度差诊断不会独立阻断，硬不一致会重新积累。
     const auto& vertical=ground_guard_->observe(s.vertical_sample_stamp,s.z,s.vz,s.z_deriv,c.local_timeout);
     if(c.feedback_guard.enabled&&!vertical.healthy){
       clear_ground_reference();stream_first_=stream_last_=-1;commits_=0;ready_source_floor_=0;return false;
     }
+    // 不同DDS源独立计数，不能强求每个land回调恰好同时伴随一个status，也不能用缓存重复计数。
     if(s.local_stamp>ground_local_)++ground_samples_;
     if(s.status_stamp>ground_status_)++ground_status_samples_;
     if(s.land_stamp>ground_land_){
@@ -280,29 +327,35 @@ class RcNavigationStart {
     ground_local_=s.local_stamp;ground_status_=s.status_stamp;ground_land_=s.land_stamp;
     ground_switch_=s.rc_switch_sample_stamp;ground_vertical_=s.vertical_sample_stamp;ground_last_at_=now;
     ground_last_z_=s.z;ground_last_vz_=s.vz;ground_last_deriv_=s.z_deriv;
+    // 至少3个local、3个land、2个status且跨越ground_seconds，启用导数监测时还要完成位置窗口。
     ground_qualified_=now-ground_since_+1e-9>=c.ground_seconds&&ground_samples_>=3&&ground_land_samples_>=3&&
       ground_status_samples_>=2&&
       (!c.feedback_guard.enabled||vertical.position_window_checked);
     // After qualification retain a bounded current-ground stability window;
     // this lets a slow valid disarmed drift refresh z0 without using the
     // previous task's altitude as a permanent map/ground reference.
+    // 已合格地面缓慢漂移可以在未解锁窗口内更新锚点；不把上一任务气压高度当永久地面。
     if(ground_qualified_&&now-ground_window_since_>=c.ground_seconds){
       ground_window_since_=now;ground_window_z_=s.z;
     }
     return ground_qualified_;
   }
+  // 未解锁准入重置清连续流和锚点，同时保留本对象已观察过解锁意图的历史字段。
   void reset(const std::string& why){phase_=RcStartPhase::WaitGround;anchor_=false;
     stream_first_=stream_last_=-1;commits_=0;ready_source_floor_=0;clear_ground_reference();reason_=why;}
+  // 只在允许的未解锁地面分支捕获NED z、wxyz姿态、reset及开关水位。
   template<class F>void capture(const F& s){
     anchor_=true;z0_=s.z;q0_=s.q;z_reset_=s.z_reset;vz_reset_=s.vz_reset;quat_reset_=s.quat_reset;
     disarmed_status_=s.status_stamp;disarmed_armed_time_=s.armed_time;
     last_arm_switch_=s.rc_arm_switch;last_mode_slot_=s.rc_mode_slot;last_switch_stamp_=s.rc_switch_sample_stamp;
   }
+  // 成员分为阶段/意图、姿态高度锚点、单调秒窗口、PX4源µs边沿及独立地面证据；不同时间域不可直接相减。
   RcStartPhase phase_{RcStartPhase::WaitGround};std::string reason_{"RC_WAIT_SAFE_GROUND"};
   bool anchor_{},manual_arm_proven_{},navigation_offboard_observed_{},arm_intent_observed_{};
   Quaternion q0_{1,0,0,0};double z0_{};
   std::uint8_t z_reset_{},vz_reset_{},quat_reset_{},last_arm_switch_{},last_mode_slot_{};
   double arm_since_{-1},navigation_since_{-1},stream_first_{-1},stream_last_{-1},observed_at_{-1};unsigned commits_{};
+  // 解锁前status/armed_time、已确认manual_armed_time及开关边沿均保留源时序，用来匹配唯一人工解锁事件。
   std::uint64_t disarmed_status_{},disarmed_armed_time_{},manual_armed_time_{},arm_edge_{},navigation_edge_{},last_switch_stamp_{};
   std::uint64_t ready_source_floor_{},pending_armed_time_{},last_stabilized_status_{};
   bool ground_qualified_{};unsigned ground_samples_{},ground_land_samples_{},ground_status_samples_{};
@@ -310,6 +363,7 @@ class RcNavigationStart {
   double ground_last_z_{},ground_last_vz_{},ground_last_deriv_{};
   std::uint64_t ground_local_{},ground_status_{},ground_land_{},ground_switch_{},ground_vertical_{};
   std::uint8_t ground_z_reset_{},ground_vz_reset_{},ground_quat_reset_{};
+  // 仅在地面窗口建立后构造导数监测器，reset窗口时一起销毁；不会复用上次飞行积分。
   std::optional<VerticalFeedbackGuard> ground_guard_;
 };
 } // namespace fc01::attitude

@@ -1,3 +1,5 @@
+// 五个历史独立反例的正向回归：保留原始文件字节，另以断言验证修复后的安全属性。
+// 覆盖地面取消、斜坡超时、land dwell、零推力姿态旁路、接管请求与真实交接，以及最终sink证据。
 // C's five independent counterexamples, converted to assertions. Fully offline.
 // Original C file remains unchanged in tests/c_independent_repro.
 #include "authority_test_support.hpp"
@@ -10,6 +12,7 @@ struct Mode {std::uint64_t timestamp{};bool attitude{};};
 struct Target {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};
   std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
 static f::Config cfg(){auto c=authority_test::config();c.attitude.autonomous_failsafe_confirmed=true;return c;}
+// 已解锁但未静止时LAND只进入减推地面恢复；见新静止证据后才提交一次Disarm。
 static void c01_cancel_ground(){
   f::Runtime r(cfg());auto s=authority_test::sample();double t=0;
   authority_test::armed(r,s,t,"AUTHORITY_AUTONOMOUS");
@@ -40,6 +43,7 @@ static void c01_cancel_ground(){
   assert(r.attitude_core().phase()==a::Phase::SafeDisarmed);
   std::cout<<"C01 recovered powered ground; ordered Disarm ACK + new status: GREEN\n";
 }
+// 无离地反馈时斜坡最终超时并按slew减推，保持心跳；不把时间到当成已经离地。
 static void c02_ramp_timeout(){
   f::Runtime r(cfg());auto s=authority_test::sample();double t=0;
   authority_test::armed(r,s,t,"AUTHORITY_AUTONOMOUS");
@@ -70,6 +74,7 @@ static void c02_ramp_timeout(){
   assert(r.attitude_core().phase()==a::Phase::RequestDisarm&&last.command==a::Command::Disarm);
   std::cout<<"C02 timeout ramps motor safely, maintains heartbeat, then requests Disarm: GREEN\n";
 }
+// 冻结/回退/短丢帧不能凭控制tick累计land dwell，超过允许gap必须从新源样本重计。
 static void c03_timestamp_dwell(){
   f::Runtime r(cfg());auto s=authority_test::sample();double t=0;
   authority_test::armed(r,s,t,"AUTHORITY_AUTONOMOUS");
@@ -98,6 +103,7 @@ static void c03_timestamp_dwell(){
   assert(r.attitude_core().phase()==a::Phase::ThrustRamp);
   std::cout<<"C03 frozen, regressed and dropped land-detector frames: GREEN\n";
 }
+// 即使推力为零，恶意90°姿态也不能绕过最终水平/航向参考检查。
 static void c04_zero_thrust_sink(){
   f::Runtime r(cfg());auto s=authority_test::sample();auto c=r.publication_context(s,0,true,true);
   c.authority={fc01::authority::Mode::AutonomousNoRc,fc01::authority::Mode::AutonomousNoRc,true,false};
@@ -118,6 +124,7 @@ static void c04_zero_thrust_sink(){
   }
   std::cout<<"C04 zero-thrust attacked template sink for all applicable phases: GREEN\n";
 }
+// 接管请求与PX4已经离开Offboard是两个事实；等待交接期间继续原安全输出。
 static void c05_takeover(){
   f::Runtime r(cfg());auto s=authority_test::sample();double t=0;
   authority_test::armed(r,s,t,"AUTHORITY_AUTONOMOUS");
@@ -132,6 +139,7 @@ static void c05_takeover(){
   assert(!observed.attitude.publish&&r.attitude_core().authority_state().takeover_latched);
   std::cout<<"C05 request != completed PX4 handoff; no immediate heartbeat gap: GREEN\n";
 }
+// 着陆/减推后的上锁仍要新land样本，接触弹跳立即回下降，不能沿用旧接地证据。
 static void touchdown_landed_fresh_samples(){
   f::Runtime r(cfg());auto s=authority_test::sample();double t=0;
   authority_test::armed(r,s,t,"AUTHORITY_AUTONOMOUS");
@@ -165,6 +173,7 @@ static void touchdown_landed_fresh_samples(){
   assert(r.attitude_core().phase()==a::Phase::RequestDisarm);
   std::cout<<"Touchdown/Landed frozen stamps and bounce never bypass new-sample Disarm: GREEN\n";
 }
+// 计划命令不是线上提交；最终sink拒绝后迟到ACK也不能把未发Arm变为接受。
 static void request_vs_sink_publication(){
   f::Runtime r(cfg());r.require_attitude_sink_commit();auto s=authority_test::sample();double t=0;
   assert(r.request("INTERACTIVE",{},s,t).accepted);

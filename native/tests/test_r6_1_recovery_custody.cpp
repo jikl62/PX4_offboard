@@ -1,3 +1,5 @@
+// R6.1 长时恢复责任回归：无XY/VXY时，健康已解锁Offboard仍须保留有界垂向输出并披露超期。
+// 原历史夹具按宏复用不改字节；12000步是600 s模拟时间，绝非等待真实电机或飞控。
 // Offline positive properties. The unchanged C harness reaches the REAL
 // Runtime and final publication boundary; none of these numbers calibrate FC01.
 #define main C_S10_preserved_driver_not_called
@@ -5,6 +7,7 @@
 #undef main
 
 static void require(bool ok,const char* message){if(!ok)throw std::runtime_error(message);}
+// 从真实准备/解锁/斜坡流程进入低高度离地不确定状态，明确XY/VXY不可用，不能用Land21后备。
 static void airborne(Harness& h){
   h.ramp();h.s.feedback.landed=false;h.s.at_rest=false;
   h.s.attitude.z=1.97;h.s.attitude.vz=-.02;
@@ -17,6 +20,7 @@ static void continuous_tick(Harness& h){
   require(h.attitude_sinks==targets+1&&h.mode_sinks==modes+1,"actual final sink missing");
   require(o.command==a::Command::None,"airborne recovery planned a new command without proof");
 }
+// 正常/关闭/断线三类中断各跑600 s；检查双sink、原推力和slew、固定截止、不再上升及不重复命令。
 static void long_healthy_custody(int interruption){
   Harness h;airborne(h);
   if(interruption==1)h.r.begin_shutdown(h.s,h.t);
@@ -56,6 +60,7 @@ static void reach_overdue(Harness& h){
   for(int i=0;i<900;++i)continuous_tick(h);
   require(h.r.attitude_core().recovery_deadline()>0&&h.t>h.r.attitude_core().recovery_deadline(),"not past recovery deadline");
 }
+// 超预算也不能豁免十三类原致命门；任何失败都停两sink并报告Safety而非受控下降。
 static void overdue_does_not_bypass_failures(){
   for(int which=0;which<13;++which){
     Harness h;reach_overdue(h);
@@ -80,6 +85,7 @@ static void overdue_does_not_bypass_failures(){
   }
   std::cout<<"R6.1_POST_BUDGET 13 original fatal gates fail closed; no routine Disarm PASS\n";
 }
+// 即使Core过去健康，最终边界当前动作门/stall/Kill/高度无效仍独立否决。
 static void overdue_final_boundary_is_unchanged(){
   Harness h;reach_overdue(h);const auto o=h.tick();
   const auto valid=h.r.publication_context(h.s,h.t,true,true);
@@ -95,6 +101,7 @@ static void overdue_final_boundary_is_unchanged(){
   }
   std::cout<<"R6.1_POST_BUDGET final policy still blocks gate/stall/Kill/Z failure PASS\n";
 }
+// 实际新模式退出后尊重PX4控制权，只能说明观察到失效处置，不能声称飞行任务已经工作。
 static void overdue_mode_exit_respected(){
   Harness h;reach_overdue(h);h.s.feedback.offboard=false;h.s.nav_state=15;
   const auto o=h.tick();require(!o.publish&&o.command==a::Command::None,"Offboard output continued after actual fresh mode exit");
@@ -103,6 +110,7 @@ static void overdue_mode_exit_respected(){
     "PX4_FAILSAFE_OBSERVED_BUT_CONTROL_UNVERIFIED","mode exit fabricated working flight task");
   std::cout<<"R6.1_POST_BUDGET fresh PX4 mode exit respected, physical task unverified PASS\n";
 }
+// 触地后还未证实静止时先归零推力，不能把已停止下降的阶段继续错误标成正在下降或盲上锁。
 static void overdue_power_removal_is_not_labelled_descent(){
   Harness h;reach_overdue(h);h.s.attitude.z=2.;h.s.attitude.vz=0.;
   h.s.feedback.landed=true;h.s.at_rest=false;
@@ -115,6 +123,7 @@ static void overdue_power_removal_is_not_labelled_descent(){
   require(h.disarms==0,"unconfirmed at_rest allowed Disarm");
   std::cout<<"R6.1_POST_BUDGET power removal reports guarded custody, no false descent or Disarm PASS\n";
 }
+// 单个接触脉冲不够；后来完整1 Hz新地面窗才允许唯一state-only上锁及原地面模式释放。
 static void overdue_ground_proof_can_finish(){
   Harness h;reach_overdue(h);
   h.s.attitude.z=2.;h.s.attitude.vz=0.;

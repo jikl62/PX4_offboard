@@ -1,3 +1,5 @@
+// R6.2b 未解锁地面模式释放竞态回归：旧高度原点漂移与真实PX4已离开Offboard分别处理。
+// ground_ctx只构造可信未解锁地面；所有mode/target/heartbeat发布为本地计数。
 // R6.2b: unarmed, ground-only Offboard release races. No real ROS/flight actions.
 #define main C_S10_original_main_unused
 #include "c_s10_independent/C_S10_SAFETY_ATTACKS.cpp"
@@ -5,6 +7,7 @@
 #include <iostream>
 #include <string>
 
+// NED z比旧参考低约0.27 m，用于复现长期未解锁准备后参考漂移，不代表允许空中放弃。
 static a::BoundaryContext ground_ctx(){
   auto c=a::BoundaryContext{};c.profile="attitude_altitude";
   c.phase=a::Phase::ReleaseOffboard;
@@ -19,6 +22,7 @@ static a::BoundaryContext ground_ctx(){
   s.stationary_seconds=3;s.status_stamp=s.land_stamp=1000;
   return c;
 }
+// 可信未解锁地面可按原策略释放旧Offboard，零推力和两sink仍须完整。
 static void unarmed_ground_stale_z0_release_allowed(){
   auto c=ground_ctx();
   int sends=0;
@@ -31,6 +35,7 @@ static void unarmed_ground_stale_z0_release_allowed(){
   assert(d.allowed&&targets==1&&heartbeats==1);
   std::cout<<"R62B_UNARMED_GROUND_STALE_Z0_RELEASE PASS\n";
 }
+// 已承担任务、曾确认解锁或任一健康/地面/速度/Kill异常都不能套用未解锁漂移路线。
 static void armed_and_unhealthy_release_still_denied(){
   const auto base=ground_ctx();
   auto denied=[](const a::BoundaryContext& c){
@@ -50,6 +55,7 @@ static void armed_and_unhealthy_release_still_denied(){
   {auto c=base;c.feedback.kill=true;denied(c);}
   std::cout<<"R62B_ARMED_AND_UNHEALTHY_RELEASE_DENIED PASS\n";
 }
+// PX4已实际退出Offboard且未解锁地面时，只取消旧释放意图；不能额外发送176覆盖新模式。
 static void external_mode_departure_is_cancellation_not_command(){
   auto c=ground_ctx();c.feedback.offboard=false;
   assert(a::external_ground_mode_departure(c));
@@ -61,6 +67,7 @@ static void external_mode_departure_is_cancellation_not_command(){
   c.feedback.offboard=true;assert(!a::external_ground_mode_departure(c));
   std::cout<<"R62B_FINAL_SINK_EXTERNAL_MODE_CANCELLATION_PREDICATE PASS\n";
 }
+// 在Core下一tick前观测外部Altitude模式，验证无心跳、无额外176且正常退Idle。
 static void core_observed_external_altitude_never_plans_release(){
   Harness h;h.ready();
   assert(h.r.request("LAND",{},h.s,h.t).accepted);

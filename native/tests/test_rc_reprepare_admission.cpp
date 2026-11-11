@@ -1,3 +1,5 @@
+// RC 重准备准入回归：已有静止时间不重复等待，已知准备失败可重试，永久完整性故障不能误清。
+// 只操作纯Core合成反馈，不发送ROS/串口；下一任务仍需新人工Arm和导航证据。
 #include "authority_test_support.hpp"
 #include <iostream>
 #include <stdexcept>
@@ -21,12 +23,14 @@ static a::Feedback safe_rc_feedback(){
   s.status_stamp=s.land_stamp=s.local_stamp=s.rc_switch_sample_stamp=1000000;
   return s;
 }
+// 已独立证明三秒静止的当前地面可立即开始零预发送，不再人为多等第二个静止窗。
 static void preaccumulated_ground_rest_does_not_wait_twice(){
   a::Core core(rc_admission_config());auto s=safe_rc_feedback();
   const auto out=core.step(s,.05,{},{});
   require_rc(core.phase()==a::Phase::RcPrestream&&out.publish,
     "already proven stationary ground must begin RC prestream without a second two-second rest wait");
 }
+// 原永久/完整性故障不能被安全开关或后来的可恢复原因覆盖。
 static void fatal_faults_cannot_be_cleared_by_ground_controls(){
   for(const char* reason:{"ACTIVE_VERTICAL_ESTIMATOR_RESET","TELEMETRY_TIME_REGRESSION",
       "ROS_ADAPTER_CONTROL_LOOP_STALL","PERSISTENT_THRUST_SATURATION",
@@ -39,6 +43,7 @@ static void fatal_faults_cannot_be_cleared_by_ground_controls(){
       "a later recoverable-looking reason cannot overwrite an earlier permanent fault lock");
   }
 }
+// 真实经历预发送READY、Arm开关ON却缺armed状态并超时，再复位OFF，避免用人工block替代复现。
 struct RetryFixture {
   a::Core core{rc_admission_config()};a::Feedback s{safe_rc_feedback()};double now{};
   RetryFixture(){
@@ -56,6 +61,7 @@ struct RetryFixture {
     const auto out=core.step(s,now,{},{});if(out.publish)core.note_rc_publication(true,now);
   }
 };
+// 已知未加入准备超时仅在新安全RC、合法时钟与模式档位时可重试。
 static void known_preparation_timeouts_can_reprepare_only_on_safe_ground(){
   RetryFixture q;
   require_rc(q.core.rc_restart_allowed(q.s),"a known preparation timeout can restart after fresh safe ground and switch reset");
@@ -67,6 +73,7 @@ static void known_preparation_timeouts_can_reprepare_only_on_safe_ground(){
     require_rc(!q.core.rc_restart_allowed(s),"reprepare rejects unsafe switches, clocks and invalid RC mode slots");
   }
 }
+// 导航档位7不合法，不能靠“不等于目标档”被误认作安全非导航档。
 static void invalid_rc_mode_slot_cannot_begin_prestream(){
   a::Core core(rc_admission_config());auto s=safe_rc_feedback();s.rc_mode_slot=7;
   require_rc(!core.step(s,.05,{},{}).publish,"invalid RC mode slot cannot begin a new prepared stream");

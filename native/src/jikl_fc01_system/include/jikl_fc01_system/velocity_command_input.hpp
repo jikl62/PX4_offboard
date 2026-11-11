@@ -1,4 +1,7 @@
 #pragma once
+// 本文件保持独立预览边界：Session 的缓存、错误和计算结果均不进入生产 Runtime。
+// 预览需要显式 Policy 与可信状态；FRD 目标速度先完整旋转到 NED，再与实际 NED 速度作差。
+// 本轮补充函数与成员关系说明，原数学公式、短路顺序、错误锁存和所有公共字段均保持。
 #include "jikl_fc01_system/vision_navigation.hpp"
 #include "jikl_fc01_system/vision_ros_adapter.hpp"
 #include <string>
@@ -15,6 +18,7 @@ inline bool identity_valid(const std::string& value) {
          value.find_first_not_of(" \t\r\n") != std::string::npos;
 }
 
+// Disabled 不计算，VelocityPreview 仅允许离线运算；两者都不携带飞机控制权限。
 enum class Mode {Disabled, VelocityPreview};
 
 // 上层给出的“希望怎么运动”，不是飞机的实际速度反馈。
@@ -98,8 +102,10 @@ inline Vec3 rotate_body_to_world(const attitude::Quaternion& q, const Vec3& vect
       2*(x*z-w*y)*vector[0]+2*(y*z+w*x)*vector[1]+(1-2*(x*x+y*y))*vector[2]};
 }
 
+// 一个 Session 对应一次离线尝试；身份/reset/序号变化和时钟/超时错误首次出现后锁存。
 class Session {
  public:
+  // 复制视觉外环配置并校验；另建时间配置以使用本次显式 Policy，不修改原生产配置。
   explicit Session(Policy policy = {}, vision::Config candidate = {})
       : policy_(policy), control_config_(candidate) {
     control_config_.validate();
@@ -124,6 +130,7 @@ class Session {
     return first_error_;
   }
 
+  // 输入来源数量单独观察；已缓存输入后的缺源与多源同样撤销，不能靠旧缓存继续预览。
   void observe_publishers(std::size_t states, std::size_t commands) {
     state_publisher_count_ = states;
     command_publisher_count_ = commands;
@@ -282,6 +289,7 @@ class Session {
     return true;
   }
 
+  // now 为单调 s、ros_now_ns 为 ROS ns；trusted_yaw_reference 是外部可信航向 rad，消息不自带 yaw。
   Preview preview(Mode mode, double now, std::uint64_t ros_now_ns,
                   double trusted_yaw_reference) {
     Preview result;
@@ -391,6 +399,7 @@ class Session {
   }
 
  private:
+  // 预览至少需要真实速度、姿态和质量；位置可选，与生产位置模式的必需字段不同。
   bool required_state_fields_valid(const vision::State& value) const {
     constexpr auto required_fields = vision::Velocity | vision::Attitude | vision::Quality;
     if ((value.valid_fields & required_fields) != required_fields ||
@@ -410,6 +419,7 @@ class Session {
     return true;
   }
 
+  // 可选字段只有声明有效才检查；缺 covariance 不伪造 0，所用检查也不等于完整矩阵 PSD 证明。
   bool optional_state_fields_valid(const vision::State& value) const {
     if ((value.valid_fields & vision::Position) && !vision::detail::finite(value.position)) {
       return false;
@@ -429,6 +439,7 @@ class Session {
     return true;
   }
 
+  // 只保留本轮第一个错误便于还原根因；健康尾帧不能掩盖此前异常。
   bool latch(const std::string& reason) {
     if (first_error_.empty()) {
       first_error_ = reason;
@@ -436,6 +447,7 @@ class Session {
     return false;
   }
 
+  // 失败结果从空对象构造，不返回上一条非零目标；control_authority 默认始终为 false。
   Preview rejected(const std::string& reason) {
     latch(reason);
     Preview result;
@@ -443,6 +455,7 @@ class Session {
     return result;
   }
 
+  // 接收前与预览前都先核对旧缓存和双时钟推进；新帧不能把已出现的超时洗掉。
   bool clock_observation(double now, std::uint64_t ros_now_ns) {
     if (!policy_.configured()) {
       return latch("VELOCITY_PREVIEW_POLICY_UNCONFIGURED");
@@ -466,15 +479,18 @@ class Session {
     return true;
   }
 
+  // 统一复用 source age、arrival delay 与接收 TTL 检查，不把其中一项当成另一项的替代。
   bool time_valid(std::uint64_t stamp, double received, std::uint64_t ros_now,
                   double now, double timeout) const {
     return vision::detail::clock_valid(
         stamp, received, ros_now, now, timeout, time_validation_config_);
   }
 
+  // policy_ 是本次离线合同；control_config_ 用于计算，time_validation_config_ 只承载相同公式的时间限制。
   Policy policy_;
   vision::Config control_config_;
   vision::Config time_validation_config_;
+  // 实际状态与目标独立存储及独立 seen/count；状态 reset 和命令 reset 互不假定相等。
   vision::State actual_state_;
   Target target_;
   bool has_state_{};

@@ -1,9 +1,12 @@
+// 垂向诊断Runtime整链回归：速度差告警不停止闭环或积分，真实位置矛盾/坏raw时钟仍停止。
+// GuardFlight使用生产Core路径但反馈合成；所有上正高度/速度先转换为NED下正再计算。
 // Exercise diagnostic rate disagreement and retained hard faults through the
 // current Runtime. Synthetic feedback only; no ROS/PX4 or hardware outputs.
 #include "ramp_guard_test_support.hpp"
 static f::Config feedback_config(){
   auto c=guard_config();c.attitude.feedback_guard.enabled=true;return c;
 }
+// 先真实进入HeightHold，再持续给vz=-0.3、z_deriv=0；保持非零闭环且积分继续制动，正常帧清告警。
 static void sustained_rate_difference_preserves_control_and_integral(){
   GuardFlight q(.5,feedback_config());q.s.attitude.z_deriv=0;q.ground_ramp();
   q.s.feedback.landed=false;q.s.at_rest=false;
@@ -30,6 +33,7 @@ static void sustained_rate_difference_preserves_control_and_integral(){
       recovered.disagreement_seconds==0&&recovered.disagreement_samples==0&&q.o.attitude.publish,
     "a new agreeing sample clears diagnostics while control remains active");
 }
+// 速度一致而位移固定是独立位置硬矛盾，须Safety停发布，不能通过新起飞绕过。
 static void position_contradiction_still_stops_control(){
   GuardFlight q(.5,feedback_config());q.s.attitude.vz=q.s.attitude.z_deriv=-.4;
   // Both rates agree, but their integrated displacement contradicts fixed z.
@@ -40,6 +44,7 @@ static void position_contradiction_still_stops_control(){
   require_guard(!q.o.attitude.publish,"hard feedback faults suppress publication rather than sending zero thrust");
   require_guard(!q.r.request("TAKEOFF",{.5},q.s,q.t).accepted,"hard feedback faults cannot admit another takeoff");
 }
+// 只envelope更新而raw重复时，差异计数/持续时间不能推进，也不因纯速度差停控制。
 static void raw_samples_not_envelopes(){
   GuardFlight q(.5,feedback_config());q.s.attitude.z_deriv=0;q.s.attitude.vz=-.4;
   for(int i=0;i<6;++i)q.advance();
@@ -55,6 +60,7 @@ static void raw_samples_not_envelopes(){
       after.disagreement_samples==before.disagreement_samples&&!after.rate_warning,
     "new envelopes cannot manufacture raw disagreement duration, counts or warnings");
 }
+// 监测开启仍支持正常离地、保持、降落、上锁与模式释放，不能修诊断而阻塞主流程。
 static void guarded_lifecycle(){
   GuardFlight q(.5,feedback_config());q.s.attitude.z_deriv=0;q.ground_ramp();
   q.s.feedback.landed=false;q.s.at_rest=false;
@@ -81,6 +87,7 @@ static void guarded_lifecycle(){
   require_guard(q.r.attitude_core().phase()!=a::Phase::Safety,"normal guarded lifecycle must not fault");
   require_guard(!q.r.attitude_core().active(),"normal guarded lifecycle must finish release");
 }
+// 空raw、回退、过大gap、NaN导数继续显示精确硬故障原因并停流。
 static void bad_raw_inputs_fail_closed(){
   for(int k=0;k<4;++k){
     GuardFlight q(.5,feedback_config());q.s.attitude.z_deriv=0;q.advance();

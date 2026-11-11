@@ -1,3 +1,5 @@
+// R6.3.1 首次普通Arm新状态证明回归：同步歧义ACK只记观察，独立外部解锁事件才可作窄后备。
+// ArmTrial仅使用第一次400，要求真实假提交、COMMAND_EXTERNAL原因、新armed_time和因果新状态；不适用RC解锁或复用400。
 // R6.3.1 first-400 / normal TAKEOFF external-state fallback.
 // SYNTHETIC, NO HARDWARE. Reuses the original project Runtime fixture.
 #pragma GCC diagnostic push
@@ -7,6 +9,7 @@
 #undef main
 #pragma GCC diagnostic pop
 
+// 构造器只规划Arm，require_sink_commit使sent仍false；commit之后才建立线上代数与wire floor。
 struct ArmTrial {
   f::Runtime r{r63_arm_config()};
   f::Snapshot s{sample()};
@@ -55,6 +58,7 @@ struct ArmTrial {
     return tick(r,s,t+=.05).attitude;
   }
 };
+// 快速ACK不归属，但完整首次外部新armed事件可进入零推力ArmedGround，保留state-only审计。
 static void approved_first_400_fallback(){
   ArmTrial h;
   h.commit();
@@ -71,6 +75,7 @@ static void approved_first_400_fallback(){
   assert(h.r.pending(400).stage==f::CommandStage::StateOnlyTerminal);
   std::cout<<"R631_FRESH_EXTERNAL_ARM_FIRST_400_NO_MATCHED_ACK_PASS\n";
 }
+// 十五项缺失/冲突/过期/错误解锁原因/RC开关/超时变体均不得进入ArmedGround或斜坡。
 static void denial_matrix(){
   for(int mutation=0;mutation<15;++mutation){
     ArmTrial h;
@@ -103,6 +108,7 @@ static void denial_matrix(){
   }
   std::cout<<"R631_15_NEGATIVE_GATE_CASES_PASS\n";
 }
+// 已明确归属的DENIED不能被后续armed误翻成允许爬坡；仍承担零流恢复责任。
 static void rejected_ack_never_authorizes_ramp(){
   ArmTrial h;h.commit();
   auto stamp=h.r.pending(400).causal_floor+1000;
@@ -114,6 +120,7 @@ static void rejected_ack_never_authorizes_ramp(){
   assert(h.r.attitude_core().phase()!=a::Phase::ArmedGround);
   std::cout<<"R631_REJECTED_ACK_STILL_GUARDED_RECOVERY_PASS\n";
 }
+// 原先合法关联ACK加新armed路径仍正常，窄后备不得破坏旧主路径。
 static void existing_matched_ack_unchanged(){
   f::Runtime r(ArmTrial::r63_arm_config());auto s=sample();double t=ready(r,s,true);
   assert(r.request("INTERACTIVE",{},s,t).accepted);

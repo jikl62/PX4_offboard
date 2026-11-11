@@ -1,3 +1,6 @@
+// 视觉导航纯算法回归：覆盖状态/目标有效性、坐标符号、双时钟租约、撤权历史和受控降落锁存。
+// 仅使用进程内合成数据；测试内 enabled=true 不修改生产默认关闭策略或原 RC 起飞流程。
+// 位置/速度使用 NED(m、m/s)，四元数为 Hamilton [w,x,y,z]、FRD→NED；yaw 为 rad。
 #include "jikl_fc01_system/vision_navigation.hpp"
 #include <cmath>
 #include <iostream>
@@ -10,6 +13,7 @@ static constexpr double pi=3.14159265358979323846;
 static void require(bool condition,const char* reason){if(!condition)throw std::runtime_error(reason);}
 static bool near(double x,double y,double tolerance=1e-9){return std::abs(x-y)<tolerance;}
 static v::Config config(){v::Config c;c.enabled=true;return c;}
+// 构造独立且唯一的状态/目标来源，源戳用 ROS 纳秒、received_at 用单调秒；缺省可选测量仍为 NaN。
 static v::Input input(){
   v::Input in;in.ros_now_ns=100000000000ULL;in.state_publishers=in.command_publishers=1;
   auto& s=in.state;s.sequence=1;s.stamp_ns=in.ros_now_ns;s.received_at=10;
@@ -21,6 +25,7 @@ static v::Input input(){
   c.source_id="navigation-client";c.frame_id=s.frame_id;c.valid=true;c.mode=v::Mode::Hold;
   return in;
 }
+// 同时推进 ROS 时钟与状态测量源戳；可单独冻结命令，检验状态流量不能替目标续租。
 static void advance(v::Input& in,double seconds=.05,bool refresh_command=true){
   const auto ns=static_cast<std::uint64_t>(std::llround(seconds*1e9));
   in.ros_now_ns+=ns;++in.state.sequence;in.state.stamp_ns+=ns;in.state.received_at+=seconds;
@@ -32,6 +37,7 @@ static v::Result step(v::Controller& c,const v::Input& in,double height=.5,doubl
 static double yaw_of(a::Quaternion q){return std::atan2(2*(q[0]*q[3]+q[1]*q[2]),1-2*(q[2]*q[2]+q[3]*q[3]));}
 static double tilt_of(a::Quaternion q){return std::acos(std::clamp(1-2*(q[1]*q[1]+q[2]*q[2]),-1.,1.));}
 // Catches accidental activation without valid metric state/command and NaN-as-zero defaults.
+// 尚未激活时缺数据应等待；健康 Hold 才建立计划。必需有效位缺失、默认关闭或缺省 NaN 不能伪装可用。
 static void waiting_and_validity(){
   const v::State empty;require(std::isnan(empty.position[0])&&std::isnan(empty.attitude[0])&&std::isnan(empty.quality),"missing measurements must remain NaN");
   v::Controller waiting(config());v::Input absent;auto o=waiting.step(absent,10,.5,0,.05);
@@ -47,6 +53,7 @@ static void waiting_and_validity(){
   }
 }
 // Catches coordinate sign inversions and a fake controller that ignores measured velocity.
+// 北向位置误差应生成北向速度/加速度与负 pitch；真实速度反馈增加后必须减小前向加速度。
 static void cruise_and_feedback(){
   auto in=input();in.command.mode=v::Mode::Cruise;in.command.position_valid=true;in.command.position={.5,0,-1};
   v::Controller c(config());const auto o=step(c,in);
@@ -59,6 +66,7 @@ static void cruise_and_feedback(){
   require(tilt_of(braking.q)<=5*pi/180+1e-12,"motion tilt candidate limit must hold");
 }
 // Catches Hold recapturing its target every state/command update and wrong source of z feedback.
+// Hold 只捕获一次原始 XY/高度；同序号篡改模式不能生成新运动授权。
 static void hold_is_stable(){
   auto in=input();v::Controller c(config());require(step(c,in).active,"hold activates");
   advance(in);in.state.position={.2,-.1,-.1};const auto o=step(c,in,.6);
@@ -69,6 +77,7 @@ static void hold_is_stable(){
   const auto bad=step(c,modified,.6);require(bad.request_land&&!bad.active,"mode mutation without a new command must invalidate active task");
 }
 // Catches roll/pitch/throttle/yaw mapping errors and diagonal speed-limit bypass.
+// 逐轴检验右移/前进/右偏航/上升符号，再检验实测 yaw 的机体到 NED 旋转及对角向量限幅。
 static void follow_axes(){
   for(int axis=0;axis<4;++axis){
     auto in=input();in.command.mode=v::Mode::Follow;in.command.sticks_valid=true;in.command.sticks={0,0,0,0};in.command.sticks[axis]=1;
@@ -87,6 +96,7 @@ static void follow_axes(){
   require(std::hypot(diagonal.acceleration_target[0],diagonal.acceleration_target[1])<=.6+1e-12,"diagonal acceleration obeys vector bound");
 }
 // Catches duplicate packets refreshing leases and malformed new measurements retaining old validity.
+// 重复和旧序号不能刷新接收年龄；新无效样本必须替换旧健康载荷并使活动计划请求下降。
 static void inbox_replay_and_invalidation(){
   auto in=input();v::Inbox box;require(box.state(in.state,10)&&box.command(in.command,10),"initial inbox samples accepted");
   require(!box.state(in.state,10.2)&&!box.command(in.command,10.2),"duplicates must not refresh receive times");
@@ -98,6 +108,7 @@ static void inbox_replay_and_invalidation(){
   require(c.step(got,10.1,.5,0,.05).request_land,"new invalid message revokes active state");
 }
 // Catches checking only an old active flag at the final publication boundary.
+// 最终使用计划时复核载荷/代数/唯一发布者及两种时钟；不能沿用旧 active，也不能靠新包络掩盖过期。
 static void current_revalidates_both_clocks_and_identity(){
   auto in=input();v::Controller c(config());require(step(c,in).active,"valid plan activates");
   auto changed=in;changed.state.position[0]=.1;require(!c.current(changed,10),"same identity with mutated payload rejected");
@@ -110,6 +121,7 @@ static void current_revalidates_both_clocks_and_identity(){
   changed=in;changed.ros_now_ns-=60000000;require(!c.current(changed,10),"future source time rejects plan");
 }
 // Catches automatic recovery/reacquisition after stale data, source/frame changes or estimator resets.
+// 质量、标定、跟踪、来源、坐标、重置、突变、非法姿态等活动故障锁存下降；新健康消息不能自动抢回。
 static void active_faults_latch_land(){
   for(int fault=0;fault<16;++fault){
     auto in=input();v::Controller c(config());require(step(c,in).active,"activate fixture");advance(in);
@@ -139,6 +151,7 @@ static void active_faults_latch_land(){
   require(!step(stopped,in).active,"stop permanently removes current motion permission");
 }
 // Catches optional angular velocity being silently accepted without provenance.
+// 声明有效的角速度还需明确来源与有限数；非法模式/轴量/超半径目标或零控制增益均应被拒绝。
 static void optional_fields_and_limits(){
   for(int issue=0;issue<4;++issue){
     auto in=input();in.state.valid_fields|=v::AngularVelocity;in.state.angular_velocity={0,0,0};in.state.angular_velocity_source="vision-derived";
@@ -155,6 +168,7 @@ static void optional_fields_and_limits(){
 }
 // Catches a controller which emits plausible setpoints without closing position feedback.
 // This is a gravity/rotation ideal plant, not PX4 SITL or airframe calibration.
+// 用四元数旋转出的水平推力推进理想 XY 模型，施加位置扰动后检查位置与速度同时收敛；不是 PX4 SITL。
 static void ideal_xy_plant_returns_to_point_after_disturbance(){
   auto in=input();in.command.mode=v::Mode::Cruise;in.command.position_valid=true;in.command.position={.75,-.4,0};
   v::Controller c(config());double x=0,y=0,vx=0,vy=0;
@@ -175,6 +189,7 @@ static void ideal_xy_plant_returns_to_point_after_disturbance(){
   require(std::hypot(vx,vy)<.015,"closed loop must settle velocity, not just pass through the point");
 }
 // Catches independent command TTL being accidentally renewed by state traffic.
+// 独立冻结命令/原始状态戳并改变 reset 代数，验证各自租约和测量进展不可互相代替。
 static void independent_leases_and_sample_progress(){
   auto in=input();v::Controller c(config());require(step(c,in).active,"lease fixture activates");
   advance(in,.31,false);const auto expired=step(c,in);
@@ -190,6 +205,7 @@ static void independent_leases_and_sample_progress(){
   require(!inbox.snapshot(in.ros_now_ns,1,1).command.valid,"old command validity cannot survive new invalid command");
 }
 // Catches treating an arrival-delay cap as a shorter replacement for the fixed TTL.
+// 到达延迟上限只决定入场可否；传输耗时消耗源 TTL，不能在每次接收时重新发放完整寿命。
 static void arrival_delay_consumes_ttl_without_replacing_it(){
   auto in=input();v::Controller c(config());require(step(c,in).active,"fixed TTL fixture activates");
   auto later=in;later.ros_now_ns+=220000000;
@@ -205,6 +221,7 @@ static void arrival_delay_consumes_ttl_without_replacing_it(){
 }
 // Catches sequence filtering hiding restarted source/epoch/frame revocation,
 // including recovery arriving before the control loop has observed the fault.
+// 重启来源即使序号回到 1，身份/坐标/reset 变化也先作为撤权证据；A→B→恢复不能抹掉尚未被控制器观察的历史。
 static void inbox_identity_revocation_precedes_sequence_deduplication(){
   for(int change=0;change<5;++change){
     auto in=input();in.state.sequence=in.command.sequence=100;v::Inbox inbox;
@@ -245,6 +262,7 @@ static void inbox_identity_revocation_precedes_sequence_deduplication(){
 }
 // Catches explicit fresh health withdrawal being swallowed by a reused sequence,
 // while preserving normal same-stream duplicate and out-of-order behavior.
+// 新鲜健康撤销先于序号去重保留；真正较旧的同流坏包仍忽略，普通重复包也不能续租。
 static void inbox_health_revocation_is_sticky_without_renewing_old_samples(){
   for(int change=0;change<5;++change){
     auto in=input();in.state.sequence=in.command.sequence=100;v::Inbox inbox;
@@ -274,6 +292,7 @@ static void inbox_health_revocation_is_sticky_without_renewing_old_samples(){
 }
 // Catches making revocation sticky in the Inbox itself, which would prevent
 // a normal camera initialization before the controller has accepted a plan.
+// 首个计划之前允许相机初始化变健康；首个计划之后即使同接收时刻 A→B→A 原样恢复，也由本地代数发现撤权。
 static void inbox_initialization_can_recover_before_first_plan(){
   for(bool changed_identity:{false,true}){
     auto in=input();auto initial=in;initial.state.initialized=false;initial.state.sequence=100;initial.command.sequence=100;
@@ -300,6 +319,7 @@ static void inbox_initialization_can_recover_before_first_plan(){
   require(!c.current(restored,10)&&c.step(restored,10,.5,0,.05).request_land,"local generation detects exact A-to-B-to-A even at the same receipt time");
 }
 // Catches long-way yaw wrapping, incorrect direction outside yaw=0, and optional validity shortcuts.
+// 验证跨 ±π 最短转向、四象限机体前向映射、协方差负方差拒绝，以及新鲜显式 Land 不依赖视觉估计。
 static void yaw_wrap_all_quadrants_and_covariance(){
   auto in=input();in.command.mode=v::Mode::Cruise;in.command.position_valid=true;in.command.position={0,0,0};
   in.command.yaw_valid=true;in.command.yaw=-pi+.02;v::Controller wrapped(config());const auto o=step(wrapped,in,.5,pi-.01);
@@ -317,6 +337,7 @@ static void yaw_wrap_all_quadrants_and_covariance(){
   in=input();in.command.mode=v::Mode::Land;in.state={};v::Controller land(config());
   require(land.step(in,10,.5,0,.05).request_land,"explicit fresh Land needs no valid vision estimate");
 }
+// 逐段构造中间溢出，防止限幅把非法计算洗成可用零制动；可表示大数仍保留制动方向，活动后故障沿原下降锁存。
 static void intermediate_overflow_cannot_be_hidden_by_control_limits(){
   // 每轴仍有限、合加速度却溢出的输入，不能在限幅时被洗成零制动并激活。
   for(const auto& velocity:{v::Vec3{1.2e308,1.2e308,0},v::Vec3{1.3e308,1.3e308,0},

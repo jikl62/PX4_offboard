@@ -1,3 +1,5 @@
+// 控制权独立复核：真实 RC 观测、Core、Runtime 和最终发布之间的组合边界。
+// 主要回归新鲜外壳掩盖旧采样、接管后普通故障、开关A→B→A以及即时诊断。
 // Independent-review regressions exercise the actual observation helper, Core,
 // Runtime and final publisher, with synthetic configuration and fake sinks only.
 #include "authority_test_support.hpp"
@@ -17,6 +19,7 @@ struct Switches {
 };
 struct Mode {std::uint64_t timestamp{};bool position{},velocity{},acceleration{},attitude{},body_rate{},thrust_and_torque{},direct_actuator{};};
 struct Target {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
+// 一帧或只有 envelope 推进不够建立 RC ready；需两次 raw 推进，过期后单帧也不能立即恢复。
 static void first_sample(){
   auto c=config();c.attitude.rc_takeover_confirmed=true;f::Runtime r(c);
   auto s=sample();double t=0;ready(r,s,t,"AUTHORITY_RC");
@@ -46,6 +49,7 @@ static void first_sample(){
   facts=observer.facts(late,c.attitude.flags_timeout,true,false,1,1);
   assert(!facts.rc_link_ready&&!facts.rc_switches_ready);
 }
+// Kill后又发生一般发布/stall故障，AUTHORITY_RESET 不得借接管标签清掉更严安全故障。
 static void fault_after_takeover(){
   {
     auto c=config();f::Runtime r(c);auto s=sample();double t=0;
@@ -64,6 +68,7 @@ static void fault_after_takeover(){
     assert(!r.request("AUTHORITY_RESET",{},s,t).accepted);
   }
 }
+// 开关计数变化先使旧计划最终sink拒绝；仍在Offboard时仅请求交接，见实际退出才锁存已接管。
 static void switch_counter(){
   auto c=config();c.attitude.autonomous_failsafe_confirmed=true;f::Runtime r(c);
   auto s=sample();double t=0;f::AuthorityTelemetry observer;Switches sw;
@@ -94,6 +99,7 @@ static void switch_counter(){
   observer.switches(sw,t,c.attitude.flags_timeout);
   assert(observer.facts(t,c.attitude.flags_timeout,true,false,1,1).switch_generation>facts.switch_generation);
 }
+// 在控制步骤前查询 authority_json 也应反映当前 Kill/失效/接管意图，不能显示过期允许结论。
 static void immediate_diagnostics(){
   for(int event=0;event<6;++event){
     auto c=config();c.attitude.autonomous_failsafe_confirmed=true;f::Runtime r(c);

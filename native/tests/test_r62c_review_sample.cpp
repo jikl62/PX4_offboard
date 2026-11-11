@@ -1,3 +1,5 @@
+// 原始采样寿命与RC时钟回归：外壳更新不能掩盖冻结、错误时钟域或非法Kill OFF。
+// Estimate/Manual/Switches仅为消息字段假类型；epoch为同步µs，回调到达时间为单调s。
 #include "jikl_fc01_system/authority_telemetry.hpp"
 #include "jikl_fc01_system/source_clock.hpp"
 #include <cassert>
@@ -15,6 +17,7 @@ struct Switches {
   std::uint8_t mode_slot{1},arm_switch{3},return_switch{3},loiter_switch{3},offboard_switch{3},kill_switch{3};
   std::uint32_t switch_changes{};
 };
+// raw寿命与envelope独立：冻结/空值/raw晚于envelope/回退都无效；后续新外壳不得借上一帧raw续期。
 static void estimates(){
   f::Stamp envelope;f::SourceSampleProgress raw;Estimate held;
   Estimate input{epoch,epoch-1000,1};
@@ -48,6 +51,7 @@ static void estimates(){
   assert(!future.fresh(epoch,0,.5));
   std::cout<<"REVIEW_FRESH_ENVELOPE_CANNOT_REFRESH_FROZEN_OR_INVALID_RAW_ESTIMATE PASS\n";
 }
+// 启动相对µs不可和同步epoch混比，两个真正同步且推进的RC样本才ready，过远未来再撤销。
 static void rc_clock(){
   f::AuthorityTelemetry observer;Manual m{1000000,1000000};
   observer.manual(m,0,epoch,.5);
@@ -66,6 +70,7 @@ static void rc_clock(){
   assert(!observer.facts(.04,.5,true,false,1,1,epoch+40000).rc_link_ready);
   std::cout<<"REVIEW_RC_BOOT_CLOCK_AND_FUTURE_CLOCK_REVOKE_ADMISSION PASS\n";
 }
+// Kill ON立即保留；错误未来OFF不能清锁也不能污染最近正常戳，后来的合法新OFF才可恢复。
 static void kill_clock(){
   f::AuthorityTelemetry observer;Switches sw{epoch,epoch};sw.kill_switch=1;
   observer.switches(sw,0,.5,epoch);

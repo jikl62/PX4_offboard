@@ -1,3 +1,5 @@
+// R6.3 普通起飞完整链回归：悬停映射、地面dwell、斜坡、离地认证、爬升保持与超时恢复。
+// 复用原真实Runtime夹具，只有PX4反馈合成；hover0.50表示FRD目标(0,0,-0.50)，不是0.50 N。
 // R6.3 normal-flight candidate regression (synthetic PX4 samples only).
 // Reuse the original fully independent normal-flight runtime fixture.
 #pragma GCC diagnostic push
@@ -16,6 +18,7 @@ static f::Config r63_config(){
   c.validate();
   return c;
 }
+// 零高度/速度误差时垂向输出等于悬停幅值，映射到机体负z才是旋翼升力。
 static void r63_hover_mapping(){
   auto c=r63_config();
   assert(!c.attitude.bench_arm_only_enabled);
@@ -27,6 +30,7 @@ static void r63_hover_mapping(){
   // Body FRD/NED thrust in VehicleAttitudeSetpoint: command is (0,0,-0.50).
   std::cout<<"R63_HOVER_0P50_NORMALIZED_NEGATIVE_BODY_Z_PASS\n";
 }
+// 必须按Arm ACK、新armed、独立地面dwell、逐步推力与联合离地反馈顺序推进；时间/推力本身不够。
 static void r63_flight_chain(){
   f::Runtime r(r63_config());auto s=sample();double t=ready(r,s,true);
   assert(r.request("INTERACTIVE",{},s,t).accepted);
@@ -82,6 +86,7 @@ static void r63_flight_chain(){
   assert(r.pending(400).sent);
   std::cout<<"R63_NORMAL_TAKEOFF_RAMP_ASCEND_HEIGHT_HOLD_PASS\n";
 }
+// 始终landed时不得出现Ascend/HeightHold，超时走已有PoweredGround恢复。
 static void r63_no_liftoff_fallback(){
   f::Runtime r(r63_config());auto s=sample();double t=ready(r,s,true);
   assert(r.request("INTERACTIVE",{},s,t).accepted);
@@ -106,6 +111,7 @@ static void r63_no_liftoff_fallback(){
   assert(entered_ramp&&saw_no_liftoff_recovery);
   std::cout<<"R63_RAMP_TIMEOUT_NO_SYNTHETIC_LIFTOFF_PASS\n";
 }
+// bench仍禁止TAKEOFF；普通路线高度无效继续Safety停流，不能因候选参数放宽。
 static void r63_bench_isolation_and_estimator_denial(){
   {auto c=r63_config();c.attitude.bench_arm_only_enabled=true;
     c.attitude.takeoff_enabled=false;c.validate();

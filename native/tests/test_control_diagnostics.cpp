@@ -1,3 +1,5 @@
+// 周期与发布取证回归：把快照构造时长计入截止，区分可恢复拒绝与已发生部分发布。
+// 模拟三个context采样点；target/heartbeat仅计数，不启动ROS或飞控。
 #include "jikl_fc01_system/control_diagnostics.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
 #include <cmath>
@@ -8,6 +10,7 @@
 namespace a=fc01::attitude;
 struct Mode {std::uint64_t timestamp{};bool position{},velocity{},acceleration{},attitude{},body_rate{},thrust_and_torque{},direct_actuator{};};
 struct Target {std::uint64_t timestamp{};float yaw_sp_move_rate{};std::array<float,4> q_d{};std::array<float,3> thrust_body{};bool reset_integral{},fw_control_yaw_wheel{};};
+// 构造第一阶段健康零推力上下文，避免飞行动作门影响被测截止行为。
 static a::BoundaryContext safe_context(){
   a::BoundaryContext c;c.profile="attitude_altitude";c.phase=a::Phase::Prestream;
   c.session_connected=c.control_fresh=c.reference_ready=true;
@@ -15,6 +18,7 @@ static a::BoundaryContext safe_context(){
   s.z_valid=s.vz_valid=s.landed=s.at_rest=s.exclusive=s.preflight=s.battery_ready=true;
   s.q={1,0,0,0};s.stationary_seconds=3;return c;
 }
+// 分别让初查、目标前、心跳前快照跨 .3s，前两者无sink，第三者必须保留target已发并抛错。
 static void publication_context_includes_snapshot_duration(){
   for(int stall_context=0;stall_context<=3;++stall_context){
     fc01::CurrentControlCycle cycle;cycle.begin(0.);cycle.callbacks_done(.01);
@@ -47,6 +51,7 @@ static void publication_context_includes_snapshot_duration(){
   }
 }
 
+// 核对PublicationAttempt的精确阶段、拒绝原因、两sink已提交位及sink_exception不能混淆。
 static void publication_outcome_preserves_stage_and_commit_evidence(){
   for(unsigned failing=1;failing<=3;++failing){
     unsigned reads=0,targets=0,heartbeats=0;bool threw=false;
@@ -64,6 +69,7 @@ static void publication_outcome_preserves_stage_and_commit_evidence(){
        targets!=(failing==3?1U:0U)||heartbeats||threw!=(failing==3))
       throw std::runtime_error("deadline classification must retain exact stage and sink evidence");
   }
+  // 目标/心跳真实sink抛错与策略截止拒绝分开标注，避免把未知发布异常当作可恢复准备超时。
   for(bool fail_heartbeat:{false,true}){
     a::PublicationAttempt attempt;a::Output output;output.publish=true;bool threw=false;
     try{
@@ -91,6 +97,7 @@ static void publication_outcome_preserves_stage_and_commit_evidence(){
 int main(){
   publication_context_includes_snapshot_duration();
   publication_outcome_preserves_stage_and_commit_evidence();
+  // 验证未begin、未callbacks_done、NaN/Inf、倒时、无效budget和同周期失败后恢复都不能取得资格。
   fc01::CurrentControlCycle cycle;
   if(cycle.current(100.,.3))throw std::runtime_error("no current cycle before begin and callbacks");
   cycle.begin(100.);cycle.callbacks_done(100.29);
@@ -120,6 +127,7 @@ int main(){
   }
   cycle.begin(0.);cycle.callbacks_done(.01);
   if(!cycle.current(.25,.25))throw std::runtime_error("a finite cycle exactly at the configured limit is valid");
+  // 观测统计分开回调耗时、计算耗时和相邻周期；统计值不授予发布许可。
   fc01::ControlTiming timing;
   if(timing.valid)throw std::runtime_error("no cycle may be invented before observation");
   timing.observe(100.,100.01,100.03,.3);

@@ -1,8 +1,11 @@
+// 未解锁准备截止超时恢复回归：仅已知严格零流截止拒绝可恢复，重复超时与未知异常仍拦截。
+// 真实RC夹具只产生本地假sink，新增恢复证明期间完全静默，不能用早先快速tick证明整个周期健康。
 // Existing synthetic RC fixture; no ROS/DDS or hardware sinks.
 #define main rc_navigation_fixture_main
 #include "test_rc_navigation.cpp"
 #undef main
 
+// 三种已知截止原因逐一验证：晚期overrun、长调度gap、重复stall都清窗；完整新健康地面窗才重准备。
 static void preparation_deadline_needs_healthy_new_cycle(){
   for(const char* reason:{"ROS_ADAPTER_CONTROL_LOOP_STALL","PUBLISHER_BOUNDARY_CONTROL_LOOP_STALL",
       "PARTIAL_OR_FAILED_SETPOINT_PUBLICATION_HEARTBEAT_FINAL_CONTEXT_CHANGED_CONTROL_LOOP_STALL"}){
@@ -45,6 +48,7 @@ static void preparation_deadline_needs_healthy_new_cycle(){
       "only a new manual RC arm and new Offboard episode can start next task");
   }
 }
+// 已armed/Offboard、未知arming、Arm意图、倒时、未知sink异常或已加入任务均不得借准备截止范围恢复。
 static void unknown_or_armed_failure_cannot_acquire_recovery_scope(){
   for(int unsafe=0;unsafe<6;++unsafe){Flight q;q.warm();
     if(unsafe==0)q.s.feedback.armed=true;

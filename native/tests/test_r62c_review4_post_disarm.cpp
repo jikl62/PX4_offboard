@@ -1,3 +1,5 @@
+// 台架第四轮上锁后复核：区分真提交、因果新未解锁状态、后续估计漂移和独立静止终态。
+// measured_tail读取17行实测，其余缺回调/静止/漂移均明确合成；本机提交不证明PX4实际执行。
 #include "review_bench_support.hpp"
 #include <filesystem>
 #include <fstream>
@@ -8,6 +10,7 @@
 // Synthetic PX4 observations drive the real Runtime, Core and final sinks.
 // Only measured_tail() consumes recorded phase-event values. Missing callbacks
 // and all later at_rest/landing responses are explicitly synthetic.
+// 串联零推力台架、上锁计划、假提交、真实模拟未解锁、静止窗与176释放，保留一次命令计数。
 struct R4Bench : B {
   R4Bench():B(true){}
   void spinning(){armed();s.at_rest=false;s.stationary_seconds=0;}
@@ -35,6 +38,7 @@ struct R4Bench : B {
   }
 };
 
+// 回放实测17行未解锁尾部但不发明at_rest；故仍RequestDisarm，无state_verified与释放。
 static void measured_tail(){
   R4Bench h;h.s.attitude.z=-.196438625;h.spinning();h.commit(h.plan());
   const auto p=std::filesystem::path(__FILE__).parent_path()/"data/review3_measured_post_disarm.csv";
@@ -65,6 +69,7 @@ static void measured_tail(){
   std::cout<<"REVIEW4_MEASURED_POST_DISARM_TAIL_SURVIVES_WITHOUT_INVENTING_REST PASS\n";
 }
 
+// 因果新未解锁后连续估计漂移不能强求回到旧z0；新静止地面窗完成后只能state-only终态。
 static void drift_rest_and_release(){
   R4Bench h;h.stopped();
   for(int i=0;i<180;++i){h.drift();const auto out=h.next();
@@ -80,6 +85,7 @@ static void drift_rest_and_release(){
   std::cout<<"REVIEW4_SYNTHETIC_CONTINUOUS_DRIFT_NEW_REST_ONE_ARM_ONE_DISARM_TO_IDLE PASS\n";
 }
 
+// 重新解锁/离地/跳变/reset/过期/时钟/控制权等任一异常仍Safety，不能沿用台架宽容。
 static void post_disarm_attacks(){
   const std::function<void(f::Snapshot&)> attacks[]={
     [](auto& s){s.feedback.armed=true;},[](auto& s){s.feedback.landed=false;},
@@ -101,6 +107,7 @@ static void post_disarm_attacks(){
   std::cout<<"REVIEW4_POST_DISARM_REARM_LANDED_JUMPS_RESETS_STALE_CLOCK_AND_AUTHORITY_BLOCKED PASS\n";
 }
 
+// status/land/local任一冻结不能完成上锁；恢复连续新源后才可结束。
 static void frozen_sources_cannot_finish(){
   for(int which=0;which<3;++which){
     R4Bench h;h.stopped();h.s.at_rest=true;
@@ -116,6 +123,7 @@ static void frozen_sources_cannot_finish(){
   std::cout<<"REVIEW4_POST_DISARM_FROZEN_STATUS_LAND_LOCAL_NEVER_COMPLETE_OLD_DWELL PASS\n";
 }
 
+// 只有计划未实际提交的Disarm不得获得提交后宽容，否则会伪造协议因果。
 static void uncommitted_disarm_never_gets_post_disarm_grace(){
   R4Bench h;h.spinning();h.plan();assert(h.disarms==0);
   h.s.feedback.armed=false;
@@ -125,6 +133,7 @@ static void uncommitted_disarm_never_gets_post_disarm_grace(){
   std::cout<<"REVIEW4_UNCOMMITTED_DISARM_CANNOT_BYPASS_ARMED_ENVELOPE PASS\n";
 }
 
+// 提交后仍真实armed时保留原已解锁包络，连续漂移越界仍必须停流。
 static void armed_boundary_unchanged(){
   R4Bench h;h.spinning();h.commit(h.plan());
   for(int i=0;i<110&&h.r.attitude_core().phase()!=a::Phase::Safety;++i){h.drift();h.next();}
@@ -134,6 +143,7 @@ static void armed_boundary_unchanged(){
   std::cout<<"REVIEW4_ARMED_LOWER_HEIGHT_BOUND_UNCHANGED PASS\n";
 }
 
+// 外部未解锁可独立证明安全地面，不能捏造本机Disarm记录。
 static void external_stop_stays_external(){
   R4Bench h;h.spinning();h.s.feedback.armed=false;
   h.next();
@@ -146,6 +156,7 @@ static void external_stop_stays_external(){
   std::cout<<"REVIEW4_EXTERNAL_DISARM_DRIFT_REST_RELEASE_NEVER_ATTRIBUTED_TO_COMPANION PASS\n";
 }
 
+// 即使已SafeDisarmed，模式释放前仍复核当前健康、reset/跳变、地面与bench范围。
 static void release_sink_races(){
   R4Bench h;h.stopped();for(int i=0;i<100;++i){h.drift();h.next();}h.finish();h.next();
   const auto original=h.r.publication_context(h.s,h.t,true,true);
@@ -166,6 +177,7 @@ static void release_sink_races(){
   std::cout<<"REVIEW4_POST_DISARM_RELEASE_SINK_RECHECKS_NEW_STATE_AND_BENCH_SCOPE PASS\n";
 }
 
+// 从SafeDisarmed到释放的最后窗口也保留Core跳变/reset门，避免阶段尾部保护缺口。
 static void post_safe_core_guards(){
   for(int which=0;which<5;++which){
     R4Bench h;h.stopped();h.finish();h.s.stationary_seconds=3;
@@ -180,6 +192,7 @@ static void post_safe_core_guards(){
   std::cout<<"REVIEW4_POST_SAFE_CORE_JUMPS_AND_RESETS_REMAIN_GUARDED_THROUGH_RELEASE PASS\n";
 }
 
+// 已离开Offboard的Safety只读观察可报告新安全地面，不把它标成任务成功或400已完成。
 static void terminal_observation_outside_offboard(){
   R4Bench h;h.stopped();h.s.feedback.offboard=false;h.s.nav_state=15;h.next();
   assert(h.r.attitude_core().phase()==a::Phase::Safety);

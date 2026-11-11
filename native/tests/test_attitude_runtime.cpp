@@ -1,8 +1,12 @@
+// 原姿态高度 Runtime 主回归：从零推力准备到起飞、保持、降落、上锁及地面释放。
+// cfg(true) 只启用合成测试合同，sample 的 z=2 m 是 NED 基准；真实配置不从这里部署。
+// 每个断言针对实际 Runtime/Core 输出，反馈为合成值，不能作为动力学或真实飞行验收。
 #if __has_include("jikl_fc01_system/attitude_altitude_core.hpp")
 #include "jikl_fc01_system/runtime.hpp"
 #include <cassert>
 #include <iostream>
 namespace f=fc01;namespace a=fc01::attitude;
+// enabled=false 验证默认动作门关闭；true 才填测试闭环参数和自主合同，避免隐式放行动力。
 static f::Config cfg(bool enabled=false){
   f::Config c;c.profile="attitude_altitude";
   if(enabled){
@@ -18,6 +22,7 @@ static f::Config cfg(bool enabled=false){
   p.height_lower_margin_m=.25;p.z_jump_limit_m=1.2;p.vz_jump_limit_mps=2.0;
   }return c;
 }
+// 构造新鲜、未解锁、接地静止及合法单位姿态，供各错误场景只改变被测条件。
 static f::Snapshot sample(){
   f::Snapshot s;s.status_fresh=s.land_fresh=s.local_fresh=true;s.at_rest=true;s.stationary_seconds=3;
   s.status_stamp=s.land_stamp=1000;s.system=s.component=1;
@@ -27,10 +32,12 @@ static f::Snapshot sample(){
   s.attitude.battery_voltage=7.6;s.attitude.q={1,0,0,0};s.attitude.z=2;s.attitude.vz=0;
   s.attitude.local_stamp=s.attitude.vertical_sample_stamp=1000;return s;
 }
+// 每次推进 status/land/local/raw 源戳，但 now 由调用者指定，便于测试冻结、回退和长周期。
 static f::Output tick(f::Runtime& r,f::Snapshot& s,double now){
   s.status_stamp+=50000;s.land_stamp+=50000;
   s.attitude.local_stamp+=50000;s.attitude.vertical_sample_stamp+=50000;return r.step(s,now);
 }
+// 按原 1.2 s 预发送窗口输出严格零推力，只有窗口结束才规划一次 Offboard 命令。
 static double prepare(f::Runtime& r,f::Snapshot& s,bool select_authority=false){
   if(select_authority){
     assert(r.request("INTERACTIVE",{},s,0).accepted);
@@ -44,12 +51,14 @@ static double prepare(f::Runtime& r,f::Snapshot& s,bool select_authority=false){
   auto out=tick(r,s,1.25);assert(out.attitude.command==a::Command::Offboard);
   assert(r.pending(176).sent&&!r.pending(400).sent);return 1.25;
 }
+// 合法 ACK 与新 Offboard 状态都满足后才能到 OffboardReady。
 static double ready(f::Runtime& r,f::Snapshot& s,bool select_authority=false){
   prepare(r,s,select_authority);auto base=r.pending(176).baseline;
   r.ack({base+1,176,0,1,191,false},1.26);
   s.feedback.offboard=true;s.nav_state=14;tick(r,s,1.3);
   assert(r.attitude_core().phase()==a::Phase::OffboardReady);return 1.3;
 }
+// 错误命令/目标、旧戳、同戳改结果和仅 ACK 无新状态均不能证明准备完成。
 static void strict_ready(){
   f::Runtime r(cfg());auto s=sample();prepare(r,s);auto b=r.pending(176).baseline;
   r.ack({b+1,512,0,1,191,false},1.26);r.ack({b+2,176,0,255,190,false},1.26);
@@ -67,6 +76,7 @@ static void strict_ready(){
   for(int i=27;i<=130;++i)tick(no_status,s,i*.05);
   assert(no_status.attitude_core().phase()==a::Phase::Safety);
 }
+// 逐一关闭动作/解锁/起飞/会话门，保持零心跳可准备但不得 Arm；非法配置构造即拒绝。
 static void gates(){
   for(int gate=0;gate<4;++gate){auto c=cfg(true);
     if(gate==0)c.attitude.flight_actions_enabled=false;
@@ -84,6 +94,7 @@ static void gates(){
   auto o=tick(r,s,1.35);assert(!o.attitude.publish&&r.attitude_core().phase()==a::Phase::Safety);
   assert(!r.pending(400).sent);
 }
+// 逐项注入过期/无效/非有限/失效/冲突/时钟及周期异常，确认 Safety 停输出且健康尾帧不解锁存。
 static void faults(){
   for(int failure=0;failure<12;++failure){f::Runtime r(cfg());auto s=sample();ready(r,s);
     double t=1.35;
@@ -106,6 +117,7 @@ static void faults(){
   assert(released.attitude.command==a::Command::ReleaseOffboard);
   assert(released.attitude.thrust[2]==0);
 }
+// 完整模拟上升/保持/落地弹跳；Command400 从 Arm 复用到 Disarm 时，旧 ACK 不得误归属。
 static void flight_and_sequential_400(){
   f::Runtime r(cfg(true));auto s=sample();double t=ready(r,s,true);
   assert(r.request("INTERACTIVE",{},s,t).accepted);assert(r.request("PING",{},s,t).accepted);
@@ -162,6 +174,7 @@ static void flight_and_sequential_400(){
   s.feedback.offboard=false;s.nav_state=15;tick(r,s,t+=.05);
   assert(r.attitude_core().phase()==a::Phase::Idle);
 }
+// 活动后估计器 reset/模式退出/超包络停止；有效大倾角仍是反馈，Arm 超时则保留不确定事务。
 static void active_reset_and_timeout(){
   for(int reset=0;reset<5;++reset){f::Runtime r(cfg(true));auto s=sample();double t=ready(r,s,true);
     r.request("INTERACTIVE",{},s,t);r.request("PING",{},s,t);r.request("TAKEOFF",{1},s,t);tick(r,s,t+=.05);
@@ -193,6 +206,7 @@ static void active_reset_and_timeout(){
   assert(late.attitude.publish);
   assert(r.attitude_core().phase()==a::Phase::PoweredGround);
 }
+// 分别在零推力、斜坡途中和未离地超时前取消；推力只能递减，确认静止/减推结束后才上锁。
 static void cancel_on_armed_ground(){
   for(int progress=0;progress<3;++progress)for(int cancellation=0;cancellation<3;++cancellation){
     auto c=cfg(true);c.attitude.landing_seconds=.6;
@@ -233,6 +247,7 @@ static void cancel_on_armed_ground(){
     assert(r.attitude_core().phase()==a::Phase::SafeDisarmed);
   }
 }
+// 同一 poll 批中的晚到准备/起飞/模式请求不能复活已关闭任务，状态/PING/原降落仍可处理。
 static void shutdown_rejects_queued_starts(){
   for(int phase=0;phase<3;++phase){
     f::Runtime r(cfg(true));auto s=sample();double t=0;
@@ -262,6 +277,7 @@ static void shutdown_rejects_queued_starts(){
   assert(o.attitude.command==a::Command::ReleaseOffboard);
   assert(!r.pending(400).sent&&r.attitude_core().phase()==a::Phase::ReleaseOffboard);
 }
+// 交互准备需要 PING 租约；一次性 ready 不伪造交互租约，断开时仍按原地面握手释放。
 static void preparation_interactive_lease(){
   auto c=cfg();c.attitude.console_timeout=.4;
   f::Runtime prestream(c);auto s=sample();
