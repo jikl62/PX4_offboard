@@ -58,6 +58,32 @@ class FeedbackAgeProbeTests(unittest.TestCase):
                 self.assertIsNone(row[name])
             self.assertEqual(path.read_bytes(), before)
 
+    # 本地快照不受 ROS uint64 字段约束；源戳算术溢出沿原错误报告路径返回，文件保持只读。
+    def test_status_snapshot_stamp_overflow_returns_explicit_partial_diagnostic(self):
+        for envelope in (10**400, -(10**400)):
+            for sample in (10**400, -(10**400)):
+                with (
+                    self.subTest(envelope_positive=envelope > 0, sample_positive=sample > 0),
+                    tempfile.TemporaryDirectory() as directory,
+                ):
+                    path = Path(directory) / 'status.json'
+                    fixture = dict(
+                        updated_unix=1.0,
+                        state=dict(
+                            source_timing=dict(local=dict(envelope_us=envelope, sample_us=sample))
+                        ),
+                    )
+                    path.write_text(json.dumps(fixture))
+                    before = path.read_bytes()
+                    row = read_controller_status(
+                        path, 1_000_000, {'local': {'last': {'envelope_us': 100}}}
+                    )
+                    # available 仍只表示已解析根对象；error 明确保存算术失败，不代表反馈有效。
+                    self.assertTrue(row['available'])
+                    self.assertEqual(row['error'], 'int too large to convert to float')
+                    self.assertEqual(row['topics'], {})
+                    self.assertEqual(path.read_bytes(), before)
+
     # 0/缺失时间必须保持未知，不能自动换成主机当前时刻。
     def test_missing_timestamp_and_rmw_zero_are_unavailable(self):
         observed = TopicObservation()

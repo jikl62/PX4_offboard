@@ -222,7 +222,7 @@ def read_controller_status(path, host_us, probe_topics):
                 ),
                 same_envelope=probe_stamp == envelope if probe_stamp and envelope else None,
             )
-    except (OSError, ValueError, TypeError) as exc:
+    except (OSError, ValueError, TypeError, OverflowError) as exc:
         result['error'] = str(exc)
     return result
 
