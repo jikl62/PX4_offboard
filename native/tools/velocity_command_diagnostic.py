@@ -689,11 +689,65 @@ def finalize_diagnostic(receiver, writer, topic, now, system_now_ns):
     return value
 
 
+def _release_diagnostic_resources(actions, primary_error):
+    """逐项尝试 main 所有者提供的清理动作，保留主异常并按失败顺序连接清理异常。
+
+    actions 只含无参数清理函数，调用次序由 main 明确列出；本函数不启动 ROS、执行回调
+    或改变控制数据。primary_error 是正在向外传播的异常或 None，不能被 destroy/shutdown
+    的次生错误覆盖。没有主异常时传播首个清理错误；每项失败也不阻止后续动作。
+    """
+    errors = []
+    for release in actions:
+        try:
+            release()
+        except BaseException as cleanup_error:
+            errors.append(cleanup_error)
+
+    failure = primary_error if primary_error is not None else (errors[0] if errors else None)
+    if failure is None:
+        return
+    seen = set()
+
+    def visible_chain_tail(error):
+        """沿 traceback 实际显示的 cause/context 找尾部；只剪断指回已见异常的循环边。"""
+        while True:
+            seen.add(id(error))
+            following = error.__cause__
+            if following is None and not error.__suppress_context__:
+                following = error.__context__
+            if following is None:
+                return error
+            if id(following) in seen:
+                if error.__cause__ is following:
+                    error.__cause__ = None
+                    error.__suppress_context__ = True
+                if error.__context__ is following:
+                    error.__context__ = None
+                return error
+            error = following
+
+    tail = visible_chain_tail(failure)
+    for cleanup_error in errors:
+        if id(cleanup_error) in seen:
+            continue
+        next_tail = visible_chain_tail(cleanup_error)
+        # 不直接覆盖主异常的 cause：原本通过 implicit context 显示的业务首错也要保留。
+        # 清理错误由 finally 自动带回主异常的 context 已在上面的遍历中剪掉。
+        tail.__cause__ = cleanup_error
+        tail.__suppress_context__ = True
+        tail = next_tail
+    if primary_error is None:
+        raise failure
+
+
 # 只有执行入口才加载 ROS；创建订阅与诊断定时器，不创建飞控 publisher。核心接收器可独立离线测试。
 def main(args=None):
+    import signal
+
     import rclpy
     from rclpy.node import Node
     from rclpy.executors import ExternalShutdownException
+    from rclpy.signals import SignalHandlerOptions
     from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
     from rcl_interfaces.msg import ParameterDescriptor
     from jikl_fc01_system.msg import VelocityCommand
@@ -702,6 +756,8 @@ def main(args=None):
         def __init__(self):
             super().__init__('fc01_velocity_command_diagnostic')
 
+        def configure_diagnostic(self):
+            # main 已先持有完整基类节点；后续配置/端点失败也必须走显式销毁。
             def parameter(name, default):
                 # 参数仅在启动时读取；运行期明确拒绝修改，避免显示值与实际值不同。
                 return self.declare_parameter(
@@ -791,26 +847,57 @@ def main(args=None):
             self.writer.flush(now)
             self.writer.snapshot(value)
 
-    rclpy.init(args=args)
+    stop_requested = False
+
+    def request_stop(_signum, _frame):
+        # 信号只置标志，不能关闭正在取消息/查询来源的 context，也不在回调中异步抛异常。
+        nonlocal stop_requested
+        stop_requested = True
+
+    previous_handlers = {
+        signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)
+    }
     node = None
+    executor = None
+    configured = False
+    context_owned = False
+    primary_error = None
     try:
+        for signum in previous_handlers:
+            signal.signal(signum, request_stop)
+        # 只关闭本入口从未初始化状态取得的默认 context；已有调用者 context 的重复 init 原样报错。
+        context_owned = not rclpy.ok()
+        rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
         node = DiagnosticNode()
-        rclpy.spin(node)
+        node.configure_diagnostic()
+        configured = True
+        executor = rclpy.get_global_executor()
+        executor.add_node(node)
+        while executor.context.ok() and not stop_requested:
+            executor.spin_once(timeout_sec=0.1)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except BaseException as error:
+        primary_error = error
+        raise
     finally:
-        if node is not None:
-            try:
-                finalize_diagnostic(
+        stop_requested = True
+        actions = []
+        if configured:
+            actions.append(
+                lambda: finalize_diagnostic(
                     node.receiver, node.writer, node.topic, time.monotonic(), time.time_ns()
                 )
-            except Exception as error:
-                # 此时 ROS logger 可能已经关闭；写盘失败也不能掩盖原运行异常。
-                print('FC01_DIAGNOSTIC_FINALIZE_FAILED ' + repr(error), file=sys.stderr)
-            finally:
-                node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
+            )
+        if executor is not None and node is not None:
+            actions.append(lambda: executor.remove_node(node))
+        if node is not None:
+            actions.append(node.destroy_node)
+        if context_owned:
+            actions.append(lambda: rclpy.shutdown() if rclpy.ok() else None)
+        for signum, handler in previous_handlers.items():
+            actions.append(lambda signum=signum, handler=handler: signal.signal(signum, handler))
+        _release_diagnostic_resources(actions, primary_error)
 
 
 if __name__ == '__main__':
