@@ -69,7 +69,8 @@ static void complete_ground_cancel(Flight& flight, unsigned mission) {
 
   flight.s.feedback.offboard = false; // 人工复位控制开关，并让新状态证明已退出Offboard。
   flight.s.nav_state = 15;
-  flight.s.attitude.rc_mode_slot = 1;
+  flight.s.attitude.rc_mode_slot =
+      flight.c.attitude.rc_navigation_mode_slot == 1 ? 6 : 1; // 复位到当前导航档以外，兼容部署配置的CH6档位。
   flight.s.attitude.rc_arm_switch = 3;
   flight.s.at_rest = true;
   flight.s.stationary_seconds = 3;
@@ -81,7 +82,7 @@ static void complete_ground_cancel(Flight& flight, unsigned mission) {
 int main() {
   constexpr unsigned missions = 320; // 超过128条容量的两倍，实际经过多次淘汰边界。
   constexpr std::size_t retained_limit = 128;
-  Flight flight;
+  Flight flight{production_no_vision_rc_config()}; // 使用1.5m、0.50/0.04/0.80和垂向监测均保留的部署候选配置。
   std::vector<f::Pending> completed;
   for (unsigned mission = 1; mission <= missions; ++mission) {
     begin_next_manual_rc_task(flight, mission);
