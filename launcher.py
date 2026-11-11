@@ -58,6 +58,7 @@ class Display:
     """A vanished or flow-controlled terminal must never own the flight lease."""
 
     def __init__(self, stream):
+        # 借用调用者stream，不拥有关闭它的权利；本对象只拥有显示队列和后台线程。
         self.stream = stream
         self.messages = queue.Queue(maxsize=128)
         self.closed = False
@@ -89,6 +90,7 @@ class Display:
                     self.failed = True
 
     def close(self):
+        # 只请求显示线程结束并有限等待；阻塞的daemon仍可能存活，不能据此宣布写盘或终端完成。
         self.closed = True
         # A blocked terminal writer is a daemon, not a reason to abandon recovery.
         self.thread.join(timeout=0.1)
@@ -96,6 +98,7 @@ class Display:
 
 # 序号必须是正 uint64，参数必须是有限数；成功后生成一条 ASCII 换行协议消息。
 def encode_command(seq, op, args):
+    # 返回bytes，不发送；op和参数个数需符合白名单，拒绝发生在Channel消耗序号之前。
     if type(seq) is not int or not 0 < seq < 2**64:
         raise ControlError('无效控制台序号')
     if op not in OPS or len(args) != OPS[op]:
@@ -124,6 +127,7 @@ class ChannelError(ControlError):
 # 非阻塞 Unix socket 客户端：发送带序号命令，接收按换行分帧的 JSON 状态。
 class Channel:
     def __init__(self, sock):
+        # 保存调用方传入socket并切为非阻塞；Channel自己没有析构close，调用会话负责最终关闭。
         self.sock = sock
         self.sock.setblocking(False)
         self.seq = 0
@@ -133,6 +137,7 @@ class Channel:
 
     # 发送总期限 0.3 秒。开始写之前消耗序号，部分写失败后禁止重发，避免一次请求被执行两次。
     def send(self, op, args):
+        # 成功返回本次序号；超时/断连向上传播。写入可能已发生，不能因调用报错就重放请求。
         wire = encode_command(self.seq + 1, op, args)
         # Consume a sequence before writing: a partial write is never replayed.
         self.seq += 1
@@ -154,6 +159,7 @@ class Channel:
     # 一个 recv 不等于一条消息；先拼接缓冲，再逐条解析，拒绝 NaN、无穷值、非对象与超长记录。
     # 若有效记录后紧跟 EOF/坏记录，先交付已有记录；错误锁存在 read_error，下一次读取仍会报告。
     def read(self):
+        # 返回本轮完整dict列表；read_error是粘性终止原因，不会被下一次好包清掉。
         if self.read_error is not None:
             raise self.read_error
         objects = []
@@ -208,6 +214,7 @@ class Process:
 
 # 读取 /proc 快照，允许进程在检查期间自然退出；权限不足则拒绝继续，不能据此假定没有控制器。
 def process_list():
+    # 返回瞬时/proc事实，不持有进程句柄；检查后进程仍可能退出，慢操作后需重新核对。
     result = []
     for entry in Path('/proc').iterdir():
         if not entry.name.isdecimal():
@@ -238,6 +245,7 @@ def option(argv, *names):
 
 # 只复用目标串口、同用户、115200 的唯一 Agent；发现其他占用者时保留它并拒绝新启动。
 def choose_agent(processes, owners, device, uid):
+    # 返回唯一可复用Process或None；只做选择，不创建/停止Agent，不因名字相同就获得所有权。
     candidates = [
         p
         for p in processes
@@ -289,6 +297,7 @@ def verify_binary(path):
 
 # 运行目录限定当前用户且无组/其他用户权限；拒绝符号链接，避免 IPC 与证据落到不受控位置。
 def private_dir(path):
+    # 无返回值，可创建缺失目录；已存在则核对当前用户和权限，失败不自动chmod别人的目录。
     if path.is_symlink():
         raise ControlError('私有运行目录不能是符号链接: ' + str(path))
     path.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -326,6 +335,7 @@ class Evidence:
     )
 
     def __init__(self, folder, metadata):
+        # 创建新证据目录并独占打开events；调用者负责events.close()。后续会话不复用这些文件对象。
         self.folder = folder
         folder.mkdir(mode=0o700, parents=True, exist_ok=False)
         self.first_failure = None
@@ -336,11 +346,13 @@ class Evidence:
         self.events = open(folder / 'console.jsonl', 'x', buffering=1, encoding='utf8')
 
     def write_json(self, name, obj):
+        # 同步覆盖本会话文件；context manager关闭fd，序列化/写盘失败直接传播，不承诺原子替换。
         with open(self.folder / name, 'w', encoding='utf8') as f:
             json.dump(obj, f, ensure_ascii=False, indent=2, allow_nan=False)
             f.write('\n')
 
     def failure(self, text):
+        # 首错水位只写一次；这里只存诊断，不会请求LAND、上锁或改变原生控制权。
         if self.first_failure is None:
             self.first_failure = {'kind': 'launcher', 'message': str(text)}
 
@@ -365,37 +377,32 @@ class Evidence:
     def command(self, seq, op, args, now):
         self.record({'kind': 'command', 'seq': seq, 'op': op, 'args': args}, now)
 
+    def _summary(self, outcome):
+        # 返回当次摘要字典，不写盘；嵌套状态/裁剪列表仍引用本对象，保持原快照构造语义。
+        # 每次原写入点重新构造，保留状态字段重绑定和truncated读取时机；列表就地更新仍共享可见。
+        return {
+            'outcome': outcome,
+            'first_failure': self.first_failure,
+            'last_state': self.last_state,
+            'truncated_files': self.truncated,
+            'hardware_flight_verified_by_this_bundle': False,
+        }
+
     # 控制器仍在运行时只更新小摘要；扫描与 ZIP 压缩延后，避免给活跃控制会话增加长时间 I/O。
     def checkpoint(self, outcome):
+        # 无返回值；OSError转成first_failure，其余序列化等异常继续传播，不能承诺任意错误都被处理。
         # Only a small current-state JSON while the node is alive. Archive
         # scanning/compression is deliberately deferred until native exit.
         try:
-            self.write_json(
-                'summary.json',
-                {
-                    'outcome': outcome,
-                    'first_failure': self.first_failure,
-                    'last_state': self.last_state,
-                    'truncated_files': self.truncated,
-                    'hardware_flight_verified_by_this_bundle': False,
-                },
-            )
+            self.write_json('summary.json', self._summary(outcome))
         except OSError as exc:
             self.failure('状态摘要写入失败: ' + str(exc))
 
     # 节点退出后才归档。每个文件的报告副本最多约 8 MiB，过大时保留头部与尾部并标记，原日志不截断。
     def report(self, outcome):
+        # 返回ZIP路径；调用者须先确认原生已退出，避免归档I/O占用活跃会话。错误不伪装成报告成功。
         self.events.flush()
-        self.write_json(
-            'summary.json',
-            {
-                'outcome': outcome,
-                'first_failure': self.first_failure,
-                'last_state': self.last_state,
-                'truncated_files': self.truncated,
-                'hardware_flight_verified_by_this_bundle': False,
-            },
-        )
+        self.write_json('summary.json', self._summary(outcome))
         path = self.folder / 'report.zip'
         self.truncated.clear()
         limit = 8 * 1024 * 1024
@@ -417,16 +424,7 @@ class Evidence:
                         data = f.read(limit)
                 if name != 'summary.json':
                     z.writestr(name, data)
-            self.write_json(
-                'summary.json',
-                {
-                    'outcome': outcome,
-                    'first_failure': self.first_failure,
-                    'last_state': self.last_state,
-                    'truncated_files': self.truncated,
-                    'hardware_flight_verified_by_this_bundle': False,
-                },
-            )
+            self.write_json('summary.json', self._summary(outcome))
             z.write(self.folder / 'summary.json', 'summary.json')
         return path
 
@@ -437,6 +435,7 @@ class NodeStop:
         self.node, self.requested = node, False
 
     def request(self):
+        # 没有发送成功确认；一旦开始尝试便锁住requested，除已退出外的发送错误仍向上传播。
         if not self.requested and self.node.poll() is None:
             self.requested = True
             try:
@@ -447,6 +446,8 @@ class NodeStop:
 
 # 只能停止自己创建的 Agent，且需节点已退出、1 秒内的新鲜未解锁接地证据；否则保留传输。
 def finish_agent(agent, owned, node_exited, state, state_at, now):
+    # state_at/now为单调秒；True表示自有Agent满足停止条件，它可能已退出，也可能仅收到terminate请求。
+    # 只有自建句柄可触发terminate；复用Agent、未知接地或过期状态都返回False并保留。
     safe = (
         node_exited
         and 0 <= now - state_at <= 1
@@ -478,6 +479,7 @@ def state_line(state):
 
 # 只重试 socket 尚未创建/尚未监听；原生已退出或其他错误立即上报，绝不靠删除旧 socket 绕过。
 def connect_controller(path, node, timeout=12):
+    # 成功返回接管socket的Channel；失败尝试关闭本次socket，保留原生与它的恢复责任。
     end = time.monotonic() + timeout
     while time.monotonic() < end:
         if node.poll() is not None:
@@ -552,6 +554,8 @@ def _show_console_state(obj, now, say, mission, closing, printed_phase, last_pri
 
 # 一次现场会话主循环：持续收状态和发 PING，Mission 仅安排请求，原生端仍拥有最终动作判断权。
 def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
+    # channel/node/evidence都是调用者交来的本轮对象；flight只选择入口策略，不替代原生动作门。
+    # params高度单位m，seconds用于只检查期限，stop_signal为共享单元素列表（信号只改第0项）。
     display = Display(sys.stdout)
     say = display.say
     mission = Mission(params['aa_max_height'])
@@ -567,12 +571,14 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
     healthy_seen = False
 
     def send(op, values):
+        # 闭包借用当前channel/evidence；先真实写socket再记命令证据，后者失败也不能重放已写请求。
         seq = channel.send(op, values)
         evidence.command(seq, op, values, time.monotonic())
         return seq
 
     # 结束会话先取消 Python 起飞流程，飞行会话再请求 LAND，然后请原生退出；不会自行合成上锁命令。
     def close_session(reason):
+        # nonlocal修改本会话的closing/outcome；幂等关闭请求，等待原生完成，不在此销毁Agent。
         nonlocal closing, outcome
         if closing:
             return
@@ -722,6 +728,7 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
 
 # 预检验证实际 ARM64、固定 DDS 域、类型支持、串口与进程唯一性；通过只说明环境可启动，不表示可以飞。
 def preflight(root, agent_binary, device, *, controller=None, config_path=None):
+    # 返回(已验二进制, 可复用Agent或None)，不启动服务。controller/config_path显式覆盖只改来源选择。
     if platform.machine().lower() not in ('aarch64', 'arm64'):
         raise ControlError('本入口只在实际 ARM64 香橙派上运行；本机架构=' + platform.machine())
     if (
@@ -859,12 +866,14 @@ def main(argv=None):
             'entry_version': '20261027.2',
         },
     )
+    # None区分未取得资源；owned_agent只在本次Popen成功后置真，不把复用Process当自有子进程。
     node = agent = channel = None
     owned_agent = False
     lock = None
     files = []
     stopped = [False]
     outcome = 'preflight_refused'
+    # 单元素列表让signal闭包写入同一停止标记；handler不操作socket、服务或原生进程。
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
         signal.signal(sig, lambda *_: stopped.__setitem__(0, True))
     try:

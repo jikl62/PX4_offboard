@@ -65,6 +65,7 @@ class _ReportFileCapture:
 
         先标记名字再尝试读取，NOFOLLOW及裁尾/预留顺序保留；只修改本收集器和capture索引。
         """
+        # 第一步只记本报告的名字和预算；同名第二次调用不重新读盘，也不退还先前占用。
         if name in self.captured_names:
             return None
         self.captured_names.add(name)
@@ -74,6 +75,7 @@ class _ReportFileCapture:
             item['result'] = 'REPORT_SIZE_LIMIT'
             return None
         try:
+            # 第二步只读已打开的普通文件。NOFOLLOW仅拒绝末级链接，不保证父目录随后不被替换。
             read_fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
             with os.fdopen(read_fd, 'rb') as source:
                 before = os.fstat(source.fileno())
@@ -96,6 +98,7 @@ class _ReportFileCapture:
                 after.st_size,
                 after.st_mtime_ns,
             ) or renamed
+            # 第三步保存实际读到的字节；SHA对应裁剪后的这段内容，不是完整源文件。
             self.archive.writestr(name, data)
             self.total += len(data)
             item.update(
@@ -110,6 +113,7 @@ class _ReportFileCapture:
             )
             return data
         except OSError as error:
+            # 单文件读写不可用写入索引并继续；ZIP本身的最终关闭错误仍由外层with向上传播。
             item.update(result='UNAVAILABLE', error=str(error))
             return None
 
@@ -120,8 +124,7 @@ def _report_entries(home, entry, row):
     只识别既有config/native来源路径，不把新包名冒充已部署版本，也不改变服务。
     """
     entries = [('invoked_entry', entry)]
-    # A report invoked from a new unpacked release may observe an older
-    # running controller. Capture the explicitly named runtime source too.
+    # 从新解包入口调用报告时，后台可能仍跑旧版；两者的证据要分别保留。
     source = row.get('config_source_path')
     if isinstance(source, str):
         path = Path(source)
@@ -155,8 +158,49 @@ def _include_command_report(archive, capture, name, argv, runner):
     archive.writestr(name, data)
 
 
+# 纯内存证据处理：initial是刚捕获的原始status字节或None；capture是本报告自己的索引。
+# 返回解析出的row，并按原顺序填写session/native_state；不读文件、不查询服务，也不授予控制权。
+# 无效JSON/编码或非字典回落为空观测，其余异常继续传播，由调用者的ZIP上下文完成关闭。
+def _record_status_identity(capture, initial):
+    try:
+        row = json.loads(initial or b'{}')
+        if not isinstance(row, dict):
+            row = {}
+    except (ValueError, UnicodeError):
+        row = {}
+    state = row.get('state') if isinstance(row.get('state'), dict) else {}
+    capture['session'] = {
+        key: row.get(key)
+        for key in (
+            'boot_id',
+            'supervisor_pid',
+            'controller_pid',
+            'state_controller_pid',
+            'entry_version',
+            'runtime_mode',
+            'feedback_current',
+            'state_age_seconds',
+        )
+    }
+    capture['native_state'] = {
+        key: state.get(key)
+        for key in (
+            'phase',
+            'reason',
+            'rc_first_fault_reason',
+            'rc_latest_fault_reason',
+            'rc_recovery_block_reason',
+            'rc_reprepare_block_reason',
+            'native_log_dropped',
+        )
+    }
+    return row
+
+
 # 从home/entry读取证据到新建0600 ZIP，返回路径；runner可注入离线fixture且只执行只读查询。
 def collect_report(home, *, entry, runner=subprocess.run):
+    # 此函数只编排I/O顺序：初始状态 → 小型身份/配置 → 有界日志 → 末尾状态 → 只读命令 → 索引。
+    # _ReportFileCapture管理源文件字节预算；capture是采集事实，不是“一切正常”的飞行验收结论。
     home, entry = Path(home), Path(entry)
     folder = home / 'FC01_navigation'
     folder.mkdir(mode=0o700, exist_ok=True)
@@ -173,8 +217,7 @@ def collect_report(home, *, entry, runner=subprocess.run):
         commands={},
     )
     files = _ReportFileCapture(capture)
-    # Create with private permissions from the first byte, including during
-    # compression. Reading logs or evidence never invokes a service action.
+    # 从首字节起以0600独占创建ZIP；成功取得的output/压缩器由这两个with在正常或异常时关闭。
     fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with (
         os.fdopen(fd, 'wb') as output,
@@ -183,44 +226,12 @@ def collect_report(home, *, entry, runner=subprocess.run):
         files.archive = archive
         include = files.include
         initial = include(folder / 'status.json', 'status.json')
-        try:
-            row = json.loads(initial or b'{}')
-            if not isinstance(row, dict):
-                row = {}
-        except (ValueError, UnicodeError):
-            row = {}
-        state = row.get('state') if isinstance(row.get('state'), dict) else {}
-        capture['session'] = {
-            key: row.get(key)
-            for key in (
-                'boot_id',
-                'supervisor_pid',
-                'controller_pid',
-                'state_controller_pid',
-                'entry_version',
-                'runtime_mode',
-                'feedback_current',
-                'state_age_seconds',
-            )
-        }
-        capture['native_state'] = {
-            key: state.get(key)
-            for key in (
-                'phase',
-                'reason',
-                'rc_first_fault_reason',
-                'rc_latest_fault_reason',
-                'rc_recovery_block_reason',
-                'rc_reprepare_block_reason',
-                'native_log_dropped',
-            )
-        }
+        row = _record_status_identity(capture, initial)
         try:
             capture['capture_boot_id'] = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
         except OSError:
             capture['capture_boot_id'] = None
-        # Capture small session/configuration and release evidence before
-        # rotating logs can consume the report budget.
+        # 小型会话/配置和版本证据先收，避免大日志先消耗掉文件预算。
         for name in BASE_FILES[1:]:
             if '.log' not in name:
                 include(folder / name, name)
@@ -251,6 +262,7 @@ def collect_report(home, *, entry, runner=subprocess.run):
             include(path, name, limit=MAX_METADATA, reserve=MAX_METADATA)
 
         final = include(folder / 'status.json', 'status_after_capture.json')
+        # 两次都实际读到字节才比较；其中一次失败应记未知，不能伪造“未变化”。
         capture['status_changed_during_capture'] = (
             initial != final if initial is not None and final is not None else None
         )

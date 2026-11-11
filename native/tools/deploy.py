@@ -32,6 +32,8 @@ def validate_platform(os_data, arch):
 
 # 排除版本控制、构建安装、日志及 Python 缓存，避免把运行态和凭据装入源码包。
 def include_in_bundle(relative):
+    # relative 是相对 ROOT 的 Path；任一目录组件命中排除名就排除整条路径。
+    # 这是打包范围过滤，不是凭据扫描器；不能仅凭通过此函数就证明文件不含敏感内容。
     return (
         not any(
             x
@@ -54,6 +56,7 @@ def include_in_bundle(relative):
 
 # 按相对路径计算文件真实字节摘要；SOURCE.json 自身排除以避免自引用。
 def hashes(root):
+    # 全部文件字节会被读取并参与摘要；此映射不包含目录权限、软链身份或 SOURCE.json 自身。
     return {
         p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted(root.rglob('*'))
@@ -92,6 +95,8 @@ def verify_messages(root):
 
 # 构造源码 ZIP 并返回路径；拒绝输出到工程内部，避免递归把新包再次打包。
 def export_bundle(messages, destination):
+    # 两种 vendor 来源共用同一固定 PIN：有清单时读当前字节，无清单时 git archive 固定提交。
+    # ZIP 句柄由 with 关闭，但中途异常可能留下不完整 destination；这里没有发布/回滚事务。
     verify_messages(messages)
     # git archive exports the checked commit, without remote config or credentials.
     if (messages / 'SOURCE.json').is_file():
@@ -134,6 +139,7 @@ def export_bundle(messages, destination):
 
 # 只接受单个安全 ZIP 文件名，再整体转义远端脚本；不允许文件名注入 shell 命令。
 def remote_install_command(filename):
+    # 返回一整段作为 ssh 远端命令参数的 shell 文本；本函数只构造字符串，不执行 SSH。
     if not re.fullmatch(r'[A-Za-z0-9_.-]+\.zip', filename):
         raise ValueError('远端包文件名只能包含字母、数字、下划线、点和短横线')
     script = 'set -e\nmkdir -p "$HOME/fc01_uploads/unpacked"\n'
@@ -173,6 +179,8 @@ def main():
         elif args.op == 'export':
             print(export_bundle(args.messages, args.output))
         else:
+            # 外部副作用按 mkdir -> scp -> 远端安装执行；check=True 仅保证当前命令失败便停止。
+            # 不能撤销先前已成功的上传/远端安装步骤，故失败后需以远端实际记录判断完成程度。
             if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.@:\[\]-]*', args.host):
                 raise ValueError('SSH host invalid')
             bundle = args.bundle.resolve()

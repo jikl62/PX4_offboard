@@ -64,6 +64,8 @@ class BuildEvidenceError(RuntimeError):
 
 # 分块摘要真实文件字节，不依赖文件mtime；避免一次把大依赖库读入内存。
 def digest(path):
+    # path 指定普通文件或可读目标，返回SHA256字符串；文件操作异常直接传播。
+    # with 在正常/异常路径关闭输入流；分块读取限制单次块分配，不是文件整体大小预算。
     value = hashlib.sha256()
     with Path(path).open('rb') as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b''):
@@ -73,6 +75,8 @@ def digest(path):
 
 # 稳定排序与紧凑JSON序列化使同一结构有相同摘要，供输入索引和证据校验。
 def object_digest(value):
+    # 返回可JSON序列化结构的稳定摘要，不改输入；不支持的类型直接抛序列化异常。
+    # 此处稳定的是JSON内容顺序；不是数字范围、schema或飞行安全校验。
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(',', ':')).encode()
     ).hexdigest()
@@ -80,6 +84,8 @@ def object_digest(value):
 
 # 无交互运行只读工具查询，非零保留stdout/stderr后拒绝，不能静默选另一工具。
 def command(argv):
+    # argv 是独立参数数组，成功返回去掉首尾空白的stdout；非零转 BuildEvidenceError并附完整输出。
+    # 调用者负责只传取证查询；本函数不检查命令白名单，也不提供超时/输出大小限制。
     result = subprocess.run(
         list(map(str, argv)), stdin=subprocess.DEVNULL, capture_output=True, text=True, check=False
     )
@@ -92,6 +98,7 @@ def command(argv):
 
 # 正式入口仅接受本机aarch64/arm64，禁止把host或交叉编译文件冒充目标机原生证据。
 def require_arm64():
+    # 通过无返回值；这里只核本机平台名称，ELF结构和实际依赖须由后续各门分别验证。
     if platform.machine() not in ('aarch64', 'arm64'):
         raise BuildEvidenceError(
             'native ARM64 host required; no cross-built or host binary accepted'
@@ -100,6 +107,9 @@ def require_arm64():
 
 # 验证提交标识、源码路径/SHA与编译标记，拒绝符号链接/路径穿越和不完整源树。
 def release_sources(entry):
+    # entry 是待交付包目录，返回提交声明、控制标记和清单/源码摘要组成的小字典。
+    # 只读文件；提交字段验证为40位hex而不查询远程Git，真正文件身份由逐项SHA和源树覆盖证明。
+    # 只要求native源码/配置全列入源清单，不把外层部署生成物加入本次不可变源码。
     entry = Path(entry).resolve()
     manifest_path = entry / 'FC01_RELEASE.json'
     try:
@@ -157,6 +167,8 @@ def tree_fingerprint(root):
 
     # ancestors只记录当前递归链，防止目录链接成环；每个相对路径及真实路径都纳入摘要。
     def walk(directory, ancestors):
+        # 递归闭包更新外层count/total/hash，无返回值；只在当前祖先链查环，不全局去重共享目标。
+        # 同一个目标经不同相对路径出现时分别计入，路径身份也会影响摘要。
         nonlocal count, total
         real = directory.resolve()
         if real in ancestors:
@@ -186,6 +198,8 @@ def tree_fingerprint(root):
 
 # 从PATH找到真实工具后解析symlink、摘要可执行文件及版本输出，而非只记录名称。
 def executable_fingerprint(name, *version_args):
+    # name 可为工具名或绝对路径；返回解析路径、文件SHA和版本输出。
+    # 缺工具或查询失败即拒绝，不下载工具、不悄悄采用另一版本。
     located = shutil.which(name)
     if not located:
         raise BuildEvidenceError('required installed tool is missing: ' + name)
@@ -195,6 +209,8 @@ def executable_fingerprint(name, *version_args):
 
 # 强制Humble且px4_msgs来自所选SDK；收集工具、包版本、头/库/生成器树与影响编译的环境。
 def dependency_snapshot(entry, sdk):
+    # sdk 先解析绝对目录；返回依赖/环境/工具大字典，只执行查询，不编译或启动ROS节点。
+    # entry 保留原接口，目前不参与选择；SDK/overlay/环境错误直接拒绝，不退回其他项目。
     sdk = Path(sdk).expanduser().resolve()
     if os.environ.get('ROS_DISTRO') != 'humble':
         raise BuildEvidenceError('ROS 2 Humble environment is not loaded')
@@ -265,11 +281,14 @@ def dependency_snapshot(entry, sdk):
 
 # 构建键同时包含不可变release源和当前依赖；任何一侧变化都不能复用旧产物。
 def build_inputs(entry, sdk):
+    # 按源码后依赖的固定顺序只读取证并返回字典；任何一步错误阻断后续，不生成成功证据。
     return dict(release=release_sources(entry), dependencies=dependency_snapshot(entry, sdk))
 
 
 # 验证ELF64小端e_machine=183、可执行权限与本版控制marker，不启动被检查程序。
 def aarch64_binary(path, marker=None):
+    # 返回路径、架构、文件SHA和marker记录；不启动被检查程序，文件错误原样传播。
+    # 这里只做ELF头/权限/标记字节检查，不宣称动态库已可解析或飞控逻辑已通过。
     path = Path(path)
     data = path.read_bytes()
     if (
@@ -291,6 +310,8 @@ def aarch64_binary(path, marker=None):
 
 # 用ldd确认真实解析库路径与内容，拒绝not found；ASLR地址不纳入摘要。
 def resolved_libraries(binary):
+    # 返回实际解析到的库绝对路径->SHA字典；ldd非零、not found或没有解析库都拒绝。
+    # 执行的是取证工具ldd，不是控制器入口；无需运行时ASLR地址也能比较路径和库内容。
     result = subprocess.run(
         ['ldd', str(binary)], stdin=subprocess.DEVNULL, capture_output=True, text=True, check=False
     )
@@ -311,6 +332,8 @@ def resolved_libraries(binary):
 
 # 核对CMake实际选中的compiler和消息/ROS包，避免配置记录与预先指纹不一致。
 def cmake_evidence(build, dependencies):
+    # build 指向编译树，dependencies 是编译前取证快照；返回cache摘要和实际选中字段。
+    # 只核函数列出的依赖/编译器，额外缓存项不参与selected字典，完整cache字节仍有SHA。
     cache = Path(build) / 'CMakeCache.txt'
     parsed = {}
     for line in cache.read_text().splitlines():
@@ -332,6 +355,8 @@ def cmake_evidence(build, dependencies):
 
 # 控制器及配置检查器各自记录ELF与实际动态库，控制器额外核验release marker。
 def binary_evidence(prefix, marker):
+    # prefix 是安装树，marker 只用于控制器；返回两个必需程序的ELF/库证据。
+    # 按BINARY_NAMES顺序检查，任一步失败原样传播，不返回半套成功结果。
     result = {}
     for name in BINARY_NAMES:
         binary = Path(prefix) / 'lib/jikl_fc01_system' / name
@@ -343,6 +368,8 @@ def binary_evidence(prefix, marker):
 
 # 完整复用检查：输入、安装链接归属、二进制/库、全安装树与CMake选择全部匹配才返回证据。
 def _verify(entry, sdk, inputs=None):
+    # inputs可由同一次构建持锁预先取得；不传时重新收集源码/依赖，不更改证据或安装链接。
+    # 返回保存的完整证据字典；任何不一致拒绝复用，调用者决定是否重建，不能据异常自动覆盖旧树。
     entry = Path(entry).resolve()
     inputs = build_inputs(entry, sdk) if inputs is None else inputs
     evidence = json.loads((entry / 'ARM64_BUILD_EVIDENCE.json').read_text())
@@ -381,6 +408,9 @@ def _verify(entry, sdk, inputs=None):
 # 只读公开校验入口；必须先加载SDK环境，文件/格式错误统一转换明确构建拒绝。
 def verify_build(entry: Path, sdk: Path | None = None) -> dict:
     """Read-only; caller must load navigation_environment.sh before invocation."""
+    # entry/sdk 指定包和SDK；未显式给sdk时读FC01_PROJECT_ROOT，成功返回完整证据。
+    # 只读入口本身不持构建锁，不是阻止其他进程同时修改文件的快照事务。
+    # 约定文件/字段错误包装成BuildEvidenceError并保留cause；既有BuildEvidenceError原样传播。
     require_arm64()
     try:
         selected = sdk or os.environ.get('FC01_PROJECT_ROOT')
@@ -394,6 +424,8 @@ def verify_build(entry: Path, sdk: Path | None = None) -> dict:
 @contextmanager
 # 锁覆盖整个离线构建/发布安装链接过程；非阻塞失败避免两次构建同时写同一证据。
 def build_lock(entry):
+    # 上下文管理器进入时创建.build并取得非阻塞排他锁；退出with自动关闭流并释放锁。
+    # 锁文件路径保留不是锁仍被持有；只有遵守相同flock协议的调用者之间才互斥。
     path = Path(entry) / '.build'
     path.mkdir(exist_ok=True)
     with (path / 'arm64-build.lock').open('a') as stream:
@@ -406,6 +438,9 @@ def build_lock(entry):
 
 # 独占临时文件写完flush/fsync后原子替换，finally只清自己的tmp，避免半写成功记录。
 def atomic_json(path, value):
+    # path/value 指定证据目标与内容，成功无返回值；先独占创建临时文件，碰撞直接报错并保留旧项。
+    # created只在open成功后置真，故序列化/replace失败能清自己创建的项；不清创建失败前就存在的项。
+    # 文件fsync后再replace；没有目录fsync，不把这一步解释为断电后的完整持久性证明。
     temporary = Path(str(path) + '.tmp-' + str(os.getpid()))
     created = False
     try:
@@ -421,8 +456,36 @@ def atomic_json(path, value):
             temporary.unlink(missing_ok=True)
 
 
+# 纯参数生成：三个阶段保持 configure -> build -> install 的原顺序，不执行外部程序。
+def _native_build_commands(entry, build, prefix, compiler):
+    # 返回全新的 argv 列表；路径中的空格仍是同一参数，不经过shell解释。
+    # compiler 必须是已取证 tools 字典，不能在这里重新从PATH选择另一个编译器。
+    return [
+        [
+            compiler['cmake']['path'],
+            '-S',
+            str(entry / 'native/src/jikl_fc01_system'),
+            '-B',
+            str(build),
+            '-G',
+            'Unix Makefiles',
+            '-DCMAKE_BUILD_TYPE=Release',
+            '-DCMAKE_INSTALL_PREFIX=' + str(prefix),
+            '-DCMAKE_CXX_COMPILER=' + compiler['g++']['path'],
+            '-DCMAKE_C_COMPILER=' + compiler['gcc']['path'],
+            '-DPython3_EXECUTABLE=/usr/bin/python3',
+            '-DPYTHON_EXECUTABLE=/usr/bin/python3',
+        ],
+        [compiler['cmake']['path'], '--build', str(build), '--parallel', '1'],
+        [compiler['cmake']['path'], '--install', str(build)],
+    ]
+
+
 # 先尝试严格复用，失败保留原prefix并新建独立stage；编译前后再比输入，最终发布链接与证据。
 def build_release(entry, sdk):
+    # 成功返回复用或新生成的证据；持锁期间可能真实调用CMake，测试必须注入外部工具替身。
+    # 失败保留已建stage供取证；旧install在最终发布前不变，不删除可能仍被运行服务引用的旧版本。
+    # 安装链接与JSON是两次独立替换：链接已换而写证据失败时必须报错，不伪称两者原子提交。
     require_arm64()
     entry = Path(entry).resolve()
     sdk = Path(sdk).resolve()
@@ -450,25 +513,7 @@ def build_release(entry, sdk):
         prefix = stage / 'install'
         build = stage / 'build'
         compiler = inputs['dependencies']['tools']
-        commands = [
-            [
-                compiler['cmake']['path'],
-                '-S',
-                str(entry / 'native/src/jikl_fc01_system'),
-                '-B',
-                str(build),
-                '-G',
-                'Unix Makefiles',
-                '-DCMAKE_BUILD_TYPE=Release',
-                '-DCMAKE_INSTALL_PREFIX=' + str(prefix),
-                '-DCMAKE_CXX_COMPILER=' + compiler['g++']['path'],
-                '-DCMAKE_C_COMPILER=' + compiler['gcc']['path'],
-                '-DPython3_EXECUTABLE=/usr/bin/python3',
-                '-DPYTHON_EXECUTABLE=/usr/bin/python3',
-            ],
-            [compiler['cmake']['path'], '--build', str(build), '--parallel', '1'],
-            [compiler['cmake']['path'], '--install', str(build)],
-        ]
+        commands = _native_build_commands(entry, build, prefix, compiler)
         for argv in commands:
             print('FC01_OFFLINE_BUILD_STEP ' + str(argv[1]), flush=True)
             subprocess.run(argv, stdin=subprocess.DEVNULL, check=True)
@@ -514,6 +559,8 @@ def build_release(entry, sdk):
 
 # 只分派build/verify；错误非零并输出证据路径，不调用生产控制节点。
 def main(argv=None):
+    # argv是可选CLI参数；成功返回0，捕获的构建/文件/子进程错误返回1并打印原因。
+    # parse_args错误仍按argparse退出；build与verify两条路径都不授权运行控制器或部署服务。
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('build', 'verify'))
     parser.add_argument('--entry', type=Path, default=Path(__file__).resolve().parent)

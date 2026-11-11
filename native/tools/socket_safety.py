@@ -22,6 +22,8 @@ class SocketSafetyError(RuntimeError):
 
 # 父目录须为当前用户所有且群组/其他人不可写的真实目录，拒绝符号链接和非私有目录。
 def checked_parent(path):
+    # 这里 lstat 的是直接父目录这一项，不是对全部祖先逐级作 O_NOFOLLOW 路径遍历。
+    # “私有”在此专指当前 uid 所有且 group/other 不可写；并不要求权限数字必须恰为 0700。
     parent = Path(path).parent
     try:
         info = parent.lstat()
@@ -84,6 +86,8 @@ class SocketLease:
 
     # 以 NOFOLLOW/CLOEXEC 打开锁文件，再非阻塞独占加锁；失败关闭自己打开的 fd。
     def __enter__(self):
+        # identity 来自已打开 fd，复验比较路径当前 inode；锁文件持久存在是共同协作身份。
+        # except 只处理 OSError/SocketSafetyError；不声称任意 BaseException 下均可完成关闭。
         checked_parent(self.path)
         try:
             self.fd = os.open(
@@ -112,6 +116,7 @@ class SocketLease:
 
     # 最终动作前同时复验父目录、锁类型/权限及 inode，防止检查后被更换。
     def verify_identity(self):
+        # 调用前须已成功取得 fd/identity；本检查不连接控制 socket，也不证明无人正在启动。
         checked_parent(self.path)
         try:
             current = self.lock.lstat()
@@ -127,6 +132,7 @@ class SocketLease:
 
     # 关闭本实例描述符释放 advisory lock；不删除共享锁文件，保留后续启动器的协调身份。
     def __exit__(self, *_args):
+        # close 若抛异常会向外传播，且 fd=None 的赋值不会执行；不在此重试或吞掉错误。
         if self.fd is not None:
             os.close(self.fd)
             self.fd = None

@@ -27,11 +27,14 @@ class DeploymentError(RuntimeError):
 
 # 用实际文件字节计算摘要，不能只比较mtime或旧文件名。
 def sha256(path):
+    # 返回文件实际内容的SHA256字符串；一次读入全部字节，文件错误原样传播。
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 # 在目标同目录私有临时文件写完后原子替换；finally仅清本操作残留临时路径。
 def write_json(path, value):
+    # path/value 是目标与可JSON序列化的数据；成功无返回值，不修改传入对象。
+    # mkstemp 生成本次独占临时文件；replace保证可见文件完整，但没有fsync或断电持久性承诺。
     path = Path(path)
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix='.' + path.name, dir=path.parent)
@@ -47,6 +50,8 @@ def write_json(path, value):
 
 # 逐项拒绝绝对/穿越/符号链接/越界/缺失/摘要不同的载荷；返回通过的当前清单。
 def verify_payload(entry):
+    # entry 是解压包目录，返回清单对象；只校验清单列出的条目，不扫描所有额外文件。
+    # 路径/摘要不符抛 DeploymentError，文件/JSON/类型错误仍可传播；此处不下载或修补源码。
     manifest = json.loads((entry / 'FC01_RELEASE.json').read_text())
     files = manifest.get('payload_sha256')
     if not isinstance(files, dict) or not files:
@@ -71,6 +76,8 @@ def verify_payload(entry):
 class DeploymentLog:
     # 日志名含UTC、PID、动作，独占创建防止覆盖另一部署证据。
     def __init__(self, entry, home, action):
+        # 立即创建本次日志文件并写BEGIN，调用者取得 output 的关闭责任；不触发构建/服务动作。
+        # 目录/文件错误直接传播；构造中途失败不是“已有完整DeploymentLog可供finish”的状态。
         self.entry = entry
         self.home = home
         self.action = action
@@ -83,12 +90,16 @@ class DeploymentLog:
         self.summary = home / 'FC01_navigation/install.log'
         self.record('BEGIN ' + action + ' entry=' + str(entry))
 
-    # 持久追加单行阶段消息，UTC用于人类跨记录对齐，不作为控制单调时间。
+    # 追加单行阶段消息，UTC用于人类跨记录对齐，不作为控制单调时间。
     def record(self, message):
+        # 追加到当前缓冲文件，无返回值；不做fsync，不保证断电后仍持久，写失败原样传播。
         self.output.write(datetime.now(timezone.utc).isoformat() + ' ' + message + '\n')
 
     # 有界保留末18行供错误显示，完整输出写本次日志；Ctrl+C先让子事务安全收尾。
     def step(self, stage, command):
+        # stage 为部署阶段名、command 为参数序列；成功无返回值，非零退出转 DeploymentError。
+        # stdout/stderr合并流式落盘；18行只限制错误尾部缓存，不限制日志总量。
+        # Ctrl+C发送terminate并等待子程序，再原样抛出中断；安全收尾依赖该子程序自身的信号处理。
         self.stage = stage
         print('FC01_STEP ' + stage + ' log=' + str(self.path), flush=True)
         self.record(stage + ' command=' + repr(list(map(str, command))))
@@ -123,6 +134,8 @@ class DeploymentLog:
 
     # 记录最终结果并关闭本次日志；失败也打印日志路径，便于现场发送原始证据。
     def finish(self, result, error=None):
+        # result/error 只组织最终诊断；成功关闭 output 并打印，无返回值。
+        # 日志/摘要写入错误仍会传播；原实现不是逐项容错清理器，不承诺写失败后全部步骤均完成。
         message = result + ' stage=' + self.stage + ' log=' + str(self.path)
         if error is not None:
             message += ' error=' + str(error)
@@ -136,6 +149,8 @@ class DeploymentLog:
 # 只生成release局部的C++检查输入，不写当前运行配置、不做在线探针或service动作。
 def prepare_offline_config(entry):
     """Generate only a release-local checker input; no live config or SDK probe."""
+    # 返回包内待检查YAML路径；相同文本不重复写入，配置/文件异常直接传播。
+    # 这是flight-test候选检查输入：读取包内设置和模板，既不读取现场runtime也不代表允许在线控制。
     import yaml
     from navigation_service import _metadata, navigation_profile
 
@@ -158,6 +173,8 @@ def prepare_offline_config(entry):
 
 # 删除旧成功令牌后重新构建/检查，前后各验源码，最后写与当前清单/二进制/YAML绑定的离线证据。
 def offline(entry, home, log):
+    # 成功无返回值；log.step 拥有外部步骤执行，home 保留兼容签名，本函数不靠它改现场配置。
+    # 清单首检失败时立即拒绝；通过首检后才清旧成功令牌，后续失败不能借旧令牌宣称本轮成功。
     release = verify_payload(entry)
     # A failed repeat preparation must not leave a previous success token.
     (entry / 'OFFLINE_DEPLOYMENT.json').unlink(missing_ok=True)
@@ -209,6 +226,9 @@ def offline(entry, home, log):
 
 # activate必须显式确认且离线证据仍与当前清单/配置一致；rollback使用备份事务。
 def online(entry, home, log, *, action, confirm=False, boot_policy='preserve', backup=None):
+    # CLI只传 activate/rollback；成功无返回值，动作真正执行由恢复器子进程及其事务锁负责。
+    # activate先核离线证据和显式确认；rollback保留旧语义，不因新候选源码损坏而阻止恢复备份。
+    # 这里的离线hash是交接一致性证据，恢复器仍须重新核验构建/进程/当前地面条件。
     if action == 'activate':
         verify_payload(entry)
         if not confirm:
@@ -253,6 +273,8 @@ def online(entry, home, log, *, action, confirm=False, boot_policy='preserve', b
 
 # 普通用户入口、私有umask、同用户安装锁；在线路径锁由恢复器持有，避免外层提前释放。
 def main(argv=None):
+    # argv 为可选CLI参数，正常返回0，可报告部署错误返回1；参数解析和日志初始化可直接抛错。
+    # offline由此层持安装锁，在线锁由restore整段持有；umask修改当前进程，非局部临时设置。
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         'action', choices=('offline', 'activate', 'rollback'), nargs='?', default='offline'

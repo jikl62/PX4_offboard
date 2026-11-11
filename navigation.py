@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # 导航管理与只读状态窗口：Python只负责安装/服务请求/诊断显示，飞行控制留给原生后台服务。
 # 关闭窗口不发送停止；明确stop/land/disable才走systemd的原生安全退出。
+# 阅读入口：main分派明确动作；monitor循环读快照；render_status只计算显示文本。
+# status/monitor/report不会建立飞控发布者，显示“已准备”也不是给原生控制器发送授权。
 """Management and read-only status view. Flight remains in the native service."""
 from __future__ import annotations
 import argparse
@@ -27,6 +29,8 @@ ENTRY = Path(__file__).resolve().parent
 
 # 读取真实systemd主PID/状态和boot_id，拒绝把旧status.json直接当本次进程。
 def service_info():
+    # 返回systemd查询字段与本机boot_id；查询有4秒超时，执行/超时异常由外层入口处理。
+    # ActiveState只能说明服务状态；不能据此推出已接地、已上锁或PX4仍收到设定值。
     result = subprocess.run(
         ['/usr/bin/systemctl', 'show', SERVICE, '--property=ActiveState,MainPID,UnitFileState'],
         capture_output=True,
@@ -43,6 +47,7 @@ def service_info():
 
 # 读取最新JSON对象；文件缺失/半写/损坏时返回未知空状态，不填造飞机反馈。
 def snapshot(home):
+    # home是调用方已选定的用户目录；只返回JSON字典，不把列表/损坏文件补成有效状态。
     try:
         row = json.loads((home / 'FC01_navigation/status.json').read_text())
         return row if isinstance(row, dict) else {}
@@ -125,6 +130,7 @@ def _append_recovery_lines(lines, state, status, current, native_current, age, g
 
     按原Runtime/Core阻塞优先级读state，不复位故障或开启动作门。
     """
+    # current表示飞机关键反馈有效；native_current只表示本次控制器状态仍有效，两者不能互换。
     # 恢复显示分别保留首故障、最新故障、Runtime/Core阻塞及独立新样本计数，便于定位卡住来源。
     if (
         state.get('rc_first_fault_reason')
@@ -213,6 +219,8 @@ def _append_control_lines(lines, state, status, current, native_current, age):
 
 # 先确认服务与快照身份，再计算IPC/原生/飞机反馈各自新鲜度；历史与当前显示严格区分。
 def render_status(row, info, now=None):
+    # 输入row是监督器快照，info是服务身份，now为可注入的墙钟秒；返回完整文本，不修改输入。
+    # 三层证据依次判断：同次服务快照 → 本次原生控制器 → 每个飞控话题，前一层有效不替代后一层。
     now = time.time() if now is None else now
     state = row.get('state') if isinstance(row.get('state'), dict) else {}
     status, reason = _snapshot_display_status(row, info, now)
@@ -278,6 +286,8 @@ def render_status(row, info, now=None):
 
 # 周期读取状态并刷新终端；Ctrl+C/输出断开只退出查看器，不影响后台控制托管。
 def monitor(home):
+    # 每秒刷新文本，服务身份最多缓存3秒；stdout消失只结束这个查看循环。
+    # 不持有后台控制器/Agent所有权，因此finally中也没有停止服务或释放飞控的操作。
     info = {}
     next_info = 0
     try:
@@ -295,11 +305,12 @@ def monitor(home):
         except OSError:
             pass
     except (OSError, ValueError):
-        return  # Vanished view output never becomes a service stop request.
+        return  # 状态窗口输出消失不转换成停止服务请求。
 
 
 # 延迟导入有界报告收集器；报告只读服务/磁盘证据，不重新启动控制。
 def report(home):
+    # 返回新ZIP路径；外部只读命令的执行与文件预算由收集器负责，异常继续交main报告。
     from navigation_report import collect_report
 
     return collect_report(home, entry=ENTRY, runner=subprocess.run)
@@ -307,6 +318,8 @@ def report(home):
 
 # 分派显式管理动作；flight-test必须双参数确认，失败自动报告，绝不把失败当作重新起飞请求。
 def main(argv=None):
+    # 返回CLI退出码。未给action时沿用install默认值；--mode只配置安装路线，不绕过原生动作门。
+    # home取当前UID的系统账户目录，避免环境HOME误指向另一用户；umask只约束本进程后续新文件。
     parser = argparse.ArgumentParser(description='FC01 手动解锁、遥控触发导航定高')
     parser.add_argument(
         'action',
@@ -330,6 +343,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     os.umask(0o077)
     if args.mode == 'flight-test' and not args.confirm_flight_test:
+        # 先拒绝未确认的飞行模式，再进入安装或服务操作；不通过“重试”偷偷补确认参数。
         parser.error('Flight Test 必须同时提供 --confirm-flight-test')
     home = Path(pwd.getpwuid(os.getuid()).pw_dir)
     try:
@@ -359,6 +373,7 @@ def main(argv=None):
                         f.seek(max(0, p.stat().st_size - 16000))
                         print(name + '\n' + f.read().decode(errors='replace'))
         else:
+            # land沿用stop映射，请求原生安全退出；这里不直接发PX4降落命令或强杀控制进程。
             op = {
                 'start': ['start'],
                 'stop': ['stop'],
@@ -371,6 +386,7 @@ def main(argv=None):
             print(render_status(snapshot(home), service_info()))
         return 0
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+        # 操作失败仅打印/取证并返回1；自动报告不会重试start或重新执行起飞任务。
         print('未完成：' + str(exc), flush=True)
         try:
             report(home)

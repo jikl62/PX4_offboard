@@ -24,6 +24,8 @@ class GroundEvidence:
 
     # 将PX4微秒转秒，拒绝非目标系统/解锁/非静止及过期；时间回退清该链，重复样本不累加。
     def observe(self, kind, msg, wall, mono):
+        # kind由内部订阅固定为status/land，msg为抽取的ROS字段；stamp为源秒，receipt为本机单调秒。
+        # 本函数更新对应链及armed锁存，不创建许可文件；返回None，最终准入由ready重新取时钟判断。
         if kind == 'status' and msg.get('arming_state') == 2:
             self.armed_seen = True
             self.reason = '观察到飞机已解锁；保留原服务'
@@ -53,6 +55,7 @@ class GroundEvidence:
 
     # 最终准入时重新按当前时间验证两链与图来源数量，避免先前健康样本被无限复用。
     def ready(self, wall, mono, status_publishers, land_publishers):
+        # 返回bool并更新诊断reason；“两帧”必须是源时间推进，重复DDS样本不能充作新证据。
         if self.armed_seen:
             return False
         if status_publishers != 1 or land_publishers != 1:
@@ -84,6 +87,7 @@ class RcGroundEvidence:
         self.reason = '等待新鲜 RC 安全反馈：油门最低、摇杆居中、解锁开关关闭、非导航档'
 
     def observe(self, kind, msg, wall, mono):
+        # kind固定为manual/switches/flags；时间戳单位由微秒转秒，摇杆/档位范围保持既有部署合同。
         stamp = msg.get('timestamp', 0) / 1e6
         sample = msg.get('timestamp_sample', msg.get('timestamp', 0)) / 1e6
         good = 0 < sample <= stamp and -0.1 <= wall - stamp <= 2.5 and -0.1 <= wall - sample <= 2.5
@@ -126,6 +130,7 @@ class RcGroundEvidence:
 
     # RC三类都需恰好一个来源且至少两帧新样本，接收和源样本年龄独立检查。
     def ready(self, wall, mono, publishers):
+        # publishers为各RC话题来源数；这里只读三条证据链，不清理计数，也不决定飞行中恢复。
         return all(
             publishers.get(k) == 1
             and self.counts[k] >= 2
@@ -333,6 +338,9 @@ def probe(
     require_rc_safe=False,
     rc_navigation_mode_slot=6,
 ):
+    # root当前未使用，保留旧调用接口；Agent路径只在无复用者且允许新建时使用，evidence_path应为Path。
+    # 返回0仅说明本次被动部署观察成功；首个业务/写入/清理异常向上传播，不能由旧证据替代成功。
+    # Agent保留给已有原生控制链使用；本轮仅销毁自己创建的Node，并按owns_context关闭默认Context。
     import rclpy
     from rclpy.qos import qos_profile_sensor_data
     from px4_msgs.msg import VehicleStatus, VehicleLandDetected
@@ -351,6 +359,7 @@ def probe(
     try:
         match = choose_agent(process_list(), uart_owners('/dev/ttyS2'), '/dev/ttyS2', os.getuid())
         if match:
+            # 复用Agent不转移停止权；整个探针没有terminate/kill Agent的分支。
             agent_pid = match.pid
         else:
             if require_existing_agent:
@@ -365,6 +374,7 @@ def probe(
             )
             agent_pid = child.pid
             created = True
+        # 生命周期由下面既有try/finally统一收尾；不要在新增回调里另写shutdown或抢先改异常。
         # 查询失败时不声称拥有 Context；init 中途新激活后抛错也须由本轮尝试关闭。
         # 调用前已活跃的默认 Context 属于外层，init 拒绝时不能顺手关闭它。
         owns_context = not rclpy.ok()
@@ -374,6 +384,7 @@ def probe(
         subs, rc_topics = _create_ground_subscriptions(
             node, evidence, rc, VehicleStatus, VehicleLandDetected, qos_profile_sensor_data
         )
+        # subs保留全部订阅对象到等待结束；只读回调不产生飞控命令，来源数还要在ready时逐项复核。
         # 等待有界；看到armed立即停止，只有全部新鲜证据满足才记录verified_at。
         deadline = time.monotonic() + 18
         while time.monotonic() < deadline:

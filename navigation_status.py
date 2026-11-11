@@ -18,10 +18,12 @@ PREPARATION_PHASES = frozenset(
 )
 
 
-# 同一boot/控制PID与足够新的IPC快照才可作为当前控制器证据；不表示飞机传感器仍新鲜。
+# 调用方先核对服务/boot身份；这里仅检查已有控制PID的一致性、IPC异常与状态年龄。
+# 返回True不表示飞机传感器仍新鲜，也不替代外层服务身份验证。
 def controller_state_current(row, *, age=None):
     """IPC progress stays distinct from the freshness of the aircraft topics."""
     state = row.get('state')
+    # age可由显示层传入“原年龄+快照存放时间”；只有未传时才使用快照自己的原始年龄。
     if not isinstance(state, dict) or not state:
         return False
     if row.get('status') in ('STARTING', 'STALE', 'STOPPING', 'STOPPED'):
@@ -45,6 +47,8 @@ def controller_state_current(row, *, age=None):
 def aircraft_feedback_current(state, elapsed):
     """Advance native sample ages without extending their reported lifetimes."""
     finite = lambda value: type(value) in (int, float) and math.isfinite(value)
+    # elapsed是监督器接收这条原生状态后累计的显示年龄，单位秒，不是Unix时间戳。
+    # 原生明确拒绝位先否决；缺字段也不能用默认0填补，后续必须具备每路完整timing。
     if not finite(elapsed) or elapsed < 0:
         return False
     if any(
@@ -84,8 +88,7 @@ def aircraft_feedback_current(state, elapsed):
             age = item.get(name)
             if not finite(age) or (name in ('receipt_age_s', 'sample_progress_age_s') and age < 0):
                 return False
-            # Native VALID may include a source timestamp slightly ahead of
-            # the host clock. It must not buy extra display lifetime.
+            # 原生VALID允许源时钟略领先；负源年龄按0消耗显示寿命，不能借此延长TTL。
             if max(0.0, age) + elapsed >= timeout:
                 return False
     return True
@@ -97,6 +100,7 @@ def preparation_wait_details(state):
     if state.get('phase') not in PREPARATION_PHASES:
         return []
     details = []
+    # 返回新的中文提示列表，state只读；缺少事实时保留未知，不据推测让用户解锁。
     for name, text in (
         ('status_fresh', '飞控状态反馈过期'),
         ('land_fresh', '接地反馈过期'),
@@ -173,6 +177,7 @@ def recovery_wait_details(state):
     if state.get('phase') != 'SAFETY':
         return []
     details = []
+    # 只解释传入的那次快照；外层只有native_current时才把这些文字作为当前恢复观察展示。
     finite = lambda value: type(value) in (int, float) and math.isfinite(value) and value >= 0
     timings = state.get('source_timing')
     if isinstance(timings, dict):
@@ -200,8 +205,7 @@ def recovery_wait_details(state):
             queued = item.get('rmw_to_callback_s')
             if finite(queued):
                 details.append(f'{label}中间件接收至回调间隔 {queued:.3f} 秒')
-    # Check each topic's freshness independently: a local timeout must not
-    # hide a fresh detector saying the aircraft still is not at rest.
+    # 分别检查每路新鲜度：local过期也不能掩盖新鲜接地检测器报告的at_rest=false。
     if state.get('land_fresh') is True:
         if state.get('landed') is False:
             details.append('飞控尚未确认接地（landed=false）')
@@ -230,8 +234,8 @@ def preparation_diagnostic_reason(state):
 
 # 只根据RC路线三门提示人工步骤；arm_enabled=false是人工解锁合同，不应被误认为故障。
 def manual_rc_guidance_allowed(state):
-    # arm_enabled=false disables programmatic arming, and is required by the
-    # independent manual-RC route. flight_enabled belongs to another profile.
+    # arm_enabled=false禁用程序解锁，正是人工RC路线的要求；flight_enabled属于另一控制入口。
+    # 返回值只控制提示文案；render_status还须先通过服务、原生状态和飞机反馈三层新鲜度检查。
     return all(
         state.get(name) is True
         for name in ('flight_actions_enabled', 'takeoff_enabled', 'rc_navigation_enabled')

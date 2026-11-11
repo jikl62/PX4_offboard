@@ -31,6 +31,8 @@ def require_inactive_service():
 
 # 验证目标为 releases 下已构建目录；用与原生节点相同的 socket 租约阻止并发激活。
 def activate(base, target, socket_path):
+    # target/base 解析为实际路径后再判从属关系，不能靠一个外观位于 releases 下的软链越界。
+    # 只有最后的 os.replace 切 current；替换后的清理失败不表示 current 未变或已经回滚。
     base = Path(base).resolve()
     target = Path(target).resolve()
     socket_path = Path(socket_path)
@@ -44,6 +46,7 @@ def activate(base, target, socket_path):
     socket_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     # 锁内再次检查 socket；采样与最终替换之间也复验服务、锁 inode 和 socket 身份。
     with SocketLease(socket_path) as lease:
+        # flock 只协调同样遵守租约的启动器。二次服务/路径采样缩小检查窗口，不能阻止不协作进程。
         require_absent_socket(socket_path)
         # UUID path avoids deleting/overwriting another updater's current.next.
         # 每次操作用独立 UUID 临时链接，不能误删另一个更新进程的 staging 路径。
@@ -56,6 +59,7 @@ def activate(base, target, socket_path):
             # 原子替换 current，只改变下一次启动使用的版本；不向已运行进程注入新代码。
             os.replace(pending, base / 'current')
         finally:
+            # 清理仅尝试本次 UUID 链接；unlink/readlink 失败会传播，不保证保留先前异常为顶层。
             # Only this activation's freshly created symlink, never socket state.
             if pending.is_symlink() and pending.readlink() == target:
                 pending.unlink()

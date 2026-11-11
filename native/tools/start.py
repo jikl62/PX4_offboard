@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 板载进程监督器：可选管理 Agent，再运行原生节点；收到停止请求时先让节点完成恢复。
+# 板载进程监督器：可选管理 Agent，再运行原生节点；收到停止请求时先等待节点退出。
 # 停止顺序属于安全合同：节点仍需要 DDS 通道时，不能先结束 Agent。
 """Supervise agent/node; terminate the node before closing its agent."""
 import argparse
@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # 创建独立日志和进程组，监视节点/Agent退出；信号只设置停止请求，不在信号处理器中直接杀进程。
 def main():
+    # 资源取得顺序：日志目录 -> 信号处理器 -> 两个日志句柄 -> 可选自建 Agent -> 节点。
+    # children 只登记本入口成功得到的 Popen；--external-agent 不将外部 Agent 纳入回收列表。
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--external-agent', action='store_true')
     args = parser.parse_args()
@@ -33,6 +35,8 @@ def main():
     signal.signal(signal.SIGTERM, stop)
     children = []
     node = None
+    # code=2 是启动/监督失败默认值；正常观察到节点退出取其退出码，收到停止请求则设为 0。
+    # 后续清理若抛异常仍会传播，不能把这个变量当作“资源释放必然成功”的保证。
     code = 2
     with (
         (logs / ('node_' + stamp + '.log')).open('a') as node_log,
@@ -73,6 +77,8 @@ def main():
             if stopped:
                 code = 0
         finally:
+            # 这是有先后约束的退出流程，不是逐项容错清理：未捕获的 killpg/wait/OSError 会
+            # 中断后续子进程回收，异常仍可见；不能据 finally 的存在推断所有资源必被释放。
             # Allow the controller to request/confirm LAND while the Agent is still alive.
             # 向节点进程组发 SIGTERM 后持续等待，不用固定超时强杀仍在恢复/交权的控制器。
             if node and node.poll() is None:
@@ -93,6 +99,7 @@ def main():
                             )
             # 只有节点结束后才回收本监督器创建的其他子进程；超时升级杀死的是附属进程。
             for child in children:
+                # 只回收本入口拥有的附属进程；3 秒/升级 SIGKILL 的策略不适用于控制节点。
                 if child is not node and child.poll() is None:
                     os.killpg(child.pid, signal.SIGTERM)
                     try:

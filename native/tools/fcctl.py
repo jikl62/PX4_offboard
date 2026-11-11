@@ -16,6 +16,8 @@ import time
 
 # 只接受白名单和精确参数数量；速度单位 m/s、偏航角速度 rad/s，单次定时移动时长最多 2 秒。
 def parse_command(text):
+    # 返回 (协议操作名, 数值列表, 本地持续秒数)。这里只拆命令，不发送，也不转换坐标系。
+    # VEL 输入仍按控制台“前/左/上/左旋”解释；持续时间从参数表取走，不发给原生端。
     parts = shlex.split(text)
     if not parts:
         raise ValueError('请输入命令')
@@ -261,11 +263,15 @@ def _print_console_help():
 
 # 一次连接拥有独立递增序号、待回复表和最近状态；INTERACTIVE 后每 0.2 秒维持心跳，不能靠缓存续租。
 def run(args):
+    # 本函数是单连接协调器，按“入口权限 -> 建连 -> 发送 -> 定时维护/收包/读输入”执行。
+    # 不把下面的本地请求提交、服务端 accepted、PX4 ACK 和最终状态视为同一种成功。
     initial = _initial_console_command(args)
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.settimeout(3)
     sock.connect(args.socket)
     sock.setblocking(False)
+    # 请求账本：seq 是本连接已消耗的请求号，pending 关联未收回复的非 PING 操作；
+    # target_seq 仅属于 --command 的那一次请求，不能被另一条消息的成功替代。
     seq = 0
     pending = {}
     buf = b''
@@ -273,13 +279,19 @@ def run(args):
     velocity_until = 0.0
     last_ping = last_vel = 0.0
     target_seq = None
+    # 状态证据：latest_state_at 是本机收到该 state 的单调秒，不是飞控测量时间。
+    # 它只支撑控制台的附加预检；原生控制器仍需独立检查真实反馈和权限。
     latest_state = None
     latest_state_at = -1.0
     arm_confirmation_deadline = 0.0
+    # 本地解锁机会：确认窗口可取消/重开，但 arm_attempt_consumed 一旦提交即不再清零。
+    # 消耗发生在 send 之前；发送失败也不能在本会话靠重试重复请求 ARM_ONLY。
     arm_attempt_consumed = False
 
     # 写前消耗序号，0.3 秒总期限内处理部分写；非 PING 请求进入待回复表，按回复序号关联。
     def send(op, values=()):
+        # .17g 保留 double 往返文本精度；部分写继续发送剩余字节，不重新分配请求号。
+        # 返回 seq 只证明整行已交给本机 socket，不证明原生端/PX4 已接受或执行。
         nonlocal seq
         seq += 1
         packet = (
@@ -301,6 +313,8 @@ def run(args):
         return seq
 
     with sock:
+        # 进入此 with 后，正常返回及内部异常都会调用 socket.close；connect 前的失败不在其内。
+        # 本机关闭连接不是同步 LAND 完成证明；断连后的安全动作由原生端自己的逻辑负责。
         if initial:
             target_seq = send(initial[0], initial[1])
         else:
@@ -313,6 +327,8 @@ def run(args):
         deadline = time.monotonic() + args.timeout if initial else math.inf
         mode_wait = False
         ready_wait = False
+        # 一次性 MODE/ATTITUDE_READY 的 accepted 只开始等状态，不能直接按 accepted 返回成功。
+        # 接收循环只处理进入等待之后读到的 state，不用发送前的 latest_state 代替终态。
         last_shown_signature = None
         last_shown_at = -1.0
         # 主循环同时读 socket 与现场输入；定时速度到期发 HOLD，等待期间持续收状态、维持心跳。
@@ -325,6 +341,7 @@ def run(args):
                 send('PING')
                 last_ping = now
             if velocity is not None:
+                # 旧 VEL 的复发期限来自本机单调钟，到期先发 HOLD；不借收到新 state 续期。
                 if now >= velocity_until:
                     send('HOLD')
                     velocity = None
@@ -346,6 +363,7 @@ def run(args):
                 while b'\n' in buf:
                     line, buf = buf.split(b'\n', 1)
                     obj = json.loads(line)
+                    # JSON 解析错误/非预期对象形态会向外传播；这里没有把坏包替换成健康状态。
                     if obj.get('kind') == 'error':
                         show(obj, args.json)
                         return 2
@@ -400,6 +418,7 @@ def run(args):
                 text = text.strip()
                 # 二次确认前重新检查全部实时状态与 10 秒窗口；提交后即消耗本会话唯一 ARM_ONLY 机会。
                 if text == 'BENCH ARM CONFIRM' and arm_confirmation_deadline:
+                    # deadline 检查用当前时刻，preflight 也重新取时；不能复用第一次 arm-only 的通过结果。
                     why = _arm_only_preflight(
                         args, arm_attempt_consumed, latest_state, latest_state_at, time.monotonic()
                     )

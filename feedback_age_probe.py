@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # Humble被动反馈年龄观测：只订阅姿态/位置并读取status文件，保留调用方DDS域，不创建飞行发布者。
 # 源时间微秒、RMW接收时间纳秒；RMW epoch未确认时host减RMW只是诊断，不能叫纯排队延迟。
+# 阅读顺序：StampProgress 跟踪相邻源戳，TopicObservation 保存各话题窗口，main 接线并输出。
+# 本工具不共享控制器的控制权；即使看到新鲜数据或读到 status，也不能据此授予飞行许可。
 """Bounded passive Humble feedback-age observer; keeps the caller's DDS domain.
 
 Source the same ROS 2 / px4_msgs environment as the controller, then run this
@@ -48,6 +50,8 @@ def number(value):
 # 以单调秒中心化做OLS，输出年龄漂移斜率s/s与R²；统计趋势不能自行修正源时钟。
 def slope(points):
     """OLS on centered monotonic seconds; preserves signed age and jump evidence."""
+    # points 为 [(本机单调秒, 年龄秒), ...]；只读计算，不排序、不修改输入或修正时钟。
+    # 先减首个接收时刻再求均值，减少大绝对时间对浮点差值的影响；这是等权最小二乘。
     if len(points) < 2:
         return {'samples': len(points), 'span_s': 0.0, 'slope_s_per_s': None, 'r_squared': None}
     origin = points[0][0]
@@ -57,6 +61,7 @@ def slope(points):
     xx = sum((x - xbar) ** 2 for x in xs)
     yy = sum((y - ybar) ** 2 for y in ys)
     xy = sum((x - xbar) * (y - ybar) for x, y in zip(xs, ys))
+    # xx/yy 分别为时间/年龄离均差平方和，xy 为交叉和；退化时间轴或恒定年龄不伪造 R²。
     return {
         'samples': len(points),
         'span_s': xs[-1],
@@ -75,6 +80,8 @@ class StampProgress:
 
     # 缺失时间不覆盖上一有效水位；下一帧仍与最后有效源时间比较。
     def observe(self, stamp):
+        # previous 是上一次非缺失观测，不是只增不减的防重放水位：回退后也保存回退值。
+        # 返回本次关系字符串并累计计数；这些计数只供显示，不触发 reset/恢复或源时钟修正。
         if not isinstance(stamp, int) or stamp <= 0:
             relation = 'missing'
         elif self.previous is None:
@@ -102,6 +109,8 @@ class TopicObservation:
 
     # 保留原RMW元数据，记录实际回调wall/mono；按时间窗和数量上限淘汰诊断样本。
     def observe(self, envelope, sample, info, host_us, mono):
+        # host_us 用墙钟微秒算有符号源年龄；mono 用本机单调秒管理窗口，二者不可互换。
+        # last 每次替换为新字典；窗口仅留 (mono, 包络年龄, 样本年龄, RMW差)，不保留 ROS 消息。
         self.callbacks += 1
         received_ns = info.get('received_timestamp') if isinstance(info, dict) else None
         received_available = isinstance(received_ns, int) and received_ns > 0
@@ -130,6 +139,8 @@ class TopicObservation:
 
     # 报告时重新计算最后源年龄与receipt age，不用最近一条回调中的旧年龄冒充当前。
     def report(self, host_us, mono, interval_s):
+        # 这不是纯 getter：会淘汰超窗样本，并推进 reported_callbacks，下一次速率从这里起算。
+        # 返回的 last 仍引用该次原字典；调用者用于立即序列化，不应修改它来“修正”探针状态。
         while self.window and self.window[0][0] < mono - WINDOW_SECONDS:
             self.window.popleft()
         delta = self.callbacks - self.reported_callbacks
@@ -163,6 +174,8 @@ class TopicObservation:
 # 读取最多1MiB普通快照，与探针的不同采样时刻对照；不连接控制socket或刷新任务租约。
 def read_controller_status(path, host_us, probe_topics):
     """Read one bounded local snapshot; never contacts the supervisor/controller."""
+    # available 只表示已读到可解释的快照根对象，不表示反馈当前有效或任一飞行门已允许。
+    # stat 后再 open 不是对抗路径替换的安全打开协议；1 MiB 是读取预算，不是同一inode证明。
     result = {
         'path': str(path),
         'available': False,
@@ -200,6 +213,7 @@ def read_controller_status(path, host_us, probe_topics):
         timing = state.get('source_timing', {})
         timing = timing if isinstance(timing, dict) else {}
         for key, probe in probe_topics.items():
+            # 比较两个不同进程/回调时刻的源戳；probe_minus_controller 不是网络传输延迟。
             source = timing.get(key, {})
             source = source if isinstance(source, dict) else {}
             envelope, sample = source.get('envelope_us'), source.get('sample_us')
@@ -290,6 +304,7 @@ def _release_probe_resources(actions, primary_error):
             error = following
 
     tail = chain_tail(failure)
+    # 同一异常对象可能被多个释放动作重复抛出；按身份去重，避免制造循环而漏掉原始错误。
     for error in errors:
         if id(error) in seen:
             continue
@@ -303,6 +318,8 @@ def _release_probe_resources(actions, primary_error):
 
 # 校验环境/新输出路径，创建仅订阅节点；单调期限结束后输出final，再依次回收执行器/节点/文件。
 def main(argv=None):
+    # 命令行 -> 环境导入 -> 可选新输出文件 -> 本地缓存/ROS -> 有界取样 -> 最终报告 -> 清理。
+    # ROS 使用调用方默认域；use_global_arguments=False 不等于切换到独立 DDS 域。
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         '--duration', type=duration_arg, default=180.0, help='seconds, 5..180; default 180'
@@ -334,6 +351,8 @@ def main(argv=None):
 
     # JSON禁止NaN并同步写可选新文件；诊断输出不产生飞行动作。
     def emit(row):
+        # stdout 在前、文件在后：两份输出不是一个原子事务，文件失败时终端可能已看到该行。
+        # 任何序列化/打印/写盘异常都保持可见，不把“已打印”解释为“文件也已持久保存”。
         line = json.dumps(row, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
         print(line, flush=True)
         if output:
@@ -394,6 +413,8 @@ def main(argv=None):
 
         # 保留host相对steady锚误差以暴露墙钟跳变；状态对照只表示不同快照之间的差。
         def report(final=False):
+            # final 只选择报告标签；仍查询本工具自己的 ROS 图，并不生成/执行终止飞行指令。
+            # 它不是无条件可成功的退出动作：外部已关闭 Context 时，图查询仍可能失败并传播。
             nonlocal last_report
             host, mono = time.time_ns() // 1000, time.monotonic()
             topics = {
@@ -447,6 +468,8 @@ def main(argv=None):
         raise
     # 结束/异常后逐项尝试释放自己的资源；默认 Context 已在调用前活动时绝不关闭它。
     finally:
+        # 单线程 spin 已返回/抛出后才执行这些动作；不在释放时重新采样或补造最终报告。
+        # 先移出节点、停执行器，再销毁节点/自有 Context/文件；每项失败仍尝试动作表中的后项。
         actions = []
         if executor is not None and node is not None:
             actions.append(lambda: executor.remove_node(node))
