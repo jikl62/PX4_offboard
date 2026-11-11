@@ -255,6 +255,50 @@ def duration_arg(value):
     return seconds
 
 
+def _release_probe_resources(actions, primary_error):
+    # actions 只含本入口持有资源的无参释放动作，逐项尝试，不能让首次清理失败跳过文件关闭。
+    # 原业务异常对象及既有 cause/context 优先保留；无业务异常时向外抛首个清理错误。
+    errors = []
+    for release in actions:
+        try:
+            release()
+        except BaseException as error:
+            errors.append(error)
+    failure = primary_error if primary_error is not None else (errors[0] if errors else None)
+    if failure is None:
+        return
+    seen = set()
+
+    def chain_tail(error):
+        # 按 traceback 实际可见的 cause/context 找尾部，剪断指回已见对象的循环边。
+        while True:
+            seen.add(id(error))
+            following = error.__cause__
+            if following is None and not error.__suppress_context__:
+                following = error.__context__
+            if following is None:
+                return error
+            if id(following) in seen:
+                if error.__cause__ is following:
+                    error.__cause__ = None
+                    error.__suppress_context__ = True
+                if error.__context__ is following:
+                    error.__context__ = None
+                return error
+            error = following
+
+    tail = chain_tail(failure)
+    for error in errors:
+        if id(error) in seen:
+            continue
+        next_tail = chain_tail(error)
+        tail.__cause__ = error
+        tail.__suppress_context__ = True
+        tail = next_tail
+    if primary_error is None:
+        raise failure
+
+
 # 校验环境/新输出路径，创建仅订阅节点；单调期限结束后输出final，再依次回收执行器/节点/文件。
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
@@ -295,12 +339,16 @@ def main(argv=None):
             output.flush()
 
     node = executor = None
-    observations = {key: TopicObservation() for key in TOPICS}
-    start_mono, start_host = time.monotonic(), time.time_ns() // 1000
-    last_report = start_mono
-    spin_calls = 0
+    owns_context = False
+    primary_error = None
     interrupted = False
     try:
+        observations = {key: TopicObservation() for key in TOPICS}
+        start_mono, start_host = time.monotonic(), time.time_ns() // 1000
+        last_report = start_mono
+        spin_calls = 0
+        # 必须在 init 前登记：部分初始化后失败仍需释放；已有调用者 Context 不属于本入口。
+        owns_context = not rclpy.ok()
         rclpy.init(args=[])
         node = Node(
             'fc01_feedback_age_probe',
@@ -392,16 +440,23 @@ def main(argv=None):
         except KeyboardInterrupt:
             interrupted = True
         report(final=True)
-    # 无论结束/中断都关闭自己的ROS资源和文件；不触及真实控制器或Agent。
+    except BaseException as error:
+        primary_error = error
+        raise
+    # 结束/异常后逐项尝试释放自己的资源；默认 Context 已在调用前活动时绝不关闭它。
     finally:
+        actions = []
+        if executor is not None and node is not None:
+            actions.append(lambda: executor.remove_node(node))
         if executor is not None:
-            executor.shutdown(timeout_sec=1.0)
+            actions.append(lambda: executor.shutdown(timeout_sec=1.0))
         if node is not None:
-            node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
+            actions.append(node.destroy_node)
+        if owns_context:
+            actions.append(lambda: rclpy.shutdown() if rclpy.ok() else None)
         if output:
-            output.close()
+            actions.append(output.close)
+        _release_probe_resources(actions, primary_error)
     return 130 if interrupted else 0
 
 
