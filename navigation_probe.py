@@ -8,7 +8,6 @@ import math
 import os
 from pathlib import Path
 import subprocess
-import sys
 import time
 
 from launcher import ControlError, choose_agent, process_list, uart_owners
@@ -346,6 +345,7 @@ def probe(
     created = False
     node = None
     owns_context = False
+    primary_error = None
     ok = False
     verified_at = 0.0
     try:
@@ -404,6 +404,11 @@ def probe(
             raise ControlError(evidence.reason + '；未变更服务')
         print(evidence.reason, flush=True)
         return 0
+    except BaseException as error:
+        # 仅记录本次 probe 的错误；调用者可能正在 except 中运行探针，不能把其已处理
+        # 的异常误当作本体错误，否则最后写盘失败会被错误地降为次生异常并返回成功。
+        primary_error = error
+        raise
     # 无论成功失败都保存本次探针身份/原因；销毁本节点，不结束既有Agent或改变服务。
     finally:
         _finish_probe(
@@ -413,5 +418,5 @@ def probe(
             node,
             rclpy,
             owns_context,
-            sys.exc_info()[1],
+            primary_error,
         )

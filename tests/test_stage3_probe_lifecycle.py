@@ -245,6 +245,34 @@ class ProbeLifecycleTests(unittest.TestCase):
             self.assertEqual(h.events[-3:], ['write', 'destroy', 'shutdown'])
             self.assertTrue(h.active, 'failed shutdown is not reported as successful release')
 
+    def test_handled_caller_exception_does_not_hide_probe_evidence_error(self):
+        outer = ValueError('fixture already handled caller error')
+        write = OSError(errno.ENOSPC, 'fixture probe write error')
+        try:
+            raise outer
+        except ValueError:
+            with ProbeHarness(self.module(), write_error=write) as h:
+                with self.assertRaises(OSError) as raised:
+                    h.run()
+                self.assertIs(raised.exception, write)
+                self.assertIsNone(outer.__context__)
+                self.assertEqual(h.events[-3:], ['write', 'destroy', 'shutdown'])
+                self.assertFalse(h.active)
+
+    def test_handled_caller_exception_does_not_replace_probe_body_error(self):
+        outer = ValueError('fixture already handled caller error')
+        primary = RuntimeError('fixture probe callback error')
+        try:
+            raise outer
+        except ValueError:
+            with ProbeHarness(self.module(), spin_error=primary) as h:
+                with self.assertRaises(RuntimeError) as raised:
+                    h.run()
+                self.assertIs(raised.exception, primary)
+                self.assertIsNone(outer.__context__)
+                self.assertEqual(h.events[-3:], ['write', 'destroy', 'shutdown'])
+                self.assertFalse(h.active)
+
     def test_body_error_and_explicit_cause_survive_all_finalization_errors(self):
         cause = ValueError('fixture original cause')
         primary = RuntimeError('fixture callback failed')
