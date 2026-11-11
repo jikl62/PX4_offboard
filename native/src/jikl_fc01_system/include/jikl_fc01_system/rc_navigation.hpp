@@ -205,12 +205,6 @@ public:
     // 一旦看到解锁意图就永久记录在本轮，后续健康失败不能重置历史来绕过准入。
     if (s.armed || s.rc_arm_switch == 1)
       arm_intent_observed_ = true;
-    // 终止本轮准入并保留具体原因；是否能新任务重建由外层地面恢复判断。
-    const auto block = [this](const std::string& why) {
-      phase_ = RcStartPhase::Blocked;
-      reason_ = why;
-      return false;
-    };
     // 主机非有限时间或回退先于任何计时更新拒绝，防止负窗口或错误累计。
     if (!std::isfinite(now) || (observed_at_ >= 0 && now < observed_at_))
       return block("RC_TIME_REGRESSION");
@@ -261,29 +255,8 @@ public:
       phase_ = RcStartPhase::Prestream;
     }
     // READY之前提前操作解锁或导航会阻止本轮；预发送不构成授权，地面变化需重新积累。
-    if (phase_ == RcStartPhase::Prestream) {
-      if (s.armed || arm_on || nav || s.offboard)
-        return block("RC_ARM_OR_NAVIGATION_BEFORE_READY");
-      if (!s.stabilized_selected || !s.landed || !s.at_rest ||
-          std::abs(s.vz) > c.ground_vz_tolerance) {
-        reset("RC_PRESTREAM_GROUND_CHANGED");
-        return false;
-      }
-      // 地面位置/导数证据与真实输出提交并行累计；两者均满足且PX4未报丢流才READY。
-      const bool qualified = observe_ground_reference(c, s, now);
-      capture(s);
-      if (qualified && stream_ready(c, now) && !s.offboard_signal_lost) {
-        // Include the same 100ms future-source allowance as the clock guard:
-        // an event generated before readiness cannot arrive later as consent.
-        // 加上源时钟允许的100ms未来容差，保证READY前生成、后来才到达的开关不能算新授权。
-        ready_source_floor_ = s.source_host_stamp + 100000;
-        phase_ = RcStartPhase::WaitArm;
-        reason_ = "RC_READY_WAIT_CH5_MANUAL_ARM";
-      } else
-        reason_ = qualified ? "RC_PRESTREAM_WAIT_COMMITS_AND_PX4_SIGNAL"
-                            : "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE";
-      return true;
-    }
+    if (phase_ == RcStartPhase::Prestream)
+      return step_prestream(c, s, now, arm_on, nav);
     // 只有严格新的开关采样才更新边沿；重复缓存不能制造第二次解锁/导航动作。
     const bool new_switch = s.rc_switch_sample_stamp > last_switch_stamp_;
     if (new_switch) {
@@ -331,77 +304,116 @@ public:
       phase_ = RcStartPhase::WaitNavigation;
     }
     // 先拒绝超时，再尝试拼配解锁/模式证据，迟到的健康尾帧不得复活已过期任务。
-    if (phase_ == RcStartPhase::WaitNavigation) {
-      if (now - arm_since_ > c.rc_arm_to_navigation_timeout)
-        return block("RC_NAVIGATION_SELECTION_TIMEOUT");
-      // Expiry precedes pairing: evidence received on an overdue tick cannot
-      // turn an expired attempt into a proven arm or navigation admission.
-      if (!manual_arm_proven_ && now - arm_since_ > c.status_timeout)
-        return block("RC_MANUAL_ARM_EVIDENCE_TIMEOUT");
-      // 人工解锁到导航之间仍绑定原地面参考；估计器重置或高度/速度变化不能在armed状态重建锚点。
-      if (s.z_reset != z_reset_ || s.vz_reset != vz_reset_ || s.quat_reset != quat_reset_)
-        return block("RC_ARMED_ESTIMATOR_RESET");
-      if (!ground_qualified_ || !s.landed || std::abs(z0_ - s.z) > c.height_tolerance ||
-          std::abs(s.vz) > c.ground_vz_tolerance)
-        return block("RC_ARMED_GROUND_REFERENCE_NOT_STABLE");
-      if (!s.stabilized_selected && !s.offboard)
-        return block("RC_UNEXPECTED_MODE_BEFORE_NAVIGATION");
-      if (s.armed && s.latest_arming_reason != 2)
-        return block("RC_ARM_REASON_NOT_RC_SWITCH");
-      if (s.armed && s.status_stamp <= ready_source_floor_)
-        return block("RC_ARM_STATE_BEFORE_READY");
-      if (s.armed && (s.status_stamp <= disarmed_status_ || s.armed_time <= disarmed_armed_time_ ||
-                      (pending_armed_time_ && s.armed_time != pending_armed_time_)))
-        return block("RC_ARM_STATE_NOT_NEW_MATCHING_EPISODE");
-      // 首次armed帧锁定这一事件的PX4启动相对armed_time，其后帧必须仍属于同一事件。
-      if (s.armed && !pending_armed_time_)
-        pending_armed_time_ = s.armed_time;
-      if (s.armed && arm_edge_ && arm_on && s.status_stamp > disarmed_status_ &&
-          s.armed_time > disarmed_armed_time_) {
-        if (!manual_arm_proven_)
-          manual_armed_time_ = s.armed_time;
-        manual_arm_proven_ = true;
-      }
-      // 已经证明的人工授权一旦撤销就阻断本轮，不能等它再次变ON而悄悄继续。
-      if (manual_arm_proven_ && (!s.armed || !arm_on))
-        return block("RC_ARM_AUTHORIZATION_WITHDRAWN");
-      if (!manual_arm_proven_) {
-        reason_ = "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS";
-        return (!s.armed && arm_on) || pending_zero_allowed(c, s, now);
-      }
-      if (navigation_since_ >= 0 && now - navigation_since_ > c.status_timeout)
-        return block(nav ? "RC_NAVIGATION_CONFIRMATION_TIMEOUT"
-                         : "RC_NAVIGATION_MODE_SLOT_MISMATCH");
-      if (navigation_offboard_observed_ && !s.offboard)
-        return block("RC_NAVIGATION_MODE_WITHDRAWN");
-      if (navigation_edge_ && !nav)
-        return block("RC_NAVIGATION_SELECTION_WITHDRAWN");
-      // 实际Offboard反馈必须晚于先前Stabilized、解锁及READY水位，防止旧模式消息误授权。
-      if (s.offboard) {
-        if (!last_stabilized_status_ || s.status_stamp <= last_stabilized_status_ ||
-            s.status_stamp <= arm_edge_ || s.status_stamp <= ready_source_floor_)
-          return block("RC_OFFBOARD_STATE_NOT_NEW_AFTER_MANUAL_ARM");
-        navigation_offboard_observed_ = true;
-      } else
-        last_stabilized_status_ = s.status_stamp;
-      if ((nav || s.offboard) && navigation_since_ < 0)
-        navigation_since_ = now;
-      // 档位、导航边沿、真实新Offboard状态和连续流全部配对后才Joined。
-      if (nav && navigation_edge_ && s.offboard && s.status_stamp > navigation_edge_ &&
-          stream_ready(c, now) && !s.offboard_signal_lost) {
-        phase_ = RcStartPhase::Joined;
-        reason_ = "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED";
-        return false;
-      }
-      reason_ = s.offboard && !nav ? "RC_WAIT_MATCHED_NAVIGATION_SWITCH_AND_OFFBOARD"
-                : nav              ? "RC_WAIT_ACTUAL_PX4_OFFBOARD_CONFIRMATION"
-                                   : "RC_ARMED_WAIT_CH6_NAVIGATION";
-      return true;
-    }
+    if (phase_ == RcStartPhase::WaitNavigation)
+      return step_wait_navigation(c, s, now, arm_on, nav);
     return false;
   }
 
 private:
+  // 推进预发送阶段，参数均为 step 已核对的同一快照；now 是单调秒，arm_on/nav 是该快照开关状态。
+  // 返回 true 仅许可零流；可写地面证据、提交计数和 READY 水位，不能产生 Arm 或非零推力。
+  // 必须在 WaitGround 当帧转入 Prestream 后直接调用，保持原同帧累积和首次拒绝原因。
+  template <class C, class F>
+  bool step_prestream(const C& c, const F& s, double now, bool arm_on, bool nav) {
+    if (s.armed || arm_on || nav || s.offboard)
+      return block("RC_ARM_OR_NAVIGATION_BEFORE_READY");
+    if (!s.stabilized_selected || !s.landed || !s.at_rest ||
+        std::abs(s.vz) > c.ground_vz_tolerance) {
+      reset("RC_PRESTREAM_GROUND_CHANGED");
+      return false;
+    }
+    // 地面位置/导数证据与真实输出提交并行累计；两者均满足且PX4未报丢流才READY。
+    const bool qualified = observe_ground_reference(c, s, now);
+    capture(s);
+    if (qualified && stream_ready(c, now) && !s.offboard_signal_lost) {
+      // Include the same 100ms future-source allowance as the clock guard:
+      // an event generated before readiness cannot arrive later as consent.
+      // 加上源时钟允许的100ms未来容差，保证READY前生成、后来才到达的开关不能算新授权。
+      ready_source_floor_ = s.source_host_stamp + 100000;
+      phase_ = RcStartPhase::WaitArm;
+      reason_ = "RC_READY_WAIT_CH5_MANUAL_ARM";
+    } else
+      reason_ = qualified ? "RC_PRESTREAM_WAIT_COMMITS_AND_PX4_SIGNAL"
+                          : "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE";
+    return true;
+  }
+  // 在固定期限内配对人工解锁与导航，输入使用同一快照；源戳为 PX4 微秒，now 为单调秒，绝不跨域相减。
+  // 返回 true 仅维持既有零流；false 表示 Joined 或 Blocked，原因/阶段仍由本对象持有。
+  // 会写解锁 epoch、导航边沿及阶段；必须先检查过期再接收证据，且保持 WaitArm→WaitNavigation 的同帧调用。
+  template <class C, class F>
+  bool step_wait_navigation(const C& c, const F& s, double now, bool arm_on, bool nav) {
+    if (now - arm_since_ > c.rc_arm_to_navigation_timeout)
+      return block("RC_NAVIGATION_SELECTION_TIMEOUT");
+    // Expiry precedes pairing: evidence received on an overdue tick cannot
+    // turn an expired attempt into a proven arm or navigation admission.
+    if (!manual_arm_proven_ && now - arm_since_ > c.status_timeout)
+      return block("RC_MANUAL_ARM_EVIDENCE_TIMEOUT");
+    // 人工解锁到导航之间仍绑定原地面参考；估计器重置或高度/速度变化不能在armed状态重建锚点。
+    if (s.z_reset != z_reset_ || s.vz_reset != vz_reset_ || s.quat_reset != quat_reset_)
+      return block("RC_ARMED_ESTIMATOR_RESET");
+    if (!ground_qualified_ || !s.landed || std::abs(z0_ - s.z) > c.height_tolerance ||
+        std::abs(s.vz) > c.ground_vz_tolerance)
+      return block("RC_ARMED_GROUND_REFERENCE_NOT_STABLE");
+    if (!s.stabilized_selected && !s.offboard)
+      return block("RC_UNEXPECTED_MODE_BEFORE_NAVIGATION");
+    if (s.armed && s.latest_arming_reason != 2)
+      return block("RC_ARM_REASON_NOT_RC_SWITCH");
+    if (s.armed && s.status_stamp <= ready_source_floor_)
+      return block("RC_ARM_STATE_BEFORE_READY");
+    if (s.armed && (s.status_stamp <= disarmed_status_ || s.armed_time <= disarmed_armed_time_ ||
+                    (pending_armed_time_ && s.armed_time != pending_armed_time_)))
+      return block("RC_ARM_STATE_NOT_NEW_MATCHING_EPISODE");
+    // 首次armed帧锁定这一事件的PX4启动相对armed_time，其后帧必须仍属于同一事件。
+    if (s.armed && !pending_armed_time_)
+      pending_armed_time_ = s.armed_time;
+    if (s.armed && arm_edge_ && arm_on && s.status_stamp > disarmed_status_ &&
+        s.armed_time > disarmed_armed_time_) {
+      if (!manual_arm_proven_)
+        manual_armed_time_ = s.armed_time;
+      manual_arm_proven_ = true;
+    }
+    // 已经证明的人工授权一旦撤销就阻断本轮，不能等它再次变ON而悄悄继续。
+    if (manual_arm_proven_ && (!s.armed || !arm_on))
+      return block("RC_ARM_AUTHORIZATION_WITHDRAWN");
+    if (!manual_arm_proven_) {
+      reason_ = "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS";
+      return (!s.armed && arm_on) || pending_zero_allowed(c, s, now);
+    }
+    if (navigation_since_ >= 0 && now - navigation_since_ > c.status_timeout)
+      return block(nav ? "RC_NAVIGATION_CONFIRMATION_TIMEOUT" : "RC_NAVIGATION_MODE_SLOT_MISMATCH");
+    if (navigation_offboard_observed_ && !s.offboard)
+      return block("RC_NAVIGATION_MODE_WITHDRAWN");
+    if (navigation_edge_ && !nav)
+      return block("RC_NAVIGATION_SELECTION_WITHDRAWN");
+    // 实际Offboard反馈必须晚于先前Stabilized、解锁及READY水位，防止旧模式消息误授权。
+    if (s.offboard) {
+      if (!last_stabilized_status_ || s.status_stamp <= last_stabilized_status_ ||
+          s.status_stamp <= arm_edge_ || s.status_stamp <= ready_source_floor_)
+        return block("RC_OFFBOARD_STATE_NOT_NEW_AFTER_MANUAL_ARM");
+      navigation_offboard_observed_ = true;
+    } else
+      last_stabilized_status_ = s.status_stamp;
+    if ((nav || s.offboard) && navigation_since_ < 0)
+      navigation_since_ = now;
+    // 档位、导航边沿、真实新Offboard状态和连续流全部配对后才Joined。
+    if (nav && navigation_edge_ && s.offboard && s.status_stamp > navigation_edge_ &&
+        stream_ready(c, now) && !s.offboard_signal_lost) {
+      phase_ = RcStartPhase::Joined;
+      reason_ = "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED";
+      return false;
+    }
+    reason_ = s.offboard && !nav ? "RC_WAIT_MATCHED_NAVIGATION_SWITCH_AND_OFFBOARD"
+              : nav              ? "RC_WAIT_ACTUAL_PX4_OFFBOARD_CONFIRMATION"
+                                 : "RC_ARMED_WAIT_CH6_NAVIGATION";
+    return true;
+  }
+  // 终止本轮准入，保留原拒绝文本；输入为首个拒绝原因，返回 false 供阶段函数直接早退。
+  // 只写本对象 phase_/reason_，不清地面/授权历史；是否允许新任务重建仍由外层安全恢复决定。
+  bool block(const std::string& why) {
+    phase_ = RcStartPhase::Blocked;
+    reason_ = why;
+    return false;
+  }
   // 丢失地面连续性时只清本轮证据窗口/导数观察器；外层命令因果水位不在本对象中。
   void clear_ground_reference() {
     ground_qualified_ = false;

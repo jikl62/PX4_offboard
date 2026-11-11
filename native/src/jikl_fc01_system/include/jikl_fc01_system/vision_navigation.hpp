@@ -253,35 +253,9 @@ public:
       return reject("VISION_COMMAND_EPOCH_MISMATCH");
     // 已接收过有效计划后必须维持同源、同坐标、同估计 epoch；序号/源戳/接收时间不可倒退。
     if (accepted_) {
-      const auto& previous = accepted_input_;
-      if (in.state.source_id != previous.state.source_id ||
-          in.command.source_id != previous.command.source_id)
-        return reject("NAVIGATION_SOURCE_CHANGED");
-      if (in.state.frame_id != previous.state.frame_id ||
-          in.state.body_frame_id != previous.state.body_frame_id ||
-          in.command.frame_id != previous.command.frame_id)
-        return reject("NAVIGATION_FRAME_CHANGED");
-      if (in.state.reset_counter != previous.state.reset_counter ||
-          in.command.reset_counter != previous.command.reset_counter)
-        return reject("NAVIGATION_ESTIMATOR_RESET");
-      if (in.state.sequence < previous.state.sequence ||
-          in.command.sequence < previous.command.sequence)
-        return reject("NAVIGATION_SEQUENCE_REGRESSION");
-      if ((in.state.sequence == previous.state.sequence &&
-           !detail::same(in.state, previous.state)) ||
-          (in.command.sequence == previous.command.sequence &&
-           !detail::same(in.command, previous.command)))
-        return reject("NAVIGATION_REPLAY_PAYLOAD_CHANGED");
-      if ((in.state.sequence > previous.state.sequence &&
-           (in.state.stamp_ns <= previous.state.stamp_ns ||
-            in.state.received_at < previous.state.received_at)) ||
-          (in.command.sequence > previous.command.sequence &&
-           (in.command.stamp_ns <= previous.command.stamp_ns ||
-            in.command.received_at < previous.command.received_at)))
-        return reject("NAVIGATION_SAMPLE_NOT_ADVANCING");
-      if (detail::distance(in.state.position, previous.state.position) > c_.max_position_jump ||
-          detail::distance(in.state.velocity, previous.state.velocity) > c_.max_velocity_jump)
-        return reject("NAVIGATION_ESTIMATOR_JUMP");
+      const auto continuity_error = accepted_input_error(in);
+      if (!continuity_error.empty())
+        return reject(continuity_error);
     }
     // 只在首次进入或模式变化时锁新 Hold 点/Follow 高度；普通新帧不能不停重写保持目标。
     const bool entering = !accepted_ || in.command.mode != mode_;
@@ -401,6 +375,40 @@ public:
   }
 
 private:
+  // 对照已接受计划核验输入连续性；输入为已通过本帧状态/目标验证的 NED 快照，返回首个拒绝码或空串。
+  // 本函数只读 accepted_input_，不提交新计划、不清撤销/下降锁存。source ns、接收 steady s 各自比较，不互换。
+  // 必须在撤销代数/时钟/目标/实际状态校验之后、捕获原点与计算目标之前；保持所有拒绝优先级。
+  std::string accepted_input_error(const Input& in) const {
+    const auto& previous = accepted_input_;
+    if (in.state.source_id != previous.state.source_id ||
+        in.command.source_id != previous.command.source_id)
+      return "NAVIGATION_SOURCE_CHANGED";
+    if (in.state.frame_id != previous.state.frame_id ||
+        in.state.body_frame_id != previous.state.body_frame_id ||
+        in.command.frame_id != previous.command.frame_id)
+      return "NAVIGATION_FRAME_CHANGED";
+    if (in.state.reset_counter != previous.state.reset_counter ||
+        in.command.reset_counter != previous.command.reset_counter)
+      return "NAVIGATION_ESTIMATOR_RESET";
+    if (in.state.sequence < previous.state.sequence ||
+        in.command.sequence < previous.command.sequence)
+      return "NAVIGATION_SEQUENCE_REGRESSION";
+    if ((in.state.sequence == previous.state.sequence && !detail::same(in.state, previous.state)) ||
+        (in.command.sequence == previous.command.sequence &&
+         !detail::same(in.command, previous.command)))
+      return "NAVIGATION_REPLAY_PAYLOAD_CHANGED";
+    if ((in.state.sequence > previous.state.sequence &&
+         (in.state.stamp_ns <= previous.state.stamp_ns ||
+          in.state.received_at < previous.state.received_at)) ||
+        (in.command.sequence > previous.command.sequence &&
+         (in.command.stamp_ns <= previous.command.stamp_ns ||
+          in.command.received_at < previous.command.received_at)))
+      return "NAVIGATION_SAMPLE_NOT_ADVANCING";
+    if (detail::distance(in.state.position, previous.state.position) > c_.max_position_jump ||
+        detail::distance(in.state.velocity, previous.state.velocity) > c_.max_velocity_jump)
+      return "NAVIGATION_ESTIMATOR_JUMP";
+    return {};
+  }
   // 实际状态同时要求单源、身份、明确 NED/FRD、时间、有效位、跟踪/标定、质量与有限测量。
   std::string validate_state(const Input& in, double now) const {
     const auto& state = in.state;

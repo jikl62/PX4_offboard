@@ -82,6 +82,56 @@ public:
     if (last_stamp_ && dt > max_gap_seconds)
       return fail("VERTICAL_FEEDBACK_SAMPLE_GAP");
     e_.sample_stamp = stamp;
+    observe_rate_disagreement(stamp, vz, z_deriv);
+    // Integrate the position derivative over strictly new PX4 samples.
+    // vz is a different EKF output, monitored above; integrating vz
+    // here would double-count that disagreement and position corrections.
+    // A window-average
+    // residual tolerates ordinary sample noise without differentiating z at
+    // the host loop frequency. Estimator resets are rejected by Core first.
+    if (!observe_position_window(stamp, z, z_deriv, dt))
+      return fail("VERTICAL_POSITION_RATE_INCONSISTENT");
+    // 最后提交本帧采样水位和导数；前面拒绝的帧不会成为下一次积分的合法起点。
+    last_stamp_ = stamp;
+    last_rate_ = z_deriv;
+    return e_;
+  }
+
+private:
+  // 对当前新样本推进位置/导数窗口；z 为 NED m，z_deriv 为下正 m/s，dt 为相邻源采样秒数。
+  // 返回 false 只表示窗口残差越限，由 observe 在原位置锁存同一硬故障；此时不提交 last_stamp_/last_rate_。
+  // 本函数修改窗口积分和 e_ 的位置证据，必须在速度差诊断之后、最后样本水位提交之前调用。
+  bool observe_position_window(std::uint64_t stamp, double z, double z_deriv, double dt) {
+    // 首个可信新样本保存窗口起点 z；之后积分 z_deriv，避免把 vz 的独立修正重复计入。
+    if (!last_stamp_) {
+      window_stamp_ = stamp;
+      window_z_ = z;
+      window_samples_ = 1;
+    } else {
+      // 梯形积分：相邻 z_deriv 的均值乘 dt，得到本窗口 NED 向下位移 m。
+      integrated_rate_ += (last_rate_ + z_deriv) * .5 * dt;
+      ++window_samples_;
+      const double window = double(stamp - window_stamp_) * 1e-6;
+      // 有足够时长且至少三帧才比较位置变化与积分，不在主机循环频率上对噪声位置差分。
+      if (window >= c_.dwell_seconds && window_samples_ >= 3) {
+        e_.position_window_checked = true;
+        // 窗口平均残差 = |实际 z 变化 - z_deriv 积分|/窗口秒数；它与前面的 vz 差诊断是两个独立证据。
+        e_.position_rate_error_mps = std::abs((z - window_z_) - integrated_rate_) / window;
+        // 位置和其导数长时间不一致仍保持原硬故障；本轮中文化不放宽该保护。
+        if (e_.position_rate_error_mps > c_.rate_tolerance_mps)
+          return false;
+        // 完成一轮后从当前帧开启下个窗口，积分清零；相邻帧的 last_rate_ 稍后才更新。
+        window_stamp_ = stamp;
+        window_z_ = z;
+        integrated_rate_ = 0;
+        window_samples_ = 1;
+      }
+    }
+    return true;
+  }
+  // 记录一个严格新采样的速度差诊断；stamp 为 PX4 微秒，两个速度均为 NED 下正 m/s。
+  // 仅修改 e_ 的诊断字段和 bad_since_，不返回授权、不锁存硬故障。必须在输入/时钟检查之后、位置积分之前调用。
+  void observe_rate_disagreement(std::uint64_t stamp, double vz, double z_deriv) {
     // 两个输出虽同为向下速度，却可能使用不同修正算法；差值用于观察，不能当成独立高度真值。
     e_.rate_error_mps = std::abs(vz - z_deriv);
     e_.suspect = e_.rate_error_mps > c_.rate_tolerance_mps;
@@ -101,44 +151,7 @@ public:
       e_.disagreement_seconds = 0;
       e_.rate_warning = false;
     }
-    // Integrate the position derivative over strictly new PX4 samples.
-    // vz is a different EKF output, monitored above; integrating vz
-    // here would double-count that disagreement and position corrections.
-    // A window-average
-    // residual tolerates ordinary sample noise without differentiating z at
-    // the host loop frequency. Estimator resets are rejected by Core first.
-    // 首个可信新样本保存窗口起点 z；之后积分 z_deriv，避免把 vz 的独立修正重复计入。
-    if (!last_stamp_) {
-      window_stamp_ = stamp;
-      window_z_ = z;
-      window_samples_ = 1;
-    } else {
-      // 梯形积分：相邻 z_deriv 的均值乘 dt，得到本窗口 NED 向下位移 m。
-      integrated_rate_ += (last_rate_ + z_deriv) * .5 * dt;
-      ++window_samples_;
-      const double window = double(stamp - window_stamp_) * 1e-6;
-      // 有足够时长且至少三帧才比较位置变化与积分，不在主机循环频率上对噪声位置差分。
-      if (window >= c_.dwell_seconds && window_samples_ >= 3) {
-        e_.position_window_checked = true;
-        // 窗口平均残差 = |实际 z 变化 - z_deriv 积分|/窗口秒数；它与前面的 vz 差诊断是两个独立证据。
-        e_.position_rate_error_mps = std::abs((z - window_z_) - integrated_rate_) / window;
-        // 位置和其导数长时间不一致仍保持原硬故障；本轮中文化不放宽该保护。
-        if (e_.position_rate_error_mps > c_.rate_tolerance_mps)
-          return fail("VERTICAL_POSITION_RATE_INCONSISTENT");
-        // 完成一轮后从当前帧开启下个窗口，积分清零；相邻帧的 last_rate_ 稍后才更新。
-        window_stamp_ = stamp;
-        window_z_ = z;
-        integrated_rate_ = 0;
-        window_samples_ = 1;
-      }
-    }
-    // 最后提交本帧采样水位和导数；前面拒绝的帧不会成为下一次积分的合法起点。
-    last_stamp_ = stamp;
-    last_rate_ = z_deriv;
-    return e_;
   }
-
-private:
   // 集中锁存不健康、可疑及首个故障原因；调用后 observe 的早退防止正常尾帧洗掉证据。
   const VerticalFeedbackEvidence& fail(const char* reason) {
     e_.healthy = false;

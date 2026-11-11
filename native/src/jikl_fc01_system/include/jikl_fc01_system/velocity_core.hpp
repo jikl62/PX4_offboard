@@ -386,52 +386,60 @@ public:
         return landing(f, t);
       }
     } else {
-      // 超时目标立即替换为零；制动完成后重新捕获当前保持点，避免跳回旧坐标。
-      const Velocity cmd = command_fresh(t) ? input_ : Velocity{};
-      if (phase_ == Phase::Hold && zero(cmd))
-        return position_output(hold_);
-      const bool stopping = zero(cmd);
-      if (!stopping) {
-        if (phase_ != Phase::Velocity)
-          enter(Phase::Velocity, t);
-      } else if (phase_ != Phase::Brake)
-        enter(Phase::Brake, t);
-      // 先转换坐标再限制XY合速度、垂速和逐步加速度，保持原运算顺序。
-      Vec desired = heading_to_ned(cmd, f.yaw);
-      const double xy = std::hypot(desired.x, desired.y);
-      if (xy > c_.xy_speed) {
-        desired.x *= c_.xy_speed / xy;
-        desired.y *= c_.xy_speed / xy;
-      }
-      desired.z = std::clamp(desired.z, -c_.z_speed, c_.z_speed);
-      // XY采用向量增量限幅，保持加速方向；垂向与偏航分别用approach约束。
-      const double dx = desired.x - filtered_.x, dy = desired.y - filtered_.y;
-      const double delta = std::hypot(dx, dy),
-                   scale = delta > 0 ? std::min(1., c_.xy_accel * dt / delta) : 0.;
-      filtered_.x += dx * scale;
-      filtered_.y += dy * scale;
-      filtered_.z = approach(filtered_.z, desired.z, c_.z_accel * dt);
-      filtered_yaw_ = approach(filtered_yaw_, std::clamp(-cmd.ccw, -c_.yaw_speed, c_.yaw_speed),
-                               c_.yaw_accel * dt);
-      yaw_target_ = wrap(yaw_target_ + filtered_yaw_ * dt);
-      // 偏航目标相对实测航向也限制最大误差，避免长时间积分后命令机头瞬间追赶。
-      yaw_target_ = wrap(f.yaw + std::clamp(wrap(yaw_target_ - f.yaw), -.35, .35));
-      o.control = Control::Velocity;
-      o.velocity = filtered_;
-      o.yaw = yaw_target_;
-      o.yaw_rate = filtered_yaw_;
-      if (stopping &&
-          dwell(norm(f.velocity) < .15 && norm(filtered_) < .01 && std::abs(filtered_yaw_) < .01, t,
-                .3)) {
-        hold_ = f.position;
-        enter(Phase::Hold, t);
-        o = position_output(hold_);
-      }
+      return motion_output(f, t, dt);
     }
     return o;
   }
 
 private:
+  // 计算已进入 Hold/Velocity/Brake 的运动计划；f 为同一 NED 快照，t/dt 为单调秒和已限幅积分步长。
+  // 返回完整目标并更新滤波、yaw、制动 dwell/阶段；不发布命令、不跳过上层健康和权限检查。
+  // 必须在 step 完成失令/模式/包络检查之后调用；坐标转换→向量限幅→滤波→yaw→制动确认的原顺序不变。
+  Output motion_output(const Feedback& f, double t, double dt) {
+    Output o;
+    // 超时目标立即替换为零；制动完成后重新捕获当前保持点，避免跳回旧坐标。
+    const Velocity cmd = command_fresh(t) ? input_ : Velocity{};
+    if (phase_ == Phase::Hold && zero(cmd))
+      return position_output(hold_);
+    const bool stopping = zero(cmd);
+    if (!stopping) {
+      if (phase_ != Phase::Velocity)
+        enter(Phase::Velocity, t);
+    } else if (phase_ != Phase::Brake)
+      enter(Phase::Brake, t);
+    // 先转换坐标再限制XY合速度、垂速和逐步加速度，保持原运算顺序。
+    Vec desired = heading_to_ned(cmd, f.yaw);
+    const double xy = std::hypot(desired.x, desired.y);
+    if (xy > c_.xy_speed) {
+      desired.x *= c_.xy_speed / xy;
+      desired.y *= c_.xy_speed / xy;
+    }
+    desired.z = std::clamp(desired.z, -c_.z_speed, c_.z_speed);
+    // XY采用向量增量限幅，保持加速方向；垂向与偏航分别用approach约束。
+    const double dx = desired.x - filtered_.x, dy = desired.y - filtered_.y;
+    const double delta = std::hypot(dx, dy),
+                 scale = delta > 0 ? std::min(1., c_.xy_accel * dt / delta) : 0.;
+    filtered_.x += dx * scale;
+    filtered_.y += dy * scale;
+    filtered_.z = approach(filtered_.z, desired.z, c_.z_accel * dt);
+    filtered_yaw_ = approach(filtered_yaw_, std::clamp(-cmd.ccw, -c_.yaw_speed, c_.yaw_speed),
+                             c_.yaw_accel * dt);
+    yaw_target_ = wrap(yaw_target_ + filtered_yaw_ * dt);
+    // 偏航目标相对实测航向也限制最大误差，避免长时间积分后命令机头瞬间追赶。
+    yaw_target_ = wrap(f.yaw + std::clamp(wrap(yaw_target_ - f.yaw), -.35, .35));
+    o.control = Control::Velocity;
+    o.velocity = filtered_;
+    o.yaw = yaw_target_;
+    o.yaw_rate = filtered_yaw_;
+    if (stopping &&
+        dwell(norm(f.velocity) < .15 && norm(filtered_) < .01 && std::abs(filtered_yaw_) < .01, t,
+              .3)) {
+      hold_ = f.position;
+      enter(Phase::Hold, t);
+      o = position_output(hold_);
+    }
+    return o;
+  }
   // 阶段转移统一记录进入时刻并重置连续稳定计时；进入降落时重新要求模式确认。
   void enter(Phase s, double t) {
     if (s == Phase::Landing && phase_ != Phase::Landing)

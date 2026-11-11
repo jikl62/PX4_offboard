@@ -83,6 +83,12 @@ struct Config {
          rc_arm_to_navigation_timeout < 1 || rc_arm_to_navigation_timeout > 10 ||
          max_flight_seconds > 30 || max_tilt_deg > 10))
       throw std::invalid_argument("INVALID_MANUAL_RC_NAVIGATION_CONFIG");
+    validate_preparation();
+    validate_flight_limits();
+  }
+  // 校验准备、时间窗口、bench 与恢复合同；无参数/返回值，失败抛原有首个 invalid_argument。
+  // 只读配置，不改状态或参数。必须在视觉/RC 交叉校验之后、完整动力限制之前，保留原异常优先级。
+  void validate_preparation() const {
     feedback_guard.validate();
     for (double value :
          {prestream_seconds, ground_seconds, loop_hz, stall_seconds, attitude_timeout,
@@ -108,6 +114,10 @@ struct Config {
     if (bench_arm_only_enabled &&
         (!flight_actions_enabled || !arm_enabled || takeoff_enabled || !parameters_confirmed))
       throw std::invalid_argument("ARM_ONLY_REQUIRES_EXCLUSIVE_GATES_TAKEOFF_DISABLED");
+  }
+  // 仅动作门开启时核验完整动力包络；推力无量纲、时间 s、高度 m、速度 m/s、倾角 deg。
+  // 无参数/返回值，失败抛原错误码；不修改配置，不推测实机参数。保持确认声明→vertical→飞行限制顺序。
+  void validate_flight_limits() const {
     if (flight_actions_enabled) { //flight_actions_enabled=false 时，不执行完整飞行动力参数校验。
       if (!parameters_confirmed)
         throw std::invalid_argument("FLIGHT_PARAMETERS_NOT_CONFIRMED_BY_OPERATOR");

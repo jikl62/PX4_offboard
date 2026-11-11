@@ -1141,7 +1141,7 @@ public:
     return false;
   }
   // 主控制步：now为单调秒，mode/arm/px4_land为Runtime当前事务摘要，s为同轮实际反馈。
-  // 先健康/权限/时钟/参考，再推进阶段，最后检查输出有限性；长函数保留以便本轮严格保持状态顺序。
+  // 先健康/权限/时钟/参考，再按原阶段顺序推进；Arm 和斜坡分支单独命名，最终公共输出校验仍留在本步。
   Output step(const Feedback& s, double now, Transaction mode, Transaction arm,
               Transaction px4_land = {}) {
     Output out;
@@ -1472,80 +1472,9 @@ public:
       // Preparation is always zero thrust, even if stage-two config is enabled.
       // Arm只计划一次，ACK和物理状态分别观察；取消/迟到armed反馈转受监督恢复，不盲重试400。
     } else if (phase_ == Phase::RequestArm) {
-      if (!interactive_ || ping_ < 0 || now - ping_ > c_.console_timeout)
-        arm_cancel_pending_ = true;
-      // Only a genuinely new PX4 armed observation can determine the
-      // outcome of a submitted ARM. ACK alone cannot prove a physical state.
-      if (s.armed && s.status_stamp > status_baseline_) {
-        if (bench_arm_only_active_ && !arm_confirmed_) {
-          bench_arm_status_baseline_ = s.status_stamp;
-          bench_arm_land_baseline_ = s.land_stamp;
-          bench_arm_local_baseline_ = s.local_stamp;
-        }
-        arm_confirmed_ = true;
-        if (arm_cancel_pending_ || arm.rejected || arm.timed_out) {
-          const bool plausible_ground =
-              bench_arm_only_active_ ? bench_ground_observation(c_, s, z0_)
-                                     : (s.landed && std::abs(out.height) <= c_.height_tolerance &&
-                                        std::abs(out.speed) <= c_.speed_tolerance);
-          if (bench_arm_only_active_ && !plausible_ground) {
-            fault_class_ = FaultClass::UnknownAirborne;
-            fault("BENCH_LATE_ARM_GROUND_UNCONFIRMED_OPERATOR_INTERVENTION_REQUIRED");
-            return {};
-          }
-          fault_class_ = plausible_ground ? FaultClass::GroundAbort : FaultClass::ControlledDescent;
-          land_baseline_ = s.land_stamp;
-          enter(plausible_ground ? Phase::PoweredGround : Phase::Descent, now);
-          command_height_ = std::max(0., out.height);
-          // Continuity on the transition tick: controlled zero/ramp, NEVER
-          // an unguarded stop of an armed Offboard stream.
-          if (phase_ == Phase::PoweredGround) {
-            if (!apply(vertical_->ramp(0, elapsed), out, now))
-              return {};
-          } else if (!apply(vertical_->step(vertical_sample(s), command_height_, elapsed), out,
-                            now))
-            return {};
-          reason_ = "LATE_ARM_STATUS_SUPERVISED_GROUND_RECOVERY";
-        } else if (arm.accepted ||
-                   (bench_arm_only_active_ && arm_command_committed_ && s.source_clock_validated) ||
-                   (!bench_arm_only_active_ && arm_command_committed_ && arm.state_evidenced)) {
-          // Normal TAKEOFF may accept a strictly bounded, independent PX4
-          // NEW external-Arm event only after the FINAL Command 400 sink.
-          // Runtime owns its source-clock, armed_time, arming-reason, RC OFF,
-          // unique-generation and no-prior-400 evidence. An arbitrary armed
-          // bool / generic new status NEVER grants a takeoff progression.
-          enter(bench_arm_only_active_ ? Phase::BenchArmedGround : Phase::ArmedGround, now);
-          if (!arm.accepted)
-            reason_ = bench_arm_only_active_
-                          ? "BENCH_ARM_NEW_STATE_EVIDENCED_ACK_UNATTRIBUTED"
-                          : "TAKEOFF_ARM_NEW_EXTERNAL_STATE_EVIDENCED_ACK_UNATTRIBUTED";
-        } else if (now - entered_ >= c_.command_timeout) {
-          arm_cancel_pending_ = true;
-          reason_ = "ARMED_WITHOUT_MATCHED_ACK_SUPERVISED_RECOVERY_REQUIRED";
-        }
-      } else if (arm_cancel_pending_ && (!arm_command_committed_ && !command_sent_)) {
-        // No command was even planned at this point. Release zero-thrust
-        // preparation through the existing final-mode-release handshake.
-        if (!s.armed && s.landed && s.at_rest) {
-          enter(Phase::ReleaseOffboard, now);
-          reason_ = "UNSENT_ARM_CANCEL_GROUND_MODE_RELEASE";
-        }
-      } else if (!command_sent_ && !arm_cancel_pending_) {
-        command_sent_ = true;
-        status_baseline_ = s.status_stamp;
-        out.command = Command::Arm;
-      } else if (arm.rejected && arm_cancel_pending_ && !s.armed &&
-                 s.status_stamp > status_baseline_ && s.landed && s.at_rest) {
-        enter(Phase::ReleaseOffboard, now);
-        reason_ = "ARM_REJECTED_AND_NEW_DISARMED_STATUS_GROUND_RELEASE";
-      } else if (arm.rejected || arm.timed_out || now - entered_ >= c_.command_timeout) {
-        arm_cancel_pending_ = true;
-        // An ACK timeout does NOT prove the Arm never reached PX4. Hold a
-        // safe, FINAL-guarded zero setpoint; no automatic second 400.
-        reason_ = arm.rejected ? "ARM_REJECTED_AWAIT_NEW_DISARMED_STATUS"
-                               : "ARM_OUTCOME_UNCERTAIN_WAIT_PX4_STATUS_NO_NEW_TASK";
-      }
-      // 人工RC或程序路线汇合后的动力前观察：armed、Offboard、landed、高度/速度都要成立，失败同帧存证。
+      if (!advance_requested_arm(s, now, arm, elapsed, out))
+        return {};
+      // 人工RC或程序路线汇合后，按同帧 armed/Offboard/着地/高度/速度证据决定动力前观察。
     } else if (phase_ == Phase::ArmedGround) {
       const std::uint32_t failed_mask = (!s.armed ? 1U : 0U) | (!s.offboard ? 2U : 0U) |
                                         (!s.landed ? 4U : 0U) |
@@ -1604,75 +1533,8 @@ public:
       }
       // 尚未证明离地时有绝对爬升期限；超时不再加速，按地面候选或下降路径受限减推力。
     } else if (phase_ == Phase::ThrustRamp) {
-      if (now - entered_ >= c_.ascent_timeout) {
-        const bool plausible_ground = !pending_ramp_lift(s) && s.landed &&
-                                      std::abs(out.height) <= c_.height_tolerance &&
-                                      std::abs(out.speed) <= c_.speed_tolerance;
-        fault_class_ = plausible_ground ? FaultClass::GroundAbort : FaultClass::ControlledDescent;
-        land_baseline_ = s.land_stamp;
-        enter(plausible_ground ? Phase::PoweredGround : Phase::Descent, now);
-        reason_ = "LIFTOFF_TIMEOUT_ACTIVE_POWER_RECOVERY";
-        // No more acceleration. Even the transition tick MUST use the
-        // configured slew limiter; a default-zero Output is NOT a ramp.
-        if (phase_ == Phase::PoweredGround) {
-          const auto reduce = vertical_->ramp(0, elapsed);
-          if (!apply(reduce, out, now))
-            return {};
-        } else {
-          command_height_ = std::max(0., out.height);
-          const auto hold = vertical_->step(vertical_sample(s), command_height_, elapsed);
-          if (!apply(hold, out, now))
-            return {};
-        }
-      }
-      if (phase_ == Phase::ThrustRamp) {
-        // Share the original time schedule between open-loop and early
-        // feedback. A drifting height estimate may engage braking, but must
-        // not accelerate power faster than the configured takeoff ramp.
-        // 第一段按时间到hover候选，第二段增加有界reserve；时间/推力只能改变计划，不能证明离地。
-        const double ramp_age = std::max(0., now - entered_);
-        // 归一化推力上限沿既有分段斜坡，保持原乘加次序，避免中文化引入数值变化。
-        const double ramp_demand =
-            c_.vertical.hover * std::min(1., ramp_age / c_.ramp_seconds) +
-            c_.takeoff_reserve_thrust *
-                std::clamp((ramp_age - c_.ramp_seconds) / c_.ramp_seconds, 0., 1.);
-        // Detector confirmation can lag the actual climb. Height evidence
-        // changes the CONTROL LAW only; it never proves liftoff or ground.
-        // Latch feedback so crossing back below the threshold cannot restart
-        // an open-loop ramp. Every health/reset/jump/authority gate above still
-        // applies, and the original ramp timeout remains absolute.
-        // 高度达到小阈值可提前接入反馈制动，但不是离地认证；锁存此控制律，回落不能重启开环加速。
-        if (!ramp_feedback_active_ && out.height >= std::min(target_, c_.liftoff_height_m)) {
-          ramp_feedback_active_ = true;
-          command_height_ = std::clamp(out.height, 0., target_);
-          vertical_->retain_lift_reserve();
-          event_ = "RAMP_HEIGHT_GUARD_FEEDBACK_ENGAGED";
-        }
-        if (ramp_feedback_active_) {
-          if (!height_feedback(s, out, now, elapsed, false, ramp_demand))
-            return {};
-          reason_ = "RAMP_HEIGHT_GUARD_WAIT_NEW_LIFTOFF_EVIDENCE";
-        } else {
-          // Stage 1: reach measured-hover CANDIDATE. Stage 2: optional
-          // bounded reserve so reaching exactly hover does not indefinitely
-          // stall liftoff when actual takeoff thrust is slightly higher.
-          // Never infer liftoff from time or thrust alone; real detector and
-          // independent Z/VZ evidence below remains mandatory.
-          auto control = vertical_->ramp(ramp_demand, elapsed);
-          if (!apply(control, out, now))
-            return {};
-        }
-        // 离地认证要求新的着陆检测和独立高度/向上速度样本；成立后保留轨迹、积分和slew进入Ascend。
-        if (takeoff_evidence_.observe(c_, now, land_baseline_, s.land_stamp, s.landed,
-                                      s.vertical_sample_stamp, out.height, out.speed)) {
-          // Feedback already joined the measured height while the detector
-          // was pending. Keep its trajectory, integral and physical slew state.
-          out.target_height = command_height_;
-          liftoff_evidenced_ = true;
-          enter(Phase::Ascend, now);
-        }
-      }
-      // A clock or hover-thrust ramp alone is never evidence of liftoff.
+      if (!advance_thrust_ramp(s, now, elapsed, out))
+        return {};
     } else if (phase_ == Phase::Ascend || phase_ == Phase::HeightHold || phase_ == Phase::Descent ||
                phase_ == Phase::RecoveryDescent || phase_ == Phase::Px4LandPending) {
       // 上升/保持与下降/恢复共用同一垂向闭环；descending只决定目标轨迹向上或向下推进。
@@ -2077,6 +1939,205 @@ public:
   }
 
 private:
+  // 推进程序 Arm 事务阶段；s 为同帧 NED/wxyz 反馈，now/elapsed 为单调秒，arm 为 Runtime 事务摘要。
+  // 返回 false 对应原 step 的空计划早退，true 则继续原公共尾部；通过 out 引用保留同帧受限下降/零输出。
+  // 仅写 Core 的 Arm/恢复阶段、证据及垂向状态，不发送命令；必须在公共健康/权限/参考检查之后调用。
+  // ACK、严格新 armed 状态、迟到 Arm 恢复与原取消优先级完全保留，不能在 helper 返回后再处理另一阶段。
+  bool advance_requested_arm(const Feedback& s, double now, const Transaction& arm, double elapsed,
+                             Output& out) {
+    if (!interactive_ || ping_ < 0 || now - ping_ > c_.console_timeout)
+      arm_cancel_pending_ = true;
+    // Only a genuinely new PX4 armed observation can determine the
+    // outcome of a submitted ARM. ACK alone cannot prove a physical state.
+    if (s.armed && s.status_stamp > status_baseline_) {
+      if (bench_arm_only_active_ && !arm_confirmed_) {
+        bench_arm_status_baseline_ = s.status_stamp;
+        bench_arm_land_baseline_ = s.land_stamp;
+        bench_arm_local_baseline_ = s.local_stamp;
+      }
+      arm_confirmed_ = true;
+      if (arm_cancel_pending_ || arm.rejected || arm.timed_out) {
+        const bool plausible_ground =
+            bench_arm_only_active_ ? bench_ground_observation(c_, s, z0_)
+                                   : (s.landed && std::abs(out.height) <= c_.height_tolerance &&
+                                      std::abs(out.speed) <= c_.speed_tolerance);
+        if (bench_arm_only_active_ && !plausible_ground) {
+          fault_class_ = FaultClass::UnknownAirborne;
+          fault("BENCH_LATE_ARM_GROUND_UNCONFIRMED_OPERATOR_INTERVENTION_REQUIRED");
+          return false;
+        }
+        fault_class_ = plausible_ground ? FaultClass::GroundAbort : FaultClass::ControlledDescent;
+        land_baseline_ = s.land_stamp;
+        enter(plausible_ground ? Phase::PoweredGround : Phase::Descent, now);
+        command_height_ = std::max(0., out.height);
+        // Continuity on the transition tick: controlled zero/ramp, NEVER
+        // an unguarded stop of an armed Offboard stream.
+        if (phase_ == Phase::PoweredGround) {
+          if (!apply(vertical_->ramp(0, elapsed), out, now))
+            return false;
+        } else if (!apply(vertical_->step(vertical_sample(s), command_height_, elapsed), out, now))
+          return false;
+        reason_ = "LATE_ARM_STATUS_SUPERVISED_GROUND_RECOVERY";
+      } else if (arm.accepted ||
+                 (bench_arm_only_active_ && arm_command_committed_ && s.source_clock_validated) ||
+                 (!bench_arm_only_active_ && arm_command_committed_ && arm.state_evidenced)) {
+        // Normal TAKEOFF may accept a strictly bounded, independent PX4
+        // NEW external-Arm event only after the FINAL Command 400 sink.
+        // Runtime owns its source-clock, armed_time, arming-reason, RC OFF,
+        // unique-generation and no-prior-400 evidence. An arbitrary armed
+        // bool / generic new status NEVER grants a takeoff progression.
+        enter(bench_arm_only_active_ ? Phase::BenchArmedGround : Phase::ArmedGround, now);
+        if (!arm.accepted)
+          reason_ = bench_arm_only_active_
+                        ? "BENCH_ARM_NEW_STATE_EVIDENCED_ACK_UNATTRIBUTED"
+                        : "TAKEOFF_ARM_NEW_EXTERNAL_STATE_EVIDENCED_ACK_UNATTRIBUTED";
+      } else if (now - entered_ >= c_.command_timeout) {
+        arm_cancel_pending_ = true;
+        reason_ = "ARMED_WITHOUT_MATCHED_ACK_SUPERVISED_RECOVERY_REQUIRED";
+      }
+    } else if (arm_cancel_pending_ && (!arm_command_committed_ && !command_sent_)) {
+      // No command was even planned at this point. Release zero-thrust
+      // preparation through the existing final-mode-release handshake.
+      if (!s.armed && s.landed && s.at_rest) {
+        enter(Phase::ReleaseOffboard, now);
+        reason_ = "UNSENT_ARM_CANCEL_GROUND_MODE_RELEASE";
+      }
+    } else if (!command_sent_ && !arm_cancel_pending_) {
+      command_sent_ = true;
+      status_baseline_ = s.status_stamp;
+      out.command = Command::Arm;
+    } else if (arm.rejected && arm_cancel_pending_ && !s.armed &&
+               s.status_stamp > status_baseline_ && s.landed && s.at_rest) {
+      enter(Phase::ReleaseOffboard, now);
+      reason_ = "ARM_REJECTED_AND_NEW_DISARMED_STATUS_GROUND_RELEASE";
+    } else if (arm.rejected || arm.timed_out || now - entered_ >= c_.command_timeout) {
+      arm_cancel_pending_ = true;
+      // An ACK timeout does NOT prove the Arm never reached PX4. Hold a
+      // safe, FINAL-guarded zero setpoint; no automatic second 400.
+      reason_ = arm.rejected ? "ARM_REJECTED_AWAIT_NEW_DISARMED_STATUS"
+                             : "ARM_OUTCOME_UNCERTAIN_WAIT_PX4_STATUS_NO_NEW_TASK";
+    }
+    return true;
+  }
+  // 推进起飞斜坡及离地证据；s 使用原 PX4 NED/源微秒，now/elapsed 为单调秒，out 为本次已有计划。
+  // 返回 false 必须让 step 立即返回空计划，true 才继续公共发布前校验；不直接发布、不把时间或推力当作离地。
+  // 会写垂向积分/slew、轨迹、离地窗口和阶段；先绝对超时恢复，再在仍为 ThrustRamp 时推进原分段斜坡。
+  // 保留同帧超时减推力、反馈提前制动、检测器证明与 Ascend 切换顺序，不能把这些判断合并为单次阶段快照。
+  bool advance_thrust_ramp(const Feedback& s, double now, double elapsed, Output& out) {
+    if (now - entered_ >= c_.ascent_timeout) {
+      const bool plausible_ground = !pending_ramp_lift(s) && s.landed &&
+                                    std::abs(out.height) <= c_.height_tolerance &&
+                                    std::abs(out.speed) <= c_.speed_tolerance;
+      fault_class_ = plausible_ground ? FaultClass::GroundAbort : FaultClass::ControlledDescent;
+      land_baseline_ = s.land_stamp;
+      enter(plausible_ground ? Phase::PoweredGround : Phase::Descent, now);
+      reason_ = "LIFTOFF_TIMEOUT_ACTIVE_POWER_RECOVERY";
+      // No more acceleration. Even the transition tick MUST use the
+      // configured slew limiter; a default-zero Output is NOT a ramp.
+      if (phase_ == Phase::PoweredGround) {
+        const auto reduce = vertical_->ramp(0, elapsed);
+        if (!apply(reduce, out, now))
+          return false;
+      } else {
+        command_height_ = std::max(0., out.height);
+        const auto hold = vertical_->step(vertical_sample(s), command_height_, elapsed);
+        if (!apply(hold, out, now))
+          return false;
+      }
+    }
+    if (phase_ == Phase::ThrustRamp) {
+      // Share the original time schedule between open-loop and early
+      // feedback. A drifting height estimate may engage braking, but must
+      // not accelerate power faster than the configured takeoff ramp.
+      // 第一段按时间到hover候选，第二段增加有界reserve；时间/推力只能改变计划，不能证明离地。
+      const double ramp_age = std::max(0., now - entered_);
+      // 归一化推力上限沿既有分段斜坡，保持原乘加次序，避免中文化引入数值变化。
+      const double ramp_demand =
+          c_.vertical.hover * std::min(1., ramp_age / c_.ramp_seconds) +
+          c_.takeoff_reserve_thrust *
+              std::clamp((ramp_age - c_.ramp_seconds) / c_.ramp_seconds, 0., 1.);
+      // Detector confirmation can lag the actual climb. Height evidence
+      // changes the CONTROL LAW only; it never proves liftoff or ground.
+      // Latch feedback so crossing back below the threshold cannot restart
+      // an open-loop ramp. Every health/reset/jump/authority gate above still
+      // applies, and the original ramp timeout remains absolute.
+      // 高度达到小阈值可提前接入反馈制动，但不是离地认证；锁存此控制律，回落不能重启开环加速。
+      if (!ramp_feedback_active_ && out.height >= std::min(target_, c_.liftoff_height_m)) {
+        ramp_feedback_active_ = true;
+        command_height_ = std::clamp(out.height, 0., target_);
+        vertical_->retain_lift_reserve();
+        event_ = "RAMP_HEIGHT_GUARD_FEEDBACK_ENGAGED";
+      }
+      if (ramp_feedback_active_) {
+        if (!height_feedback(s, out, now, elapsed, false, ramp_demand))
+          return false;
+        reason_ = "RAMP_HEIGHT_GUARD_WAIT_NEW_LIFTOFF_EVIDENCE";
+      } else {
+        // Stage 1: reach measured-hover CANDIDATE. Stage 2: optional
+        // bounded reserve so reaching exactly hover does not indefinitely
+        // stall liftoff when actual takeoff thrust is slightly higher.
+        // Never infer liftoff from time or thrust alone; real detector and
+        // independent Z/VZ evidence below remains mandatory.
+        auto control = vertical_->ramp(ramp_demand, elapsed);
+        if (!apply(control, out, now))
+          return false;
+      }
+      // 离地认证要求新的着陆检测和独立高度/向上速度样本；成立后保留轨迹、积分和slew进入Ascend。
+      if (takeoff_evidence_.observe(c_, now, land_baseline_, s.land_stamp, s.landed,
+                                    s.vertical_sample_stamp, out.height, out.speed)) {
+        // Feedback already joined the measured height while the detector
+        // was pending. Keep its trajectory, integral and physical slew state.
+        out.target_height = command_height_;
+        liftoff_evidenced_ = true;
+        enter(Phase::Ascend, now);
+      }
+    }
+    // A clock or hover-thrust ramp alone is never evidence of liftoff.
+    return true;
+  }
+  // 接受已通过恢复窗口与导数检查的样本，分别累计 status/local/land 的严格新源戳，now 为单调秒。
+  // 无返回值，仅写本轮恢复证据水位、计数和最后 NED 样本；不授予恢复、不清故障。
+  // 必须在 discontinuity 处理与垂向检查之后、恢复就绪计算之前；独立 DDS 源不能强迫成对推进。
+  void record_rc_recovery_sources(const Feedback& s, double now) {
+    // DDS sources advance independently. A fresh cached status between two
+    // land callbacks cannot erase a healthy proof window. Each source must
+    // still provide independent NEW observations over the complete window.
+    if (s.status_stamp > rc_recovery_last_status_)
+      ++rc_recovery_status_samples_;
+    if (s.local_stamp > rc_recovery_last_local_)
+      ++rc_recovery_local_samples_;
+    if (s.land_stamp > rc_recovery_last_land_) {
+      ++rc_recovery_land_samples_;
+      rc_recovery_last_land_at_ = now;
+    }
+    rc_recovery_last_status_ = s.status_stamp;
+    rc_recovery_last_land_ = s.land_stamp;
+    rc_recovery_last_local_ = s.local_stamp;
+    rc_recovery_last_switch_ = s.rc_switch_sample_stamp;
+    rc_recovery_last_vertical_ = s.vertical_sample_stamp;
+    rc_recovery_last_z_ = s.z;
+    rc_recovery_last_vz_ = s.vz;
+    rc_recovery_last_deriv_ = s.z_deriv;
+  }
+  // 只更新恢复等待文本；参数是本轮是否重开证明及垂向窗口是否成立，返回 void。
+  // rc_recovery_ready_ 和各源计数已由 observe_rc_recovery 算好，保留原首个未满足条件优先级。
+  // 必须最后调用，不移动/删除真实门槛，也不能靠修改显示文本授予新任务或动力权限。
+  void update_rc_recovery_reason(bool discontinuity, bool position_window_checked) {
+    if (rc_recovery_ready_)
+      rc_recovery_block_reason_.clear();
+    else if (discontinuity)
+      rc_recovery_block_reason_ = "RC_RECOVERY_NEW_PROOF_AFTER_DISCONTINUITY";
+    else if (rc_recovery_status_samples_ < 2)
+      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_STATUS_PROGRESS";
+    else if (rc_recovery_local_samples_ < 3)
+      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_LOCAL_PROGRESS";
+    else if (rc_recovery_land_samples_ < 3)
+      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_LAND_SAMPLES";
+    else if (c_.feedback_guard.enabled && !position_window_checked)
+      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_VERTICAL_POSITION_WINDOW";
+    else
+      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_GROUND_DWELL";
+  }
   // 即使已停止输出，新的坏事件仍推进故障水位；下一地面恢复必须晚于这些观察。
   void observe_fault_watermarks(const Feedback& s) {
     // A second fault can occur after output has already stopped. Its causal
@@ -2242,25 +2303,7 @@ private:
       clear_rc_recovery(vertical.reason);
       return;
     }
-    // DDS sources advance independently. A fresh cached status between two
-    // land callbacks cannot erase a healthy proof window. Each source must
-    // still provide independent NEW observations over the complete window.
-    if (s.status_stamp > rc_recovery_last_status_)
-      ++rc_recovery_status_samples_;
-    if (s.local_stamp > rc_recovery_last_local_)
-      ++rc_recovery_local_samples_;
-    if (s.land_stamp > rc_recovery_last_land_) {
-      ++rc_recovery_land_samples_;
-      rc_recovery_last_land_at_ = now;
-    }
-    rc_recovery_last_status_ = s.status_stamp;
-    rc_recovery_last_land_ = s.land_stamp;
-    rc_recovery_last_local_ = s.local_stamp;
-    rc_recovery_last_switch_ = s.rc_switch_sample_stamp;
-    rc_recovery_last_vertical_ = s.vertical_sample_stamp;
-    rc_recovery_last_z_ = s.z;
-    rc_recovery_last_vz_ = s.vz;
-    rc_recovery_last_deriv_ = s.z_deriv;
+    record_rc_recovery_sources(s, now);
     // The detector observations themselves must span the ground dwell. Host
     // ticks after a burst/freeze cannot finish a shorter detector sequence.
     // 实际land新样本必须覆盖ground_seconds，还需status≥2、local≥3、land≥3及启用时的位置积分窗口。
@@ -2270,20 +2313,7 @@ private:
         rc_recovery_land_samples_ >= 3 && rc_recovery_status_samples_ >= 2 &&
         rc_recovery_local_samples_ >= 3 &&
         (!c_.feedback_guard.enabled || vertical.position_window_checked);
-    if (rc_recovery_ready_)
-      rc_recovery_block_reason_.clear();
-    else if (discontinuity)
-      rc_recovery_block_reason_ = "RC_RECOVERY_NEW_PROOF_AFTER_DISCONTINUITY";
-    else if (rc_recovery_status_samples_ < 2)
-      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_STATUS_PROGRESS";
-    else if (rc_recovery_local_samples_ < 3)
-      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_LOCAL_PROGRESS";
-    else if (rc_recovery_land_samples_ < 3)
-      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_LAND_SAMPLES";
-    else if (c_.feedback_guard.enabled && !vertical.position_window_checked)
-      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_VERTICAL_POSITION_WINDOW";
-    else
-      rc_recovery_block_reason_ = "RC_RECOVERY_WAIT_GROUND_DWELL";
+    update_rc_recovery_reason(discontinuity, vertical.position_window_checked);
   }
   // PX4 Land后备需外部已验证标识、有效XY/Z、可选Land及当前armed+Offboard；不能仅靠本地超时启用。
   bool land_fallback_ready(const Feedback& s) const {

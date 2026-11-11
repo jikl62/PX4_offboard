@@ -100,15 +100,8 @@ public:
   // 返回前先检查输入/重置/高度，再做高度外环、速度 PI、抗积分饱和和变化率限制，顺序不可随意调整。
   VerticalOutput step(const VerticalSample& s, double target, double dt,
                       double velocity_feedforward = 0, double takeoff_ceiling = 1.) {
-    // 缺少当前可信 Z/Vz 就拒绝本轮闭环；旧样本不能靠重复调用恢复有效。
-    if (!s.fresh || !s.z_valid || !s.vz_valid)
-      return bad("Z_VZ_STALE_OR_INVALID");
-    if (!std::isfinite(s.z0) || !std::isfinite(s.z) || !std::isfinite(s.vz) ||
-        !std::isfinite(target) || !std::isfinite(dt) || dt <= 0 ||
-        !std::isfinite(velocity_feedforward))
-      return bad("NONFINITE_VERTICAL_INPUT_OR_DT");
-    if (!std::isfinite(takeoff_ceiling) || takeoff_ceiling < 0 || takeoff_ceiling > 1)
-      return bad("INVALID_TAKEOFF_THRUST_CEILING");
+    if (const auto error = input_error(s, target, dt, velocity_feedforward, takeoff_ceiling))
+      return bad(error);
     // 已锁定估计器参考后出现重置立即拒绝，避免跨坐标原点计算高度。
     if (reset_set_ && (s.z_reset != z_reset_ || s.vz_reset != vz_reset_))
       return bad("VERTICAL_ESTIMATOR_RESET");
@@ -155,12 +148,7 @@ public:
     // Do not accumulate against either output saturation or a slew constraint.
     // Permit an existing integral to unwind towards zero, never through it
     // into windup of the opposite sign while the constraint remains active.
-    // 只有误差不会继续把输出推向受限方向时才提交 trial；否则禁止继续积累饱和方向的误差。
-    if (!integral_frozen_ && (raw - reachable) * error <= 0)
-      integral_ = trial;
-    // 受限时允许已有积分向零退回，但夹在旧积分与零之间，防止穿零后向另一方向继续 windup。
-    else if (!integral_frozen_ && integral_ * error < 0)
-      integral_ = std::clamp(trial, std::min(0., integral_), std::max(0., integral_));
+    accept_integral(trial, raw, reachable, error);
     // 用实际接受的积分重新算推力，保证日志和最后命令反映同一状态，而不是未提交的 trial。
     raw = c_.hover + c_.velocity_gain * error + integral_;
     if (!std::isfinite(raw))
@@ -183,6 +171,33 @@ public:
   }
 
 private:
+  // 在原可达推力已算出后决定是否接受试算积分；各参数都是本次 step 已按原公式算出的标量。
+  // 仅更新 integral_；冻结时不写入。先允许不加剧约束的积分，再允许已有积分退零，不能交换判断顺序。
+  // 必须在 trial→raw→reachable 之后、重新计算 raw 和调用 slew 限制之前执行，不重排浮点运算。
+  void accept_integral(double trial, double raw, double reachable, double error) {
+    // 只有误差不会继续把输出推向受限方向时才提交 trial；否则禁止继续积累饱和方向的误差。
+    if (!integral_frozen_ && (raw - reachable) * error <= 0)
+      integral_ = trial;
+    // 受限时允许已有积分向零退回，但夹在旧积分与零之间，防止穿零后向另一方向继续 windup。
+    else if (!integral_frozen_ && integral_ * error < 0)
+      integral_ = std::clamp(trial, std::min(0., integral_), std::max(0., integral_));
+  }
+  // 只读核验本轮闭环输入，按原优先级返回首个英文错误码，成功返回 nullptr。
+  // s 使用 NED m/m/s，target 为上正 m，dt 为秒，feedforward 为上正 m/s，ceiling 为归一化推力。
+  // 不更新估计器计数、积分或推力；必须先调用，再让 step 接受 reset 水位和计算外环。
+  static const char* input_error(const VerticalSample& s, double target, double dt,
+                                 double velocity_feedforward, double takeoff_ceiling) {
+    // 缺少当前可信 Z/Vz 就拒绝本轮闭环；旧样本不能靠重复调用恢复有效。
+    if (!s.fresh || !s.z_valid || !s.vz_valid)
+      return "Z_VZ_STALE_OR_INVALID";
+    if (!std::isfinite(s.z0) || !std::isfinite(s.z) || !std::isfinite(s.vz) ||
+        !std::isfinite(target) || !std::isfinite(dt) || dt <= 0 ||
+        !std::isfinite(velocity_feedforward))
+      return "NONFINITE_VERTICAL_INPUT_OR_DT";
+    if (!std::isfinite(takeoff_ceiling) || takeoff_ceiling < 0 || takeoff_ceiling > 1)
+      return "INVALID_TAKEOFF_THRUST_CEILING";
+    return nullptr;
+  }
   // 失败仅返回不健康结果和原始原因；调用者负责后续状态转换，不能在这里自行重建参考。
   static VerticalOutput bad(const char* reason) {
     VerticalOutput o;

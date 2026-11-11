@@ -88,17 +88,7 @@ public:
     data_source_ = message.data_source;
     source_rc_ = true;
     sticks_moving_ = message.sticks_moving;
-    // 归一化 roll/pitch/yaw 需在 ±0.15 内；throttle 需接近 -1（低油门），才满足地面重准备轴安全。
-    if constexpr (HasRcAxes<M>::value) {
-      throttle_ = message.throttle;
-      axes_safe_ = std::isfinite(message.roll) && std::isfinite(message.pitch) &&
-                   std::isfinite(message.yaw) && std::isfinite(throttle_) &&
-                   std::abs(message.roll) <= .15 && std::abs(message.pitch) <= .15 &&
-                   std::abs(message.yaw) <= .15 && throttle_ >= -1.01 && throttle_ <= -.9;
-    } else {
-      axes_safe_ = false;
-      throttle_ = NAN;
-    }
+    observe_manual_axes(message);
   }
 
   template <class Switches>
@@ -131,28 +121,7 @@ public:
     sample_timestamp_ = sample;
     sample_previous_received_ = previous_sample;
 
-    // 保存模式/解锁/返航/盘旋/Offboard/Kill 的原始档位，generation 保留同周期 A→B→A 变化证据。
-    const std::array<std::uint8_t, 6> next{message.mode_slot,       message.arm_switch,
-                                           message.return_switch,   message.loiter_switch,
-                                           message.offboard_switch, message.kill_switch};
-
-    if (switch_seen_ && (next != switches_ || message.switch_changes != switch_changes_)) {
-      ++generation_;
-    }
-
-    switches_ = next;
-    switch_changes_ = message.switch_changes;
-    switch_seen_ = true;
-    switch_clock_rejected_ = false;
-    kill_ = message.kill_switch;
-
-    // ON 立即锁存；只有严格推进、与 envelope 足够接近的新 OFF 样本可以清除遥测层 Kill。
-    if (kill_ == 1) {
-      kill_latched_ = true;
-    } else if (kill_ == 3 && sample_timestamp_ <= switch_timestamp_ &&
-               double(switch_timestamp_ - sample_timestamp_) / 1e6 < timeout) {
-      kill_latched_ = false;
-    }
+    observe_switch_values(message, timeout);
   }
 
   // 组合当前来源数量、失联标志、双时间戳和连续两帧进展；返回快照不改变内部缓存。
@@ -215,6 +184,50 @@ public:
   }
 
 private:
+  // 提交已通过双时间戳检查的原始开关载荷，timeout 单位秒；返回 void，不直接改变 Core 阶段。
+  // 修改开关缓存、generation 和遥测 Kill 锁存；ON 立即锁存，OFF 仍须源采样贴近 envelope。
+  // 必须在 switch/sample 时间水位提交后调用；无效时钟 ON 的早期否决仍留在 switches 中，不能合并。
+  template <class Switches> void observe_switch_values(const Switches& message, double timeout) {
+    // 保存模式/解锁/返航/盘旋/Offboard/Kill 的原始档位，generation 保留同周期 A→B→A 变化证据。
+    const std::array<std::uint8_t, 6> next{message.mode_slot,       message.arm_switch,
+                                           message.return_switch,   message.loiter_switch,
+                                           message.offboard_switch, message.kill_switch};
+
+    if (switch_seen_ && (next != switches_ || message.switch_changes != switch_changes_)) {
+      ++generation_;
+    }
+
+    switches_ = next;
+    switch_changes_ = message.switch_changes;
+    switch_seen_ = true;
+    switch_clock_rejected_ = false;
+    kill_ = message.kill_switch;
+
+    // ON 立即锁存；只有严格推进、与 envelope 足够接近的新 OFF 样本可以清除遥测层 Kill。
+    if (kill_ == 1) {
+      kill_latched_ = true;
+    } else if (kill_ == 3 && sample_timestamp_ <= switch_timestamp_ &&
+               double(switch_timestamp_ - sample_timestamp_) / 1e6 < timeout) {
+      kill_latched_ = false;
+    }
+  }
+  // 保存已接受 RC 源的四轴安全证据；输入为 PX4 归一化杆量，缺字段时明确无轴证据。
+  // 只更新 throttle_/axes_safe_，无返回值；必须在 envelope/raw 双时间戳提交和源选择之后调用。
+  // 本函数不能给无效源补成安全中杆，也不改变两个时钟或 RC 控制权。
+  template <class Manual> void observe_manual_axes(const Manual& message) {
+    using M = std::decay_t<Manual>;
+    // 归一化 roll/pitch/yaw 需在 ±0.15 内；throttle 需接近 -1（低油门），才满足地面重准备轴安全。
+    if constexpr (HasRcAxes<M>::value) {
+      throttle_ = message.throttle;
+      axes_safe_ = std::isfinite(message.roll) && std::isfinite(message.pitch) &&
+                   std::isfinite(message.yaw) && std::isfinite(throttle_) &&
+                   std::abs(message.roll) <= .15 && std::abs(message.pitch) <= .15 &&
+                   std::abs(message.yaw) <= .15 && throttle_ >= -1.01 && throttle_ <= -.9;
+    } else {
+      axes_safe_ = false;
+      throttle_ = NAN;
+    }
+  }
   // 分别记录选中源 envelope/raw 和开关 envelope/raw，避免一条新消息替另一来源续期。
   Stamp manual_stamp_, manual_sample_stamp_, switch_stamp_, sample_stamp_;
   std::uint64_t manual_timestamp_{}, switch_timestamp_{}, sample_timestamp_{}, generation_{};
