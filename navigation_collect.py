@@ -431,7 +431,60 @@ def endpoint_info(node, topic):
         return dict(status='unknown', reason=str(error))
 
 
-# 延迟导入ROS，创建唯一只读观察节点；finally销毁并关闭该上下文，短窗不证明长期稳定。
+def _release_sample_resources(node, rclpy, owns_context, primary_error):
+    """按 Node→自有 Context 尝试收尾；保留首错与后续清理错误，不让一项失败跳过后一项。
+
+    owns_context 只表示 init 尝试前默认 Context 未活动；不是并发租约。本函数只服务本工具
+    单次、串行采样入口，不能关闭调用者原先活动的 Context。释放失败仍抛错，不宣称必然释放。
+    """
+    errors = []
+    try:
+        if node is not None:
+            node.destroy_node()
+    except BaseException as error:
+        errors.append(error)
+    try:
+        if owns_context and rclpy.ok():
+            rclpy.shutdown()
+    except BaseException as error:
+        errors.append(error)
+    if not errors:
+        return
+
+    # Humble 的 Python 3.10 没有 ExceptionGroup；在原可见异常链尾连接清理错误。
+    # finally 中抛出的错误通常自动指回业务首错，先剪掉回边再连接，避免产生环。
+    seen = set()
+
+    def tail(error):
+        while True:
+            seen.add(id(error))
+            following = error.__cause__
+            if following is None and not error.__suppress_context__:
+                following = error.__context__
+            if following is None:
+                return error
+            if id(following) in seen:
+                if error.__cause__ is following:
+                    error.__cause__ = None
+                if error.__context__ is following:
+                    error.__context__ = None
+                error.__suppress_context__ = False
+                return error
+            error = following
+
+    first = primary_error if primary_error is not None else errors[0]
+    last = tail(first)
+    for error in errors:
+        if id(error) not in seen:
+            next_tail = tail(error)
+            last.__context__ = error
+            last.__suppress_context__ = False
+            last = next_tail
+    if primary_error is None:
+        raise first
+
+
+# 延迟导入 ROS，只创建观察订阅；清理每项分别尝试，短窗不证明长期稳定。
 def sample_ros(seconds):
     # Deliberately lazy: --help and deployment collection work without ROS installed.
     import rclpy
@@ -454,8 +507,13 @@ def sample_ros(seconds):
     node = None
     subscriptions = []
     stats = {}
-    rclpy.init(args=[])
+    owns_context = False
+    primary_error = None
     try:
+        # 默认 Context 原先活动时 init 仍按原合同拒绝；本次失败不能关闭别人的 Context。
+        # init 部分激活后抛错也处于保护区，由 finally 尝试关闭本轮取得的 Context。
+        owns_context = not rclpy.ok()
+        rclpy.init(args=[])
         node = rclpy.create_node('fc01_passive_collect_' + str(os.getpid()))
         for topic, type_name in TOPICS.items():
             stats[topic] = TopicStats()
@@ -496,10 +554,11 @@ def sample_ros(seconds):
                     endpoints=endpoint_info(node, topic),
                 )
         return result
+    except BaseException as error:
+        primary_error = error
+        raise
     finally:
-        if node is not None:
-            node.destroy_node()
-        rclpy.shutdown()
+        _release_sample_resources(node, rclpy, owns_context, primary_error)
 
 
 # 优先用运行控制器/proc环境与采样环境比较；缺SDK/RMW不能凭默认值认定加载身份一致。
