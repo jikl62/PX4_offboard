@@ -64,6 +64,9 @@ def apply_settings(config, selected):
         ('command_topic', '/fc01/navigation/command'),
     ):
         p['visual_' + key] = topic(selected.get(key, default))
+    if p['visual_navigation_enabled'] and p['visual_state_topic'] == p['visual_command_topic']:
+        # 两种消息类型不能共用这条输入；对齐生产Node已有的构造拒绝，避免导出成功后才失败。
+        raise ControlError('视觉状态与目标指令话题不能相同')
     # QoS 深度限制待接收数量；它不证明每条消息大小、传感器频率或延迟已经满足控制要求。
     depth = selected.get('qos_depth', 5)
     if type(depth) is not int or not 1 <= depth <= 20:
