@@ -1,0 +1,55 @@
+test_deterministic_real_core_and_sink_evidence (test_authority_harness.AuthorityHarnessTests) ... ok
+test_actual_runtime_authority_json (test_authority_tools.AuthorityToolsTests) ... ok
+test_authority_changes_one_shot_never_connect (test_authority_tools.AuthorityToolsTests) ... ok
+test_authority_console_syntax (test_authority_tools.AuthorityToolsTests) ... ok
+test_land_events_preserve_custody_and_ground_completion_vetoes (test_land_event_adapter.LandEventAdapterTest) ... ok
+test_report_rejected_ground_sample_with_actual_limits (test_r62c_review_console.ReviewConsoleTests) ... ok
+test_unverified_bench_or_stale_source_never_reaches_arm (test_r62c_review_console.ReviewConsoleTests) ... 未知命令；输入 help
+未知命令；输入 help
+未知命令；输入 help
+未知命令；输入 help
+未知命令；输入 help
+ok
+test_valid_interaction_sends_one_arm_after_confirmation (test_r62c_review_console.ReviewConsoleTests) ... ok
+test_default_attitude_config_cannot_authorize_arm_or_takeoff (test_r62c_review_package.ReviewPackageTests) ... ok
+test_delivery_contains_required_local_tools (test_r62c_review_package.ReviewPackageTests) ... ok
+test_elapsed_timeout_cannot_kill_node_or_remove_its_agent (test_r62c_review_supervisor.SupervisorRecoveryTests) ... 控制进程已启动（默认不解锁）。日志：/tmp/tmp4s4ftwys/logs/node_20261111T133032Z.log
+控制节点仍在恢复/等待交权；保留节点与 Agent，需操作者确认飞控状态。
+控制节点仍在恢复/等待交权；保留节点与 Agent，需操作者确认飞控状态。
+控制节点仍在恢复/等待交权；保留节点与 Agent，需操作者确认飞控状态。
+ok
+test_service_cannot_impose_a_second_elapsed_kill_deadline (test_r62c_review_supervisor.SupervisorRecoveryTests) ... ok
+test_closed_gates_are_for_read_only_checks (test_r6_preflight_audit.PreflightAuditTests) ... ok
+test_empty_events_are_unknown (test_r6_preflight_audit.PreflightAuditTests) ... ok
+test_gap_and_time_regression_are_rejected (test_r6_preflight_audit.PreflightAuditTests) ... ok
+test_half_published_tick_does_not_count_as_complete (test_r6_preflight_audit.PreflightAuditTests) ... ok
+test_healthy_offboard_silent_tail_cannot_pass (test_r6_preflight_audit.PreflightAuditTests) ... ok
+test_sink_exception_is_not_a_local_pass (test_r6_preflight_audit.PreflightAuditTests) ... ok
+test_truthy_string_cannot_pass_as_disabled (test_r6_preflight_audit.PreflightAuditTests) ... ok
+test_crash_cannot_claim_companion_recovery (test_r6_process_failures.ProcessFailureTests) ... ok
+test_sigint_retains_healthy_custody_after_budget (test_r6_process_failures.ProcessFailureTests) ... ok
+test_sigkill_cannot_claim_companion_recovery (test_r6_process_failures.ProcessFailureTests) ... ok
+test_sigterm_retains_healthy_custody_after_budget (test_r6_process_failures.ProcessFailureTests) ... ok
+test_actual_tick_recovery_uses_current_stationary_evidence (test_rc_recovery_adapter.RcRecoveryAdapterTest) ... ok
+test_pending_unsafe_payload_cannot_be_hidden_by_benign_head (test_receive_event_adapter.ReceiveEventAdapterTest) ... ok
+test_source_log_detection_and_no_fabricated_handoff (test_s10_timeline.S10TimelineTest) ... ok
+test_output_silent_safety_catches_up_without_losing_recovery_vetoes (test_safety_receive_adapter.SafetyReceiveAdapterTest) ... ok
+test_live_listener_refuses_update (test_socket_safety.SocketSafetyTests) ... ok
+test_lock_busy_changed_path_unknown_service_fail_closed (test_socket_safety.SocketSafetyTests) ... ok
+test_policy_helper_required (test_socket_safety.SocketSafetyTests) ... ok
+test_socket_appearing_during_activation_refuses (test_socket_safety.SocketSafetyTests) ... ok
+test_stale_looking_socket_diagnostic_only_retained (test_socket_safety.SocketSafetyTests) ... ok
+test_update_rejects_regular_file_symlink_fifo_never_deletes (test_socket_safety.SocketSafetyTests) ... ok
+test_install_never_switches_current_and_explicit_rollback (test_tools.ToolsTests) ... ok
+test_pinned_messages_refuse_wrong_vendor_hash (test_tools.ToolsTests) ... ok
+test_piped_input_is_not_a_live_console (test_tools.ToolsTests) ... ok
+test_portable_export_name_and_clean_source (test_tools.ToolsTests) ... ok
+test_ready_client_waits_for_confirmed_state (test_tools.ToolsTests) ... ok
+test_ready_command (test_tools.ToolsTests) ... ok
+test_ready_protocol_over_pipe_fixture (test_tools.ToolsTests) ... ok
+test_single_flight_commands_never_connect (test_tools.ToolsTests) ... ok
+
+----------------------------------------------------------------------
+Ran 41 tests in 23.651s
+
+OK

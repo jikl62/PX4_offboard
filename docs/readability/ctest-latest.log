@@ -1,0 +1,152 @@
+Internal ctest changing into directory: /tmp/fc01-readability-20261111/host-build
+Test project /tmp/fc01-readability-20261111/host-build
+      Start 45: test_r6_1_recovery_custody
+      Start 62: test_runtime_history_capacity
+      Start  2: test_async_log
+      Start 14: test_m1_r6_recovery
+ 1/73 Test #14: test_m1_r6_recovery .................   Passed    0.03 sec
+      Start 50: test_rc_navigation
+ 2/73 Test #50: test_rc_navigation ..................   Passed    0.04 sec
+      Start 30: test_r62c_review4_post_disarm
+ 3/73 Test #30: test_r62c_review4_post_disarm .......   Passed    0.02 sec
+      Start 42: test_r632_takeoff_plant
+ 4/73 Test #42: test_r632_takeoff_plant .............   Passed    0.02 sec
+      Start 73: test_visual_runtime
+ 5/73 Test  #2: test_async_log ......................   Passed    0.13 sec
+      Start 13: test_m1_r4_ack_isolation
+ 6/73 Test #73: test_visual_runtime .................   Passed    0.01 sec
+      Start 29: test_r62c_review3_bench_grace
+ 7/73 Test #29: test_r62c_review3_bench_grace .......   Passed    0.01 sec
+      Start 27: test_r62c_review2_disarm
+ 8/73 Test #13: test_m1_r4_ack_isolation ............   Passed    0.02 sec
+      Start 39: test_r632_ramp_height_guard
+ 9/73 Test #39: test_r632_ramp_height_guard .........   Passed    0.01 sec
+      Start 34: test_r62c_review_exit
+10/73 Test #27: test_r62c_review2_disarm ............   Passed    0.01 sec
+      Start 48: test_rc_before_ready_recovery
+11/73 Test #34: test_r62c_review_exit ...............   Passed    0.01 sec
+      Start 58: test_rc_timing_recovery
+12/73 Test #48: test_rc_before_ready_recovery .......   Passed    0.01 sec
+      Start 59: test_receive_events
+13/73 Test #62: test_runtime_history_capacity .......   Passed    0.17 sec
+      Start 52: test_rc_preparation_defer
+14/73 Test #59: test_receive_events .................   Passed    0.01 sec
+      Start 65: test_takeoff_evidence
+15/73 Test #58: test_rc_timing_recovery .............   Passed    0.01 sec
+      Start  3: test_attitude_runtime
+16/73 Test #52: test_rc_preparation_defer ...........   Passed    0.01 sec
+      Start 68: test_vertical_feedback_regression
+17/73 Test #65: test_takeoff_evidence ...............   Passed    0.01 sec
+      Start 41: test_r632_skewed_176_ack
+18/73 Test  #3: test_attitude_runtime ...............   Passed    0.01 sec
+      Start 15: test_m1_s10_1hz_recovery
+19/73 Test #68: test_vertical_feedback_regression ...   Passed    0.00 sec
+      Start 43: test_r63_normal_arm_evidence
+20/73 Test #41: test_r632_skewed_176_ack ............   Passed    0.01 sec
+      Start 23: test_r62_armed_ground
+21/73 Test #15: test_m1_s10_1hz_recovery ............   Passed    0.01 sec
+      Start 56: test_rc_reprepare_diagnostics
+22/73 Test #43: test_r63_normal_arm_evidence ........   Passed    0.01 sec
+      Start 57: test_rc_takeoff_stage
+23/73 Test #23: test_r62_armed_ground ...............   Passed    0.00 sec
+      Start 37: test_r632_height_tracking
+24/73 Test #57: test_rc_takeoff_stage ...............   Passed    0.00 sec
+      Start  1: test_ack_lifecycle
+25/73 Test #56: test_rc_reprepare_diagnostics .......   Passed    0.01 sec
+      Start 72: test_vision_navigation
+26/73 Test #37: test_r632_height_tracking ...........   Passed    0.00 sec
+      Start 38: test_r632_prompt_176_ack
+27/73 Test  #1: test_ack_lifecycle ..................   Passed    0.00 sec
+      Start 26: test_r62c_arm_only
+28/73 Test #72: test_vision_navigation ..............   Passed    0.00 sec
+      Start 28: test_r62c_review2_recorded_trace
+29/73 Test #38: test_r632_prompt_176_ack ............   Passed    0.00 sec
+      Start 61: test_receive_schedule_safety
+30/73 Test #26: test_r62c_arm_only ..................   Passed    0.00 sec
+      Start 12: test_m1_r3_interleavings
+31/73 Test #61: test_receive_schedule_safety ........   Passed    0.00 sec
+      Start 44: test_r63_takeoff_candidate
+32/73 Test #28: test_r62c_review2_recorded_trace ....   Passed    0.01 sec
+      Start 10: test_c_m1_r2_regressions
+33/73 Test #12: test_m1_r3_interleavings ............   Passed    0.00 sec
+      Start 11: test_control_diagnostics
+34/73 Test #44: test_r63_takeoff_candidate ..........   Passed    0.00 sec
+      Start  6: test_authority_boundary
+35/73 Test #10: test_c_m1_r2_regressions ............   Passed    0.00 sec
+      Start  7: test_authority_review
+36/73 Test #11: test_control_diagnostics ............   Passed    0.00 sec
+      Start  9: test_authority_telemetry
+37/73 Test  #6: test_authority_boundary .............   Passed    0.00 sec
+      Start  8: test_authority_runtime
+38/73 Test  #7: test_authority_review ...............   Passed    0.00 sec
+      Start 32: test_r62c_review_clock
+39/73 Test  #9: test_authority_telemetry ............   Passed    0.00 sec
+      Start 40: test_r632_ramp_schedule
+40/73 Test  #8: test_authority_runtime ..............   Passed    0.00 sec
+      Start 67: test_vertical_feedback_guard
+41/73 Test #32: test_r62c_review_clock ..............   Passed    0.00 sec
+      Start 63: test_socket
+42/73 Test #40: test_r632_ramp_schedule .............   Passed    0.00 sec
+      Start 33: test_r62c_review_diagnostics
+43/73 Test #67: test_vertical_feedback_guard ........   Passed    0.00 sec
+      Start 54: test_rc_recovery_progress
+44/73 Test #63: test_socket .........................   Passed    0.00 sec
+      Start 66: test_velocity_command_input
+45/73 Test #33: test_r62c_review_diagnostics ........   Passed    0.00 sec
+      Start 64: test_socket_boundary
+46/73 Test #54: test_rc_recovery_progress ...........   Passed    0.00 sec
+      Start 70: test_vertical_integral_reversal
+47/73 Test #66: test_velocity_command_input .........   Passed    0.00 sec
+      Start 49: test_rc_interface
+48/73 Test #64: test_socket_boundary ................   Passed    0.00 sec
+      Start 71: test_vertical_takeoff_ceiling
+49/73 Test #70: test_vertical_integral_reversal .....   Passed    0.00 sec
+      Start 19: test_p0_tilt_trigger_evidence
+50/73 Test #49: test_rc_interface ...................   Passed    0.00 sec
+      Start 46: test_r6_partial_sinks
+51/73 Test #71: test_vertical_takeoff_ceiling .......   Passed    0.00 sec
+      Start 16: test_m1_safety
+52/73 Test #19: test_p0_tilt_trigger_evidence .......   Passed    0.00 sec
+      Start 53: test_rc_recovery_boundaries
+53/73 Test #46: test_r6_partial_sinks ...............   Passed    0.00 sec
+      Start 69: test_vertical_feedforward
+54/73 Test #16: test_m1_safety ......................   Passed    0.00 sec
+      Start 36: test_r632_bounded_liftoff_reserve
+55/73 Test #53: test_rc_recovery_boundaries .........   Passed    0.00 sec
+      Start 47: test_r6_publication_audit
+56/73 Test #69: test_vertical_feedforward ...........   Passed    0.00 sec
+      Start 60: test_receive_schedule
+57/73 Test #36: test_r632_bounded_liftoff_reserve ...   Passed    0.00 sec
+      Start 31: test_r62c_review_admission
+58/73 Test #47: test_r6_publication_audit ...........   Passed    0.00 sec
+      Start  5: test_attitude_wire
+59/73 Test #60: test_receive_schedule ...............   Passed    0.00 sec
+      Start 24: test_r62_disarmed_prep_progress
+60/73 Test #31: test_r62c_review_admission ..........   Passed    0.00 sec
+      Start 22: test_publication_runtime
+61/73 Test  #5: test_attitude_wire ..................   Passed    0.00 sec
+      Start  4: test_attitude_vertical
+62/73 Test #24: test_r62_disarmed_prep_progress .....   Passed    0.00 sec
+      Start 21: test_publication_boundary
+63/73 Test #22: test_publication_runtime ............   Passed    0.00 sec
+      Start 20: test_parent_lifetime
+64/73 Test  #4: test_attitude_vertical ..............   Passed    0.00 sec
+      Start 35: test_r62c_review_sample
+65/73 Test #21: test_publication_boundary ...........   Passed    0.00 sec
+      Start 55: test_rc_reprepare_admission
+66/73 Test #20: test_parent_lifetime ................   Passed    0.00 sec
+      Start 25: test_r62b_ground_release
+67/73 Test #35: test_r62c_review_sample .............   Passed    0.00 sec
+      Start 17: test_offline_timing
+68/73 Test #55: test_rc_reprepare_admission .........   Passed    0.00 sec
+      Start 18: test_p0_attitude_audit
+69/73 Test #25: test_r62b_ground_release ............   Passed    0.00 sec
+      Start 51: test_rc_navigation_telemetry
+70/73 Test #17: test_offline_timing .................   Passed    0.00 sec
+71/73 Test #18: test_p0_attitude_audit ..............   Passed    0.00 sec
+72/73 Test #51: test_rc_navigation_telemetry ........   Passed    0.00 sec
+73/73 Test #45: test_r6_1_recovery_custody ..........   Passed    0.26 sec
+
+100% tests passed, 0 tests failed out of 73
+
+Total Test time (real) =   0.26 sec

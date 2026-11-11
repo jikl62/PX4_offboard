@@ -1,0 +1,29 @@
+EE
+======================================================================
+ERROR: test_candidate_directory_and_development_experiment_exclusion (test_navigation_install.BundleTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/fc01-readability-20261111/initial-worktree/tests/test_navigation_install.py", line 364, in test_candidate_directory_and_development_experiment_exclusion
+    script=b.build(folder/'candidate.sh',ROOT,directory_name=candidate)
+  File "/tmp/fc01-readability-20261111/initial-worktree/build_navigation_bundle.py", line 242, in build
+    files[MANIFEST]=_release_bytes(root,files)
+  File "/tmp/fc01-readability-20261111/initial-worktree/build_navigation_bundle.py", line 227, in _release_bytes
+    raise ValueError('FC01_RELEASE.json payload_sha256 differs from the current source tree')
+ValueError: FC01_RELEASE.json payload_sha256 differs from the current source tree
+
+======================================================================
+ERROR: test_exact_self_extraction_repeat_and_conflict (test_navigation_install.BundleTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/fc01-readability-20261111/initial-worktree/tests/test_navigation_install.py", line 377, in test_exact_self_extraction_repeat_and_conflict
+    folder=Path(d);script=b.build(folder/'navigation.sh',ROOT);dest=folder/'installed'
+  File "/tmp/fc01-readability-20261111/initial-worktree/build_navigation_bundle.py", line 242, in build
+    files[MANIFEST]=_release_bytes(root,files)
+  File "/tmp/fc01-readability-20261111/initial-worktree/build_navigation_bundle.py", line 227, in _release_bytes
+    raise ValueError('FC01_RELEASE.json payload_sha256 differs from the current source tree')
+ValueError: FC01_RELEASE.json payload_sha256 differs from the current source tree
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.039s
+
+FAILED (errors=2)

@@ -1,0 +1,387 @@
+{
+  "method": "Python AST ignoring docstrings and source locations; embedded string contents remain exact",
+  "checks": [
+    {
+      "path": "autostart.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "build_autostart_bundle.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "build_bundle.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "build_navigation_bundle.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "fc01_control.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "feedback_age_probe.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "launcher.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/scripts/r62_failure_replay.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/adapter_compile_check.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/replay_c11_c12.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/ros_receive_ab/probe_smoke.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/ros_receive_ab/run.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_authority_harness.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_authority_tools.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_land_event_adapter.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_r62c_review_console.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_r62c_review_package.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_r62c_review_supervisor.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_r6_preflight_audit.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_r6_process_failures.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_rc_recovery_adapter.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_receive_event_adapter.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_s10_timeline.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_safety_receive_adapter.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_socket_safety.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tests/test_tools.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/deploy.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/fcctl.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/pc.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/r632_ack176_summary.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/r63_config_check.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/r6_preflight_audit.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/replay_vertical_feedback.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/replay_vertical_refinement.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/s10_timeline.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/socket_safety.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/start.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/update.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/velocity_command_diagnostic.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/vision_odometry_adapter.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "native/tools/vision_state_validation.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation_build_evidence.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation_collect.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation_deploy.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation_install.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation_probe.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation_report.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation_restore.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation_service.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "navigation_status.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "standby.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/benchmark_vision_interfaces.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/native_fixture.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/navigation_peer.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/ros_offline_timing_smoke.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/ros_velocity_command_smoke.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/ros_vision_smoke.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/run_native_cpp.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/standby_native.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/standby_peer.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_autostart.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_control.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_feedback_age_probe.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_installer.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_integration.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_launcher.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_native_install_layout.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_native_log_records.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_native_profile.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_build_evidence.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_collect.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_deploy.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_deployment_activation.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_diagnostics.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_feedback_freshness.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_install.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_native.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_report.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_restore.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_navigation_service.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_standby.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_standby_writer.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_takeoff_configuration.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_uart_preflight.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_velocity_command_diagnostic.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_vertical_diagnostic_bundle.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_vision_adapter.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_vision_replay.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_vision_settings.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "tests/test_vision_state_validation.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "uart_preflight.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "vision_config.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "vision_replay.py",
+      "ast_equal_except_docstrings": true
+    },
+    {
+      "path": "vision_settings.py",
+      "ast_equal_except_docstrings": true
+    }
+  ],
+  "passed": 95,
+  "not_equal": []
+}

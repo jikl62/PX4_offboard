@@ -1,0 +1,623 @@
+Agent transport CONNECTED: UART /dev/ttyS2 115200; PID=36485
+WAITING: 控制器已启动，等待飞控反馈
+CONNECTED: 已连接；后台动作门关闭
+STOPPING: 等待原生退出
+STOPPING: 原生控制器退出，code=0
+STOPPED: 后台待命已停止
+缺少新鲜未解锁接地退出证据
+STOPPED: 后台待命已停止
+��出，code=0
+STOPPED: 后台待命已停止
+g reconnect；原生控制器退出，code=7
+STOPPED: 后台待命已停止
+files_and_can_be_repeated (test_autostart.AutostartTests) ... ok
+test_status_cannot_report_old_connected_snapshot_as_current (test_autostart.AutostartTests) ... ok
+test_unit_rejects_newline_in_paths (test_autostart.AutostartTests) ... ok
+test_cancel_during_preparation_cannot_later_arm (test_control.MissionTests) ... ok
+test_candidate_ack_or_unready_authority_cannot_request_takeoff (test_control.MissionTests) ... ok
+test_exact_preparation_then_single_takeoff (test_control.MissionTests) ... ok
+test_gps_denied_xy_flags_do_not_replace_vertical_health (test_control.MissionTests) ... ok
+test_invalid_height_never_queues_actions (test_control.MissionTests) ... ok
+test_kill_or_takeover_never_advances_takeoff (test_control.MissionTests) ... ok
+test_no_rc_or_clock_evidence_means_no_preparation (test_control.MissionTests) ... ok
+test_preparation_timeout_requests_only_ground_release_once (test_control.MissionTests) ... ok
+test_rejected_preparation_never_submits_takeoff (test_control.MissionTests) ... ok
+test_stale_state_cannot_request_takeoff (test_control.MissionTests) ... ok
+test_start_never_requests_motion_without_operator_command (test_control.MissionTests) ... ok
+test_wrong_or_unsent_reply_does_not_advance_plan (test_control.MissionTests) ... ok
+test_default_cannot_enable_actions_even_if_input_flags_are_true (test_control.ProfileTests) ... ok
+test_flight_uses_session_copy_preserves_numeric_parameters (test_control.ProfileTests) ... ok
+test_incompatible_profile_or_sim_clock_refused (test_control.ProfileTests) ... ok
+test_duration_is_bounded (test_feedback_age_probe.FeedbackAgeProbeTests) ... ok
+test_fixed_window_slope_and_expiry (test_feedback_age_probe.FeedbackAgeProbeTests) ... ok
+test_missing_timestamp_and_rmw_zero_are_unavailable (test_feedback_age_probe.FeedbackAgeProbeTests) ... ok
+test_new_envelope_cannot_refresh_frozen_old_raw (test_feedback_age_probe.FeedbackAgeProbeTests) ... ok
+test_read_only_controller_comparison_distinguishes_sample_instants (test_feedback_age_probe.FeedbackAgeProbeTests) ... ok
+test_sample_progress_records_duplicate_regression_and_missing (test_feedback_age_probe.FeedbackAgeProbeTests) ... ok
+test_signed_age_and_rmw_gap_preserve_future_values (test_feedback_age_probe.FeedbackAgeProbeTests) ... ok
+test_slope_needs_multiple_different_receipt_instants (test_feedback_age_probe.FeedbackAgeProbeTests) ... ok
+test_wall_jump_changes_diagnostics_instead_of_correcting_source (test_feedback_age_probe.FeedbackAgeProbeTests) ... ok
+test_archive_symlink_is_refused (test_installer.InstallerTests) ... ok
+test_even_matching_hash_archive_cannot_escape_install_directory (test_installer.InstallerTests) ... ok
+test_existing_different_file_refused_before_any_payload_write (test_installer.InstallerTests) ... ok
+test_existing_symlink_never_redirects_writes (test_installer.InstallerTests) ... ok
+test_operator_stdin_survives_python_unpacking (test_installer.InstallerTests) ... ok
+test_payload_checksum_failure_leaves_target_absent (test_installer.InstallerTests) ... ok
+test_real_bundle_installs_offline_without_launching_hardware (test_installer.InstallerTests) ... ok
+test_repeat_install_preserves_equal_files_and_unrelated_data (test_installer.InstallerTests) ... ok
+test_blocked_stdout_cannot_block_recovery_heartbeat (test_integration.LifecycleIntegration) ... ok
+test_broken_stdout_cannot_abandon_native_recovery (test_integration.LifecycleIntegration) ... ok
+test_check_mode_never_sends_preparation_or_motion_commands (test_integration.LifecycleIntegration) ... ok
+test_explicit_takeoff_quit_keeps_heartbeat_through_native_descent (test_integration.LifecycleIntegration) ... ok
+test_quit_eof_and_signal_during_pending_arm_keep_recovery_channel (test_integration.LifecycleIntegration) ... ok
+test_slow_report_cannot_interrupt_live_recovery_heartbeat (test_integration.LifecycleIntegration) ... ok
+test_incompatible_binary_is_refused_without_patching_it (test_launcher.OwnershipTests) ... ok
+test_private_socket_paths_preserve_previous_sessions (test_launcher.OwnershipTests) ... ok
+test_reuses_exact_agent_and_rejects_unknown_uart_owner (test_launcher.OwnershipTests) ... ok
+test_wrong_baud_other_uid_and_duplicate_agents_are_not_reused (test_launcher.OwnershipTests) ... ok
+test_channel_assembles_real_fragmented_socket_replies (test_launcher.ProtocolTests) ... ok
+test_complete_messages_survive_truncated_or_invalid_tail_before_error (test_launcher.ProtocolTests) ... ok
+test_final_complete_state_is_delivered_before_eof (test_launcher.ProtocolTests) ... ok
+test_malformed_or_unbounded_messages_close_the_plan (test_launcher.ProtocolTests) ... ok
+test_socket_failure_is_distinct_from_peer_eof (test_launcher.ProtocolTests) ... ok
+test_terminal_reads_classify_clean_eof_truncation_and_invalid_messages (test_launcher.ProtocolTests) ... ok
+test_wire_commands_are_bounded_finite_and_not_injectable (test_launcher.ProtocolTests) ... ok
+test_controller_stop_is_graceful_single_signal_not_a_kill (test_launcher.ReportAndLifecycleTests) ... ok
+test_owned_agent_stops_only_after_fresh_disarmed_landed_node_exit (test_launcher.ReportAndLifecycleTests) ... ok
+test_report_keeps_first_failure_and_only_named_session_artifacts (test_launcher.ReportAndLifecycleTests) ... ok
+test_copied_workspace_installs_all_declared_python_tools (test_native_install_layout.NativeInstallLayoutTests) ... ok
+test_large_state_and_adjacent_startup_remain_whole_json_records (test_native_log_records.NativeLogRecordsTests) ... ok
+test_split_utf8_and_unterminated_final_record_are_preserved (test_native_log_records.NativeLogRecordsTests) ... ok
+test_unbounded_line_is_drained_in_marked_bounded_fragments (test_native_log_records.NativeLogRecordsTests) ... ok
+test_check_session_is_accepted_by_actual_native_config (test_native_profile.NativeProfileContract) ... ok
+test_flight_session_is_accepted_by_actual_native_config (test_native_profile.NativeProfileContract) ... ok
+test_native_validator_rejects_legacy_flight_flag_in_attitude_mode (test_native_profile.NativeProfileContract) ... ok
+test_build_entry_refuses_host_without_executing_hardware (test_navigation_build_evidence.DependencyAndEnvironmentTests) ... ok
+test_dependency_hashes_follow_sdk_symlinks_and_actual_bytes (test_navigation_build_evidence.DependencyAndEnvironmentTests) ... ok
+test_sdk_resolution_environment_then_config_then_existing_home (test_navigation_build_evidence.DependencyAndEnvironmentTests) ... ok
+test_changed_cmake_dependency_cannot_pass_verification (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... 自动报告：/tmp/tmp3gtyps5n/FC01_autostart_report_20261111_212012_000230.zip
+自动报告：/tmp/tmp3gtyps5n/FC01_autostart_report_20261111_212012_000587.zip
+FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpj5dmd8vk/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=CMake selected an unexpected dependency: px4_msgs
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_changed_generated_support_file_cannot_be_reused (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpt5ka3tv7/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=installed generated library or support files differ from build evidence
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_changed_runtime_library_or_binary_cannot_be_reused (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmptolr30ti/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=binary or runtime library content differs from build evidence
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=binary or runtime library content differs from build evidence
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_dependency_content_change_requires_new_build (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpt5m47z4k/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_foreign_install_directory_and_symlink_are_retained (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpp138p0ew/release/ARM64_BUILD_EVIDENCE.json'
+FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpp138p0ew/release/ARM64_BUILD_EVIDENCE.json'
+ok
+test_interrupted_rebuild_preserves_existing_install_and_complete_evidence (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpf5hxpf6y/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_matching_provenance_reuses_without_compilation_and_verify_is_read_only (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp67_ncm4m/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_BUILD_REUSED input_sha256=a3cd76c34d9dc4832f741e11aceb0bf657cf6d6485e35e2a08e586638c3c54ef
+ok
+test_modified_source_refuses_stale_manifest_and_updated_manifest_rebuilds (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpjvzl5vux/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_unlisted_source_or_traversal_is_rejected (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... ok
+test_wrong_elf_architecture_or_old_marker_is_rejected (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... ok
+test_absent_and_future_timestamps_remain_distinguishable (test_navigation_collect.NavigationCollectTests) ... ok
+test_collect_persists_report_when_systemctl_is_missing (test_navigation_collect.NavigationCollectTests) ... ok
+test_help_works_without_ros (test_navigation_collect.NavigationCollectTests) ... ok
+test_missing_deployment_does_not_turn_default_domain_into_a_match (test_navigation_collect.NavigationCollectTests) ... ok
+test_missing_tools_and_timeout_are_unknown (test_navigation_collect.NavigationCollectTests) ... ok
+test_ros_domain_mismatch_is_reported_without_changing_environment (test_navigation_collect.NavigationCollectTests) ... ok
+test_sample_age_and_cdr_rate_do_not_claim_uart_throughput (test_navigation_collect.NavigationCollectTests) ... ok
+test_service_identity_and_running_binary_are_collected_without_mutation (test_navigation_collect.NavigationCollectTests) ... ok
+test_systemctl_success_does_not_mark_missing_unit_as_observed (test_navigation_collect.NavigationCollectTests) ... ok
+test_activation_keeps_boot_policy_and_rollback_uses_saved_backup (test_navigation_deploy.DeploymentTests) ... FC01_ROLLBACK_PATH=/tmp/tmpdfq9wzf6/backup
+FC01_ROLLBACK_PATH=/tmp/tmpdfq9wzf6/backup
+FC01_ROLLBACK_PATH=/tmp/tmpdfq9wzf6/backup
+ok
+test_activation_needs_confirmation_and_current_offline_evidence (test_navigation_deploy.DeploymentTests) ... ok
+test_build_failure_never_reaches_config_or_ready (test_navigation_deploy.DeploymentTests) ... ok
+test_mutated_source_is_refused_before_any_action (test_navigation_deploy.DeploymentTests) ... ok
+test_offline_only_builds_and_checks_release_local_config (test_navigation_deploy.DeploymentTests) ... FC01_OFFLINE_READY evidence=/tmp/tmp8cqz_hbo/release/ARM64_BUILD_EVIDENCE.json
+离线部署完成；尚未正式启用。原服务配置和 Agent 未变更。
+ok
+test_auth_probe_stop_exit_install_start_order_and_backup (test_navigation_deployment_activation.DeploymentActivationTests) ... FC01_ROLLBACK_PATH=/tmp/tmpqjfsedw2/FC01_navigation/service-backups/20261111_212024_760513
+FC01_ROLLBACK_COMMAND=bash /tmp/tmpqjfsedw2/new/navigation_restore.sh rollback --backup /tmp/tmpqjfsedw2/FC01_navigation/service-backups/20261111_212024_760513
+FC01_NEW_SERVICE_ACTIVE version=20261110.7 vertical_feedback_velocity_policy=diagnostic_only
+FC01_EXISTING_AGENT_RETAINED pid=55 rollback=/tmp/tmpqjfsedw2/FC01_navigation/service-backups/20261111_212024_760513
+ok
+test_configuration_failure_restores_original_and_never_starts (test_navigation_deployment_activation.DeploymentActivationTests) ... FC01_ROLLBACK_PATH=/tmp/tmpg4q_nkcc/FC01_navigation/service-backups/20261111_212024_764596
+FC01_ROLLBACK_COMMAND=bash /tmp/tmpg4q_nkcc/new/navigation_restore.sh rollback --backup /tmp/tmpg4q_nkcc/FC01_navigation/service-backups/20261111_212024_764596
+ok
+test_failure_with_unsafe_new_controller_retains_process_and_configuration (test_navigation_deployment_activation.DeploymentActivationTests) ... FC01_ROLLBACK_PATH=/tmp/tmpxzl0i3ny/FC01_navigation/service-backups/20261111_212024_768169
+FC01_ROLLBACK_COMMAND=bash /tmp/tmpxzl0i3ny/new/navigation_restore.sh rollback --backup /tmp/tmpxzl0i3ny/FC01_navigation/service-backups/20261111_212024_768169
+ok
+test_invalid_build_evidence_refuses_before_sudo_probe_or_stop (test_navigation_deployment_activation.DeploymentActivationTests) ... ok
+test_invalid_runtime_backup_refuses_before_restoring_any_service_bytes (test_navigation_deployment_activation.DeploymentActivationTests) ... FC01_ROLLBACK_PATH=/tmp/tmpbpamm6nu/FC01_navigation/service-backups/20261111_212024_774226
+FC01_ROLLBACK_COMMAND=bash /tmp/tmpbpamm6nu/new/navigation_restore.sh rollback --backup /tmp/tmpbpamm6nu/FC01_navigation/service-backups/20261111_212024_774226
+FC01_NEW_SERVICE_ACTIVE version=20261110.7 vertical_feedback_velocity_policy=diagnostic_only
+FC01_EXISTING_AGENT_RETAINED pid=55 rollback=/tmp/tmpbpamm6nu/FC01_navigation/service-backups/20261111_212024_774226
+ok
+test_managed_old_standby_boot_and_bytes_restored_without_restart (test_navigation_deployment_activation.DeploymentActivationTests) ... FC01_ROLLBACK_PATH=/tmp/tmp561z21di/FC01_navigation/service-backups/20261111_212024_780185
+FC01_ROLLBACK_COMMAND=bash /tmp/tmp561z21di/new/navigation_restore.sh rollback --backup /tmp/tmp561z21di/FC01_navigation/service-backups/20261111_212024_780185
+FC01_NEW_SERVICE_ACTIVE version=20261110.7 vertical_feedback_velocity_policy=diagnostic_only
+FC01_EXISTING_AGENT_RETAINED pid=55 rollback=/tmp/tmp561z21di/FC01_navigation/service-backups/20261111_212024_780185
+FC01_SERVICE_ROLLED_BACK_NOT_STARTED; 原服务保持停止，需现场人工选择是否启动
+ok
+test_old_controller_exit_timeout_never_switches_or_kills (test_navigation_deployment_activation.DeploymentActivationTests) ... FC01_ROLLBACK_PATH=/tmp/tmpeh0gouh7/FC01_navigation/service-backups/20261111_212024_787485
+FC01_ROLLBACK_COMMAND=bash /tmp/tmpeh0gouh7/new/navigation_restore.sh rollback --backup /tmp/tmpeh0gouh7/FC01_navigation/service-backups/20261111_212024_787485
+ok
+test_repeated_correct_activation_does_not_restart (test_navigation_deployment_activation.DeploymentActivationTests) ... FC01_ROLLBACK_PATH=/tmp/tmpjmxubhr5/FC01_navigation/service-backups/20261111_212024_790589
+FC01_ROLLBACK_COMMAND=bash /tmp/tmpjmxubhr5/new/navigation_restore.sh rollback --backup /tmp/tmpjmxubhr5/FC01_navigation/service-backups/20261111_212024_790589
+FC01_NEW_SERVICE_ACTIVE version=20261110.7 vertical_feedback_velocity_policy=diagnostic_only
+FC01_EXISTING_AGENT_RETAINED pid=55 rollback=/tmp/tmpjmxubhr5/FC01_navigation/service-backups/20261111_212024_790589
+FC01_NEW_SERVICE_ACTIVE_ALREADY_VERIFIED rollback=/tmp/tmpjmxubhr5/FC01_navigation/service-backups/20261111_212024_790589
+ok
+test_unpowered_hardware_reports_online_condition_without_mutation (test_navigation_deployment_activation.DeploymentActivationTests) ... FC01_ROLLBACK_PATH=/tmp/tmpife8oor6/FC01_navigation/service-backups/20261111_212024_796273
+FC01_ROLLBACK_COMMAND=bash /tmp/tmpife8oor6/new/navigation_restore.sh rollback --backup /tmp/tmpife8oor6/FC01_navigation/service-backups/20261111_212024_796273
+ok
+test_verification_failure_stops_attempted_new_then_restores_runtime (test_navigation_deployment_activation.DeploymentActivationTests) ... FC01_ROLLBACK_PATH=/tmp/tmpao1_bui2/FC01_navigation/service-backups/20261111_212024_799114
+FC01_ROLLBACK_COMMAND=bash /tmp/tmpao1_bui2/new/navigation_restore.sh rollback --backup /tmp/tmpao1_bui2/FC01_navigation/service-backups/20261111_212024_799114
+ok
+test_forwarded_second_signal_cannot_interrupt_safe_recovery (test_navigation_deployment_activation.InterruptRecoveryTests) ... ok
+test_missing_retained_agent_never_starts_an_agent (test_navigation_deployment_activation.RcProbeTests) ... ok
+test_rc_requires_advancing_unique_fresh_safe_controls (test_navigation_deployment_activation.RcProbeTests) ... ok
+test_proc_identity_and_current_policy_reject_stale_or_wrong_execution (test_navigation_deployment_activation.RunningIdentityTests) ... ok
+test_clean_eof_is_recorded_separately_from_normal_native_exit (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_closed_native_action_gate_labels_preparation_as_diagnostic (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_complete_feedback_and_ipc_failure_survive_nonzero_native_exit (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_current_safety_remains_fault_when_aircraft_feedback_is_stale (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_diagnostic_gates_do_not_hide_fault_or_revive_historical_feedback (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_expired_ready_feedback_never_prompts_manual_arming (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_explicit_unconfirmed_liftoff_never_displays_height_hold_as_ready (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_invalid_tail_stops_live_peer_without_waiting_for_another_read_event (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_native_signal_exit_keeps_signal_identity (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_old_safety_is_history_after_disconnect_snapshot_expiry_or_process_change (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_preparation_diagnostics_explain_stale_sources_and_preflight_without_admission (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_preparation_wait_names_ground_blocker_with_healthy_rc_and_data (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_program_arm_disabled_does_not_disable_valid_manual_rc_guidance (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_recovery_details_tolerate_missing_and_nonfinite_timing (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_recovery_explains_expired_sample_and_independent_fresh_rest_blocker (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_recovery_never_revives_historical_detector_or_takeover_observations (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_recovery_observations_explicitly_retain_their_snapshot_age (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_recovery_reports_actual_takeover_with_fresh_status (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_recovery_view_preserves_first_fault_and_prioritizes_actual_runtime_block (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_recovery_view_shows_specific_core_wait_and_omits_normal_ready_without_fault (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_recovery_view_uses_core_block_when_runtime_has_none_and_labels_stale_history (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_retry_retains_history_age_ipc_error_and_native_exit (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_silent_live_controller_cannot_refresh_aircraft_feedback (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_unknown_native_gates_cannot_prompt_manual_arming (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_view_adds_snapshot_elapsed_time_to_feedback_age (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_view_distinguishes_local_thrust_commit_from_px4_adoption (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_view_labels_history_even_when_supervisor_snapshot_is_fresh (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_view_requires_native_fresh_flags_and_explains_missing_height (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_view_shows_current_feedback_only_with_valid_age_and_native_flags (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_view_shows_native_height_reason_and_expected_observed_slots (test_navigation_diagnostics.NavigationDiagnosticsTests) ... ok
+test_each_topic_envelope_receipt_and_raw_sample_ages_expire_at_its_ttl (test_navigation_feedback_freshness.FeedbackFreshnessTests) ... ok
+test_future_sample_clock_skew_cannot_extend_raw_progress_lifetime (test_navigation_feedback_freshness.FeedbackFreshnessTests) ... ok
+test_missing_invalid_or_native_rejected_timing_cannot_prompt_manual_arming (test_navigation_feedback_freshness.FeedbackFreshnessTests) ... ok
+test_native_false_flags_and_transport_history_cannot_be_revived_by_valid_timing (test_navigation_feedback_freshness.FeedbackFreshnessTests) ... ok
+test_native_valid_future_source_timestamp_does_not_extend_display_lifetime (test_navigation_feedback_freshness.FeedbackFreshnessTests) ... ok
+test_sample_expiry_preserves_current_fault_and_recovery_diagnostics (test_navigation_feedback_freshness.FeedbackFreshnessTests) ... ok
+test_supervisor_state_age_and_saved_snapshot_elapsed_both_consume_ttl (test_navigation_feedback_freshness.FeedbackFreshnessTests) ... ok
+test_normal_paused_silent_stale_and_disconnected_real_ipc_controls (test_navigation_feedback_freshness.LiveMonitorFreshnessTests) ... ok
+test_candidate_directory_and_development_experiment_exclusion (test_navigation_install.BundleTests) ... ERROR
+test_exact_self_extraction_repeat_and_conflict (test_navigation_install.BundleTests) ... ERROR
+test_authentication_delay_cannot_reuse_prior_ground_evidence (test_navigation_install.InstallTests) ... ok
+test_build_is_offline_single_job_and_staged (test_navigation_install.InstallTests) ... ok
+test_compiler_access_time_does_not_force_a_new_live_binary (test_navigation_install.InstallTests) ... ok
+test_completion_covers_tools_typesupport_and_generated_messages (test_navigation_install.InstallTests) ... ok
+test_configuration_only_change_restarts_then_identical_config_does_not (test_navigation_install.InstallTests) ... 导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+ok
+test_foreign_unit_dropin_or_foreign_desktop_refuses_before_mutation (test_navigation_install.InstallTests) ... ok
+test_ground_evidence_expiry_reprobes_before_next_service_mutation (test_navigation_install.InstallTests) ... ok
+test_ground_failure_happens_after_build_validation_before_service_mutation (test_navigation_install.InstallTests) ... 正在离线编译 ARM64 原生控制器；单任务构建，首次需要等待。
+编译和实际 YAML 检查通过；正在被动确认未解锁、接地、静止。
+ok
+test_installed_tool_source_changes_select_a_new_build_key (test_navigation_install.InstallTests) ... ok
+test_legacy_binary_only_completion_record_is_not_reused (test_navigation_install.InstallTests) ... ok
+test_live_unknown_controller_and_unmanaged_install_link_are_preserved (test_navigation_install.InstallTests) ... ok
+test_managed_upgrade_and_repeat_preserve_existing_candidate (test_navigation_install.InstallTests) ... 导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+ok
+test_partial_install_prefix_is_retained_and_retry_selects_a_new_stage (test_navigation_install.InstallTests) ... ok
+test_pending_link_conflict_is_detected_before_disabling_old_service (test_navigation_install.InstallTests) ... ok
+test_rollback_authenticates_then_observes_and_uses_noninteractive_mutations (test_navigation_install.InstallTests) ... ok
+test_rollback_checks_ground_before_stop_and_restores_only_managed_standby (test_navigation_install.InstallTests) ... 已回到原关闭动作门待命服务；导航自动起飞已停用。
+ok
+test_service_defaults_to_diagnostic_and_flight_test_is_explicit (test_navigation_install.InstallTests) ... ok
+test_units_and_desktop_paths_support_space_dollar_percent_without_shell (test_navigation_install.InstallTests) ... ok
+test_armed_observation_latches_even_with_invalid_clock (test_navigation_install.ProbeTests) ... ok
+test_duplicates_unsynchronized_and_unrest_are_not_ground_proof (test_navigation_install.ProbeTests) ... ok
+test_live_probe_is_subscription_only_and_retains_matching_agent (test_navigation_install.ProbeTests) ... 已观察到新鲜、单一来源的未解锁接地静止反馈
+ok
+test_probe_requires_advancing_clock_and_exclusive_fresh_ground (test_navigation_install.ProbeTests) ... ok
+test_actual_ros_adapter_syntax_with_pinned_message_api (test_navigation_native.NativeNavigationTests) ... ok
+test_cpp_regressions_and_rc_navigation (test_navigation_native.NativeNavigationTests) ... ok
+test_capture_identifies_running_and_invoked_releases_without_mutation (test_navigation_report.NavigationReportTests) ... ok
+test_full_log_budget_preserves_release_evidence_and_final_status (test_navigation_report.NavigationReportTests) ... ok
+test_missing_metadata_and_symlink_logs_do_not_stop_capture (test_navigation_report.NavigationReportTests) ... ok
+test_oversized_logs_are_bounded_and_tail_is_marked (test_navigation_report.NavigationReportTests) ... ok
+test_reports_capture_live_change_instead_of_claiming_atomic_snapshot (test_navigation_report.NavigationReportTests) ... ok
+test_unavailable_final_status_is_unknown_instead_of_reported_changed (test_navigation_report.NavigationReportTests) ... ok
+test_velocity_command_diagnostics_are_captured_without_mutation (test_navigation_report.NavigationReportTests) ... ok
+test_velocity_diagnostic_log_tail_retains_existing_size_limit (test_navigation_report.NavigationReportTests) ... ok
+test_velocity_diagnostic_symlinks_are_not_collected (test_navigation_report.NavigationReportTests) ... ok
+test_boot_enabled_old_standby_refuses_without_mutation (test_navigation_restore.RestoreTests) ... ok
+test_configure_enables_boot_standby_without_starting_controller_or_agent (test_navigation_restore.RestoreTests) ... 自动报告：/tmp/tmpsxbr6m66/FC01_navigation_report_20261111_212128_642533.zip
+自动报告：/tmp/tmpazr9x6b6/FC01_navigation_report_20261111_212128_648505.zip
+自动报告：/tmp/tmpbgxoweex/FC01_navigation_report_20261111_212128_652378.zip
+自动报告：/tmp/tmplqhtt1cm/FC01_navigation_report_20261111_212128_656888.zip
+自动报告：/tmp/tmpqv3pwofo/FC01_navigation_report_20261111_212128_661578.zip
+自动报告：/tmp/tmp2u9tw1nm/FC01_navigation_report_20261111_212128_666858.zip
+自动报告：/tmp/tmpynxnh5_o/FC01_navigation_report_20261111_212128_669148.zip
+自动报告：/tmp/tmp010axjye/FC01_navigation_report_20261111_212128_674178.zip
+自动报告：/tmp/tmpx4a08r0_/FC01_navigation_report_20261111_212128_678593.zip
+FC01_NEW_SERVICE_CONFIGURED controller=/tmp/tmphn1bh113/new/install/lib/jikl_fc01_system/fc01_system_node
+FC01_EXISTING_AGENT_RETAINED pid=31
+FC01_SERVICE_NOT_STARTED boot_enabled=enabled boot_policy=enable original_enabled_state=disabled rollback=/tmp/tmphn1bh113/FC01_navigation/service-backups/20261111_212128_684166
+ok
+test_configure_never_disables_previously_enabled_unit (test_navigation_restore.RestoreTests) ... FC01_NEW_SERVICE_CONFIGURED controller=/tmp/tmpnhmdt92m/new/install/lib/jikl_fc01_system/fc01_system_node
+FC01_EXISTING_AGENT_RETAINED pid=31
+FC01_SERVICE_NOT_STARTED boot_enabled=enabled boot_policy=enable original_enabled_state=enabled rollback=/tmp/tmpnhmdt92m/FC01_navigation/service-backups/20261111_212128_687070
+ok
+test_missing_agent_is_not_started_and_external_binary_is_rejected (test_navigation_restore.RestoreTests) ... ok
+test_missing_ground_evidence_leaves_unit_unchanged (test_navigation_restore.RestoreTests) ... ok
+test_preserve_policy_leaves_persistent_enablement_untouched (test_navigation_restore.RestoreTests) ... FC01_NEW_SERVICE_CONFIGURED controller=/tmp/tmp9usznlg6/new/install/lib/jikl_fc01_system/fc01_system_node
+FC01_EXISTING_AGENT_RETAINED pid=31
+FC01_SERVICE_NOT_STARTED boot_enabled=enabled boot_policy=preserve original_enabled_state=enabled rollback=/tmp/tmp9usznlg6/FC01_navigation/service-backups/20261111_212128_691873
+FC01_NEW_SERVICE_CONFIGURED controller=/tmp/tmpprjc70s4/new/install/lib/jikl_fc01_system/fc01_system_node
+FC01_EXISTING_AGENT_RETAINED pid=31
+FC01_SERVICE_NOT_STARTED boot_enabled=disabled boot_policy=preserve original_enabled_state=disabled rollback=/tmp/tmpprjc70s4/FC01_navigation/service-backups/20261111_212128_694008
+FC01_NEW_SERVICE_CONFIGURED controller=/tmp/tmp_9zetmj7/new/install/lib/jikl_fc01_system/fc01_system_node
+FC01_EXISTING_AGENT_RETAINED pid=31
+FC01_SERVICE_NOT_STARTED boot_enabled=enabled-runtime boot_policy=preserve original_enabled_state=enabled-runtime rollback=/tmp/tmp_9zetmj7/FC01_navigation/service-backups/20261111_212128_696023
+ok
+test_rollback_restores_original_boot_policy_without_starting (test_navigation_restore.RestoreTests) ... FC01_SERVICE_ROLLED_BACK_NOT_STARTED; 原服务保持停止，需现场人工选择是否启动
+FC01_SERVICE_ROLLED_BACK_NOT_STARTED; 原服务保持停止，需现场人工选择是否启动
+FC01_SERVICE_ROLLED_BACK_NOT_STARTED; 原服务保持停止，需现场人工选择是否启动
+ok
+test_rollback_restores_unit_without_starting_old_controller (test_navigation_restore.RestoreTests) ... FC01_SERVICE_ROLLED_BACK_NOT_STARTED; 原服务保持停止，需现场人工选择是否启动
+ok
+test_rollback_without_original_unit_disables_before_removing_definition (test_navigation_restore.RestoreTests) ... FC01_SERVICE_ROLLED_BACK_NOT_STARTED; 原服务保持停止，需现场人工选择是否启动
+ok
+test_running_service_and_unknown_controller_refuse_before_mutation (test_navigation_restore.RestoreTests) ... ok
+test_actual_generated_rc_configuration_is_valid (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_actual_native_rejects_automatic_arm_in_manual_route (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_all_valid_mode_slots_are_accepted_by_actual_native_config (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_check_session_is_accepted_by_actual_native_config (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_flight_session_is_accepted_by_actual_native_config (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_native_validator_rejects_legacy_flight_flag_in_attitude_mode (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_closed_read_only_view_does_not_stop_or_manage_service (test_navigation_service.NavigationServiceTests) ... ok
+test_current_native_fault_survives_expired_aircraft_feedback (test_navigation_service.NavigationServiceTests) ... ok
+test_current_service_instance_controls_snapshot_validity (test_navigation_service.NavigationServiceTests) ... ok
+test_diagnostic_mode_closes_every_action_authority_and_visual_gate (test_navigation_service.NavigationServiceTests) ... ok
+test_flight_test_requires_explicit_confirmation (test_navigation_service.NavigationServiceTests) ... usage: python3 -m unittest [-h] [--mode {diagnostic,flight-test}]
+                           [--flight-test] [--confirm-flight-test]
+                           [--file FILE] [--prefix PREFIX]
+                           [--build-dir BUILD_DIR] [--require-existing-agent]
+                           [--require-rc-safe]
+                           [{run,prepare-config,validate-env,check-config,probe,build}]
+python3 -m unittest: error: Flight Test 必须同时提供 --confirm-flight-test；不会隐式开启动作门
+ok
+test_historical_phase_cannot_override_retry_or_channel_failure (test_navigation_service.NavigationServiceTests) ... ok
+test_load_profile_uses_bundle_candidate_and_writes_mode_metadata (test_navigation_service.NavigationServiceTests) ... ok
+test_load_profile_uses_settings_slot_and_preserves_base_when_omitted (test_navigation_service.NavigationServiceTests) ... ok
+test_mode_slot_is_configurable_and_rejects_invalid_values (test_navigation_service.NavigationServiceTests) ... ok
+test_native_fault_overrides_connected_and_ready_is_distinct (test_navigation_service.NavigationServiceTests) ... ok
+test_navigation_profile_keeps_program_arm_disabled_and_numeric_limits (test_navigation_service.NavigationServiceTests) ... ok
+test_old_binary_without_lifecycle_marker_is_not_accepted (test_navigation_service.NavigationServiceTests) ... ok
+test_old_or_disconnected_safety_cannot_override_transport_status (test_navigation_service.NavigationServiceTests) ... ok
+test_private_controller_does_not_require_the_sdk_controller_binary (test_navigation_service.NavigationServiceTests) ... ok
+test_release_entry_and_native_controller_share_the_current_identity (test_navigation_service.NavigationServiceTests) ... ok
+test_role_metadata_does_not_override_actual_native_gate_values (test_navigation_service.NavigationServiceTests) ... ok
+test_service_runs_private_native_with_status_only_and_graceful_recovery (test_navigation_service.NavigationServiceTests) ... ok
+test_shipped_mode_candidates_start_with_closed_gates (test_navigation_service.NavigationServiceTests) ... ok
+test_unknown_aircraft_feedback_cannot_become_ready (test_navigation_service.NavigationServiceTests) ... ok
+test_view_rejects_previous_boot_and_malformed_time (test_navigation_service.NavigationServiceTests) ... ok
+test_agent_loss_recovers_transport_without_stopping_or_commanding_native (test_standby.StandbyTests) ... ok
+test_boot_config_keeps_all_action_gates_closed (test_standby.StandbyTests) ... ok
+test_child_exit_zero_without_user_stop_is_recorded_and_retried (test_standby.StandbyTests) ... ok
+test_full_supervisor_reuses_agent_and_launches_closed_gate_native (test_standby.StandbyTests) ... ok
+test_latest_status_is_atomic_and_does_not_accumulate_files (test_standby.StandbyTests) ... ok
+test_missing_device_retries_after_30_seconds_without_new_session_folders (test_standby.StandbyTests) ... ok
+test_native_log_pump_rotates_real_subprocess_output (test_standby.StandbyTests) ... ok
+test_no_fresh_state_is_waiting_even_while_native_is_alive (test_standby.StandbyTests) ... ok
+test_orphan_wait_only_restores_transport_until_original_native_exits (test_standby.StandbyTests) ... ok
+test_retained_owned_agent_is_reused_after_standby_stop_and_start (test_standby.StandbyTests) ... ok
+test_socket_failure_waits_for_live_native_exit (test_standby.StandbyTests) ... ok
+test_standby_overrides_source_csv_file_path_with_yaml_empty_string (test_standby.StandbyTests) ... ok
+test_standby_runs_without_stdin_until_signal_and_only_requests_status (test_standby.StandbyTests) ... ok
+test_steady_feedback_refreshes_snapshot_before_view_freshness_expires (test_standby.StandbyTests) ... ok
+test_supervisor_respects_existing_operator_lock (test_standby.StandbyTests) ... ok
+test_surviving_native_blocks_start_even_without_inherited_lock (test_standby.StandbyTests) ... ok
+test_transport_reuses_one_matching_agent_and_never_spawns_duplicate (test_standby.StandbyTests) ... ok
+test_transport_unknown_uart_owner_is_retained_with_backoff (test_standby.StandbyTests) ... ok
+test_unknown_existing_socket_is_preserved_on_connect_failure (test_standby.StandbyTests) ... ok
+test_blocked_background_handler_cannot_hold_python_exit (test_standby_writer.StandbyWriterTests) ... ok
+test_blocked_status_has_bounded_close_and_only_latest_pending_snapshot (test_standby_writer.StandbyWriterTests) ... ok
+test_blocked_status_write_cannot_prevent_ipc_read_or_graceful_stop (test_standby_writer.StandbyWriterTests) ... ok
+test_delayed_snapshot_keeps_observation_time_and_renders_stale (test_standby_writer.StandbyWriterTests) ... ok
+test_disk_full_and_full_stderr_pipe_preserve_status_and_bounded_exit (test_standby_writer.StandbyWriterTests) ... ok
+test_full_journal_socket_does_not_change_stdout_flags_or_block_exit (test_standby_writer.StandbyWriterTests) ... ok
+test_full_real_stdout_pipe_cannot_block_status_or_python_exit (test_standby_writer.StandbyWriterTests) ... ok
+test_attitude_altitude_defaults_load_new_thrust_parameters (test_takeoff_configuration.TakeoffConfigurationTests)
+The shipped YAML is the source consumed by profile generation. ... ok
+test_missing_settings_and_explicit_settings_share_platform_default (test_takeoff_configuration.TakeoffConfigurationTests) ... ok
+test_old_manual_navigation_binary_cannot_pass_new_takeoff_release_check (test_takeoff_configuration.TakeoffConfigurationTests) ... ok
+test_shipping_settings_and_offline_export_use_1p5m_without_changing_gains (test_takeoff_configuration.TakeoffConfigurationTests) ... ok
+test_bounded_reads_and_abnormal_symlinks_never_open_a_device (test_uart_preflight.UartPreflightTests) ... ok
+test_console_candidate_alias_and_earlycon (test_uart_preflight.UartPreflightTests) ... ok
+test_corrected_fc01_hypothesis_keeps_orangepi_devices_and_pins (test_uart_preflight.UartPreflightTests) ... ok
+test_default_mapping_missing_evidence_unknown_and_custom_device_not_inferred (test_uart_preflight.UartPreflightTests) ... ok
+test_default_mapping_observed_alias_function_or_pin_mismatch_is_not_ready (test_uart_preflight.UartPreflightTests) ... ok
+test_device_arguments_and_command_whitelist_reject_unsafe_forms (test_uart_preflight.UartPreflightTests) ... ok
+test_device_tree_stdout_alias_absolute_path_and_linux_fallback (test_uart_preflight.UartPreflightTests) ... ok
+test_device_type_missing_and_primary_missing_cannot_pass (test_uart_preflight.UartPreflightTests) ... ok
+test_disabled_bound_node_and_disabled_parent_are_not_ready (test_uart_preflight.UartPreflightTests) ... ok
+test_expected_pins_in_a_different_uart_group_do_not_confirm_uart6 (test_uart_preflight.UartPreflightTests) ... ok
+test_fake_orangepi_mapping_is_only_eligible_for_manual_review (test_uart_preflight.UartPreflightTests) ... ok
+test_fc01_comparison_resolves_selector_and_device_without_linux_number_inference (test_uart_preflight.UartPreflightTests) ... ok
+test_fuser_exit_codes_and_timeout_are_interpreted_conservatively (test_uart_preflight.UartPreflightTests) ... ok
+test_getty_active_enabled_missing_and_command_failure (test_uart_preflight.UartPreflightTests) ... ok
+test_injected_mounts_rebase_absolute_links_and_disable_host_commands (test_uart_preflight.UartPreflightTests) ... ok
+test_inspection_has_no_filesystem_or_process_mutations (test_uart_preflight.UartPreflightTests) ... ok
+test_linux_eligible_cannot_override_conflicting_fc01_evidence (test_uart_preflight.UartPreflightTests) ... ok
+test_missing_live_device_tree_cannot_claim_orangepi (test_uart_preflight.UartPreflightTests) ... ok
+test_missing_or_mismatched_runtime_evidence_cannot_resolve_fc01_conflict (test_uart_preflight.UartPreflightTests) ... ok
+test_missing_or_permission_denied_dt_status_is_unknown (test_uart_preflight.UartPreflightTests) ... ok
+test_missing_pinctrl_function_or_unresolved_phandle_is_unknown (test_uart_preflight.UartPreflightTests) ... ok
+test_missing_uninterpretable_or_denied_console_evidence_is_unknown (test_uart_preflight.UartPreflightTests) ... ok
+test_output_must_be_new_and_cli_rejects_existing_before_collection (test_uart_preflight.UartPreflightTests) ... usage: python3 -m unittest [-h] [--output OUTPUT] [--device DEVICE]
+                           [--primary PRIMARY]
+python3 -m unittest: error: output directory must be new
+ok
+test_physical_telem4_cannot_alias_px4_logical_telem4 (test_uart_preflight.UartPreflightTests) ... ok
+test_readonly_commands_have_timeout_and_no_shell (test_uart_preflight.UartPreflightTests) ... ok
+test_real_host_smoke_is_not_confirmed_on_orangepi (test_uart_preflight.UartPreflightTests) ... ok
+test_registered_and_active_consoles_detect_conflict_without_cmdline (test_uart_preflight.UartPreflightTests) ... ok
+test_same_device_alias_and_identical_device_number_conflict (test_uart_preflight.UartPreflightTests) ... ok
+test_serial_alias_is_not_a_binding_and_registered_driver_is_not_proof (test_uart_preflight.UartPreflightTests) ... ok
+test_user_nsh_evidence_confirms_device_not_physical_uart (test_uart_preflight.UartPreflightTests) ... ok
+test_user_reported_progress_does_not_override_current_observation (test_uart_preflight.UartPreflightTests) ... ok
+test_a_to_b_to_a_cannot_renew_a_previously_observed_packet (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_bound_source_mismatch_never_becomes_a_current_candidate (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_cache_is_separate_from_history_and_invalid_message_revokes_it (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_configured_receive_timeout_is_not_a_source_clock_qualification (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_defaults_record_data_without_claiming_clock_or_control_qualification (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_drained_events_cannot_modify_retained_anomaly (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_duplicate_and_out_of_order_do_not_renew_receive_time (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_event_memory_is_bounded_and_drops_are_counted (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_explicit_clock_limits_can_report_current_while_authority_stays_false (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_explicit_vector_speed_and_clock_limits_are_checked (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_explicit_withdrawal_cannot_be_reissued_with_same_sequence_as_valid (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_frame_version_sequence_source_and_nonfinite_payload_checks (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_fresh_invalid_retracts_latest_observation_and_recovery_keeps_incident (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_invalid_configuration_rejected_without_implicit_defaults (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_oversized_integer_clocks_raise_explicit_validation_error (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_oversized_integer_velocity_is_rejected_without_interrupting_receiver (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_publisher_conflict_and_recovery_preserve_conflict_evidence (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_receive_clock_regression_recovers_only_after_previous_high_watermark (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_receive_gap_is_recorded_before_a_healthy_tail_replaces_its_age (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_rejected_future_or_malformed_packets_cannot_poison_trusted_watermarks (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_rejected_identity_does_not_consume_stream_history_capacity (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_reset_cannot_restart_source_clock_but_new_stamp_can_recover (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_restart_without_new_identity_is_visible_and_not_silently_accepted (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_returned_event_cannot_modify_retained_anomaly (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_ros_clock_regression_recovers_only_after_previous_high_watermark (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_same_stamp_cannot_be_reissued_under_a_new_sequence (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_source_age_is_recomputed_and_revokes_cache_without_new_packets (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_source_and_reset_changes_are_independent_local_events_not_bound_to_state (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_source_gap_is_recorded_before_a_healthy_tail_without_snapshot (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_source_gap_survives_invalid_tail_and_is_not_double_counted (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_source_stamp_regression_is_explicit_and_cannot_renew_cache (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_stream_history_capacity_never_evicts_old_replay_evidence (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_unbound_source_or_unconfigured_speed_cannot_qualify_cache (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_valid_withdrawal_also_establishes_cross_reset_source_stamp (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_zero_or_multiple_publishers_revoke_cache_until_a_new_message_arrives (test_velocity_command_diagnostic.ReceiverTests) ... ok
+test_default_writer_creates_nothing (test_velocity_command_diagnostic.WriterTests) ... ok
+test_failed_forced_flush_retains_pending_anomaly_for_retry (test_velocity_command_diagnostic.WriterTests) ... ok
+test_forced_flush_writes_pending_anomaly_once_before_interval (test_velocity_command_diagnostic.WriterTests) ... ok
+test_log_rotation_and_snapshot_are_bounded_json_evidence (test_velocity_command_diagnostic.WriterTests) ... ok
+test_oversize_event_cannot_break_file_limit (test_velocity_command_diagnostic.WriterTests) ... ok
+test_pending_anomaly_is_independent_from_callers_nested_event (test_velocity_command_diagnostic.WriterTests) ... ok
+test_shutdown_does_not_substitute_system_time_for_simulated_ros_clock (test_velocity_command_diagnostic.WriterTests) ... ok
+test_shutdown_persists_pending_anomaly_and_terminal_snapshot_without_ros (test_velocity_command_diagnostic.WriterTests) ... ok
+test_shutdown_snapshot_is_attempted_after_log_io_failure (test_velocity_command_diagnostic.WriterTests) ... ok
+test_shutdown_without_ros_observation_keeps_clock_unknown (test_velocity_command_diagnostic.WriterTests) ... ok
+test_source_contains_no_publisher_or_flight_module_and_ros_imports_only_in_main (test_velocity_command_diagnostic.WriterTests) ... ok
+test_throttled_unique_anomaly_survives_following_healthy_data (test_velocity_command_diagnostic.WriterTests) ... ok
+test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_default_offline_repeat_skips_unpack_and_preserves_generated_outputs (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_existing_different_or_incomplete_directory_is_never_overwritten (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_extract_only_compatibility_and_action_forwarding (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_manifest_checks_actual_disk_and_rejects_stale_content (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_new_default_directory_preserves_previous_unpacked_release (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_no_sidecar_uses_embedded_hash_and_rebuild_is_reproducible (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_unsafe_archive_paths_are_rejected_before_creating_target (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_whole_package_sidecar_and_archive_hash_fail_before_extract (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_absent_position_velocity_attitude_and_angular_source_are_not_invented (test_vision_adapter.OdometryAdapterTests) ... ok
+test_bad_stamp_is_invalid_and_config_needs_explicit_conventions (test_vision_adapter.OdometryAdapterTests) ... ok
+test_callback_expiry_precedes_fresh_pair_without_hiding_revocation (test_vision_adapter.OdometryAdapterTests) ... ok
+test_each_quality_time_reset_and_calibration_contract_is_required (test_vision_adapter.OdometryAdapterTests) ... ok
+test_enu_flu_rotates_pose_child_twist_and_angular_velocity (test_vision_adapter.OdometryAdapterTests) ... ok
+test_half_turn_orientation_conversion_is_stable_on_each_axis (test_vision_adapter.OdometryAdapterTests) ... ok
+test_late_health_cannot_rescue_odometry_at_or_after_pair_timeout (test_vision_adapter.OdometryAdapterTests) ... ok
+test_late_odometry_cannot_borrow_health_at_or_after_pair_timeout (test_vision_adapter.OdometryAdapterTests) ... ok
+test_lever_arm_changes_position_and_removes_rotational_sensor_velocity (test_vision_adapter.OdometryAdapterTests) ... ok
+test_missing_metadata_emits_explicit_revocation_without_borrowing_health (test_vision_adapter.OdometryAdapterTests) ... ok
+test_missing_or_mismatched_health_never_makes_zero_values_valid (test_vision_adapter.OdometryAdapterTests) ... ok
+test_ned_frd_preserves_explicit_valid_fields_and_wxyz (test_vision_adapter.OdometryAdapterTests) ... ok
+test_nonfinite_or_zero_norm_raw_measurements_are_rejected (test_vision_adapter.OdometryAdapterTests) ... ok
+test_nonzero_lever_arm_without_angular_measurement_invalidates_velocity (test_vision_adapter.OdometryAdapterTests) ... ok
+test_raw_conflict_discards_cached_health_before_another_odometry_can_pair (test_vision_adapter.OdometryAdapterTests) ... ok
+test_raw_topics_each_require_exactly_one_publisher_before_conversion (test_vision_adapter.OdometryAdapterTests) ... ok
+test_rotated_mount_and_world_alignment_are_applied (test_vision_adapter.OdometryAdapterTests) ... ok
+test_stamp_pair_buffer_matches_exact_sample_and_never_republishes_duplicates (test_vision_adapter.OdometryAdapterTests) ... ok
+test_timely_pair_remains_accepted_in_either_callback_order (test_vision_adapter.OdometryAdapterTests) ... ok
+test_timer_revokes_healthy_state_on_raw_graph_conflict_and_waits_for_new_pair (test_vision_adapter.OdometryAdapterTests) ... ok
+test_transform_overflow_never_marks_nonfinite_derived_measurements_valid (test_vision_adapter.OdometryAdapterTests) ... ok
+test_zero_quality_remains_explicit_measured_quality_for_core_threshold (test_vision_adapter.OdometryAdapterTests) ... ok
+test_cpp_mapping_preserves_wxyz_masks_mode_and_rejects_invalid_stamp_version (test_vision_adapter.RosMappingTests) ... ok
+test_bad_frame_and_missing_valid_velocity_latch_native_descent (test_vision_replay.VisionReplay) ... ok
+test_command_timeout_is_independent_of_new_state_samples (test_vision_replay.VisionReplay) ... ok
+test_duplicate_state_sequence_does_not_renew_receiver_freshness (test_vision_replay.VisionReplay) ... ok
+test_expired_state_enters_native_descent_and_cannot_reactivate (test_vision_replay.VisionReplay) ... ok
+test_follow_axes_and_modes_are_real_motion_requests (test_vision_replay.VisionReplay) ... ok
+test_ideal_closed_loop_changes_real_attitude_and_reduces_point_error (test_vision_replay.VisionReplay) ... ok
+test_invalid_mode_type_is_reported_as_an_input_error (test_vision_replay.VisionReplay) ... ok
+test_invalid_record_is_rejected_before_host_driver (test_vision_replay.VisionReplay) ... ok
+test_missing_state_waits_without_fabricating_valid_zero (test_vision_replay.VisionReplay) ... ok
+test_target_height_changes_original_vertical_controller_thrust (test_vision_replay.VisionReplay) ... ok
+test_velocity_feedback_changes_attitude_at_same_position (test_vision_replay.VisionReplay) ... ok
+test_check_session_is_accepted_by_actual_native_config (test_native_profile.NativeProfileContract) ... ok
+test_flight_session_is_accepted_by_actual_native_config (test_native_profile.NativeProfileContract) ... ok
+test_native_validator_rejects_legacy_flight_flag_in_attitude_mode (test_native_profile.NativeProfileContract) ... ok
+test_exporter_writes_default_off_or_explicit_candidate_without_changing_settings (test_vision_settings.VisionConfigExportTests) ... ok
+test_check_session_is_accepted_by_actual_native_config (test_vision_settings.VisionNativeConfigTests) ... ok
+test_disabled_visual_preserves_more_conservative_native_configuration (test_vision_settings.VisionNativeConfigTests) ... ok
+test_flight_session_is_accepted_by_actual_native_config (test_vision_settings.VisionNativeConfigTests) ... ok
+test_native_validator_rejects_legacy_flight_flag_in_attitude_mode (test_vision_settings.VisionNativeConfigTests) ... ok
+test_visual_configuration_cannot_expand_original_tilt_envelope (test_vision_settings.VisionNativeConfigTests) ... ok
+test_visual_configuration_requires_existing_manual_rc_route (test_vision_settings.VisionNativeConfigTests) ... ok
+test_default_off_preserves_existing_flight_parameters (test_vision_settings.VisionSettingsTests) ... ok
+test_disabled_visual_accepts_stricter_existing_flight_envelope (test_vision_settings.VisionSettingsTests) ... ok
+test_explicit_topics_and_candidate_limits_reach_generated_parameters (test_vision_settings.VisionSettingsTests) ... ok
+test_invalid_or_misspelled_config_is_not_silently_ignored (test_vision_settings.VisionSettingsTests) ... ok
+test_missing_file_is_disabled_and_existing_file_is_consumed (test_vision_settings.VisionSettingsTests) ... ok
+test_below_quality_threshold_rejects_and_unknown_threshold_stays_explicit (test_vision_state_validation.StateValidationTests) ... ok
+test_config_copies_transform_lists_before_caller_can_change_them (test_vision_state_validation.StateValidationTests) ... ok
+test_covariance_nonfinite_negative_asymmetric_and_indefinite_are_rejected (test_vision_state_validation.StateValidationTests) ... ok
+test_covariance_psd_checks_do_not_hide_small_indefinite_block_in_large_axis (test_vision_state_validation.StateValidationTests) ... ok
+test_covariance_psd_rank_deficiency_and_large_finite_matrix (test_vision_state_validation.StateValidationTests) ... ok
+test_covariance_unknown_and_declared_zero_never_become_transformed_valid (test_vision_state_validation.StateValidationTests) ... ok
+test_current_expiry_revokes_cache_and_new_data_recovers (test_vision_state_validation.StateValidationTests) ... ok
+test_duplicate_and_regression_revoke_without_renewing_age (test_vision_state_validation.StateValidationTests) ... ok
+test_enu_flu_conversion_uses_actual_converter (test_vision_state_validation.StateValidationTests) ... ok
+test_event_queue_is_bounded_and_healthy_tail_keeps_anomaly_counts (test_vision_state_validation.StateValidationTests) ... ok
+test_expired_cache_is_recorded_before_retired_epoch_rejection_and_recovery (test_vision_state_validation.StateValidationTests) ... ok
+test_expiry_does_not_erase_last_trusted_continuity_baseline (test_vision_state_validation.StateValidationTests) ... ok
+test_explicit_clock_offset_applies_to_copies_only (test_vision_state_validation.StateValidationTests) ... ok
+test_explicit_covariance_caps_require_declaration_and_compare_raw_variance (test_vision_state_validation.StateValidationTests) ... ok
+test_explicit_relocalization_and_reset_rebaseline_position_velocity_attitude (test_vision_state_validation.StateValidationTests) ... ok
+test_identical_attitude_and_its_opposite_sign_pass_tiny_step_limit (test_vision_state_validation.StateValidationTests) ... ok
+test_input_object_and_returned_result_cannot_mutate_current_cache (test_vision_state_validation.StateValidationTests) ... ok
+test_invalid_configuration_is_rejected_without_ros (test_vision_state_validation.StateValidationTests) ... ok
+test_invalid_epoch_cannot_erase_source_age_expiry_with_recent_receipt (test_vision_state_validation.StateValidationTests) ... ok
+test_invalid_identity_cannot_erase_expiry_or_poison_trusted_state (test_vision_state_validation.StateValidationTests) ... ok
+test_lever_arm_uses_actual_angular_velocity_correction (test_vision_state_validation.StateValidationTests) ... ok
+test_many_explicit_new_epochs_work_until_capacity_without_silent_eviction (test_vision_state_validation.StateValidationTests) ... ok
+test_measurement_clock_regression_and_new_epoch_reset (test_vision_state_validation.StateValidationTests) ... ok
+test_missing_fields_bad_version_and_bool_coercion_never_fabricate_measurements (test_vision_state_validation.StateValidationTests) ... ok
+test_new_epoch_must_advance_same_confirmed_measurement_clock (test_vision_state_validation.StateValidationTests) ... ok
+test_new_receive_records_prior_expiry_without_relying_on_timer (test_vision_state_validation.StateValidationTests) ... ok
+test_new_relocalization_epoch_cannot_repeat_confirmed_clock_stamp (test_vision_state_validation.StateValidationTests) ... ok
+test_no_step_limits_does_not_invent_jump_faults_and_q_sign_is_equivalent (test_vision_state_validation.StateValidationTests) ... ok
+test_normal_stationary_and_moving_samples_keep_state_and_target_separate (test_vision_state_validation.StateValidationTests) ... ok
+test_receive_and_ros_clock_regressions_are_visible_and_recoverable (test_vision_state_validation.StateValidationTests) ... ok
+test_regressed_clock_does_not_create_an_expiry_before_epoch_rejection (test_vision_state_validation.StateValidationTests) ... ok
+test_rejected_unknown_epoch_cannot_reauthorize_duplicate_old_pair (test_vision_state_validation.StateValidationTests) ... ok
+test_retired_relocalization_epoch_with_new_sequence_is_still_rejected (test_vision_state_validation.StateValidationTests) ... ok
+test_retired_reset_epoch_replay_cannot_rebase_to_old_pose_within_ttl (test_vision_state_validation.StateValidationTests) ... ok
+test_returned_covariance_diagnostic_cannot_mutate_cached_diagnostic (test_vision_state_validation.StateValidationTests) ... ok
+test_snapshot_clock_watermark_covers_receive_and_empty_cache (test_vision_state_validation.StateValidationTests) ... ok
+test_source_age_expires_even_with_recent_receive_and_current_unknown_clock (test_vision_state_validation.StateValidationTests) ... ok
+test_source_and_frame_epoch_events_never_authorize_unconfigured_transforms (test_vision_state_validation.StateValidationTests) ... ok
+test_stale_and_future_source_times_do_not_poison_next_good_sample (test_vision_state_validation.StateValidationTests) ... ok
+test_tiny_real_attitude_steps_obey_explicit_limit (test_vision_state_validation.StateValidationTests) ... ok
+test_tracking_degraded_lost_and_repeated_recovery_keep_anomaly (test_vision_state_validation.StateValidationTests) ... ok
+test_unconfirmed_clock_and_missing_policy_remain_unknown (test_vision_state_validation.StateValidationTests) ... ok
+test_unexplained_jump_cannot_rebaseline_itself_and_return_to_trust_recovers (test_vision_state_validation.StateValidationTests) ... ok
+test_untrusted_epoch_neither_consumes_capacity_nor_retires_good_epoch (test_vision_state_validation.StateValidationTests) ... ok
+
+======================================================================
+ERROR: test_candidate_directory_and_development_experiment_exclusion (test_navigation_install.BundleTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/test_navigation_install.py", line 364, in test_candidate_directory_and_development_experiment_exclusion
+    script=b.build(folder/'candidate.sh',ROOT,directory_name=candidate)
+  File "/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py", line 242, in build
+    files[MANIFEST]=_release_bytes(root,files)
+  File "/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py", line 227, in _release_bytes
+    raise ValueError('FC01_RELEASE.json payload_sha256 differs from the current source tree')
+ValueError: FC01_RELEASE.json payload_sha256 differs from the current source tree
+
+======================================================================
+ERROR: test_exact_self_extraction_repeat_and_conflict (test_navigation_install.BundleTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/test_navigation_install.py", line 377, in test_exact_self_extraction_repeat_and_conflict
+    folder=Path(d);script=b.build(folder/'navigation.sh',ROOT);dest=folder/'installed'
+  File "/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py", line 242, in build
+    files[MANIFEST]=_release_bytes(root,files)
+  File "/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py", line 227, in _release_bytes
+    raise ValueError('FC01_RELEASE.json payload_sha256 differs from the current source tree')
+ValueError: FC01_RELEASE.json payload_sha256 differs from the current source tree
+
+----------------------------------------------------------------------
+Ran 426 tests in 95.587s
+
+FAILED (errors=2)

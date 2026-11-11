@@ -1,0 +1,19 @@
+{
+  "syntax_counts": {
+    "python": 98,
+    "shell": 36
+  },
+  "yaml_semantic_equal": [
+    "native/config/R6_OFFLINE_DEV.yaml",
+    "native/config/R6_REAL_FC01_PENDING_REVIEW.yaml",
+    "native/config/S10_1HZ_EXPERIMENTAL_SIM_ONLY.yaml",
+    "native/config/attitude_altitude.yaml",
+    "native/config/diagnostic.yaml",
+    "native/config/flight.yaml",
+    "native/config/flight_test.yaml",
+    "native/config/ground.yaml",
+    "native/config/historical/R5_CANDIDATES_GATES_CLOSED.yaml",
+    "native/config/sim.yaml",
+    "tests/fixtures/base.yaml"
+  ]
+}
