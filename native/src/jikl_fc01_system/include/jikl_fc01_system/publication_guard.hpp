@@ -2,18 +2,26 @@
 // 飞控最终发布策略：对每一条真实 sink 调用独立检查当前健康、状态和权限。
 // 这是无 ROS/DDS、无副作用的拒绝优先策略；不夹紧输出、不重置故障、不推进飞行状态机。
 // BoundaryContext 是当次发布的不可变快照，生产节点在目标和心跳前分别重取，不能复用过期的通过结论。
+//
+// 从调用链阅读：Core计算计划 → 本文件返回Decision → publication_boundary实际调用sink。
+// “计划正确”和“现在仍准许发”是两个时间点的问题；本文件重复健康/权限门是有意的最后一道检查。
+// 这里全部是只读策略；allow只准许调用者继续，绝不等于目标已经发出，更不等于PX4采用。
+// 各策略按源码顺序返回首个拒绝，不收集所有错误；交换两个if可能改变可观察的故障原因。
+// 正常准备零流、人工RC待证零流、bench零流、飞行非零推力及地面模式释放有不同合同，
+// 不要把下面看似重复的条件合并成一个“只要healthy就都能发”的通用开关。
 #include "jikl_fc01_system/attitude_altitude_core.hpp"
 #include <string>
 
 namespace fc01::attitude {
-// Immutable per-publication view, sampled again by the ROS adapter at the sink.
-// No ROS/DDS dependencies, side effects, clamping, or state transitions here.
-// 包括当前配置/反馈、Core 阶段、地面参考、租约、事务证据与视觉计划；这些字段均由本机状态生成。
+// 这份上下文由Runtime/节点从当前配置、快照和Core状态组装，策略通过const引用只读借用。
+// 它不是新的控制权对象；同一份“已通过”上下文不能在稍后的另一个sink前继续当作最新证据。
 struct BoundaryContext {
   std::string profile;
   Phase phase{Phase::Idle};
   Config config;
   Feedback feedback;
+  // session/lease是对应路线的有效操作者连接/租约，不等同于“必须打开图形窗口”。
+  // control_fresh由整个控制周期的截止预算产生，不能仅凭源消息新鲜就补成true。
   bool shutdown{}, session_connected{}, operator_lease_live{}, control_fresh{};
   bool preparation_lease_valid{true}, flight_started{}, reference_ready{};
   // PX4 NED z 地面零点，单位 m，向下为正；飞行高度由 reference_z-feedback.z 得到，向上为正。
@@ -21,6 +29,8 @@ struct BoundaryContext {
   std::uint8_t reference_z_reset{}, reference_vz_reset{}, reference_quat_reset{};
   authority::State authority;
   bool offboard_observed{};
+  // confirmed表示Core已经观察的证明，pending表示未结束的意图，committed表示本地实际出口提交。
+  // 三种bool描述不同层次；默认false不能被解释成已证明飞机上锁或接地。
   bool ground_confirmed{}, arm_confirmed{}, ground_release_pending{}, arm_cancel_pending{};
   bool disarm_command_committed{};
   bool bench_arm_only_active{}, bench_disarm_proven{}, arm_command_committed{};
@@ -199,11 +209,13 @@ inline const char* name(BoundaryReason reason) {
   }
   return "UNKNOWN_DENIED";
 }
+// 缺省Decision是拒绝；调用者要同时读取allowed和reason，不能把枚举数字当作bool成功码。
 struct Decision {
   bool allowed{};
   BoundaryReason reason{BoundaryReason::InvalidOutput};
 };
 inline Decision deny(BoundaryReason reason) {
+  // 聚合初始化依次填写结构体的allowed、reason字段，不修改任何外部状态。
   return {false, reason};
 }
 inline Decision allow() {
@@ -240,10 +252,12 @@ inline bool rc_stage(Phase p) {
   return p == Phase::RcPrestream || p == Phase::RcWaitArm || p == Phase::RcWaitNavigation;
 }
 inline bool stage_one(Phase p) {
+  // 这是“只可零推力准备”的分类，不是Phase数值大小或可自动进入下一阶段的授权。
   return p == Phase::Idle || p == Phase::SelfCheck || p == Phase::Prestream ||
          p == Phase::RequestOffboard || p == Phase::OffboardReady || rc_stage(p);
 }
 inline bool nonzero(const std::array<double, 3>& thrust) {
+  // const引用不复制三轴数组；||只需一轴不等于0就为真。很小的double也不能算“安全零”。
   return thrust[0] != 0 || thrust[1] != 0 || thrust[2] != 0;
 }
 // 检查动作总门、程序/人工解锁路线、起飞/台架门和参数确认；异常配置统一拒绝。
@@ -256,6 +270,8 @@ inline Decision flight_gates(const Config& c) {
     return deny(BoundaryReason::TakeoffEnabled);
   if (!c.parameters_confirmed)
     return deny(BoundaryReason::ParametersConfirmed);
+  // 只将配置值不合法的invalid_argument映射成稳定拒绝原因；内存等其他异常仍向外传播，
+  // 不用catch(...)把无法完成校验伪装为一个普通可重试等待。
   try {
     c.validate();
   } catch (const std::invalid_argument&) {
@@ -268,6 +284,8 @@ inline Decision boundary_health(const BoundaryContext& c) {
   if (c.profile != "attitude_altitude")
     return deny(BoundaryReason::WrongProfile);
   // 关闭期间只保留已定义的受控下降、地面上锁/释放及取消处置阶段，不重新开放起飞。
+  // !(A && B)表示除去一条“当前阶段且已有取消意图”的窄例外；其他恢复阶段也只允许继续处置。
+  // 命中例外仍须通过下方所有当前健康/权限/输出门，不是在shutdown时新开一个起飞入口。
   if (c.shutdown && !(c.phase == Phase::RequestArm && c.arm_cancel_pending) &&
       c.phase != Phase::Descent && c.phase != Phase::RecoveryDescent &&
       c.phase != Phase::Px4LandPending && c.phase != Phase::PoweredGround &&
@@ -278,6 +296,7 @@ inline Decision boundary_health(const BoundaryContext& c) {
     return deny(BoundaryReason::Shutdown);
   if (!c.control_fresh)
     return deny(BoundaryReason::ControlStall);
+  // s是c.feedback的只读别名，避免反复写长成员路径；没有新采样，也不会产生第二份反馈。
   const auto& s = c.feedback;
   // 任何已锁存接管、Kill、飞控接管或已观察 Offboard 后的信号丢失都否决输出。
   if (c.authority.takeover_latched || s.kill || s.operator_takeover ||
@@ -311,9 +330,8 @@ inline Decision boundary_health(const BoundaryContext& c) {
     return deny(BoundaryReason::VerticalInvalid);
   if (!std::isfinite(s.z) || !std::isfinite(s.vz) || !std::isfinite(s.stationary_seconds))
     return deny(BoundaryReason::NonfiniteTelemetry);
-  // A callback can replace the validated snapshot between Core and the
-  // final release sink. Keep the per-sample guard after flight_started=false;
-  // this checks discontinuities, not cumulative drift from the old Armed z0.
+  // 最终出口可能看到不同于Core计算时的新上下文；bench即使已清flight_started，仍保留相邻控制观察跳变门。
+  // 此门检查相对最近实际观察的z/vz不连续，不把旧armed地面z0的累计漂移误当成跳变。
   if (bench_release && (!c.bench_sample_guard_ready || !std::isfinite(c.bench_sample_z) ||
                         !std::isfinite(c.bench_sample_vz) ||
                         std::abs(s.z - c.bench_sample_z) > c.config.z_jump_limit_m ||
@@ -323,6 +341,7 @@ inline Decision boundary_health(const BoundaryContext& c) {
 }
 // 程序解锁只允许 RequestArm 的当前未解锁地面状态；RC 导航模式明确禁止程序解锁。
 inline Decision arm_publication_policy(const BoundaryContext& c) {
+  // 先拒绝整条人工RC路线，再检查其他门；保留该顺序，不能因遥测健康就允许程序代替人工Arm。
   if (c.config.rc_navigation_enabled)
     return deny(BoundaryReason::ArmEnabled);
   const auto healthy = boundary_health(c);
@@ -355,8 +374,8 @@ inline Decision arm_publication_policy(const BoundaryContext& c) {
 inline Decision disarm_publication_policy(const BoundaryContext& c) {
   if (c.phase != Phase::RequestDisarm)
     return deny(BoundaryReason::DisarmPhase);
-  // rclcpp::publish is a local commit, not proof of PX4 receipt/execution.
-  // A second routine Disarm cannot be justified by an uncorrelated error ACK.
+  // 本地publish返回不证明PX4收到/执行，但也不能据此假定“没发到”而重发。
+  // Arm/Disarm共用400，不能拿一条无法归属的错误ACK授权第二次例行Disarm。
   if (c.disarm_command_committed)
     return deny(BoundaryReason::DisarmTransaction);
   const auto health = boundary_health(c);
@@ -376,6 +395,7 @@ inline Decision disarm_publication_policy(const BoundaryContext& c) {
       s.local_stamp > c.bench_arm_local_baseline && s.status_stamp >= c.bench_disarm_status_floor &&
       s.local_stamp >= c.bench_disarm_local_floor && s.land_stamp >= c.bench_disarm_land_floor &&
       bench_ground_observation(c.config, s, c.reference_z);
+  // 只要配置或本轮进入bench，就必须满足完整bench专用证明；不能失败后回落到更宽松的普通地面分支。
   if ((c.config.bench_arm_only_enabled || c.bench_arm_only_active) && !bench)
     return deny(BoundaryReason::DisarmGround);
   if (!c.flight_started || !c.arm_confirmed || !c.reference_ready || !c.ground_confirmed ||
@@ -405,19 +425,14 @@ inline Decision land_fallback_publication_policy(const BoundaryContext& c) {
     return deny(BoundaryReason::LandFallback);
   return allow();
 }
-// Only a previously UNARMED ground preparation may treat stale z0 drift as
-// irrelevant to releasing Offboard. The PX4 status and land detector must still
-// say disarmed/landed/at_rest, and boundary_health checks current Z/Vz, resets
-// of time, telemetry freshness and sole publication ownership. Flight paths
-// retain the original reference-height requirement.
-// 只识别从未开始飞行且未确认解锁的准备取消；该状态的旧地面零点漂移不应阻塞退出。
+// 只识别未开始动力托管且未确认解锁的准备取消；其旧地面零点漂移不应永久卡住退出。
+// 这只是分类函数；实际释放仍需新鲜上锁/接地/静止、当前Z/Vz、时间/唯一性等最终门。
+// 曾经确认解锁的任务仍保留原参考高度要求，不能借准备取消例外退出飞行。
 inline bool unarmed_preparation_release(const BoundaryContext& c) {
   return !c.flight_started && !c.arm_confirmed;
 }
-// A fresh external mode change can overtake a planned Command 176 between
-// Core::step and the final ROS sink. Cancel, never publish a second mode
-// request into a PX4 mode that is already under operator control.
-// 地面准备时外部已切出 Offboard，则取消原计划的模式请求，避免向操作者新模式再发送一次切换。
+// 当最新最终上下文已证明操作者切出Offboard，未起飞的地面准备就取消原176计划。
+// 原计划依据的模式事实已过时，不能向操作者的新模式再多发一次切换；这不扩大到飞行阶段。
 inline bool external_ground_mode_departure(const BoundaryContext& c) {
   const auto& s = c.feedback;
   return c.profile == "attitude_altitude" && c.phase == Phase::ReleaseOffboard &&
@@ -434,8 +449,8 @@ inline Decision release_publication_policy(const BoundaryContext& c) {
   if (!health.allowed)
     return health;
   const auto& s = c.feedback;
-  // Stage-one ground release must work even with all flight gates closed and
-  // flight-only envelope parameters unset. Use the prepared ground tolerance.
+  // 关闭动力门的地面准备也必须能正常释放模式，而这时飞行动力包络可能尚未填写。
+  // 三目表达式仅在地面释放选已有合法容差或原固定后备值，不修改配置，也不用于授权起飞。
   const double ground_height_tolerance =
       c.config.height_tolerance > 0 ? c.config.height_tolerance : .30;
   const double ground_speed_tolerance =
@@ -443,9 +458,8 @@ inline Decision release_publication_policy(const BoundaryContext& c) {
   const bool bench = c.config.bench_arm_only_enabled && c.bench_arm_only_active &&
                      c.arm_confirmed && !c.config.takeoff_enabled && !c.flight_started &&
                      c.ground_confirmed;
-  // Core has already completed the separate new Disarmed/rest dwell. The
-  // final release sink rechecks that live state without the old Armed z0.
-  // 台架用新的未解锁地面观测，飞行结束仍按原高度/速度容差；二者不能共享旧 Armed z0 假设。
+  // Core已完成专门的上锁后静止新样本窗口；bench最终释放只复查当前上锁地面合同。
+  // 正常飞行结束仍查原参考高度/速度容差，不能把两者都改成忽略旧z0。
   const bool vertical = bench ? bench_disarmed_ground_observation(c.config, s)
                               : ((unarmed_preparation_release(c) ||
                                   std::abs(c.reference_z - s.z) <= ground_height_tolerance) &&
@@ -459,9 +473,12 @@ inline Decision release_publication_policy(const BoundaryContext& c) {
 // 返回子检查的首个拒绝原因；NED/FRD 姿态沿用 Hamilton wxyz，角度计算及浮点顺序保持原样。
 // 仅供总策略在既有位置调用，不能独立作为发布许可；不采新上下文、不改变目标、不重新分配权限。
 inline Decision attitude_target_policy(const BoundaryContext& c, const Output& output) {
+  // normalized返回optional<Quaternion>：不存在有效结果就拒绝；不会在这里改写原目标output.q。
   const auto commanded = normalized(output.q);
   if (!commanded || !std::isfinite(c.yaw_reference))
     return deny(BoundaryReason::CommandedAttitude);
+  // Hamilton[w,x,y,z]：只有yaw旋转时w=cos(yaw/2)、z=sin(yaw/2)，roll/pitch目标为0。
+  // yaw_reference是弧度，且须来自本轮已锁参考或已提交视觉yaw，不能直接跟随任意实测机头。
   Quaternion level{std::cos(c.yaw_reference / 2), 0, 0, std::sin(c.yaw_reference / 2)};
   // 视觉运动只在明确开启且已离地 HeightHold 时允许，并与当前视觉计划四元数及倾角相符。
   if (output.visual_motion) {
@@ -471,7 +488,9 @@ inline Decision attitude_target_policy(const BoundaryContext& c, const Output& o
     const auto expected = normalized(c.visual_target_q);
     if (!expected)
       return deny(BoundaryReason::VisualAttitude);
+    // *expected解引用optional，取出已验证的目标副本；之前已检查非空，不是解引用悬空指针。
     level = *expected;
+    // 旋转矩阵zz元素等于目标倾角cos值；clamp只防反三角函数舍入越界，不修改发送目标。
     const double cosine = std::clamp(
         1 - 2 * ((*commanded)[1] * (*commanded)[1] + (*commanded)[2] * (*commanded)[2]), -1., 1.);
     if (std::acos(cosine) * 180 / 3.14159265358979323846 >
@@ -479,6 +498,8 @@ inline Decision attitude_target_policy(const BoundaryContext& c, const Output& o
       return deny(BoundaryReason::VisualAttitude);
   }
   // 四元数点积绝对值给出最短转角；普通定高目标要接近锁定 yaw 的水平姿态，视觉目标采用更严同计划容差。
+  // 单位四元数q与-q表示同一姿态，所以先abs(dot)；2*acos才是两姿态的最短转角（弧度）。
+  // 普通目标容差2度先换成弧度，视觉目标须与同一计划在1e-5弧度内一致。
   double dot = 0;
   for (unsigned k = 0; k < 4; ++k)
     dot += (*commanded)[k] * level[k];
@@ -516,12 +537,16 @@ inline Decision rc_preparation_output_policy(const BoundaryContext& c, bool thru
                             !c.flight_started &&
                             (c.phase == Phase::RcWaitArm || c.phase == Phase::RcWaitNavigation) &&
                             !s.offboard && s.rc_mode_slot != c.config.rc_navigation_mode_slot;
+  // navigation_zero是人工解锁已证明但导航开关/模式仍异步配对的窄零流；pending_zero则还没证明人工Arm。
+  // 两者均不是flight_started，也不能给非零推力授权；RC原准入机另管固定配对期限。
   const bool navigation_zero = c.rc_navigation_zero_allowed && c.rc_manual_arm_proven &&
                                !c.flight_started && c.phase == Phase::RcWaitNavigation;
   if (c.phase == Phase::RcWaitNavigation && c.rc_manual_arm_proven && !navigation_zero)
     return deny(BoundaryReason::RcTelemetry);
   if (!c.rc_manual_arm_proven && (s.armed || s.rc_arm_switch == 1) && !pending_zero)
     return deny(BoundaryReason::ArmDisarmed);
+  // armed_time是PX4本次解锁事件身份，latest_arming_reason=2是RC开关原因；
+  // 与manual证明严格匹配，不能用上一轮已解锁事实授权这一轮。
   if (s.armed && !pending_zero &&
       (!c.rc_manual_arm_proven || s.rc_arm_switch != 1 || s.armed_time != c.rc_manual_armed_time ||
        s.latest_arming_reason != 2))
@@ -542,8 +567,8 @@ inline Decision attitude_publication_policy(const BoundaryContext& c, const Outp
   for (double x : output.thrust)
     if (!std::isfinite(x) || x < -1 || x > 1)
       return deny(BoundaryReason::InvalidOutput);
-  // Evaluate the original doubles: underflow at float conversion must never
-  // conceal an upstream stage-one error. Reject, do not silently clamp.
+  // 例如微小double非零在转float时可能变0；必须在转换之前拒绝准备阶段非零。
+  // 这里拒绝错误计划，不夹紧、不替它补成零，也不修改Core的原输出。
   const bool thrust_nonzero = nonzero(output.thrust);
   if ((stage_one(c.phase) || c.config.bench_arm_only_enabled) && thrust_nonzero)
     return deny(BoundaryReason::StageOneNonzero);
@@ -580,8 +605,8 @@ inline Decision attitude_publication_policy(const BoundaryContext& c, const Outp
   }
   if (!c.reference_ready)
     return deny(BoundaryReason::FlightReference);
-  // Common final sink gate: no ZERO thrust, stage-one, or release bypass of
-  // target attitude/yaw reference. Exact-double nonzero test remains above.
+  // 零推力、普通准备和模式释放也要检查目标姿态/yaw；不能靠“推力反正是0”跳过目标合同。
+  // 推力原始double非零检查已在健康门之前，首拒绝优先级保持不动。
   const auto target = attitude_target_policy(c, output);
   if (!target.allowed)
     return target;
@@ -592,13 +617,14 @@ inline Decision attitude_publication_policy(const BoundaryContext& c, const Outp
   if (c.phase == Phase::ReleaseOffboard) {
     if (thrust_nonzero)
       return deny(BoundaryReason::StageOneNonzero);
-    // A disarmed-ground release retains zero heartbeat until PX4 switches
-    // modes. This is NOT an in-flight setpoint bypass; flight gates are not
-    // required here because release also serves closed-gate preparation.
+    // 未解锁地面释放用零流维持到PX4模式转移；它还服务于动力门全关的准备取消。
+    // 因此这里不要求飞行动作门开启，但仍要求专门地面释放策略全部通过。
     return release_publication_policy(c);
   }
   // 未解锁准备使用准备租约，动作门关闭仍可预发送零心跳；任何已解锁状态都被拒绝。
   if (stage_one(c.phase)) {
+    // 关闭UI时，尚未结束的176仍可能生效；这条窄例外只维持未解锁地面的零准备流等原事务结果。
+    // 它只豁免当前session_connected，不省略preparation_lease和其他上方门。
     const bool cancelled_ground_mode = c.phase == Phase::RequestOffboard &&
                                        c.ground_release_pending && unarmed_preparation_release(c) &&
                                        !c.feedback.armed && c.feedback.landed && c.feedback.at_rest;
@@ -610,7 +636,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c, const Outp
       return deny(BoundaryReason::ArmDisarmed);
     if (c.phase == Phase::OffboardReady && !c.feedback.offboard)
       return deny(BoundaryReason::ArmedOffboard);
-    return allow(); // Four closed flight gates do not block zero-thrust prepare.
+    return allow(); // 动作门关闭仍可做零推力准备，不意味着可以Arm或起飞。
   }
   const auto gates = flight_gates(c.config);
   if (!gates.allowed)
@@ -632,7 +658,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c, const Outp
     return deny(BoundaryReason::FlightReference);
   // RequestArm/ArmedGround/RequestDisarm 的零目标可在前述健康和授权完整时发出；非零目标继续检查。
   if (!thrust_nonzero)
-    return allow(); // RequestArm/ArmedGround/RequestDisarm use zero.
+    return allow(); // 此处仅省略后面的非零动力检查，上方健康/目标/权限/托管门均已执行。
   if (c.phase != Phase::ThrustRamp && c.phase != Phase::Ascend && c.phase != Phase::HeightHold &&
       c.phase != Phase::Descent && c.phase != Phase::RecoveryDescent &&
       c.phase != Phase::Px4LandPending && c.phase != Phase::PoweredGround &&
@@ -646,6 +672,8 @@ inline Decision attitude_publication_policy(const BoundaryContext& c, const Outp
     return deny(BoundaryReason::InvalidThrust);
   if (!c.feedback.battery_ready)
     return deny(BoundaryReason::BatteryPreflight);
+  // 这些已进入下降/地面处置的阶段不因UI会话结束而遗弃armed+Offboard托管，
+  // 但健康、控制权、当前armed、推力范围/方向与电池门仍在上方全部执行。
   if (c.phase != Phase::Descent && c.phase != Phase::RecoveryDescent &&
       c.phase != Phase::Px4LandPending && c.phase != Phase::PoweredGround &&
       c.phase != Phase::Landed) {
@@ -663,6 +691,7 @@ inline Decision attitude_publication_policy(const BoundaryContext& c, const Outp
 }
 // 仅把动作门序列化到诊断，不依据输出 JSON 的显示状态改变任何权限。
 inline std::string flight_gates_json(const Config& c) {
+  // lambda把bool变成JSON字面量true/false；只读显示不是修改动作门的命令入口。
   auto boolean = [](bool b) {
     return b ? "true" : "false";
   };

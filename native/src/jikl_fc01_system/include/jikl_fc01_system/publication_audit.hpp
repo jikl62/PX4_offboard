@@ -5,12 +5,12 @@
 #include <cstdint>
 #include <cmath>
 namespace fc01::attitude {
-// Local publish returns only. Neither counts nor timing assert PX4 receipt.
-// Target and mode are separate commits, never an atomic pair.
+// 审计只记本地publish返回：数量、间隔都不能证明PX4已收到。target/mode是两个独立提交。
 struct PublicationAudit {
   // 目标和心跳分别计数；mode_gap_violations 只记录超过 0.3 s 的本地心跳间隔。
   std::uint64_t target_count{}, mode_count{}, mode_gap_violations{};
   double target_last{-1}, mode_last{-1}, max_target_gap{}, max_mode_gap{};
+  // -1表示尚无提交时刻；最大间隔是历史观测，不能被新一轮begin清成“从没卡过”。
   double last_target_thrust_z{NAN};
   bool target_this_tick{}, mode_this_tick{}, exception_this_tick{};
   // 每轮清除“本轮已提交/异常”标志，不清历史总量与最大间隔。
@@ -19,6 +19,7 @@ struct PublicationAudit {
   }
   // 只有目标 sink 真正返回后调用；输出值用于取证，不能把它等同于实际电机推力。
   void target_committed(double now, double thrust_z = NAN) {
+    // now是主机单调秒，不是ROS消息timestamp；源域延迟由另一条source_clock证据链负责。
     if (target_last >= 0 && std::isfinite(now))
       max_target_gap = std::max(max_target_gap, now - target_last);
     target_last = now;
@@ -39,6 +40,7 @@ struct PublicationAudit {
     mode_this_tick = true;
   }
   void failed() {
+    // 只标本轮存在异常，不抹掉异常之前已经完成的target/mode事实，便于解释部分发布。
     exception_this_tick = true;
   }
 };

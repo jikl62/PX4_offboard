@@ -1,6 +1,14 @@
 // ROS 2 适配主节点：把 PX4 反馈与离散安全事件交给纯计算 Runtime，再经最终边界发布获准的控制计划。
 // main 使用单线程执行器，回调、快照、Core 和发布串行执行；只有 AsyncLog 在后台写盘。
 // 本文件同时包含诊断序列化；日志里的本地 publish 成功不等于 PX4 收到、采用或飞机真实离地。
+//
+// 初读建议：先看末尾 main 的循环，再看 tick，最后沿用到的辅助函数向下阅读。
+// 数据流是“PX4 消息 → 回调保存证据 → snapshot 整理事实 → Runtime/Core 计算计划
+// → publication_boundary 最后复核 → ROS 发布函数”。Core 不持有 ROS 发布器。
+// 名词区分：目标 setpoint 是要飞控跟踪的量；Offboard 心跳声明当前控制类型；
+// VehicleCommand 是切模式/解上锁等离散动作，三者不是同一条消息。
+// 阅读日志时分清四层：收到的反馈、计算的计划、本地发布返回、PX4 采用/实际运动。
+// 本文件直接记录前三层；确认最后一层仍需飞控状态、飞控日志或现场证据。
 #include "jikl_fc01_system/runtime.hpp"
 #include "jikl_fc01_system/unix_server.hpp"
 #include "jikl_fc01_system/attitude_ros_parameters.hpp"
@@ -45,6 +53,7 @@
 #include <thread>
 
 // 本地别名缩短协议类型；实际 PX4 消息身份与版本在下方编译期断言中固定。
+// namespace 别名 f/v 缩短命名空间；using 只给已有类型取短名，不创建另一种 ROS 消息。
 namespace f = fc01;
 namespace v = jikl_velocity;
 using Local = px4_msgs::msg::VehicleLocalPosition;
@@ -70,6 +79,7 @@ static_assert(Attitude::MESSAGE_VERSION == 0 && AttitudeTarget::MESSAGE_VERSION 
                   Manual::MESSAGE_VERSION == 0,
               "FC01 attitude/manual interfaces require pinned PX4 v1.16 messages");
 namespace {
+// 匿名命名空间中的名字只属于本编译单元；不把这些本机工具函数暴露成公共接口。
 // 信号处理器只写 sig_atomic_t 标志；不能在异步信号上下文发布 ROS、拿锁或运行降落控制。
 volatile std::sig_atomic_t stop_requested = 0;
 void stop_handler(int) {
@@ -102,13 +112,19 @@ std::string default_socket() {
 }
 } // namespace
 // 该类独占 Runtime 和 UnixServer；构造只建立端点，实际控制由 main 每轮接收后调用 tick。
+// public 继承让本类拥有 ROS Node 的接口；final 禁止再派生，控制周期由本类固定组织。
 class SystemNode final : public rclcpp::Node {
 public:
   // 初始化失败直接抛到 main；所有参数验证先于创建飞行发布链。真实 sink 提交模式禁止用计划值代替已发送。
   SystemNode() : Node("fc01_system") {
+    // 冒号后的 Node(...) 先构造 ROS 基类；*this 表示当前节点对象，供配置读取参数。
+    // config 是局部值，验证成功后 Runtime 与 config_ 各保存所需配置，不借用它的地址。
     f::Config config = f::read_ros_config(*this);
     config.validate();
+    // unique_ptr 表示唯一所有者：make_unique 创建对象，runtime_-> 调用对象的方法。
+    // 构造后续若抛异常，已构造的成员自动析构；正常退出也由节点析构释放，无需手写 delete。
     runtime_ = std::make_unique<f::Runtime>(config);
+    // 开启真实 sink 提交回填：Core 提出请求后，不能直接把请求当作已经发出的事实。
     runtime_->require_attitude_sink_commit();
     config_ = config;
     const std::string socket = declare_parameter<std::string>("socket_path", default_socket());
@@ -122,6 +138,10 @@ public:
     server_ = std::make_unique<f::UnixServer>(socket);
     // PX4 使用传感器 QoS、深度 10；队列深度只决定保留量，不替代源时间和测量时间校验。
     const auto qos = rclcpp::SensorDataQoS().keep_last(10);
+    // create_subscription 的 lambda 是未来收到消息才调用的函数，不是在这里立刻执行。
+    // [this] 保存当前节点指针以访问成员，不复制整个节点；订阅成员 SharedPtr 保持端点存活。
+    // ConstSharedPtr m 共享持有只读消息，*m 取消息本体，m->field 访问字段。
+    // 回调把必要事实复制进缓存/有界事件队列；不把 m 的裸指针留到下一控制周期。
     // 只有显式启用既有视觉导航时才订阅 VisionState/NavigationCommand。
     // 新 VelocityCommand 由独立诊断工具只读订阅，此处不授予它飞行权限。
     if (config.attitude.visual.enabled) {
@@ -140,6 +160,7 @@ public:
         throw std::invalid_argument("INVALID_VISUAL_INPUT_TOPICS_OR_QOS");
       auto state_qos = rclcpp::QoS(std::size_t(depth)).durability_volatile();
       auto command_qos = rclcpp::QoS(std::size_t(depth)).durability_volatile();
+      // volatile 表示不向后来订阅者补发旧样本；可靠性由双方 QoS 匹配决定，不保证测量仍新鲜。
       if (state_reliable)
         state_qos.reliable();
       else
@@ -152,12 +173,14 @@ public:
           visual_state_topic_, state_qos, [this](VisualState::ConstSharedPtr m) {
             ++received_callbacks_;
             ++receive_events_;
+            // 状态是“视觉估计自己在哪、怎样运动”；只转为内部事实交给 Inbox 校验与缓存。
             visual_inbox_.state(f::vision::state_from_message(*m), steady());
           });
       visual_command_sub_ = create_subscription<VisualCommand>(
           visual_command_topic_, command_qos, [this](VisualCommand::ConstSharedPtr m) {
             ++received_callbacks_;
             ++receive_events_;
+            // 命令是“希望怎样运动”，不能拿它替代位置/姿态估计；收到消息本身不等于授权执行。
             visual_inbox_.command(f::vision::command_from_message(*m), steady());
           });
       std::cout << "{\"kind\":\"visual_inputs\",\"state_topic\":" << f::quote(visual_state_topic_)
@@ -172,6 +195,8 @@ public:
           "/fmu/out/vehicle_attitude", qos,
           [this](Attitude::ConstSharedPtr m, const rclcpp::MessageInfo& info) {
             const auto previous = attitude_;
+            // previous 不带 &，保存接收前的值；receive_sampled 可能更新 attitude_。
+            // 这样才能比较本条消息的变化，而不是错误地比较同一个已经更新的对象。
             receive_sampled(*m, attitude_, attitude_stamp_, attitude_sample_,
                             f::SourceSlot::Attitude, info);
             if (f::attitude_receive_event(previous, *m, config_.attitude)) {
@@ -195,9 +220,12 @@ public:
           const auto previous = local_;
           receive_sampled(*m, local_, local_stamp_, local_sample_, f::SourceSlot::Local, info);
           const auto& core = runtime_->attitude_core();
+          // const auto& 只读借用核心，避免复制状态机；该引用不离开本次同步回调。
           const bool vertical_only = config_.profile == "attitude_altitude" &&
                                      !config_.attitude.visual.enabled &&
                                      !config_.attitude.px4_land_fallback_confirmed;
+          // 纯垂向路线不消费明确标无效的水平估计，避免这些未用字段反复打断接收补读。
+          // 有效性/参考重置边沿及垂向诊断关键样本仍要保留，不能只留下最后一个正常 z/vz。
           if (f::local_receive_event(previous, *m, config_.attitude, vertical_only) ||
               core.local_requires_control_step(m->timestamp_sample, m->z, m->vz, m->z_deriv)) {
             latch_event(local_events_, *m);
@@ -211,6 +239,7 @@ public:
           receive_event(*m, status_, status_stamp_, f::SourceSlot::Status, info,
                         f::status_receive_event<Status>);
         });
+    // 落地检测器的 landed 与 at_rest 是独立证据：落地不自动等于静止，也不能由高度接近零替代。
     land_sub_ =
         create_subscription<Land>("/fmu/out/vehicle_land_detected", qos,
                                   [this](Land::ConstSharedPtr m, const rclcpp::MessageInfo& info) {
@@ -224,8 +253,10 @@ public:
             receive_event(*m, battery_, battery_stamp_, f::SourceSlot::Battery, info,
                           f::battery_receive_event<Battery>);
           else
+            // 其他电池也计入回调负载，但不能刷新被监测的 1 号电池健康证据。
             ++received_callbacks_;
         });
+    // 失效标志单独订阅；遥控丢失、Offboard 丢失和严重故障的短暂变化也必须送进安全观察。
     flags_sub_ = create_subscription<Flags>(
         "/fmu/out/failsafe_flags", qos,
         [this](Flags::ConstSharedPtr m, const rclcpp::MessageInfo& info) {
@@ -241,6 +272,7 @@ public:
           runtime_->ack({m->timestamp, m->command, m->result, m->target_system, m->target_component,
                          m->from_external},
                         received);
+          // result 仅是飞控对命令的应答；Runtime 还核对时间水位、事务归属和后续实际状态。
           std::cout << "{\"kind\":\"ack\",\"command\":" << m->command
                     << ",\"result\":" << int(m->result) << ",\"timestamp\":" << m->timestamp
                     << ",\"target_system\":" << int(m->target_system)
@@ -331,9 +363,8 @@ public:
   }
   // 可输出任务遇离散事件尽快进入安全计算；完全静默的 Safety 可有界追赶队列，但危险事件仍全部保留。
   bool stop_receive_on_events() const {
-    // A stopped task still retains every payload for the same-cycle recovery
-    // veto. Extra bounded passes let its cached DDS samples catch up instead
-    // of repeatedly stopping on an ended flight's reference or invalid XY.
+    // Safety 完全静默时，仍保留每条事件用于本轮恢复否决；只允许接收调度继续有界补读。
+    // 避免已结束任务的旧参考或无效水平数据反复终止补读，让队列后方的新反馈一直取不到。
     return config_.profile != "attitude_altitude" ||
            runtime_->attitude_core().phase() != f::attitude::Phase::Safety ||
            last_attitude_output_.publish;
@@ -365,18 +396,17 @@ public:
   // 单轮顺序：同轮快照→静止证据→逐个危险事件→IPC→Runtime计划→最终sink→报告→安全重新准备。
   // 返回 false 表示原停机条件已结束；true 表示 main 继续调度，不能把活跃任务遗弃。
   bool tick() {
+    // 【1. 整理输入】now 是本机单调秒，不是 ROS/PX4 微秒戳；后面的最终边界会另取当前时刻。
     const double now = steady();
-    // The continuous snapshot stays newest. Every discrete safety payload
-    // is checked separately before planning, then acknowledged after sinks.
+    // 连续缓存提供最新数值；离散安全事件单独逐条检查，全部发布步骤结束后才确认已处理。
     publication_audit_.begin(now);
     const std::string phase_before = runtime_->phase_name();
     auto s = snapshot(now);
     const bool resting = update_stationary_evidence(s, now);
-    // Queued events must use the same current ground dwell as step(). A
-    // default-zero snapshot here would reset recovery even on healthy events.
-    // Their individual unsafe payloads still veto recovery during the scan.
-    // 危险队列使用本轮真实地面停留时间；任意一条不安全 payload 都能否决本轮恢复。
+    // 先更新地面停留，再扫描队列：这里与 step 必须看到同一停留证据。
+    // 若扫描时误用默认 0 秒，即使事件本身健康也会重置恢复窗口；任一坏事件仍否决本轮恢复。
     observe_pending_safety(s, now);
+    // 通用速度路线使用自己的起点；姿态高度路线的 z0 由其 Core 管理，不能在这里互相覆盖。
     if (config_.profile != "attitude_altitude") {
       if (resting && s.local_fresh && local_.z_valid && !velocity_reference_set_ &&
           s.stationary_seconds >= 2) {
@@ -391,12 +421,15 @@ public:
     if (stop_requested)
       begin_shutdown(s, now);
     const double ipc_started = steady();
+    // 【2. 接受上层请求】poll 同步调用这两个 lambda，返回后不保留它们。
+    // [this, &s, now]：节点指针按值、当前快照按引用、时刻按值；&s 只在本次 tick 内使用。
     // 控制台请求和断连均在本线程交给 Runtime 权限仲裁；PING 不发飞行命令，但会按原协议续操作员租约；STOP 成功才锁存停机请求。
     server_->poll(
         [this, &s, now](const f::Request& req) {
           if (stop_requested)
             begin_shutdown(s, now);
           auto reply = runtime_->request(req.op, req.values, s, now);
+          // accepted 表示 Runtime 接受了本次请求，不证明其后计划已发布，更不证明飞控已完成动作。
           if (req.op == "STOP" && reply.accepted) {
             stop_requested = 1;
             begin_shutdown(s, now);
@@ -411,12 +444,13 @@ public:
         });
     work_.ipc = steady() - ipc_started;
     const double runtime_started = steady();
+    // 【3. 计算控制计划】step 可以改变状态机和事务状态；返回 output 仍只是本轮待审计划。
+    // Runtime 负责权限/命令事务和路线选择，姿态高度 Core 负责该路线的阶段与控制量计算。
     // Core 只产生计划，没有直接 ROS 发布权限；后续仍可能因为过期、控制权或部分提交而拒绝。
     auto output = runtime_->step(s, now);
     work_.runtime = steady() - runtime_started;
-    // A task-input TTL may expire between calculation and the first sink.
-    // Re-enter the original descent controller before any motion is committed.
-    // 计算结束后视觉 TTL 可能已到期；首个 sink 前重新采样，过期便重新进入既有下降链。
+    // 视觉输入的 TTL（有效寿命）可能在计算期间耗尽，不能凭计算开始时有效就继续发运动目标。
+    // 首个实际发布前重新观察；过期时请求原下降流程，再用该流程重新计算计划。
     if (output.attitude.visual_motion) {
       const auto actual_time = steady();
       const auto actual = snapshot(actual_time);
@@ -438,14 +472,12 @@ public:
     const bool previous_heartbeat_committed = previous_attitude_output.publish;
     const double previous_heartbeat_stamp = publication_audit_.mode_last;
     last_attitude_output_ = {};
+    // {} 把本轮“已提交输出”证据置为默认空；它不撤销此前已经发出的 ROS 消息。
     if (boundary_fault_latched_)
       output = {};
-    // PX4 status can change after Core::step but before publication. A
-    // confirmed, disarmed external departure during stage-one release makes
-    // both the zero heartbeat and any release 176 unnecessary. Do not weaken
-    // the ordinary final guard or apply this to a flight/armed vehicle.
-    // 释放Offboard阶段若已新鲜证明未解锁地面且外部已离开模式，就取消多余176和零心跳。
-    // 此窄分支不能用于仍解锁的飞机，也不能替代普通发布边界。
+    // 释放 Offboard 的第一阶段重新确认：若当前新鲜证据已证明飞机在未解锁地面、
+    // PX4 已经由外部切离 Offboard，就不再补发释放 176 或零推力心跳，避免延续不必要的流。
+    // 这仅消除已完成外部模式退出后的多余输出；不能用于仍解锁的飞机，也不放宽普通边界。
     if (config_.profile == "attitude_altitude" &&
         (output.attitude.publish ||
          output.attitude.command == f::attitude::Command::ReleaseOffboard) &&
@@ -461,18 +493,21 @@ public:
                 << std::endl;
       output.attitude = {};
     }
-    // Never put a 176/400 command on the wire before its companion final
-    // setpoint sink has approved the same tick.  In particular this prevents
-    // a denied attitude sample from preceding an untracked Arm/Disarm.
     // 先记动作意图；本轮声明publish时，必须配套目标/心跳整体获准后才能继续对应176/400提交。
     const auto requested_command = output.attitude.command;
     const auto attempted_attitude = output.attitude;
+    // 【4. 执行最终发布边界】保存原始意图供回填，即使后续拒绝把 output 清空也不能丢失审计。
+    // 没有计划姿态 publish 时，true 只表示“不需要等待配套目标/心跳”，不表示已经发过。
+    // 解锁、上锁以及姿态路线的释放/后备降落动作还须过各自最终合同，不能只凭此布尔值放行。
     bool attitude_sent = !output.attitude.publish;
     if (output.attitude.publish) {
       try {
         pair_context_count_ = 0;
         pair_context_seconds_.fill(0);
         sampling_pair_ = true;
+        // 这里传入的是三个同步回调：取上下文、发目标、发心跳。sink 指实际发布函数。
+        // 正常路径取三次上下文：初查、目标前、心跳前；检查时重新计算年龄与控制周期寿命。
+        // 目标先发、心跳后发，二者不是原子事务；目标已发而心跳被拒时必须按部分提交处理。
         // 每个 sink 前重建上下文，目标与心跳各自计真实提交；第二个 sink 失败属于部分提交完整性故障。
         const auto decision = f::attitude::publish_attitude_resampled<Mode, AttitudeTarget>(
             [this] {
@@ -481,6 +516,7 @@ public:
             output.attitude, timestamp(),
             [this](const AttitudeTarget& target) {
               attitude_pub_->publish(target);
+              // 只有本地 publish 返回后才记提交；这不提供 PX4 收到/执行该目标的证据。
               publication_audit_.target_committed(steady(), target.thrust_body[2]);
             },
             [this](const Mode& mode) {
@@ -497,10 +533,9 @@ public:
           if (publication_block_reason_ == preparation_age_wait_)
             publication_block_reason_.clear();
         }
-        // 视觉首次sink拒绝时尚无输出，可走原降落请求；已经部分提交的异常不会进入此分支。
+        // 此类普通拒绝发生在首个发布前，原因可能是视觉输入失效或离地检测证据矛盾。
+        // 已经发出目标后的拒绝会抛异常，进入下方部分提交故障处理，不会伪装成“完全没发”。
         else if (decision.reason == f::attitude::BoundaryReason::VisualInput) {
-          // No sink ran: the motion input or detector agreement changed. A partial
-          // target/heartbeat failure still takes the hard exception path below.
           const auto actual_time = steady();
           const auto actual = snapshot(actual_time);
           runtime_->request_visual_land(actual, actual_time,
@@ -539,6 +574,7 @@ public:
       }
     }
     // 动作是否发送及真实 wire 微秒戳独立记录；默认未发，不能使用 Core 请求时间冒充。
+    // 【5. 动作与事务回填】176=切模式，400=解锁/上锁，21=请求 PX4 降落。
     bool command_sent = false;
     std::uint64_t command_stamp = 0;
     // 动作参数保持 PX4 合同：176 模式、400 解/上锁、21 降落；本轮输出未获准则禁止动作。
@@ -560,6 +596,8 @@ public:
     // 用真实发布结果回填事务，再记录提交水位；未发但未已有明确边界故障时同样拒绝继续控制。
     if (requested_command != f::attitude::Command::None) {
       const auto commit_snapshot = snapshot(steady());
+      // 事务绑定最终真实发送戳和发送后重取快照的缓存水位；此时未必已有新PX4样本，不能当成状态已取证。
+      // 这些下界用于防止迟到ACK被直接归到新命令；物理结果仍须后续独立新反馈证明。
       runtime_->confirm_attitude_command_publication(requested_command, command_sent, command_stamp,
                                                      commit_snapshot, steady());
       std::cout << "{\"kind\":\"command_sink_audit\",\"requested\":true,\"published\":"
@@ -613,6 +651,7 @@ public:
       target.velocity.fill(NAN);
       target.acceleration.fill(NAN);
       target.jerk.fill(NAN);
+      // NED 位置单位 m，z 向下为正；速度单位 m/s；转换 float 保持既有消息精度。
       if (mode.position)
         target.position = {float(output.flight.position.x), float(output.flight.position.y),
                            float(output.flight.position.z)};
@@ -620,6 +659,7 @@ public:
         target.velocity = {float(output.flight.velocity.x), float(output.flight.velocity.y),
                            float(output.flight.velocity.z)};
       target.yaw = float(output.flight.yaw);
+      // yaw 是 rad，yawspeed 是 rad/s；本文件不把角度制数值直接写入这两个字段。
       target.yawspeed = float(output.flight.yaw_rate);
       target_pub_->publish(target);
       mode_pub_->publish(mode);
@@ -627,14 +667,12 @@ public:
     // 心跳停止沿同时报告上次真实目标和当前观测姿态；必须用合并 status/land 的反馈，不能读默认 armed。
     if (config_.profile == "attitude_altitude" && previous_heartbeat_committed &&
         !last_attitude_output_.publish) {
-      // The adapter stores status/land facts in Snapshot, then Runtime folds
-      // them into attitude feedback. Raw s.attitude leaves those fields at
-      // defaults and can falsely report a disarmed mode departure on this edge.
-      // Reuse this tick's snapshot; this conversion performs no graph query.
+      // snapshot 的状态/落地事实保存在通用字段，需由 Runtime 合并为完整姿态反馈。
+      // 不能直接读未合并的 s.attitude 中那些默认字段，否则可能把心跳停沿误报成已上锁退出。
+      // 此处沿用本轮快照做字段转换，不再查询 DDS 图。
       const auto fb = runtime_->publication_context(s, now, server_->connected(), true).feedback;
       const auto att = f::attitude::attitude_diagnostics(fb.q, previous_attitude_output.q);
-      // PREVIOUS committed target vs CURRENT observed pose. Never claim that
-      // a locally committed ROS publish was received/applied by PX4.
+      // 比较的是“上轮本地已提交目标”与“本轮观测姿态”，并不证明 PX4 已收到或采用该目标。
       std::cout << "{\"kind\":\"offboard_stream_edge\",\"edge\":\"LOCAL_HEARTBEAT_COMMIT_STOPPED\""
                 << ",\"monotonic_s\":" << number(now)
                 << ",\"previous_heartbeat_commit_monotonic_s\":"
@@ -660,11 +698,10 @@ public:
                 << ",\"local_heartbeat_this_tick\":" << boolean(publication_audit_.mode_this_tick)
                 << "}" << std::endl;
     }
-    // Keep every transition; ordinary thrust samples need only the existing
-    // 2 Hz reporting cadence. Avoid a second full DDS graph snapshot and a
-    // large diagnostic record on all 20 control ticks.
-    // 每个阶段变化保留一条事件，普通状态约2Hz；报告耗时计入预算，不在每个控制tick重复大记录。
+    // 阶段变化立即留事件；普通状态沿用约 2 Hz 节流，不在每个控制周期重复大记录与完整图查询。
+    // 报告本身也消耗整轮预算，不能把诊断耗时排除在控制超时之外。
     const double reporting_started = steady();
+    // 【6. 记录事实】phase_event 保留阶段变化，state 是显示/IPC 输出；二者不授予控制权。
     if (config_.profile == "attitude_altitude" &&
         (phase_before != runtime_->phase_name() || now - printed_ >= .5))
       write_phase_event(phase_before, s, attempted_attitude, now);
@@ -676,10 +713,10 @@ public:
       write_csv(s, now);
     }
     work_.reporting = steady() - reporting_started;
-    // Reporting can take time. Recovery must use a freshly aged snapshot,
-    // not the original tick sample after logging has consumed its lifetime.
-    // 报告可能耗时：重新准备前重龄反馈、静止秒数与整轮 deadline，不复用tick开始时的寿命。
+    // 报告可能耗尽输入寿命；恢复前重新计算反馈年龄、地面停留秒数和整轮截止条件，
+    // 不能把 tick 开始时仍新鲜的旧判断直接用于准备下一任务。
     auto reprepare_snapshot = snapshot(steady());
+    // 【7. 准备下一任务】此时才取得重龄快照；沿用的地面窗口仍由真实反馈和估计器 reset 约束。
     const double reprepare_now = steady();
     reprepare_snapshot.stationary_seconds =
         rest_since_ >= 0 ? std::max(0., reprepare_now - rest_since_) : 0;
@@ -687,6 +724,7 @@ public:
         cycle_.current(reprepare_now, config_.attitude.stall_seconds);
     // 新安全地面和开关复位全部通过才重建任务并清本地边界锁；停止期间绝不启动下一轮。
     if (!stopping_ && runtime_->reprepare_rc(reprepare_snapshot, reprepare_now)) {
+      // reprepare_rc 完成安全资格审查后才能清此本地锁；不会因清锁本身自动解锁或抢回 Offboard。
       boundary_fault_latched_ = false;
       publication_block_reason_.clear();
       std::cout
@@ -697,15 +735,15 @@ public:
     }
     // 只有已上锁着地且任务结束才正常退出；60秒不能强行截断健康armed+Offboard的受控恢复输出。
     if (stopping_) {
+      // 【8. 结束与交接】停止请求先进入既有安全退出流程；这里仅判断是否可结束节点调度。
       if (s.status_fresh && s.land_fresh && !s.feedback.armed && s.feedback.landed &&
           !runtime_->active()) {
         end_latched_events();
         return false;
       }
       if (now - stop_since_ >= 60) {
-        // A healthy, still-armed PX4 Offboard powered-ground recovery must
-        // NEVER lose setpoint custody merely because the shutdown timer fired.
-        // Fatal faults / hard process termination remain PX4 failsafe-dependent.
+        // 仍解锁且在 Offboard 中进行健康受控恢复时，不能仅因 60 秒到期就丢弃目标流。
+        // 严重故障或进程被强制终止后的处置仍依赖 PX4 Failsafe，不能靠本线程继续保证。
         if (config_.profile == "attitude_altitude" && s.status_fresh && s.feedback.armed &&
             s.feedback.offboard && runtime_->attitude_core().active() && !boundary_fault_latched_) {
           if (now - last_shutdown_warning_ >= 5) {
@@ -726,6 +764,7 @@ public:
   }
 
 private:
+  // private 辅助函数/成员由节点内部管理；main 只通过 public 周期接口组织接收与控制。
   // 单周期工作量诊断：时间为单调秒，计数区分快照、图查询、最终上下文与接收轮次。
   struct Work {
     double started{}, callbacks{}, ipc{}, runtime{}, snapshot{}, graph{}, boundary{}, reporting{};
@@ -752,8 +791,7 @@ private:
     if (cycle_graph_invalidated_)
       return {};
     if (!cycle_graph_ready_ || (graph_event_ && graph_event_->check())) {
-      // Clear BEFORE counting: a discovery change during the query invalidates
-      // the entire result. A pending change is cleared only with a full query.
+      // 先清图变化通知、再完整查询；若查询期间又发生变化，下面会把整份结果标为不可用。
       if (graph_event_)
         graph_event_->check_and_clear();
       cycle_graph_ = query_graph();
@@ -762,9 +800,8 @@ private:
     }
     if (!graph_event_ || graph_event_->check())
       cycle_graph_invalidated_ = true;
-    // Stable discovery reuses this cycle's counts. A real discovery event
-    // triggers one refresh, including unrelated changes with identical counts.
-    // Further churn DURING that refresh refuses this cycle, never a wait loop.
+    // 图稳定时仅复用本周期计数；真实发现事件会触发刷新，即使变化后数量刚好仍相同。
+    // 若刷新期间继续变化，本轮直接否决，不能无界循环等待图稳定而拖死控制周期。
     return cycle_graph_invalidated_ ? GraphCounts{} : cycle_graph_;
   }
   // 检查全部竞争 setpoint/command 发布者及必需飞控来源/接收者，不能只数本节点创建的端点。
@@ -785,6 +822,7 @@ private:
                      subscribers("/fmu/in/vehicle_command"), publishers("/fmu/in/vehicle_command")};
     graph.local = publishers("/fmu/out/vehicle_local_position");
     auto& ownership = graph.ownership;
+    // 发布者数包含本节点自己的端点；策略据此判定唯一控制权，不能把“有订阅者”当成飞控已采用。
     ownership.mode_publishers = publishers("/fmu/in/offboard_control_mode");
     ownership.mode_subscribers = subscribers("/fmu/in/offboard_control_mode");
     ownership.trajectory_publishers = publishers("/fmu/in/trajectory_setpoint");
@@ -851,6 +889,8 @@ private:
   // 同时记录源envelope/原始sample、ROS主机微秒、steady接收秒及RMW时间；多种时钟证据不混用。
   void record_receipt(f::SourceSlot slot, std::uint64_t envelope, std::uint64_t sample,
                       bool sampled, double received, const rclcpp::MessageInfo& info) {
+    // envelope 是消息发布戳，sample 是原始测量戳，received 是本机收到回调时的单调秒。
+    // 姿态/本地位置须同时验证两种源戳；重新发送旧测量不等于产生新测量。
     ++received_callbacks_;
     ++source_callbacks_[std::size_t(slot)];
     ++source_cycle_callbacks_[std::size_t(slot)];
@@ -858,10 +898,8 @@ private:
         f::observe_source_receipt(envelope, sample, sampled, timestamp(), received,
                                   info.get_rmw_message_info().received_timestamp);
     const auto host = receipt_timing_[std::size_t(slot)].host_stamp;
-    // A newer healthy callback must not erase an unsafe timing observation
-    // while stopped Safety drains queued samples. Preserve the first cause
-    // through the same acknowledgement boundary as discrete payload events.
-    // 本轮首个坏时序保持到末尾ack边界；后到的健康帧不能抹掉过期或未同步事件。
+    // 本轮首个坏时序保留到发布边界结束后，与离散事件一起收尾。
+    // 即使 Safety 补读过程中后到健康帧，也不能抹掉已观察的过期或未同步证据。
     if (receive_timing_block_source_ == f::SourceSlot::Count) {
       const auto timeout = source_timeout(slot);
       const auto source_reason = f::source_time_reason(envelope, sample, sampled, host, timeout);
@@ -882,6 +920,7 @@ private:
   template <class T>
   void receive(const T& msg, T& destination, f::Stamp& stamp, f::SourceSlot slot,
                const rclcpp::MessageInfo& info) {
+    // template 让相同收包规则复用于不同 PX4 消息；const T& 只读借用，T& 允许更新缓存。
     const double received = steady();
     record_receipt(slot, msg.timestamp, 0, false, received, info);
     const bool accepted = stamp.accept(msg.timestamp, received);
@@ -921,8 +960,10 @@ private:
     const auto observe = [this, now](const auto& sample, Event kind) {
       runtime_->observe_attitude_safety_event(sample, kind, now);
     };
-    // Check every payload, including an unsafe event behind a benign head.
-    // This bounded scan performs no DDS query, output or receive wait.
+    // 每条事件先复制同轮 base，再仅覆盖该来源负责的事实；不把一条旧事件冒充全套新测量。
+    // 下方 [&] 在同步有界遍历中借用 base/observe；sample 是本次遍历私有的值，不修改连续缓存。
+    // 扫描会记录安全故障/恢复否决，不发布控制目标，也不等待新的 ROS 消息。
+    // 遍历全部已保留消息，不能看到队首健康就忽略后方的危险事件；不查询 DDS 图。
     attitude_events_.for_each([&](const auto& value) {
       auto sample = base;
       for (std::size_t i = 0; i < 4; ++i)
@@ -1011,8 +1052,8 @@ private:
       sample.operator_switch_generation = value.switch_generation;
       observe(sample, Event::Authority);
     });
-    // Scan payloads first: one may enter Safety this cycle. The timing veto
-    // also applies then, even when the newest continuous snapshot is healthy.
+    // 前面的事件可能刚让 Core 进入 Safety；此时还必须施加本轮保留的坏时序否决。
+    // 不能只因为最新连续快照健康，就立即利用旧时序下的事件进入恢复。
     if (receive_timing_block_source_ != f::SourceSlot::Count &&
         runtime_->attitude_core().phase() == f::attitude::Phase::Safety) {
       auto sample = base;
@@ -1038,8 +1079,8 @@ private:
   }
   // 完成控制与所有sink后才ack整轮事件；overflow保持粘性，普通本轮时序否决在此收尾。
   void end_latched_events() {
-    // Acknowledge only after the full control/publication boundary. Overflow
-    // remains sticky; a healthy later payload cannot clear an observed fault.
+    // acknowledge_all 仅确认“本轮已检查这些事件”；Core 的 Kill/接管/故障锁不会因此自动清除。
+    // 事件队列溢出标志仍保持锁存：正常尾帧不能补回已经丢失的安全证据。
     status_events_.acknowledge_all();
     land_events_.acknowledge_all();
     battery_events_.acknowledge_all();
@@ -1071,6 +1112,7 @@ private:
     authority_telemetry_.manual(message, now, host, config_.attitude.flags_timeout);
     const auto after =
         authority_telemetry_.facts(now, config_.attitude.flags_timeout, true, false, 1, 1, host);
+    // before/after 只比较这条手动消息是否改变权限事实；完整来源数量仍由后续快照按真实 DDS 图检查。
     if (f::authority_receive_key(before) != f::authority_receive_key(after)) {
       latch_event(authority_events_, after);
       ++receive_events_;
@@ -1111,10 +1153,11 @@ private:
   }
   // 每个sink前重新快照和重龄；图查询耗时也计入完整周期，返回合同及三次配对取证。
   f::attitude::BoundaryContext boundary_context() {
+    // tick 内虽无其他 ROS 回调并发，时间仍在流逝，DDS discovery 也可能由中间件线程更新。
+    // 因而同样的缓存值在后一次检查中可能已过期；不能把上一轮 allowed 一直复用到 sink。
     const double begin = steady();
     auto s = snapshot(begin);
-    // The snapshot performs graph lookups. Its elapsed time belongs to this
-    // publication's budget, including the final check after target commit.
+    // 快照可能查询图；连同目标已提交后的心跳前复核，这些耗时全部计入本次发布预算。
     const double now = steady();
     s.stationary_seconds = rest_since_ >= 0 ? std::max(0., now - rest_since_) : 0;
     auto context = runtime_->publication_context(
@@ -1177,9 +1220,8 @@ private:
   // 仅首个sink前的普通源年龄跨界可安全延期；必须无历史时钟事件、无命令、无非零推力、无实际sink。
   bool defer_unarmed_source_expiry(const f::attitude::Decision& decision,
                                    const f::attitude::Output& planned) {
-    // Only an age crossing BEFORE the first sink of an untouched RC ground
-    // preparation is recoverable here. A partial pair always throws and
-    // bypasses this path; command/arming/flight histories remain immutable.
+    // 仅允许尚未发出任何消息的 RC 地面准备，在首个发布前恰好跨过源年龄上限时等待新数据。
+    // 部分配对提交会走异常路径；不能借此回退命令、解锁或飞行历史。
     if (decision.reason != f::attitude::BoundaryReason::SourceClock || stop_requested ||
         stopping_ || boundary_fault_latched_ || clock_event_count_ ||
         planned.command != f::attitude::Command::None || f::attitude::nonzero(planned.thrust) ||
@@ -1190,8 +1232,7 @@ private:
     if (clock_event_count_ || !cycle_.current(now, config_.attitude.stall_seconds))
       return false;
     const auto host = actual.attitude.source_host_stamp;
-    // Require recent reception AND advancing raw samples. Future/missing
-    // stamps, clock jumps and stalled raw data cannot enter this retry path.
+    // 接收必须仍新鲜，原始测量也必须持续推进；未来戳、缺戳、时钟跳变和原始测量停滞均排除。
     if (!f::only_preparation_source_age_expired(
             source_timings(now, host),
             {f::receipt_time_reason(local_sample_.received, now, config_.attitude.local_timeout),
@@ -1199,8 +1240,7 @@ private:
                                     config_.attitude.attitude_timeout)}))
       return false;
     actual.stationary_seconds = rest_since_ >= 0 ? std::max(0., now - rest_since_) : 0;
-    // snapshot() ordinarily reports the previous tick's stream. Admission
-    // here uses the actual sinks in this attempt, verified above as empty.
+    // 普通快照的输出标记可能来自上轮；此处改看本次真实发布记录，上方已验证两项都没有发出。
     actual.attitude_output_active = publication_audit_.target_this_tick;
     actual.offboard_heartbeat_active = publication_audit_.mode_this_tick;
     if (!runtime_->defer_rc_preparation(actual, now, preparation_age_wait_))
@@ -1228,6 +1268,7 @@ private:
   // 发送前重打真实时间戳，Arm/Disarm/Release/Land各自执行最终权限合同。
   bool publish_command(std::uint32_t id, float p1, float p2,
                        std::uint64_t* actual_stamp = nullptr) {
+    // actual_stamp 是可选输出指针：调用方传地址时，成功后回填最终线上微秒戳；nullptr 表示不需要。
     Command cmd{};
     cmd.timestamp = timestamp();
     cmd.command = id;
@@ -1239,6 +1280,7 @@ private:
     cmd.source_component = 191;
     cmd.from_external = true;
     auto sink = [this, &cmd] {
+      // cmd 是本函数局部对象；sink 仅同步执行，按引用取得重打后的最终戳，不向外保存其地址。
       f::publish_command_with_stamp(
           cmd,
           [this] {
@@ -1248,8 +1290,8 @@ private:
             command_pub_->publish(stamped);
           });
     };
-    // This unconditional final sink check also covers future callers and the
-    // legacy flight/sim route. Those profiles cannot bypass the Arm contract.
+    // 所有进入本函数的解锁动作都必须经过最终解锁合同，包含原通用/仿真路线与后续新调用点。
+    // 不能因为调用方已经检查过，便在唯一命令出口省掉 Arm 检查。
     if (id == Command::VEHICLE_CMD_COMPONENT_ARM_DISARM && p1 == 1) {
       const auto decision = f::attitude::publish_arm_at_boundary(boundary_context(), sink);
       if (!decision.allowed) {
@@ -1367,6 +1409,7 @@ private:
   void populate_velocity_feedback(f::Snapshot& s) {
     // 通用反馈位置/速度均为NED，m与m/s；yaw来自PX4 heading，单位rad，valid还需有限值和估计器有效位。
     auto& fb = s.feedback;
+    // fb 是 s.feedback 的别名，下面的赋值直接填快照；不是另一份会遗漏回写的拷贝。
     fb.position = {local_.x, local_.y, local_.z};
     fb.velocity = {local_.vx, local_.vy, local_.vz};
     fb.yaw = local_.heading;
@@ -1380,8 +1423,8 @@ private:
     fb.offboard = s.nav_state == Status::NAVIGATION_STATE_OFFBOARD;
     fb.landing = s.nav_state == Status::NAVIGATION_STATE_AUTO_LAND;
     fb.failsafe = status_.failsafe;
-    // Each packed counter occupies its own byte. All position/velocity/heading resets terminate the mission.
-    // 四个重置计数各占一个byte；该通用路线把坐标重置视为旧任务参考失效。
+    // 四个重置计数各占一个字节，按位打包便于比较；它们不是四个量相加。
+    // 通用路线的任一位置/速度重置会使旧任务参考失效；航向重置由紧接的独立判断处理。
     fb.reset_id = std::uint32_t(local_.xy_reset_counter) |
                   (std::uint32_t(local_.z_reset_counter) << 8) |
                   (std::uint32_t(local_.vxy_reset_counter) << 16) |
@@ -1423,8 +1466,7 @@ private:
                                   config_.attitude.attitude_timeout) &&
         f::source_stamp_in_clock(flags_stamp_.value, host_stamp, config_.attitude.flags_timeout) &&
         f::source_stamp_in_clock(battery_stamp_.value, host_stamp, 1.);
-    a.source_clock_validated =
-        true; // validation performed; validity may expire after a sink commit
+    a.source_clock_validated = true; // 只表示做过校验；源数据仍可能在后续实际发布前后过期
     // PX4四元数顺序w,x,y,z；z/vz保持NED向下符号，垂向Core之后转换为向上高度/速度。
     for (std::size_t i = 0; i < 4; ++i)
       a.q[i] = attitude_.q[i];
@@ -1474,11 +1516,12 @@ private:
     a.offboard_signal_lost = a.failsafe_fresh && flags_.offboard_control_signal_lost;
     fb.exclusive = fb.exclusive && graph.attitude == 1;
   }
+  // 只整理“当前可用证据”，不执行 Core::step、不改变飞行阶段，也不发布；内部会更新诊断/时钟观察。
+  // 三条时间链分别检查：本机接收年龄、源发布年龄、原始测量推进；任一新鲜不替代其余证据。
   f::Snapshot snapshot(double now) {
     const double begin = steady();
-    // SingleThreadedExecutor performs no callbacks during tick. Reuse only
-    // this cycle's graph counts while its discovery event stays unchanged;
-    // every snapshot still ages source/receipt/RC/clock evidence anew.
+    // tick 内没有本执行器的回调插入；图未变化时，仅复用本周期的图计数。
+    // 源戳、接收年龄、RC 与主机时钟条件每次仍重新检查，不把缓存图计数误当反馈寿命续期。
     const auto graph = current_graph();
     now = steady();
     const auto host_stamp = timestamp();
@@ -1493,12 +1536,11 @@ private:
                            status_.arming_state == Status::ARMING_STATE_DISARMED;
     s.status_fresh = s.status_fresh && s.arming_state_known;
     s.attitude_output_active = s.offboard_heartbeat_active = last_attitude_output_.publish;
+    // 这是最近完整本地配对提交的记录，后续恢复延期等窄路径还要用“本次实际 sink”进一步收紧。
     s.publication_fault_latched = boundary_fault_latched_;
     s.control_cycle_fresh = cycle_.current(now, config_.attitude.stall_seconds);
     s.battery_fresh = battery_stamp_.fresh(now, 1.);
     s.manual_fresh = flags_stamp_.fresh(now, config_.attitude.flags_timeout);
-    // A lost discrete observation is a sticky transport fault. Include it in
-    // the final assignment so normal source clocks cannot overwrite it.
     // 时钟回退、原始样本回退和离散事件丢失都保留为否决，正常的其他来源不能覆盖它们。
     s.time_regressed = receive_event_overflow_ || status_stamp_.regressed ||
                        land_stamp_.regressed || local_stamp_.regressed ||
@@ -1531,6 +1573,7 @@ private:
                    s.traffic.command_subscribers == 1 && s.traffic.command_publishers == 1 &&
                    graph.local == 1;
     fb.exclusive = fb.exclusive && f::attitude::owns_setpoints(config_.profile, graph.ownership);
+    // 先形成通用状态事实，再补该 profile 的姿态/RC/源时钟条件；不能省掉前面的唯一来源检查。
     if (config_.profile == "attitude_altitude")
       populate_attitude_feedback(s, graph, now, host_stamp);
     if (config_.profile != "sim" && (graph.battery != 1 || graph.flags != 1))
@@ -1667,6 +1710,8 @@ private:
   std::string rc_recovery_fields(const f::Snapshot& s, double now) const {
     const auto& core = runtime_->attitude_core();
     const auto d = core.rc_recovery_diagnostics();
+    // d.ready 是 Core 的恢复证据状态；Runtime 还有重新准备条件，所以同时输出两种 block_reason。
+    // 看见 ready 不能跳过本轮安全事件、停止请求或其他任务生命周期检查直接重启任务。
     std::ostringstream out;
     out << ",\"rc_first_fault_reason\":" << f::quote(d.first_fault_reason)
         << ",\"rc_latest_fault_reason\":" << f::quote(d.latest_fault_reason)
@@ -1696,6 +1741,7 @@ private:
                           : e.local_samples < 2  ? "WAIT_NEW_LOCAL_MOTION_SAMPLES"
                           : !e.rise_confirmed    ? "WAIT_SUSTAINED_HEIGHT_AND_VELOCITY_AGREEMENT"
                                                  : "WAIT_JOINT_EVIDENCE";
+    // 条件按顺序解释尚缺哪类离地证据；下面只有未确认离地时才显示 pending，不把请求当成离地。
     std::ostringstream out;
     out << ",\"takeoff_stage\":" << f::quote(core.takeoff_stage())
         << ",\"takeoff_request_accepted\":"
@@ -1746,6 +1792,8 @@ private:
   }
   // 聚合各源envelope、sample与接收寿命供最终边界检查，不用最新回调时间替代原始测量时间。
   f::SourceTimingSet source_timings(double now, std::uint64_t host) const {
+    // 三个并列数组必须遵循 SourceSlot 的同一顺序；位置对应的是来源，不是到达先后。
+    // 只有 Local/Attitude 带原始测量戳，其他来源的 sample=0 表示本协议没有该字段。
     const std::array<const f::Stamp*, 6> stamps = {&status_stamp_, &land_stamp_,
                                                    &local_stamp_,  &attitude_stamp_,
                                                    &flags_stamp_,  &battery_stamp_};
@@ -1766,6 +1814,8 @@ private:
   }
   // 分层显示本机时钟变化、每源时间证据与配对上下文，便于区分未同步、原始样本不推进和控制超时。
   std::string timing_evidence(double now, std::uint64_t host) const {
+    // 此处输出的是已记录的诊断事实：年龄缺少比较依据时为 null，不能显示成“0 秒且新鲜”。
+    // callback/accepted 计数区分“回调执行过”和“消息获连续缓存接受”，帮助定位队列或源戳问题。
     std::ostringstream out;
     const auto age = [](f::AgeMeasurement value) {
       return number(value.seconds, value.available);
@@ -1798,6 +1848,7 @@ private:
         config_.attitude.local_timeout,  config_.attitude.attitude_timeout,
         config_.attitude.flags_timeout,  1.};
     const auto sources = source_timings(now, host);
+    // 每个 item 同时报告源发布年龄、测量年龄与本机接收年龄；追到最新回调不代表追到最新测量。
     for (std::size_t i = 0; i < stamps.size(); ++i) {
       if (i)
         out << ',';
@@ -1850,6 +1901,7 @@ private:
         << number(pair_context_seconds_[2], pair_context_count_ > 2)
         << "],\"pair_context_snapshots\":[";
     for (std::size_t i = 0; i < std::min(pair_context_count_, pair_samples_.size()); ++i) {
+      // 上限为已记录的三次上下文；水位相同可能只是同线程没有新回调，仍要比较检查时刻和年龄。
       if (i)
         out << ',';
       const auto& sample = pair_samples_[i];
@@ -1903,6 +1955,8 @@ private:
   std::string state(const f::Snapshot& s, double now, const char* kind = "state",
                     std::uint64_t seq = 0, bool accepted = true,
                     const std::string& message = "") const {
+    // s 是调用方那次观察的快照，不是序列化过程中重新接收的数据；age/fresh 字段决定能否解释其值。
+    // const 表示此方法不改节点成员；它读取的 Runtime 事务与诊断也不能被显示工具当成新控制命令。
     std::ostringstream out;
     out << "{\"kind\":" << f::quote(kind) << ",\"seq\":" << seq
         << ",\"accepted\":" << boolean(accepted) << ",\"message\":" << f::quote(message)
@@ -1926,15 +1980,18 @@ private:
         << ",\"visual_command_age_s\":"
         << number(now - s.attitude.visual_input.command.received_at,
                   s.attitude.visual_input.command.received_at >= 0)
-        << ",\"rc_target_height\":" << number(config_.attitude.rc_target_height)
+        << ",\"rc_target_height\":"
+        << number(config_.attitude.rc_target_height)
+        // 以下四组分别说明飞行进度、恢复资格、地面参考及时间证据，不能用一个 phase 代替全部事实。
         << progress_fields() << rc_recovery_fields(s, now) << reference_fields(s)
         << feedback_timing_fields(s, now)
         << ",\"rc_navigation_mode_slot\":" << config_.attitude.rc_navigation_mode_slot
         << ",\"rc_prestream_commits\":" << runtime_->attitude_core().rc_prestream_commits()
         << ",\"rc_manual_arm_proven\":" << boolean(runtime_->attitude_core().rc_manual_arm_proven())
         << ",\"rc_axes_safe\":" << boolean(s.attitude.rc_axes_safe)
-        << ",\"rc_throttle\":" << number(s.attitude.rc_throttle)
-        << ",\"native_log_dropped\":" << f::native_log_dropped.load()
+        << ",\"rc_throttle\":" << number(s.attitude.rc_throttle) << ",\"native_log_dropped\":"
+        << f::native_log_dropped.load()
+        // 累计本地提交数与最后提交时刻属于发布审计；后面的 UNOBSERVED 明确没有 PX4 采用取证。
         << ",\"target_local_commits\":" << publication_audit_.target_count
         << ",\"heartbeat_local_commits\":" << publication_audit_.mode_count
         << ",\"last_target_local_thrust_z\":"
@@ -1960,7 +2017,9 @@ private:
         << number(attitude_.q[1], s.attitude.attitude_fresh) << ','
         << number(attitude_.q[2], s.attitude.attitude_fresh) << ','
         << number(attitude_.q[3], s.attitude.attitude_fresh) << "]"
-        << ",\"attitude_event\":" << f::quote(runtime_->attitude_core().event())
+        << ",\"attitude_event\":"
+        << f::quote(runtime_->attitude_core().event())
+        // 故障类别、失败条件位图、恢复预算和责任归属帮助解释停在哪一步，不在这里执行恢复。
         << ",\"m1_fault_class\":"
         << f::quote(f::attitude::name(runtime_->attitude_core().fault_class()))
         << ",\"armed_ground_evidence_valid\":"
@@ -1979,10 +2038,13 @@ private:
         << ",\"m1_400_requested\":" << boolean(runtime_->pending(400).requested)
         << transaction_fields() << ",\"attitude_setpoint_q\":["
         << number(last_attitude_output_.q[0]) << ',' << number(last_attitude_output_.q[1]) << ','
-        << number(last_attitude_output_.q[2]) << ',' << number(last_attitude_output_.q[3]) << "]"
+        << number(last_attitude_output_.q[2]) << ',' << number(last_attitude_output_.q[3])
+        << "]"
+        // 推力是机体系 FRD 的归一化目标，z 向下为正，因此向上推力通常为负；不是实测电机推力。
         << ",\"thrust_body\":[" << number(last_attitude_output_.thrust[0]) << ','
         << number(last_attitude_output_.thrust[1]) << ',' << number(last_attitude_output_.thrust[2])
         << "]"
+        // 下列值是快照中的飞控反馈；必须联读 fresh、known、源时钟等条件，不能把过期 false 当已上锁。
         << ",\"nav_state\":" << s.nav_state << ",\"armed\":" << boolean(s.feedback.armed)
         << ",\"landed\":" << boolean(s.feedback.landed) << ",\"at_rest\":" << boolean(s.at_rest)
         << ",\"status_fresh\":" << boolean(s.status_fresh)
@@ -2098,6 +2160,7 @@ private:
   static constexpr const char* preparation_age_wait_ =
       "RC_PREPARATION_SOURCE_AGE_EXPIRED_WAIT_NEW_DATA";
   // last_attitude_output只保存已配对提交的目标；原始PX4最新payload缓存并不等于已通过控制准入。
+  // 消息成员的 {} 是 C++ 默认初始化，不是“已收到且有效”；对应时间水位与有效位决定能否使用。
   Attitude attitude_{};
   f::attitude::Output last_attitude_output_;
   f::AuthorityTelemetry authority_telemetry_;
@@ -2182,6 +2245,7 @@ int main(int argc, char** argv) {
   const auto supervisor_pid = getppid();
   int code = 0;
   std::unique_ptr<f::AsyncLog> logs;
+  // logs 放在 try 外，异常处理打印完之后才析构；其后台线程与 ROS 控制线程职责分开。
   try {
     logs = std::make_unique<f::AsyncLog>();
     rclcpp::init(argc, argv);
@@ -2192,11 +2256,12 @@ int main(int argc, char** argv) {
     if (supervisor_lost)
       stop_requested = 1;
     auto node = std::make_shared<SystemNode>();
-    // One executor/thread; complete ready passes may catch up within a small
-    // cooperative budget. Discrete events end extra passes while a task can
-    // publish. An output-silent Safety task retains every event and scans it
-    // after bounded catch-up, so an unsafe payload still vetoes recovery.
-    // 一个执行器线程：回调与tick不并发，有限接收追赶保留危险事件；预算属于合作调度而非抢占。
+    // make_shared 创建共享所有权指针；main 的 node 保持节点存活，executor 注册其回调调度。
+    // 先构造节点、再创建执行器，离开作用域按相反次序释放。
+    // 若构造失败，已完成构造的成员依 C++ 规则析构，不进入下面的控制循环。
+    // 单线程执行器先接收、再运行 tick：可输出任务遇离散事件就停止额外补读，尽快处理安全变化。
+    // 完全静默的 Safety 可以在有限预算内追赶队列，但保留每条事件，坏消息仍能否决恢复。
+    // 此预算在完整接收 pass 之间检查，属于合作调度，不能抢占一个执行中的慢回调。
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(node);
     while (rclcpp::ok()) {
@@ -2214,6 +2279,8 @@ int main(int argc, char** argv) {
       receive.begin(start, node->receive_budget_seconds(), node->received_callbacks(),
                     node->receive_events(), node->stop_receive_on_events());
       while (receive.next_pass(steady(), node->received_callbacks(), node->receive_events())) {
+        // spin_some 运行当前可就绪回调；调度器只在两次完整接收 pass 之间判断是否继续。
+        // 这里没有第二个控制线程，因而回调不能插入 tick 中途；单个慢回调仍会消耗整轮预算。
         executor.spin_some();
         node->receive_pass_done();
       }
@@ -2228,6 +2295,7 @@ int main(int argc, char** argv) {
       std::this_thread::sleep_until(deadline);
     }
     executor.remove_node(node);
+    // 正常路径先从执行器移除节点；随后局部对象析构，最后退出 try 后关闭全局 ROS 上下文。
   } catch (const std::exception& error) {
     std::cerr << "[ERROR] " << error.what() << '\n';
     code = 2;

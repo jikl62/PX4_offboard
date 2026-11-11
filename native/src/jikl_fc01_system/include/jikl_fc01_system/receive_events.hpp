@@ -8,12 +8,11 @@
 #include <tuple>
 
 namespace fc01 {
-// These predicates stop additional receive passes, then give the existing
-// controller the observed event. They neither authorize output nor clear a
-// fault. Ordinary advancing numeric measurements may replace one another;
-// discrete changes and invalid feedback must reach a control step first.
+// 这些谓词只决定“先停止额外收包，把本条交给控制步骤”；不授权输出，不直接清故障。
+// 普通推进的连续数值可追到最新，离散变化和无效反馈则必须先被控制器观察。
 // 把来源、Kill、档位、时钟和开关代数纳入比较，保留同周期短暂接管的可见性。
 inline auto authority_receive_key(const AuthorityTelemetry::Facts& f) {
+  // make_tuple把相关字段组成一个可整体比较的值；这里用作变化检测，不是把元组解释成授权结果。
   return std::make_tuple(f.rc_link_ready, f.rc_switches_ready, f.kill, f.manual_seen,
                          f.manual_valid, f.rc_source_selected, f.sticks_moving,
                          f.rc_source_clock_valid, f.rc_switch_clock_valid, f.data_source,
@@ -22,6 +21,7 @@ inline auto authority_receive_key(const AuthorityTelemetry::Facts& f) {
 }
 // PX4 模式/解锁/失效/校准/可选模式变化均属离散事件，时间戳本身推进不算事件。
 template <class M> bool status_receive_event(const M& a, const M& b) {
+  // a为上一值、b为新值；lambda只收本次借用参数，返回元组副本。!=检测任一离散字段变化。
   const auto key = [](const M& m) {
     return std::make_tuple(m.system_id, m.component_id, m.arming_state, m.armed_time,
                            m.latest_arming_reason, m.nav_state, m.failsafe,
@@ -42,8 +42,7 @@ template <class M> bool flags_receive_event(const M& a, const M& b) {
          a.fd_critical_failure != b.fd_critical_failure;
 }
 template <class M> bool battery_receive_event(const M& a, const M& b) {
-  // Preserve every voltage change too: battery is low rate, and its readiness
-  // thresholds belong to the controller rather than this receive scheduler.
+  // 电池低频，电压的每次变化也保留；低压阈值属于上层控制器，接收调度器不另造“安全电压”。
   return a.connected != b.connected || a.warning != b.warning || a.voltage_v != b.voltage_v;
 }
 // z、vz、z_deriv 均来自 PX4 NED：m、m/s、m/s，向下为正；此处不建立地面零点。
@@ -62,10 +61,8 @@ bool local_receive_event(const M& a, const M& b, const attitude::Config& c,
   for (double value : {double(b.z), double(b.vz), double(b.z_deriv)})
     if (!std::isfinite(value))
       return true;
-  // A vertical-only consumer does not use estimates explicitly marked
-  // unavailable. Repeated NaNs in those fields must not stop every receive
-  // pass and strand healthy Z/Vz behind a DDS backlog. Validity/reset edges
-  // above and nonfinite fields claimed valid still remain discrete events.
+  // 纯垂向路线不用明确无效的水平估计；不能让重复NaN每次都中止补读，害得有效Z/Vz滞留DDS队列。
+  // 有效位/reset变化及“自称有效却非有限”的水平字段仍属于事件，不能借此绕过保护。
   // 纯垂向消费者可忽略明确标无效的水平 NaN，防止未使用字段让新鲜 Z/Vz 卡在 DDS 队列后方。
   if ((!allow_unused_horizontal || b.xy_valid) && (!std::isfinite(b.x) || !std::isfinite(b.y)))
     return true;
@@ -73,9 +70,7 @@ bool local_receive_event(const M& a, const M& b, const attitude::Config& c,
     return true;
   if ((!allow_unused_horizontal || b.heading_good_for_control) && !std::isfinite(b.heading))
     return true;
-  // Preserve disagreement observations AND the return to agreement. Dropping
-  // that return would join separate episodes into a false continuous warning.
-  // This schedules diagnostic observations; it grants no output permission.
+  // 差异和恢复一致都要保留；漏掉恢复边沿会把两次独立异常错误拼成一段连续告警。
   // 速度差仅是独立诊断：保留差异样本，也保留恢复一致边沿，避免把两次事件拼成一次持续超时。
   if (c.feedback_guard.enabled) {
     const bool before = std::abs(double(a.vz) - a.z_deriv) > c.feedback_guard.rate_tolerance_mps;
@@ -83,15 +78,12 @@ bool local_receive_event(const M& a, const M& b, const attitude::Config& c,
     if (after || before != after)
       return true;
   }
-  // The node's disarmed stationary dwell also consumes Vz. Preserve a
-  // departure from (or return to) its existing rest band before another
-  // callback can hide it. No ground reference is created here.
+  // 未解锁静止计时也使用Vz；离开/回到静止带先交控制步骤观察，本函数不建立地面零点。
   // 离开和回到静止 Vz 带都影响地面静止计时，必须先让节点看见，不能凭后帧续成静止。
   if (c.ground_vz_tolerance > 0 && (std::abs(double(a.vz)) <= c.ground_vz_tolerance) !=
                                        (std::abs(double(b.vz)) <= c.ground_vz_tolerance))
     return true;
-  // Reuse configured estimator jump limits only when available. A jump gets
-  // a controller step before any subsequent sample can replace it.
+  // 只复用已配置的估计器跳变界限，跳变必须先被处理，不能被下一条正常样本替换掉。
   return (c.z_jump_limit_m > 0 && std::abs(double(b.z) - a.z) > c.z_jump_limit_m) ||
          (c.vz_jump_limit_mps > 0 && std::abs(double(b.vz) - a.vz) > c.vz_jump_limit_mps);
 }
@@ -102,13 +94,10 @@ template <class M> bool attitude_receive_event(const M& a, const M& b, const att
     return true;
   const attitude::Quaternion q{b.q[0], b.q[1], b.q[2], b.q[3]};
   const auto diagnostic = attitude::attitude_diagnostics(q, {1, 0, 0, 0});
-  // A valid measured attitude is ordinary feedback, even when it is outside
-  // the historical navigation envelope.  Do not stop the receive drain for
-  // it: the autonomous controller must continue consuming status, estimator
-  // and authority events.  Invalid quaternion data remains an event so the
-  // existing independent health checks see it before a later sample replaces
-  // it.  The configuration argument is retained for the shared predicate API.
+  // 有效实测姿态按连续量处理，即使倾角较大也不在此中断补读，避免状态/估计器/权限事件被积压。
+  // 无效四元数仍是事件，须先到既有独立健康门；配置参数保留以维持统一API。
   (void)c;
+  // (void)c显式说明此函数当前不使用配置；不是删除对姿态质量的检查，下一行仍拒绝无效四元数。
   return !diagnostic.valid;
 }
 } // namespace fc01

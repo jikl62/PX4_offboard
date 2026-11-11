@@ -3,7 +3,7 @@
 // State 保存选定模式与本次尝试锁定的模式；Inputs 来自遥控器/配置证据。
 // evaluate 是无副作用判定，Allowed 仍需叠加健康、状态阶段和最终发布门。
 namespace fc01::authority {
-// Companion policy; these are not PX4 navigation modes or parameter values.
+// 这些是伴随计算机内部策略，不是PX4模式枚举或PX4参数。
 // Unset=未选择，RcTakeover=依赖可接管 RC，AutonomousNoRc=依赖明确确认的自主失效处置。
 enum class Mode { Unset, RcTakeover, AutonomousNoRc };
 inline const char* name(Mode mode) {
@@ -65,6 +65,8 @@ inline const char* name(Reason reason) {
   return "INVALID_AUTHORITY_MODE";
 }
 inline Reason evaluate(const State& state, const Inputs& in, bool require_lock = true) {
+  // state/in均按const引用借用；本函数没有清锁存/改模式的副作用，只给出本次判定的首个原因。
+  // require_lock=false仅由有明确准备合同的调用者选择，不意味着可以忽略接管锁存或所选模式。
   // 按原优先级先检查不可绕过的接管，再检查模式选择/锁定，保证错误信息与实际拒绝一致。
   if (state.takeover_latched)
     return Reason::Takeover;
@@ -73,6 +75,7 @@ inline Reason evaluate(const State& state, const Inputs& in, bool require_lock =
   if (require_lock && !state.locked)
     return Reason::NotLocked;
   if (state.locked && state.mode != state.attempt_mode)
+    // 锁定的是本轮开始时的策略。即使新的mode单独看合法，也不能在进行中的任务里悄悄换授权来源。
     return Reason::Changed;
   switch (state.mode) {
   // 有人接管路线同时要求链路、已确认接管合同和开关遥测；不能只凭“有遥控器”通过。
@@ -85,6 +88,7 @@ inline Reason evaluate(const State& state, const Inputs& in, bool require_lock =
       return Reason::RcTelemetry;
     return Reason::Allowed;
   case Mode::AutonomousNoRc:
+    // ?:只选择一个结果；自主失效处置必须已显式确认，不能从“当前没RC”反推这条路线获准。
     return in.autonomous_failsafe_confirmed ? Reason::Allowed : Reason::AutonomousUnconfirmed;
   default:
     return Reason::Invalid;

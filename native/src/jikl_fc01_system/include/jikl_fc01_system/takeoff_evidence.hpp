@@ -14,23 +14,23 @@ struct LiftoffEvidence {
   std::uint64_t first_land_stamp{}, last_land_stamp{}, first_local_stamp{}, last_local_stamp{};
 };
 
-// The detector and local position arrive independently. Keep each source's
-// evidence separately: an early !landed callback is not consumed merely
-// because its companion local callback has not crossed the height threshold.
-// Neither a detector sequence nor a single high position/velocity can certify
-// liftoff. Agreement still cannot exclude common-mode estimator drift.
+// 检测器与位置消息独立到达，各自保留证据：先到的!landed不因本地高度尚未跨阈值而被吃掉。
+// 单独检测器序列或一个高度/速度尖峰都不算离地；即使两者一致，也不能排除共同估计误差。
 class TakeoffEvidence {
 public:
   void reset() {
+    // *this=临时默认对象把本任务的全部证据与时钟水位一起清空；只能由外层任务/失效路径明确触发。
     *this = TakeoffEvidence{};
   }
   const LiftoffEvidence& evidence() const {
+    // 借用成员证据以减少复制；调用observe后内容会改变，不是一个被冻结的历史快照。
     return e_;
   }
   // 每次消费真实新样本；land_baseline 为本任务起飞前基线，避免旧空中检测复用。
   template <class C>
   bool observe(const C& c, double now, std::uint64_t land_baseline, std::uint64_t land_stamp,
                bool landed, std::uint64_t local_stamp, double height, double up_speed) {
+    // 本轮先撤销最终confirmed，再重算两个来源的交集；不能让上一次true自动沿用到失效输入。
     e_.confirmed = false;
     if (!std::isfinite(now) || !std::isfinite(height) || !std::isfinite(up_speed)) {
       reset();
@@ -48,7 +48,7 @@ public:
     // 检测器回到地面先撤销 detector；若此前真见过空中，则同时撤销早先上升片段，区分起落弹跳。
     if (landed) {
       clear_detector();
-      // A real bounce after !landed invalidates the earlier rise episode.
+      // 曾观察非地面后又landed相当于起落弹跳，旧上升片段须作废，不能拼成下一次离地证据。
       if (detector_was_airborne_)
         clear_local();
       detector_was_airborne_ = false;
@@ -72,6 +72,7 @@ public:
             e_.detector_samples >= 2 && land_stamp > e_.first_land_stamp &&
             now - land_first_time_ + 1e-9 >= c.liftoff_dwell_seconds &&
             double(land_stamp - e_.first_land_stamp) * 1e-6 + 1e-9 >= c.liftoff_dwell_seconds;
+        // 主机经过时间和源戳经过时间都要满dwell，防止一阵延迟后补送旧样本瞬间凑够持续时间。
       }
     }
     if (land_last_time_ >= 0 && now - land_last_time_ > detector_gap)
@@ -82,8 +83,7 @@ public:
                                     double(local_stamp - local_seen_) * 1e-6 > c.local_timeout))
         clear_local();
       local_seen_ = local_stamp;
-      // The bounded join permits a slow detector to arrive after braking,
-      // but new envelopes at a fixed height cannot renew an old rise forever.
+      // 检测器稍晚到达时可在有界窗口内拼合已确认上升；高度不再增长的新信封不能无限续期旧运动。
       if (e_.rise_confirmed && (motion_at_ < 0 || now - motion_at_ > c.land_timeout ||
                                 double(local_stamp - motion_stamp_) * 1e-6 > c.land_timeout))
         clear_rise();
@@ -120,8 +120,7 @@ public:
     }
     if (local_last_time_ >= 0 && now - local_last_time_ > c.local_timeout)
       clear_local();
-    // Fresh local observations may bridge braking only within land_timeout
-    // of measured upward motion, using both source and receiver time.
+    // 制动后只能在实测上升运动的land_timeout内桥接新本地观测，同时核对源域和主机域的期限。
     // 最终取两证据交集：当前非地面、检测器和上升均确认，高度达标，最新各源未超时。
     e_.confirmed = !landed && e_.detector_confirmed && e_.rise_confirmed &&
                    latest_height_ >= c.liftoff_height_m && local_last_time_ >= 0 &&
@@ -150,6 +149,7 @@ private:
     local_last_time_ = -1;
   }
   LiftoffEvidence e_;
+  // seen是各源最新已观察戳；motion是最近真实向上运动戳。它们与主机秒的*_time_不可直接相减。
   std::uint64_t land_seen_{}, local_seen_{}, motion_stamp_{};
   double land_first_time_{-1}, land_last_time_{-1}, local_first_time_{-1}, local_last_time_{-1},
       last_observed_{-1};

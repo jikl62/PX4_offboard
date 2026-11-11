@@ -40,20 +40,15 @@ inline const char* receive_pass_stop_name(ReceivePassStop value) {
   return "UNKNOWN";
 }
 
-// Each authorized pass is a complete, unlimited spin_some(), with the same
-// per-pass callback ordering as the original loop. Its callbacks cannot be
-// preempted. The cooperative budget only decides whether to START another
-// pass; CurrentControlCycle and the publication boundary still enforce the
-// control deadline after callbacks finish. The first pass is retained even
-// if setup work has already used the receive budget.
+// begin在控制周期开始时保存累计计数；每次next_pass只回答“还可不可以开始下一整轮spin_some”。
+// 一轮内可能执行很多回调，调度器无法抢占正在执行的回调；max_passes=10限制的是轮数而非消息数。
+// 第一轮不因接收预算已消耗完而被省略，但无效时钟/计数、或应先处理的新事件仍会拒绝它。
 //
-// Callbacks increment the total callback count, and increment the event count
-// when a safety-relevant observation must reach Runtime::step before another
-// sample can overwrite it. An output-silent Safety observer may keep collecting
-// bounded passes while the adapter retains every discrete payload for its
-// recovery scan. This scheduler does not interpret measurements, alter
-// timeouts, or grant control authority. A stopped schedule stays stopped until
-// begin() starts the next control cycle.
+// callbacks累计所有接收回调，events累计“应先交给控制步骤”的观察：
+// 后者可以是需要留证的危险变化，也可以是促使控制尽早运行的测量候选；其内容由适配层判断。
+// 默认一见新event就结束额外补读，使中间观察先到Runtime/Core，避免健康尾帧覆盖它。
+// Safety无输出观察可设置stop_on_events=false继续有限补读，但适配层仍必须保留每个离散载荷。
+// 本类不解析测量、不修改超时/控制权；一次停止保持到下一周期begin，不被后来好消息重新打开。
 class ReceivePassSchedule {
 public:
   // 每个控制周期最多十轮；不是每轮最多十个回调，第一轮保持原无限 spin_some 语义。
@@ -61,6 +56,7 @@ public:
   // 保存本周期预算起点和原计数；stop_on_events=false 只适用于保留全部离散证据的无输出安全观察。
   void begin(double now, double budget, std::uint64_t callbacks, std::uint64_t events,
              bool stop_on_events = true) {
+    // begin代表新控制周期，不是每轮补读都调用；若每轮重开会把预算/上限不断续长。
     started_ = observed_ = now;
     budget_ = budget;
     callbacks_ = callbacks;
@@ -77,15 +73,19 @@ public:
   bool next_pass(double now, std::uint64_t callbacks, std::uint64_t events) {
     if (reason_ != ReceivePassStop::Running)
       return false;
+    // 首拒绝顺序本身是诊断合同：时钟→计数→新事件→空闲→预算→轮数上限。
+    // 后面即使同时有多个停止原因，也保留这里最先命中的那个。
     if (!std::isfinite(now) || now < observed_)
       return stop(ReceivePassStop::InvalidClock);
     observed_ = now;
+    // 计数应是进程累计总量；小于上轮保存值不是“没消息”，而是当前观察上下文不可信。
     if (callbacks < callbacks_ || events < events_)
       return stop(ReceivePassStop::InvalidCounter);
     // 新安全事件优先结束补读，控制步骤必须先消费它，不能追新掩盖。
     if (stop_on_events_ && events != events_)
       return stop(ReceivePassStop::Event);
-    // 第一轮保留；从第二轮起，没回调、预算耗尽或达上限均停止。
+    // passes_是已批准轮数，初值0；if(passes_)等价于“至少批准过一轮”。
+    // 因此第一轮不查空闲/预算/上限，之后才根据上一整轮有没有新回调决定是否继续。
     if (passes_) {
       if (callbacks == callbacks_)
         return stop(ReceivePassStop::Idle);
@@ -94,6 +94,8 @@ public:
       if (passes_ >= max_passes)
         return stop(ReceivePassStop::PassLimit);
     }
+    // 只有真的批准新一轮才提交计数基线并+1；它不表示该轮回调已经执行完成。
+    // 调用者拿到true后才运行spin_some，结束后带新的累计计数再来询问。
     callbacks_ = callbacks;
     events_ = events;
     ++passes_;
@@ -109,11 +111,13 @@ public:
     return receive_pass_stop_name(reason_);
   }
   double elapsed_seconds() const {
+    // 最后一次合法时钟观察与begin起点之差；不是“每个回调都保证在此时间内返回”。
     return observed_ - started_;
   }
 
 private:
   bool stop(ReceivePassStop reason) {
+    // 参数reason是本次原因，reason_是保存到周期结束的成员；返回false让调用者退出补读。
     reason_ = reason;
     return false;
   }
