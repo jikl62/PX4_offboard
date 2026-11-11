@@ -30,6 +30,13 @@ LANGUAGES = {
     '.service': 'systemd',
     '.inc': 'cpp',
 }
+# 只纳入本工程的这三份元数据，不把任意第三方 XML/TOML 或嵌套工具配置算成自主源码。
+# package.xml 位于唯一的正式 ROS 包根；两份排版配置只认仓库根路径。
+SOURCE_METADATA = {
+    'native/src/jikl_fc01_system/package.xml': 'package_xml',
+    '.clang-format': 'formatter_config',
+    'pyproject.toml': 'python_tool_config',
+}
 CHINESE = re.compile(r'[\u3400-\u9fff]')
 
 
@@ -44,7 +51,9 @@ def git(root, *arguments):
 
 
 def language(path):
-    """返回源码候选类别；严格 JSON/说明文档不属于可直接加注释的源码。"""
+    """识别业务源码及三份明确登记的工程元数据，数据 JSON/说明文档仍单列。"""
+    if path.as_posix() in SOURCE_METADATA:
+        return SOURCE_METADATA[path.as_posix()]
     return 'cmake' if path.name == 'CMakeLists.txt' else LANGUAGES.get(path.suffix)
 
 
@@ -57,6 +66,10 @@ def exclusion(path):
         return 'historical_evidence', '历史证据快照，保留原始可复现字节'
     if 'c_independent_repro' in parts or 'c_s10_independent' in parts:
         return 'historical_reproduction', '独立历史审查反例；单列保留，不能当成当前正向回归'
+    if parts[:2] == ('native', 'tests') and any(
+        part.startswith('historical_') for part in parts[2:]
+    ):
+        return 'historical_reproduction', '归档的历史测试载荷；保留原字节，不计入当前源码完成数'
     return None
 
 
@@ -81,6 +94,19 @@ def ignored_entry(name):
             'Git 忽略文件，来源仍需人工确认，不计作完成',
         )
     return {'path': name, 'category': category, 'reason': reason}
+
+
+def group_ignored(names):
+    """同类原因只保存一次，每个具体路径仍有唯一归属，避免报告被重复说明撑大。"""
+    groups = {}
+    for name in sorted(set(names)):
+        entry = ignored_entry(name)
+        key = (entry['category'], entry['reason'])
+        groups.setdefault(key, []).append(name)
+    return [
+        {'category': category, 'reason': reason, 'paths': paths}
+        for (category, reason), paths in sorted(groups.items())
+    ]
 
 
 def inspect(root, name, reviews, initially_modified):
@@ -119,6 +145,16 @@ def inspect(root, name, reviews, initially_modified):
     digest = hashlib.sha256(data).hexdigest()
     review = reviews.get(name, {})
     current_review = review if review.get('sha256') == digest else {}
+    # 注释、排版和结构拆分是不同事实。旧记录没有新排版字段时，只继承同 SHA 的
+    # readability_complete；旧 SHA 的所有完成标记都失效，不能靠文件中有汉字补回。
+    annotation_complete = current_review.get('annotation_complete', False) is True
+    readability_complete = current_review.get('readability_complete', False) is True
+    layout_finished = current_review.get('layout_finished', readability_complete) is True
+    structural_pending = current_review.get('structural_refactor_pending', [])
+    if not isinstance(structural_pending, list) or not all(
+        isinstance(item, str) for item in structural_pending
+    ):
+        raise ValueError(name + ': structural_refactor_pending must be a list of explicit items')
     # 这些指标故意保守：字符串/注释中的分号也会触发，仅作为人工复核线索。
     dense = [
         i
@@ -134,8 +170,10 @@ def inspect(root, name, reviews, initially_modified):
         'chinese_lines': sum(bool(CHINESE.search(line)) for line in lines),
         'density_review_lines': dense,
         'reviewed': bool(current_review),
-        'annotation_complete': current_review.get('annotation_complete', False),
-        'readability_complete': current_review.get('readability_complete', False),
+        'annotation_complete': annotation_complete,
+        'readability_complete': readability_complete,
+        'layout_finished': layout_finished,
+        'structural_refactor_pending': structural_pending,
         'review_notes': current_review.get('notes', '尚未完成当前文件逐项人工复核'),
         'outstanding': current_review.get(
             'outstanding', ['逐项核对职责、输入输出、物理量、判断、状态和格式']
@@ -162,19 +200,24 @@ def report(root, ledger):
     ]
     sources = [entry for entry in files if not entry['excluded']]
     groups = {}
-    for kind in sorted(set(LANGUAGES.values())):
+    for kind in sorted(set(LANGUAGES.values()) | set(SOURCE_METADATA.values())):
         group = [entry for entry in sources if entry['language'] == kind]
         groups[kind] = {
             'total': len(group),
             'reviewed': sum(entry['reviewed'] for entry in group),
             'annotation_complete': sum(entry['annotation_complete'] for entry in group),
             'readability_complete': sum(entry['readability_complete'] for entry in group),
+            'layout_finished': sum(entry['layout_finished'] for entry in group),
+            'structural_refactor_pending': sum(
+                bool(entry['structural_refactor_pending']) for entry in group
+            ),
         }
-    # 忽略目录通常含构建树、缓存和二进制；仍输出每个实际文件，不能静默漏掉。
+    # 忽略目录通常含构建树、缓存和二进制。分类理由只写一次，具体路径一个不省略；
+    # 报告压缩的是重复说明，不放宽安装包的文件数、总字节或单文件大小保护。
     ignored = git(root, 'ls-files', '--others', '--ignored', '--exclude-standard', '-z')
     ignored_names = sorted(set(ignored.decode().rstrip('\0').split('\0')) - {''})
     excluded = [entry for entry in files if entry['excluded']]
-    ignored_entries = [ignored_entry(name) for name in ignored_names]
+    ignored_groups = group_ignored(ignored_names)
     changed_during_scan = [
         entry['path']
         for entry in sources
@@ -184,7 +227,7 @@ def report(root, ledger):
     changed = set(git(root, 'diff', ledger['baseline_commit'], '--name-only').decode().splitlines())
     changed.update(git(root, 'ls-files', '--others', '--exclude-standard').decode().splitlines())
     return {
-        'schema_version': 1,
+        'schema_version': 2,
         'baseline_commit': ledger.get('baseline_commit'),
         'current_commit': git(root, 'rev-parse', 'HEAD').decode().strip(),
         'changed_during_scan': changed_during_scan,
@@ -196,6 +239,16 @@ def report(root, ledger):
             entry['annotation_complete'] and entry['readability_complete'] for entry in sources
         ),
         'annotation_complete': sum(entry['annotation_complete'] for entry in sources),
+        'annotation_unfinished': [
+            entry['path'] for entry in sources if not entry['annotation_complete']
+        ],
+        'readability_complete': sum(entry['readability_complete'] for entry in sources),
+        'layout_finished': sum(entry['layout_finished'] for entry in sources),
+        'structural_refactor_pending': [
+            {'path': entry['path'], 'remaining': entry['structural_refactor_pending']}
+            for entry in sources
+            if entry['structural_refactor_pending']
+        ],
         'unfinished': [
             entry['path']
             for entry in sources
@@ -207,12 +260,15 @@ def report(root, ledger):
         ],
         'exclusion_counts': dict(Counter(entry['category'] for entry in excluded)),
         'excluded': excluded,
-        'ignored_files': ignored_entries,
+        'ignored_file_count': len(ignored_names),
+        'ignored_group_count': len(ignored_groups),
+        'ignored_files': ignored_groups,
         'ignored_source_origin_review_required': [
-            entry['path']
-            for entry in ignored_entries
-            if entry['category'] == 'git_ignored_requires_origin_review'
-            and language(Path(entry['path']))
+            name
+            for group in ignored_groups
+            if group['category'] == 'git_ignored_requires_origin_review'
+            for name in group['paths']
+            if language(Path(name))
         ],
         'files': sources,
     }
