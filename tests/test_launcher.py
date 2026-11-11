@@ -28,11 +28,15 @@ class ProtocolTests(unittest.TestCase):
     # 分别注入干净 EOF、截断 JSON、非法 UTF-8、NaN 和超长行，必须保留不同错误类别。
     def test_terminal_reads_classify_clean_eof_truncation_and_invalid_messages(self):
         m = api()
-        cases = ((b'', 'clean_eof'), (b'{"kind":', 'truncated_json'),
-                 (b'[]\n', 'invalid_message'), (b'{broken}\n', 'invalid_message'),
-                 (b'{"x":NaN}\n', 'invalid_message'),
-                 (b'{"x":"\xff"}\n', 'invalid_message'),
-                 (b'x' * 131073, 'invalid_message'))
+        cases = (
+            (b'', 'clean_eof'),
+            (b'{"kind":', 'truncated_json'),
+            (b'[]\n', 'invalid_message'),
+            (b'{broken}\n', 'invalid_message'),
+            (b'{"x":NaN}\n', 'invalid_message'),
+            (b'{"x":"\xff"}\n', 'invalid_message'),
+            (b'x' * 131073, 'invalid_message'),
+        )
         for wire, kind in cases:
             with self.subTest(kind=kind, size=len(wire)):
                 a, b = socket.socketpair()
@@ -50,18 +54,17 @@ class ProtocolTests(unittest.TestCase):
     # 先交付完整 SAFE_DISARMED，下一次 read 再抛尾部错误，防止丢掉最后安全证据。
     def test_complete_messages_survive_truncated_or_invalid_tail_before_error(self):
         m = api()
-        for tail, kind in ((b'{"kind":', 'truncated_json'),
-                           (b'[]\n', 'invalid_message')):
+        for tail, kind in ((b'{"kind":', 'truncated_json'), (b'[]\n', 'invalid_message')):
             with self.subTest(kind=kind):
                 a, b = socket.socketpair()
                 try:
                     channel = m.Channel(a)
-                    b.sendall(b'{"kind":"state","phase":"SAFE_DISARMED","armed":false}\n'+tail)
+                    b.sendall(b'{"kind":"state","phase":"SAFE_DISARMED","armed":false}\n' + tail)
                     b.close()
                     try:
                         rows = channel.read()
                     except m.ControlError as exc:
-                        self.fail('complete state was lost before terminal error: '+str(exc))
+                        self.fail('complete state was lost before terminal error: ' + str(exc))
                     self.assertEqual(rows, [dict(kind='state', phase='SAFE_DISARMED', armed=False)])
                     with self.assertRaises(m.ControlError) as caught:
                         channel.read()
@@ -90,10 +93,14 @@ class ProtocolTests(unittest.TestCase):
     def test_wire_commands_are_bounded_finite_and_not_injectable(self):
         m = api()
         self.assertEqual(m.encode_command(7, 'TAKEOFF', [0.5]), b'7 TAKEOFF 0.5\n')
-        for seq, op, args in ((0, 'PING', []), (True, 'PING', []),
-                              (1, 'LAND\n2 TAKEOFF', []),
-                              (1, 'TAKEOFF', [float('nan')]),
-                              (1, 'TAKEOFF', [True]), (1, 'ARM_ONLY', [])):
+        for seq, op, args in (
+            (0, 'PING', []),
+            (True, 'PING', []),
+            (1, 'LAND\n2 TAKEOFF', []),
+            (1, 'TAKEOFF', [float('nan')]),
+            (1, 'TAKEOFF', [True]),
+            (1, 'ARM_ONLY', []),
+        ):
             with self.subTest(op=op, args=args):
                 with self.assertRaises(m.ControlError):
                     m.encode_command(seq, op, args)
@@ -148,8 +155,20 @@ class OwnershipTests(unittest.TestCase):
     # 生成仅用于比较的 Process 描述，不启动该 Agent；默认契约为 ttyS2、115200。
     def proc(self, pid, baud='115200', device='/dev/ttyS2'):
         m = api()
-        return m.Process(pid, os.getuid(), ('/home/orangepi/fc01_agent_build_offline/MicroXRCEAgent',
-                                           'serial', '-D', device, '-b', baud, '-v', '4'))
+        return m.Process(
+            pid,
+            os.getuid(),
+            (
+                '/home/orangepi/fc01_agent_build_offline/MicroXRCEAgent',
+                'serial',
+                '-D',
+                device,
+                '-b',
+                baud,
+                '-v',
+                '4',
+            ),
+        )
 
     # 只能复用被当前设备占用证据确认的唯一匹配 Agent，未知占用者使启动失败。
     def test_reuses_exact_agent_and_rejects_unknown_uart_owner(self):
@@ -163,10 +182,12 @@ class OwnershipTests(unittest.TestCase):
     # 错误波特率、其他用户或多 Agent 竞争时，不得任选一个继续。
     def test_wrong_baud_other_uid_and_duplicate_agents_are_not_reused(self):
         m = api()
-        bad_uid = m.Process(123, os.getuid()+1, self.proc(123).argv)
-        for procs, owners in (([self.proc(123, '921600')], {123}),
-                              ([self.proc(123), self.proc(124)], {123, 124}),
-                              ([bad_uid], {123})):
+        bad_uid = m.Process(123, os.getuid() + 1, self.proc(123).argv)
+        for procs, owners in (
+            ([self.proc(123, '921600')], {123}),
+            ([self.proc(123), self.proc(124)], {123, 124}),
+            ([bad_uid], {123}),
+        ):
             with self.subTest(procs=procs):
                 with self.assertRaises(m.ControlError):
                     m.choose_agent(procs, owners, '/dev/ttyS2', os.getuid())
@@ -235,13 +256,21 @@ class ReportAndLifecycleTests(unittest.TestCase):
         m = api()
         p = subprocess.Popen([sys.executable, '-c', 'import time;time.sleep(30)'])
         self.addCleanup(lambda: p.poll() is None and p.terminate())
-        state = {'phase': 'SAFE_DISARMED', 'armed': False, 'landed': True, 'status_fresh': True, 'land_fresh': True}
+        state = {
+            'phase': 'SAFE_DISARMED',
+            'armed': False,
+            'landed': True,
+            'status_fresh': True,
+            'land_fresh': True,
+        }
         self.assertFalse(m.finish_agent(p, False, True, state, 10.0, 10.1))
         self.assertIsNone(p.poll())
         self.assertFalse(m.finish_agent(p, True, False, state, 10.0, 10.1))
         self.assertFalse(m.finish_agent(p, True, True, state, 1.0, 10.1))
         self.assertFalse(m.finish_agent(p, True, True, {**state, 'armed': True}, 10.0, 10.1))
-        self.assertFalse(m.finish_agent(p, True, True, {**state, 'phase': 'REQUEST_ARM'}, 10.0, 10.1))
+        self.assertFalse(
+            m.finish_agent(p, True, True, {**state, 'phase': 'REQUEST_ARM'}, 10.0, 10.1)
+        )
         self.assertIsNone(p.poll())
         self.assertTrue(m.finish_agent(p, True, True, state, 10.0, 10.1))
         p.wait(timeout=3)
@@ -253,20 +282,22 @@ class ReportAndLifecycleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             proof = Path(d) / 'stop'
             ready = Path(d) / 'ready'
-            script = ('import signal,time,pathlib;'
-                      f'p=pathlib.Path({str(proof)!r});'
-                      'signal.signal(signal.SIGTERM,lambda *_:p.write_text("TERM"));'
-                      f'pathlib.Path({str(ready)!r}).write_text("ready");'
-                      'time.sleep(2)')
+            script = (
+                'import signal,time,pathlib;'
+                f'p=pathlib.Path({str(proof)!r});'
+                'signal.signal(signal.SIGTERM,lambda *_:p.write_text("TERM"));'
+                f'pathlib.Path({str(ready)!r}).write_text("ready");'
+                'time.sleep(2)'
+            )
             p = subprocess.Popen([sys.executable, '-c', script])
             self.addCleanup(lambda: p.poll() is None and p.terminate())
-            end = time.monotonic()+2
+            end = time.monotonic() + 2
             while not ready.exists() and time.monotonic() < end:
                 time.sleep(0.01)
             owner = m.NodeStop(p)
             owner.request()
             owner.request()
-            end = time.monotonic()+1
+            end = time.monotonic() + 1
             while not proof.exists() and time.monotonic() < end:
                 time.sleep(0.01)
             self.assertEqual(proof.read_text(), 'TERM')

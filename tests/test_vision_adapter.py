@@ -19,27 +19,54 @@ def stamp(sec=10, nanosec=25):
 
 
 # 生成标准 nav_msgs 形状的假对象；twist 按 child 机体/传感器帧，协方差不是转换有效性的替代。
-def odometry(position=(5., 6., 7.), velocity=(0., 0., 0.),
-             q=(1., 0., 0., 0.), omega=(0., 0., 0.)):
+def odometry(
+    position=(5.0, 6.0, 7.0),
+    velocity=(0.0, 0.0, 0.0),
+    q=(1.0, 0.0, 0.0, 0.0),
+    omega=(0.0, 0.0, 0.0),
+):
     def vector(v):
         return NS(x=v[0], y=v[1], z=v[2])
-    return NS(header=NS(stamp=stamp(), frame_id='vendor_odom'), child_frame_id='vendor_sensor',
-              pose=NS(pose=NS(position=vector(position),
-                              orientation=NS(w=q[0], x=q[1], y=q[2], z=q[3])),
-                      covariance=[0.] * 36),
-              twist=NS(twist=NS(linear=vector(velocity), angular=vector(omega)), covariance=[0.] * 36))
+
+    return NS(
+        header=NS(stamp=stamp(), frame_id='vendor_odom'),
+        child_frame_id='vendor_sensor',
+        pose=NS(
+            pose=NS(position=vector(position), orientation=NS(w=q[0], x=q[1], y=q[2], z=q[3])),
+            covariance=[0.0] * 36,
+        ),
+        twist=NS(twist=NS(linear=vector(velocity), angular=vector(omega)), covariance=[0.0] * 36),
+    )
 
 
 # 生成独立质量/尺度/时钟/标定声明；只有 stamp 与来源等合同匹配才可支持测量。
 def health(**changes):
-    fields = dict(schema_version=1, stamp=stamp(), sequence=7, source_id='fixture-session-1',
-                  frame_id='vendor_odom', body_frame_id='vendor_sensor', reset_counter=4,
-                  reset_valid=True, initialized=True, tracking=True, calibration_valid=True,
-                  frame_alignment_valid=True, time_sync_valid=True, extrinsics_valid=True,
-                  metric_scale_valid=True, position_valid=True, velocity_valid=True,
-                  attitude_valid=True, angular_velocity_valid=True,
-                  angular_velocity_source='fixture_gyro', quality_valid=True, quality=.9,
-                  extrinsics_id='mount-v1', alignment_id='align-v1')
+    fields = dict(
+        schema_version=1,
+        stamp=stamp(),
+        sequence=7,
+        source_id='fixture-session-1',
+        frame_id='vendor_odom',
+        body_frame_id='vendor_sensor',
+        reset_counter=4,
+        reset_valid=True,
+        initialized=True,
+        tracking=True,
+        calibration_valid=True,
+        frame_alignment_valid=True,
+        time_sync_valid=True,
+        extrinsics_valid=True,
+        metric_scale_valid=True,
+        position_valid=True,
+        velocity_valid=True,
+        attitude_valid=True,
+        angular_velocity_valid=True,
+        angular_velocity_source='fixture_gyro',
+        quality_valid=True,
+        quality=0.9,
+        extrinsics_id='mount-v1',
+        alignment_id='align-v1',
+    )
     fields.update(changes)
     return NS(**fields)
 
@@ -55,6 +82,7 @@ class OdometryAdapterTests(unittest.TestCase):
             cls.adapter = importlib.util.module_from_spec(spec)
             # dataclasses accesses the current module during class creation.
             import sys
+
             sys.modules[spec.name] = cls.adapter
             spec.loader.exec_module(cls.adapter)
 
@@ -63,15 +91,23 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertTrue(ADAPTER.is_file(), 'vision odometry adapter implementation is missing')
         self.a = self.adapter
         self.config = self.a.AdapterConfig(
-            source_id='fixture-session-1', input_frame_id='vendor_odom',
-            input_body_frame_id='vendor_sensor', world_convention='NED', body_convention='FRD',
-            body_from_sensor_wxyz=(1., 0., 0., 0.), sensor_position_body_frd=(0., 0., 0.),
-            world_alignment_wxyz=(1., 0., 0., 0.), world_translation_ned=(0., 0., 0.),
-            extrinsics_id='mount-v1', alignment_id='align-v1')
+            source_id='fixture-session-1',
+            input_frame_id='vendor_odom',
+            input_body_frame_id='vendor_sensor',
+            world_convention='NED',
+            body_convention='FRD',
+            body_from_sensor_wxyz=(1.0, 0.0, 0.0, 0.0),
+            sensor_position_body_frd=(0.0, 0.0, 0.0),
+            world_alignment_wxyz=(1.0, 0.0, 0.0, 0.0),
+            world_translation_ned=(0.0, 0.0, 0.0),
+            extrinsics_id='mount-v1',
+            alignment_id='align-v1',
+        )
 
     # 显式传递配置及 Health；测试可用 None 验证缺失元数据，不偷偷补有效位。
     def convert(self, msg=None, meta=None, **config_changes):
         from dataclasses import replace
+
         config = replace(self.config, **config_changes)
         return self.a.convert_odometry(msg or odometry(), meta or health(), config)
 
@@ -89,33 +125,39 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertEqual(state.reset_counter, 4)
         self.assertEqual(state.frame_id, 'fc01_vision_ned')
         self.assertEqual(state.body_frame_id, 'base_link_frd')
-        self.assertVector(state.position, (5., 6., 7.))
-        self.assertVector(state.attitude, (1., 0., 0., 0.))
+        self.assertVector(state.position, (5.0, 6.0, 7.0))
+        self.assertVector(state.attitude, (1.0, 0.0, 0.0, 0.0))
         self.assertEqual(state.valid_fields, 1 | 2 | 4 | 8 | 64)
         self.assertTrue(all(math.isnan(x) for x in state.pose_covariance + state.twist_covariance))
 
     # ENU 的东/北/上转 NED，FLU 的左/上转 FRD；pose、twist 与角速度都需一致变换。
     def test_enu_flu_rotates_pose_child_twist_and_angular_velocity(self):
-        h = math.sqrt(.5)
-        state = self.convert(odometry((1., 2., 3.), (1., 2., 3.), (h, 0., 0., h), (0., 0., 2.)),
-                             world_convention='ENU', body_convention='FLU')
+        h = math.sqrt(0.5)
+        state = self.convert(
+            odometry((1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (h, 0.0, 0.0, h), (0.0, 0.0, 2.0)),
+            world_convention='ENU',
+            body_convention='FLU',
+        )
         self.assertEqual(state.reason, 'OK')
-        self.assertVector(state.position, (2., 1., -3.))
-        self.assertVector(state.velocity, (1., -2., -3.))
-        self.assertVector(state.attitude, (1., 0., 0., 0.))
-        self.assertVector(state.angular_velocity, (0., 0., -2.))
+        self.assertVector(state.position, (2.0, 1.0, -3.0))
+        self.assertVector(state.velocity, (1.0, -2.0, -3.0))
+        self.assertVector(state.attitude, (1.0, 0.0, 0.0, 0.0))
+        self.assertVector(state.angular_velocity, (0.0, 0.0, -2.0))
 
     # 传感器距机体原点有杆臂时，位置和 ω×r 线速度必须共同修正。
     def test_lever_arm_changes_position_and_removes_rotational_sensor_velocity(self):
-        state = self.convert(odometry(velocity=(0., 2., 0.), omega=(0., 0., 2.)),
-                             sensor_position_body_frd=(1., 0., 0.))
-        self.assertVector(state.position, (4., 6., 7.))
-        self.assertVector(state.velocity, (0., 0., 0.))
+        state = self.convert(
+            odometry(velocity=(0.0, 2.0, 0.0), omega=(0.0, 0.0, 2.0)),
+            sensor_position_body_frd=(1.0, 0.0, 0.0),
+        )
+        self.assertVector(state.position, (4.0, 6.0, 7.0))
+        self.assertVector(state.velocity, (0.0, 0.0, 0.0))
 
     # 缺实测角速度无法去除旋转线速度，不能把机体速度标有效。
     def test_nonzero_lever_arm_without_angular_measurement_invalidates_velocity(self):
-        state = self.convert(meta=health(angular_velocity_valid=False),
-                             sensor_position_body_frd=(1., 0., 0.))
+        state = self.convert(
+            meta=health(angular_velocity_valid=False), sensor_position_body_frd=(1.0, 0.0, 0.0)
+        )
         self.assertFalse(state.valid_fields & 2)
         self.assertFalse(state.valid_fields & 8)
         self.assertTrue(all(math.isnan(x) for x in state.velocity))
@@ -124,18 +166,25 @@ class OdometryAdapterTests(unittest.TestCase):
 
     # 同时加入机体安装旋转和世界对齐，核对完整变换组合。
     def test_rotated_mount_and_world_alignment_are_applied(self):
-        h = math.sqrt(.5)
-        state = self.convert(body_from_sensor_wxyz=(h, 0., 0., h),
-                             sensor_position_body_frd=(1., 0., 0.),
-                             world_alignment_wxyz=(h, 0., 0., h),
-                             world_translation_ned=(1., 2., 3.))
-        self.assertVector(state.position, (-6., 7., 10.))
-        self.assertVector(state.attitude, (1., 0., 0., 0.))
+        h = math.sqrt(0.5)
+        state = self.convert(
+            body_from_sensor_wxyz=(h, 0.0, 0.0, h),
+            sensor_position_body_frd=(1.0, 0.0, 0.0),
+            world_alignment_wxyz=(h, 0.0, 0.0, h),
+            world_translation_ned=(1.0, 2.0, 3.0),
+        )
+        self.assertVector(state.position, (-6.0, 7.0, 10.0))
+        self.assertVector(state.attitude, (1.0, 0.0, 0.0, 0.0))
 
     # 零数值不是健康证据，Health 缺失或 stamp/来源不匹配须撤销。
     def test_missing_or_mismatched_health_never_makes_zero_values_valid(self):
-        for meta in (None, health(stamp=stamp(10, 26)), health(frame_id='other'),
-                     health(body_frame_id='other'), health(source_id='other')):
+        for meta in (
+            None,
+            health(stamp=stamp(10, 26)),
+            health(frame_id='other'),
+            health(body_frame_id='other'),
+            health(source_id='other'),
+        ):
             with self.subTest(meta=meta):
                 state = self.a.convert_odometry(odometry(), meta, self.config)
                 self.assertEqual(state.valid_fields, 0)
@@ -144,13 +193,21 @@ class OdometryAdapterTests(unittest.TestCase):
 
     # 逐个破坏质量、时钟、reset、尺度和标定声明，证明任一合同不可被默认值补齐。
     def test_each_quality_time_reset_and_calibration_contract_is_required(self):
-        for field in ('reset_valid', 'initialized', 'tracking', 'calibration_valid',
-                      'frame_alignment_valid', 'time_sync_valid', 'extrinsics_valid',
-                      'metric_scale_valid', 'quality_valid'):
+        for field in (
+            'reset_valid',
+            'initialized',
+            'tracking',
+            'calibration_valid',
+            'frame_alignment_valid',
+            'time_sync_valid',
+            'extrinsics_valid',
+            'metric_scale_valid',
+            'quality_valid',
+        ):
             with self.subTest(field=field):
                 state = self.convert(meta=health(**{field: False}))
                 self.assertEqual(state.valid_fields, 0)
-        for value in (float('nan'), -1., 1.1):
+        for value in (float('nan'), -1.0, 1.1):
             with self.subTest(quality=value):
                 self.assertEqual(self.convert(meta=health(quality=value)).valid_fields, 0)
         for values in ({'extrinsics_id': 'new'}, {'alignment_id': 'new'}, {'schema_version': 2}):
@@ -158,14 +215,17 @@ class OdometryAdapterTests(unittest.TestCase):
 
     # 实际质量=0 仍是有效“质量测量”，是否足够由后续显式阈值决定。
     def test_zero_quality_remains_explicit_measured_quality_for_core_threshold(self):
-        state = self.convert(meta=health(quality=0.))
-        self.assertEqual(state.quality, 0.)
+        state = self.convert(meta=health(quality=0.0))
+        self.assertEqual(state.quality, 0.0)
         self.assertTrue(state.valid_fields & 64)
 
     # 上游未声明有效的状态不能由恰为零的字段或无来源角速度伪造。
     def test_absent_position_velocity_attitude_and_angular_source_are_not_invented(self):
-        for field, bit, array in (('position_valid', 1, 'position'), ('velocity_valid', 2, 'velocity'),
-                                  ('attitude_valid', 4, 'attitude')):
+        for field, bit, array in (
+            ('position_valid', 1, 'position'),
+            ('velocity_valid', 2, 'velocity'),
+            ('attitude_valid', 4, 'attitude'),
+        ):
             state = self.convert(meta=health(**{field: False}))
             self.assertFalse(state.valid_fields & bit)
             self.assertTrue(all(math.isnan(x) for x in getattr(state, array)))
@@ -174,31 +234,38 @@ class OdometryAdapterTests(unittest.TestCase):
 
     # 原始 NaN/Inf 或零范数四元数不能进入可信状态。
     def test_nonfinite_or_zero_norm_raw_measurements_are_rejected(self):
-        self.assertFalse(self.convert(odometry(position=(math.nan, 0., 0.))).valid_fields & 1)
-        self.assertFalse(self.convert(odometry(velocity=(math.inf, 0., 0.))).valid_fields & 2)
-        self.assertFalse(self.convert(odometry(q=(0., 0., 0., 0.))).valid_fields & 4)
-        self.assertFalse(self.convert(odometry(q=(2., 0., 0., 0.))).valid_fields & 4)
-        self.assertEqual(self.convert(odometry(q=(1.01, 0., 0., 0.))).reason, 'OK')
+        self.assertFalse(self.convert(odometry(position=(math.nan, 0.0, 0.0))).valid_fields & 1)
+        self.assertFalse(self.convert(odometry(velocity=(math.inf, 0.0, 0.0))).valid_fields & 2)
+        self.assertFalse(self.convert(odometry(q=(0.0, 0.0, 0.0, 0.0))).valid_fields & 4)
+        self.assertFalse(self.convert(odometry(q=(2.0, 0.0, 0.0, 0.0))).valid_fields & 4)
+        self.assertEqual(self.convert(odometry(q=(1.01, 0.0, 0.0, 0.0))).reason, 'OK')
 
     # 输入各轴有限仍可能在外参算术中溢出；派生非有限值必须清对应有效位。
     def test_transform_overflow_never_marks_nonfinite_derived_measurements_valid(self):
-        state = self.convert(odometry(position=(1.e308, 0., 0.)),
-                             world_translation_ned=(1.e308, 0., 0.))
+        state = self.convert(
+            odometry(position=(1.0e308, 0.0, 0.0)), world_translation_ned=(1.0e308, 0.0, 0.0)
+        )
         self.assertFalse(state.valid_fields & 1)
         self.assertTrue(all(math.isnan(x) for x in state.position))
-        half_yaw = math.pi / 8.
-        state = self.convert(odometry(velocity=(1.7e308, 1.7e308, 0.),
-                                      q=(math.cos(half_yaw), 0., 0., math.sin(half_yaw))))
+        half_yaw = math.pi / 8.0
+        state = self.convert(
+            odometry(
+                velocity=(1.7e308, 1.7e308, 0.0),
+                q=(math.cos(half_yaw), 0.0, 0.0, math.sin(half_yaw)),
+            )
+        )
         self.assertFalse(state.valid_fields & 2)
         self.assertTrue(all(math.isnan(x) for x in state.velocity))
-        state = self.convert(odometry(omega=(1.7e308, 1.7e308, 0.)),
-                             body_from_sensor_wxyz=(math.cos(half_yaw), 0., 0., math.sin(half_yaw)))
+        state = self.convert(
+            odometry(omega=(1.7e308, 1.7e308, 0.0)),
+            body_from_sensor_wxyz=(math.cos(half_yaw), 0.0, 0.0, math.sin(half_yaw)),
+        )
         self.assertFalse(state.valid_fields & 8)
         self.assertTrue(all(math.isnan(x) for x in state.angular_velocity))
 
     # 逐轴 180° 姿态需走稳定四元数分支，不能在 trace 接近 -1 时除零。
     def test_half_turn_orientation_conversion_is_stable_on_each_axis(self):
-        for quaternion in ((0., 1., 0., 0.), (0., 0., 1., 0.), (0., 0., 0., 1.)):
+        for quaternion in ((0.0, 1.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0), (0.0, 0.0, 0.0, 1.0)):
             with self.subTest(quaternion=quaternion):
                 state = self.convert(odometry(q=quaternion))
                 self.assertVector(state.attitude, quaternion)
@@ -211,15 +278,21 @@ class OdometryAdapterTests(unittest.TestCase):
             msg.header.stamp = raw
             self.assertEqual(self.convert(msg).valid_fields, 0)
         from dataclasses import replace
-        for changes in ({'source_id': ''}, {'extrinsics_id': ''}, {'world_convention': ''},
-                        {'body_convention': 'OPTICAL'}, {'body_from_sensor_wxyz': (0., 0., 0., 0.)}):
+
+        for changes in (
+            {'source_id': ''},
+            {'extrinsics_id': ''},
+            {'world_convention': ''},
+            {'body_convention': 'OPTICAL'},
+            {'body_from_sensor_wxyz': (0.0, 0.0, 0.0, 0.0)},
+        ):
             with self.assertRaises(ValueError):
                 replace(self.config, **changes).validate()
 
     # 仅完全相同 stamp 两半配对；已发布/过期 stamp 的重复不能再次授权输出。
     def test_stamp_pair_buffer_matches_exact_sample_and_never_republishes_duplicates(self):
-        pairs = self.a.StampPairBuffer(timeout=.05, max_pending=4)
-        self.assertEqual(pairs.odometry(odometry(), 1.), [])
+        pairs = self.a.StampPairBuffer(timeout=0.05, max_pending=4)
+        self.assertEqual(pairs.odometry(odometry(), 1.0), [])
         ready = pairs.health(health(), 1.01)
         self.assertEqual(len(ready), 1)
         self.assertIsNotNone(ready[0][1])
@@ -227,7 +300,7 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertEqual(pairs.odometry(odometry(), 1.03), [])
         later = odometry()
         later.header.stamp = stamp(10, 30)
-        self.assertEqual(pairs.odometry(later, 2.), [])
+        self.assertEqual(pairs.odometry(later, 2.0), [])
         expired = pairs.expire(2.06)
         self.assertEqual(len(expired), 1)
         self.assertIsNone(expired[0][1])
@@ -235,32 +308,34 @@ class OdometryAdapterTests(unittest.TestCase):
 
     # 构造同时检查两个原始 Topic 发布者数量的适配器，来源图权威不能只看输出节点数。
     def guarded(self):
-        self.assertTrue(hasattr(self.a, 'GuardedOdometryAdapter'),
-                        'raw source graph authority must guard the exact-stamp adapter')
-        return self.a.GuardedOdometryAdapter(self.config, pair_timeout=.05, max_pending=4)
+        self.assertTrue(
+            hasattr(self.a, 'GuardedOdometryAdapter'),
+            'raw source graph authority must guard the exact-stamp adapter',
+        )
+        return self.a.GuardedOdometryAdapter(self.config, pair_timeout=0.05, max_pending=4)
 
     # Health 在恰好 TTL 或更晚回调，先撤销旧 Odometry，不能绕过尚未执行的 timer。
     def test_late_health_cannot_rescue_odometry_at_or_after_pair_timeout(self):
-        for delay in (.05, .20):
+        for delay in (0.05, 0.20):
             with self.subTest(delay=delay):
-                pairs = self.a.StampPairBuffer(timeout=.05, max_pending=4)
-                self.assertEqual(pairs.odometry(odometry(), 0.), [])
+                pairs = self.a.StampPairBuffer(timeout=0.05, max_pending=4)
+                self.assertEqual(pairs.odometry(odometry(), 0.0), [])
                 # 达到窗口边界即先撤销旧测量，不能被同时间戳的晚到健康声明恢复。
                 expired = pairs.health(health(), delay)
                 self.assertEqual(len(expired), 1)
                 self.assertIsNone(expired[0][1])
-                self.assertEqual(pairs.health(health(), delay + .01), [])
-                self.assertEqual(pairs.odometry(odometry(), delay + .02), [])
+                self.assertEqual(pairs.health(health(), delay + 0.01), [])
+                self.assertEqual(pairs.odometry(odometry(), delay + 0.02), [])
 
     # 反向回调次序也一样：过期 Health 不能为晚到测量背书。
     def test_late_odometry_cannot_borrow_health_at_or_after_pair_timeout(self):
-        for delay in (.05, .20):
+        for delay in (0.05, 0.20):
             with self.subTest(delay=delay):
-                pairs = self.a.StampPairBuffer(timeout=.05, max_pending=4)
-                self.assertEqual(pairs.health(health(), 0.), [])
+                pairs = self.a.StampPairBuffer(timeout=0.05, max_pending=4)
+                self.assertEqual(pairs.health(health(), 0.0), [])
                 # 先到的声明已经过期；新到的原始测量应重新等待自己的健康配对。
                 self.assertEqual(pairs.odometry(odometry(), delay), [])
-                expired = pairs.expire(delay + .06)
+                expired = pairs.expire(delay + 0.06)
                 self.assertEqual(len(expired), 1)
                 self.assertIsNone(expired[0][1])
 
@@ -268,18 +343,18 @@ class OdometryAdapterTests(unittest.TestCase):
     def test_timely_pair_remains_accepted_in_either_callback_order(self):
         for health_first in (True, False):
             with self.subTest(health_first=health_first):
-                pairs = self.a.StampPairBuffer(timeout=.05, max_pending=4)
+                pairs = self.a.StampPairBuffer(timeout=0.05, max_pending=4)
                 first = pairs.health if health_first else pairs.odometry
                 second = pairs.odometry if health_first else pairs.health
-                self.assertEqual(first(health() if health_first else odometry(), 0.), [])
-                ready = second(odometry() if health_first else health(), .049)
+                self.assertEqual(first(health() if health_first else odometry(), 0.0), [])
+                ready = second(odometry() if health_first else health(), 0.049)
                 self.assertEqual(len(ready), 1)
                 self.assertIsNotNone(ready[0][1])
 
     # 同一回调同时产生旧撤销和新正常帧，必须按撤销在前返回且序号继续前进。
     def test_callback_expiry_precedes_fresh_pair_without_hiding_revocation(self):
         adapter = self.guarded()
-        self.assertEqual(adapter.odometry(odometry(), 1., 10_000_000_050, 1, 1), [])
+        self.assertEqual(adapter.odometry(odometry(), 1.0, 10_000_000_050, 1, 1), [])
         later = odometry()
         later.header.stamp = stamp(10, 400)
         later_health = health(stamp=stamp(10, 400), sequence=8)
@@ -299,20 +374,27 @@ class OdometryAdapterTests(unittest.TestCase):
         for counts in ((0, 1), (1, 0), (2, 1), (1, 2), (2, 2)):
             with self.subTest(counts=counts):
                 adapter = self.guarded()
-                states = adapter.health(health(), 1., 10_000_000_100, *counts)
+                states = adapter.health(health(), 1.0, 10_000_000_100, *counts)
                 self.assertEqual(len(states), 1)
                 invalid = states[0]
                 self.assertEqual(invalid.valid_fields, 0)
-                self.assertFalse(invalid.tracking or invalid.initialized or invalid.calibration_valid)
+                self.assertFalse(
+                    invalid.tracking or invalid.initialized or invalid.calibration_valid
+                )
                 self.assertEqual(invalid.source_id, 'fixture-session-1')
                 self.assertEqual(invalid.stamp_ns, 10_000_000_100)
                 self.assertGreater(invalid.sequence, 0)
-                self.assertTrue(all(math.isnan(x) for x in invalid.position + invalid.velocity + invalid.attitude))
+                self.assertTrue(
+                    all(
+                        math.isnan(x)
+                        for x in invalid.position + invalid.velocity + invalid.attitude
+                    )
+                )
 
     # 冲突前缓存的 A 来源 Health 不能在冲突消失后给 B 测量背书。
     def test_raw_conflict_discards_cached_health_before_another_odometry_can_pair(self):
         adapter = self.guarded()
-        self.assertEqual(adapter.health(health(), 1., 10_000_000_050, 1, 1), [])
+        self.assertEqual(adapter.health(health(), 1.0, 10_000_000_050, 1, 1), [])
         invalid = adapter.odometry(odometry(), 1.01, 10_000_000_100, 2, 1)[0]
         self.assertEqual(invalid.valid_fields, 0)
         # The former health from A cannot bless the remaining raw Odom from B.
@@ -325,7 +407,7 @@ class OdometryAdapterTests(unittest.TestCase):
     # 图冲突即 timer 撤销；恢复单源后仍需一对新 stamp 才可恢复，不复用旧缓存。
     def test_timer_revokes_healthy_state_on_raw_graph_conflict_and_waits_for_new_pair(self):
         adapter = self.guarded()
-        adapter.health(health(), 1., 10_000_000_050, 1, 1)
+        adapter.health(health(), 1.0, 10_000_000_050, 1, 1)
         valid = adapter.odometry(odometry(), 1.01, 10_000_000_100, 1, 1)[0]
         self.assertEqual(valid.reason, 'OK')
         self.assertEqual(valid.raw_health_sequence, 7)
@@ -346,7 +428,7 @@ class OdometryAdapterTests(unittest.TestCase):
     # 旧状态健康但新样本缺 metadata，超时必须发新序号明确撤销。
     def test_missing_metadata_emits_explicit_revocation_without_borrowing_health(self):
         adapter = self.guarded()
-        adapter.health(health(), 1., 10_000_000_050, 1, 1)
+        adapter.health(health(), 1.0, 10_000_000_050, 1, 1)
         valid = adapter.odometry(odometry(), 1.01, 10_000_000_100, 1, 1)[0]
         later = odometry()
         later.header.stamp = stamp(10, 200)
@@ -362,7 +444,9 @@ class OdometryAdapterTests(unittest.TestCase):
 class RosMappingTests(unittest.TestCase):
     # 验证时间单位、wxyz、mask 和 mode；非法版本/时间/枚举必须清有效性。
     def test_cpp_mapping_preserves_wxyz_masks_mode_and_rejects_invalid_stamp_version(self):
-        header = ROOT / 'native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp'
+        header = (
+            ROOT / 'native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp'
+        )
         self.assertTrue(header.is_file(), 'C++ vision wire adapter implementation is missing')
         source = r'''
 #include "jikl_fc01_system/vision_ros_adapter.hpp"
@@ -403,9 +487,23 @@ int main(){
             cpp = Path(directory) / 'wire.cpp'
             binary = Path(directory) / 'wire'
             cpp.write_text(source)
-            result = subprocess.run(['g++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-pedantic',
-                                     '-I', str(header.parents[1]), str(cpp), '-o', str(binary)],
-                                    capture_output=True, text=True)
+            result = subprocess.run(
+                [
+                    'g++',
+                    '-std=c++17',
+                    '-Wall',
+                    '-Wextra',
+                    '-Werror',
+                    '-pedantic',
+                    '-I',
+                    str(header.parents[1]),
+                    str(cpp),
+                    '-o',
+                    str(binary),
+                ],
+                capture_output=True,
+                text=True,
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             subprocess.run([str(binary)], check=True)
 

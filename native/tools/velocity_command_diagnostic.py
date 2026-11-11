@@ -60,6 +60,7 @@ def _text(value):
 @dataclass(frozen=True)
 class DiagnosticConfig:
     """诊断策略；数值阈值与发送来源必须由接口双方明确配置。"""
+
     timeout_sec: float = 0.0
     max_speed_mps: float = 0.0
     max_source_age_sec: float = 0.0
@@ -71,9 +72,14 @@ class DiagnosticConfig:
             value = getattr(self, name)
             if not _finite(value) or value < 0:
                 raise ValueError(name + ' must be finite and nonnegative; 0 means unconfigured')
-        if (not isinstance(self.expected_source_id, str) or len(self.expected_source_id) > MAX_TEXT
-                or (self.expected_source_id and not self.expected_source_id.strip())):
-            raise ValueError('expected_source_id must be empty (unbound) or an explicit source identifier')
+        if (
+            not isinstance(self.expected_source_id, str)
+            or len(self.expected_source_id) > MAX_TEXT
+            or (self.expected_source_id and not self.expected_source_id.strip())
+        ):
+            raise ValueError(
+                'expected_source_id must be empty (unbound) or an explicit source identifier'
+            )
 
 
 class Receiver:
@@ -82,12 +88,27 @@ class Receiver:
     accepted 只表示通过当时已配置的检查，不表示允许飞机运动。
     正常新消息可以恢复候选，但不能覆盖此前的异常证据。
     """
+
     def __init__(self, config=None):
         self.config = config or DiagnosticConfig()
-        self.counters = dict.fromkeys(('received', 'accepted', 'invalid', 'duplicate',
-                                      'out_of_order', 'source_change', 'reset_change',
-                                      'source_count', 'timeout', 'clock_regression',
-                                      'source_expired', 'anomalies', 'events_dropped'), 0)
+        self.counters = dict.fromkeys(
+            (
+                'received',
+                'accepted',
+                'invalid',
+                'duplicate',
+                'out_of_order',
+                'source_change',
+                'reset_change',
+                'source_count',
+                'timeout',
+                'clock_regression',
+                'source_expired',
+                'anomalies',
+                'events_dropped',
+            ),
+            0,
+        )
         self.last_message = None
         self.last_anomaly = None
         self.last_event = None
@@ -99,7 +120,7 @@ class Receiver:
         self._sequence = 0
         self._stamp = 0
         self._last_valid = None  # 历史上最后一次接受的消息，过期后仍保留供查错。
-        self._candidate = None   # 当前候选；无效、过期或来源异常时立即撤销。
+        self._candidate = None  # 当前候选；无效、过期或来源异常时立即撤销。
         self._last_observation_steady = None
         self._last_observation_ros = None
         self._timeout_reported = False
@@ -111,15 +132,19 @@ class Receiver:
         errors = []
         if self._last_observation_steady is not None and now < self._last_observation_steady:
             errors.append('RECEIVE_CLOCK_REGRESSION')
-        if (self._last_observation_ros is not None and ros_now_ns
-                and ros_now_ns < self._last_observation_ros):
+        if (
+            self._last_observation_ros is not None
+            and ros_now_ns
+            and ros_now_ns < self._last_observation_ros
+        ):
             errors.append('ROS_CLOCK_REGRESSION')
         # 保留已经观察到的最大时刻。回退不能降低基准，否则连续的旧时间
         # 会在第二帧就重新通过；时钟追上基准后，正常新消息仍可恢复候选。
         if self._last_observation_steady is None or now > self._last_observation_steady:
             self._last_observation_steady = now
-        if ros_now_ns and (self._last_observation_ros is None
-                           or ros_now_ns > self._last_observation_ros):
+        if ros_now_ns and (
+            self._last_observation_ros is None or ros_now_ns > self._last_observation_ros
+        ):
             self._last_observation_ros = ros_now_ns
         if errors:
             self._candidate = None
@@ -130,16 +155,24 @@ class Receiver:
     def _observe_receive_timeout(self, now, ros_now_ns):
         # 必须先检查旧消息，再接收新消息。否则执行器停顿后恰好收到正常包，
         # 就会覆盖旧接收时间，让断流在定时快照尚未运行时消失。
-        if (self._last_valid is None or not self.config.timeout_sec
-                or now - self._last_valid['received_at'] < self.config.timeout_sec):
+        if (
+            self._last_valid is None
+            or not self.config.timeout_sec
+            or now - self._last_valid['received_at'] < self.config.timeout_sec
+        ):
             return
         self._candidate = None
         if not self._timeout_reported:
             self._timeout_reported = True
             self.counters['timeout'] += 1
-            self._event('timeout', ['RECEIVE_TIMEOUT'], now, ros_now_ns,
-                        last_valid_age_sec=now - self._last_valid['received_at'],
-                        last_valid_sequence=self._last_valid['sequence'])
+            self._event(
+                'timeout',
+                ['RECEIVE_TIMEOUT'],
+                now,
+                ros_now_ns,
+                last_valid_age_sec=now - self._last_valid['received_at'],
+                last_valid_sequence=self._last_valid['sequence'],
+            )
 
     def _observe_candidate_expiry(self, now, ros_now_ns):
         # 收到新包和查询快照都走这里。接收年龄与源测量年龄是两个条件：
@@ -150,8 +183,11 @@ class Receiver:
         candidate = self._candidate
         age = now - candidate['received_at']
         # 源年龄 = ROS 当前时间 − 测量时间；本机接收得晚仍可能收到一条已经过期的指令。
-        source_age = ((ros_now_ns - candidate['stamp_ns']) / 1e9
-                      if ros_now_ns and candidate['stamp_ns'] else None)
+        source_age = (
+            (ros_now_ns - candidate['stamp_ns']) / 1e9
+            if ros_now_ns and candidate['stamp_ns']
+            else None
+        )
         if age < 0:
             errors.append('RECEIVE_CLOCK_REGRESSION')
         elif self.config.timeout_sec and age >= self.config.timeout_sec:
@@ -165,17 +201,30 @@ class Receiver:
         if errors:
             self._candidate = None
             self.counters['source_expired'] += 1
-            self._event('cache_revoked', errors, now, ros_now_ns,
-                        last_candidate_sequence=candidate['sequence'],
-                        last_candidate_source_age_sec=source_age)
+            self._event(
+                'cache_revoked',
+                errors,
+                now,
+                ros_now_ns,
+                last_candidate_sequence=candidate['sequence'],
+                last_candidate_source_age_sec=source_age,
+            )
         return errors
 
     # 事件 ID 与有界队列记录顺序；异常单独留存，队列溢出计数，正常新包不能洗掉先前异常。
     def _event(self, kind, reasons, now, ros_now_ns, **fields):
         self._event_id += 1
-        event = _json_safe(dict(event_id=self._event_id, kind=kind, reasons=list(reasons),
-                               received_at=now, ros_now_ns=ros_now_ns,
-                               control_authority=False, **fields))
+        event = _json_safe(
+            dict(
+                event_id=self._event_id,
+                kind=kind,
+                reasons=list(reasons),
+                received_at=now,
+                ros_now_ns=ros_now_ns,
+                control_authority=False,
+                **fields,
+            )
+        )
         self.last_event = event
         if reasons:
             self.last_anomaly = event
@@ -208,8 +257,14 @@ class Receiver:
         if reasons:
             self._candidate = None
             self.counters['source_count'] += 1
-        return self._event('publisher_count', reasons, now, ros_now_ns,
-                           previous_count=previous, publisher_count=count)
+        return self._event(
+            'publisher_count',
+            reasons,
+            now,
+            ros_now_ns,
+            previous_count=previous,
+            publisher_count=count,
+        )
 
     def receive(self, message, received_at, ros_now_ns, publisher_count):
         """按“旧缓存→本帧字段→消息顺序→候选更新”的顺序处理一帧。"""
@@ -236,12 +291,22 @@ class Receiver:
         valid = getattr(message, 'valid', None)
         velocities = [getattr(message, name, None) for name in ('vx', 'vy', 'vz')]
         source_age = (ros_now_ns - stamp_ns) / 1e9 if stamp_ns and ros_now_ns else None
-        sample = dict(schema_version=schema, sequence=sequence,
-                      stamp=dict(sec=sec, nanosec=nanosec), stamp_ns=stamp_ns or None,
-                      reset_counter=reset, source_id=_text(source), frame_id=_text(frame),
-                      valid=valid, vx=velocities[0], vy=velocities[1], vz=velocities[2],
-                      received_at=received_at, source_age_at_receive_sec=source_age,
-                      publisher_count=publisher_count)
+        sample = dict(
+            schema_version=schema,
+            sequence=sequence,
+            stamp=dict(sec=sec, nanosec=nanosec),
+            stamp_ns=stamp_ns or None,
+            reset_counter=reset,
+            source_id=_text(source),
+            frame_id=_text(frame),
+            valid=valid,
+            vx=velocities[0],
+            vy=velocities[1],
+            vz=velocities[2],
+            received_at=received_at,
+            source_age_at_receive_sec=source_age,
+            publisher_count=publisher_count,
+        )
         errors = list(clock_errors)
         if schema != 1 or isinstance(schema, bool):
             errors.append('SCHEMA_VERSION_INVALID')
@@ -274,8 +339,9 @@ class Receiver:
             errors.append('ROS_CLOCK_UNAVAILABLE')
 
         # 3. 检查来源、reset、序号与测量时间；不合格数据不得推进可信水位。
-        self._check_stream_order(source, reset, sequence, stamp_ns, valid, errors,
-                                 received_at, ros_now_ns)
+        self._check_stream_order(
+            source, reset, sequence, stamp_ns, valid, errors, received_at, ros_now_ns
+        )
 
         # 4. 只有本帧全部检查通过，才建立新的当前候选。
         # last_message 保存本次观测；last_anomaly 由 _event 单独保存。
@@ -290,14 +356,20 @@ class Receiver:
             self.counters['invalid'] += 1
         self.last_message = _json_safe(sample)
         self.latest_errors = errors
-        return self._event('message', errors, received_at, ros_now_ns,
-                           accepted=accepted, sample=sample)
+        return self._event(
+            'message', errors, received_at, ros_now_ns, accepted=accepted, sample=sample
+        )
 
-    def _check_stream_order(self, source, reset, sequence, stamp_ns, valid, errors,
-                           received_at, ros_now_ns):
+    def _check_stream_order(
+        self, source, reset, sequence, stamp_ns, valid, errors, received_at, ros_now_ns
+    ):
         """追加顺序错误，并仅在本帧可信时更新防重放记录。"""
-        identity_valid = (_integer(reset, 2**32 - 1) and isinstance(source, str)
-                          and bool(source.strip()) and len(source) <= MAX_TEXT)
+        identity_valid = (
+            _integer(reset, 2**32 - 1)
+            and isinstance(source, str)
+            and bool(source.strip())
+            and len(source) <= MAX_TEXT
+        )
         if identity_valid:
             identity = (source, reset)
             if self._identity is not None and identity != self._identity:
@@ -308,15 +380,27 @@ class Receiver:
                 if reset != self._identity[1]:
                     self.counters['reset_change'] += 1
                     changes.append('RESET_CHANGED')
-                self._event('stream_change', changes, received_at, ros_now_ns,
-                            previous_source_id=self._identity[0], previous_reset_counter=self._identity[1],
-                            source_id=source, reset_counter=reset)
+                self._event(
+                    'stream_change',
+                    changes,
+                    received_at,
+                    ros_now_ns,
+                    previous_source_id=self._identity[0],
+                    previous_reset_counter=self._identity[1],
+                    source_id=source,
+                    reset_counter=reset,
+                )
                 self._candidate = None
             self._identity = identity
             self._sequence, self._stamp = self._watermarks.get(identity, (0, 0))
-            source_matches = not self.config.expected_source_id or source == self.config.expected_source_id
-            if (source_matches and identity not in self._watermarks
-                    and len(self._watermarks) >= STREAM_HISTORY_CAPACITY):
+            source_matches = (
+                not self.config.expected_source_id or source == self.config.expected_source_id
+            )
+            if (
+                source_matches
+                and identity not in self._watermarks
+                and len(self._watermarks) >= STREAM_HISTORY_CAPACITY
+            ):
                 # 历史满后拒绝新会话，不淘汰旧水位，否则旧包可能重新有效。
                 # 已记录会话仍可继续接收，不需要重启飞机或清除飞行故障。
                 errors.append('STREAM_HISTORY_CAPACITY_REACHED')
@@ -328,8 +412,14 @@ class Receiver:
                     errors.append('OUT_OF_ORDER_SEQUENCE')
                     self.counters['out_of_order'] += 1
                 else:
-                    source_stamp = max((watermark[1] for key, watermark in self._watermarks.items()
-                                        if key[0] == source), default=0)
+                    source_stamp = max(
+                        (
+                            watermark[1]
+                            for key, watermark in self._watermarks.items()
+                            if key[0] == source
+                        ),
+                        default=0,
+                    )
                     if source_stamp > self._stamp and stamp_ns and stamp_ns <= source_stamp:
                         # reset 可重启序号，不能让同一发送源的测量时钟倒退。
                         errors.append('SOURCE_STAMP_NOT_ADVANCING_ACROSS_RESET')
@@ -366,8 +456,13 @@ class Receiver:
             return receive_freshness
         if self.latest_errors:
             return 'LATEST_MESSAGE_INVALID'
-        time_limits_configured = all((self.config.timeout_sec, self.config.max_source_age_sec,
-                                      self.config.future_tolerance_sec))
+        time_limits_configured = all(
+            (
+                self.config.timeout_sec,
+                self.config.max_source_age_sec,
+                self.config.future_tolerance_sec,
+            )
+        )
         if not time_limits_configured or last_message is None:
             return 'UNCONFIGURED'
         source_age = last_message['source_age_sec']
@@ -393,8 +488,9 @@ class Receiver:
         last = dict(self.last_message) if self.last_message is not None else None
         if last is not None:
             last['receive_age_sec'] = now - last['received_at']
-            last['source_age_sec'] = ((ros_now_ns - last['stamp_ns']) / 1e9
-                                      if ros_now_ns and last['stamp_ns'] else None)
+            last['source_age_sec'] = (
+                (ros_now_ns - last['stamp_ns']) / 1e9 if ros_now_ns and last['stamp_ns'] else None
+            )
         if self._candidate is None:
             candidate_errors.append('NO_CURRENT_CANDIDATE')
         if not all(getattr(self.config, name) > 0 for name in LIMIT_NAMES):
@@ -404,40 +500,44 @@ class Receiver:
         if self.publisher_count != 1:
             candidate_errors.append('PUBLISHER_COUNT_NOT_ONE')
         freshness = self._message_freshness(receive_freshness, last)
-        return _json_safe({
-            'schema_version': 1,
-            'kind': 'velocity_command_diagnostic',
-            'message_type': MESSAGE_TYPE,
-            'control_authority': False,
-            'qualification': 'DIAGNOSTIC_ONLY',
-            'limits': {name: getattr(self.config, name) or None for name in LIMIT_NAMES},
-            'expected_source_id': self.config.expected_source_id or None,
-            'stream_history_size': len(self._watermarks),
-            'stream_history_capacity': STREAM_HISTORY_CAPACITY,
-            'cache_scope': 'DIAGNOSTIC_ONLY',
-            'cache_usable': not candidate_errors,
-            'cache_errors': candidate_errors,
-            'current_candidate': self._candidate if not candidate_errors else None,
-            'historical_last_accepted_message': self._last_valid,
-            'observed_at': now,
-            'ros_now_ns': ros_now_ns,
-            'publisher_count': self.publisher_count,
-            'freshness': freshness,
-            'receive_freshness': receive_freshness,
-            'last_valid_age_sec': age,
-            'last_valid_is_historical': True,
-            'last_message': last,
-            'latest_errors': list(self.latest_errors),
-            'last_anomaly': self.last_anomaly,
-            'last_event': self.last_event,
-            'counters': dict(self.counters),
-        })
+        return _json_safe(
+            {
+                'schema_version': 1,
+                'kind': 'velocity_command_diagnostic',
+                'message_type': MESSAGE_TYPE,
+                'control_authority': False,
+                'qualification': 'DIAGNOSTIC_ONLY',
+                'limits': {name: getattr(self.config, name) or None for name in LIMIT_NAMES},
+                'expected_source_id': self.config.expected_source_id or None,
+                'stream_history_size': len(self._watermarks),
+                'stream_history_capacity': STREAM_HISTORY_CAPACITY,
+                'cache_scope': 'DIAGNOSTIC_ONLY',
+                'cache_usable': not candidate_errors,
+                'cache_errors': candidate_errors,
+                'current_candidate': self._candidate if not candidate_errors else None,
+                'historical_last_accepted_message': self._last_valid,
+                'observed_at': now,
+                'ros_now_ns': ros_now_ns,
+                'publisher_count': self.publisher_count,
+                'freshness': freshness,
+                'receive_freshness': receive_freshness,
+                'last_valid_age_sec': age,
+                'last_valid_is_historical': True,
+                'last_message': last,
+                'latest_errors': list(self.latest_errors),
+                'last_anomaly': self.last_anomaly,
+                'last_event': self.last_event,
+                'counters': dict(self.counters),
+            }
+        )
 
 
 class DiagnosticWriter:
     """写入完整快照，并限制日志频率、单文件大小与备份数量。"""
-    def __init__(self, output_dir='', log_max_bytes=262144, log_backup_count=1,
-                 log_min_interval_sec=0.2):
+
+    def __init__(
+        self, output_dir='', log_max_bytes=262144, log_backup_count=1, log_min_interval_sec=0.2
+    ):
         if not _integer(log_max_bytes, 16 * 1024 * 1024) or log_max_bytes < 1024:
             raise ValueError('log_max_bytes must be an integer in [1024,16777216]')
         if not _integer(log_backup_count, 10):
@@ -478,7 +578,11 @@ class DiagnosticWriter:
         """写出待处理异常；正常退出用 force 跳过节流，写入成功后才清除。"""
         if self._pending_anomaly is None:
             return False
-        if not force and self.last_logged_at is not None and 0 <= now - self.last_logged_at < self.min_interval:
+        if (
+            not force
+            and self.last_logged_at is not None
+            and 0 <= now - self.last_logged_at < self.min_interval
+        ):
             return False
         written = self._write(self._pending_anomaly, now)
         if written:
@@ -490,9 +594,18 @@ class DiagnosticWriter:
         value = dict(event, log_events_suppressed=self.suppressed)
         data = (json.dumps(_json_safe(value), ensure_ascii=False, allow_nan=False) + '\n').encode()
         if len(data) > self.max_bytes:
-            data = (json.dumps(dict(kind='event_truncated', event_id=event.get('event_id'),
-                                    reasons=['LOG_RECORD_TOO_LARGE'], control_authority=False,
-                                    log_events_suppressed=self.suppressed)) + '\n').encode()
+            data = (
+                json.dumps(
+                    dict(
+                        kind='event_truncated',
+                        event_id=event.get('event_id'),
+                        reasons=['LOG_RECORD_TOO_LARGE'],
+                        control_authority=False,
+                        log_events_suppressed=self.suppressed,
+                    )
+                )
+                + '\n'
+            ).encode()
         path = self.directory / 'velocity_command_diagnostic.log'
         if path.exists() and path.stat().st_size + len(data) > self.max_bytes:
             for number in range(self.backups, 0, -1):
@@ -513,7 +626,9 @@ class DiagnosticWriter:
         if self.directory is None:
             return
         data = json.dumps(_json_safe(value), ensure_ascii=False, allow_nan=False, indent=2) + '\n'
-        descriptor, temporary = tempfile.mkstemp(prefix='.velocity_command_diagnostic.', dir=self.directory)
+        descriptor, temporary = tempfile.mkstemp(
+            prefix='.velocity_command_diagnostic.', dir=self.directory
+        )
         try:
             with os.fdopen(descriptor, 'w', encoding='utf-8') as stream:
                 stream.write(data)
@@ -534,11 +649,16 @@ def finalize_diagnostic(receiver, writer, topic, now, system_now_ns):
         raise ValueError('shutdown system time must be a nonnegative integer')
     ros_now_ns = receiver.last_observed_ros_ns
     value = receiver.snapshot(now, ros_now_ns)
-    value.update(topic=topic, receiver_running=False,
-                 stopped_at_monotonic=now, stopped_at_ros_ns=ros_now_ns,
-                 stopped_at_system_ns=system_now_ns,
-                 shutdown_clock_source='last_observed_ros_clock',
-                 cache_usable=False, current_candidate=None)
+    value.update(
+        topic=topic,
+        receiver_running=False,
+        stopped_at_monotonic=now,
+        stopped_at_ros_ns=ros_now_ns,
+        stopped_at_system_ns=system_now_ns,
+        shutdown_clock_source='last_observed_ros_clock',
+        cache_usable=False,
+        current_candidate=None,
+    )
     value['cache_errors'] = list(dict.fromkeys(value['cache_errors'] + ['RECEIVER_STOPPED']))
     failures = []
     for event in receiver.drain_events():
@@ -575,35 +695,72 @@ def main(args=None):
 
             def parameter(name, default):
                 # 参数仅在启动时读取；运行期明确拒绝修改，避免显示值与实际值不同。
-                return self.declare_parameter(name, default, descriptor=ParameterDescriptor(
-                    read_only=True, description='Startup-only diagnostic configuration; restart to change.')).value
+                return self.declare_parameter(
+                    name,
+                    default,
+                    descriptor=ParameterDescriptor(
+                        read_only=True,
+                        description='Startup-only diagnostic configuration; restart to change.',
+                    ),
+                ).value
 
             self.topic = parameter('topic', DEFAULT_TOPIC)
             depth = parameter('qos_depth', 5)
             reliable = parameter('reliable', False)
             period = parameter('snapshot_period_sec', 1.0)
-            if (not isinstance(self.topic, str) or not self.topic.startswith('/')
-                    or self.topic.startswith('/fmu/') or not _integer(depth, 20) or depth < 1
-                    or not _finite(period) or period < .01 or period > 60):
+            if (
+                not isinstance(self.topic, str)
+                or not self.topic.startswith('/')
+                or self.topic.startswith('/fmu/')
+                or not _integer(depth, 20)
+                or depth < 1
+                or not _finite(period)
+                or period < 0.01
+                or period > 60
+            ):
                 raise ValueError('invalid diagnostic topic, depth, or snapshot period')
-            self.receiver = Receiver(DiagnosticConfig(**{
-                name: parameter(name, default) for name, default in vars(DiagnosticConfig()).items()}))
-            self.writer = DiagnosticWriter(parameter('output_dir', ''),
-                                           parameter('log_max_bytes', 262144),
-                                           parameter('log_backup_count', 1),
-                                           parameter('log_min_interval_sec', .2))
-            qos = QoSProfile(depth=depth, durability=DurabilityPolicy.VOLATILE,
-                             reliability=ReliabilityPolicy.RELIABLE if reliable else ReliabilityPolicy.BEST_EFFORT)
-            self.subscription = self.create_subscription(VelocityCommand, self.topic, self.receive, qos)
+            self.receiver = Receiver(
+                DiagnosticConfig(
+                    **{
+                        name: parameter(name, default)
+                        for name, default in vars(DiagnosticConfig()).items()
+                    }
+                )
+            )
+            self.writer = DiagnosticWriter(
+                parameter('output_dir', ''),
+                parameter('log_max_bytes', 262144),
+                parameter('log_backup_count', 1),
+                parameter('log_min_interval_sec', 0.2),
+            )
+            qos = QoSProfile(
+                depth=depth,
+                durability=DurabilityPolicy.VOLATILE,
+                reliability=(
+                    ReliabilityPolicy.RELIABLE if reliable else ReliabilityPolicy.BEST_EFFORT
+                ),
+            )
+            self.subscription = self.create_subscription(
+                VelocityCommand, self.topic, self.receive, qos
+            )
             # ROS 接收与定时快照共用同一 Receiver；没有任何飞控 publisher。
             self.timer = self.create_timer(period, self.snapshot)
-            self.get_logger().info('Diagnostic only; control_authority=false type=' + MESSAGE_TYPE +
-                                   ' topic=' + self.topic + ' zero limits are UNCONFIGURED')
+            self.get_logger().info(
+                'Diagnostic only; control_authority=false type='
+                + MESSAGE_TYPE
+                + ' topic='
+                + self.topic
+                + ' zero limits are UNCONFIGURED'
+            )
             self.snapshot()
 
         # 每次回调重新采集单调秒、ROS 纳秒及图中的发布者数量，不能将两种时钟混为一谈。
         def receive_context(self):
-            return time.monotonic(), max(0, self.get_clock().now().nanoseconds), self.count_publishers(self.topic)
+            return (
+                time.monotonic(),
+                max(0, self.get_clock().now().nanoseconds),
+                self.count_publishers(self.topic),
+            )
 
         def flush_events(self, now):
             for event in self.receiver.drain_events():
@@ -635,8 +792,9 @@ def main(args=None):
     finally:
         if node is not None:
             try:
-                finalize_diagnostic(node.receiver, node.writer, node.topic,
-                                    time.monotonic(), time.time_ns())
+                finalize_diagnostic(
+                    node.receiver, node.writer, node.topic, time.monotonic(), time.time_ns()
+                )
             except Exception as error:
                 # 此时 ROS logger 可能已经关闭；写盘失败也不能掩盖原运行异常。
                 print('FC01_DIAGNOSTIC_FINALIZE_FAILED ' + repr(error), file=sys.stderr)

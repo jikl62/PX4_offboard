@@ -12,24 +12,30 @@ import subprocess
 import zipfile
 
 # 沿用既有包/控制器版本标记；不能只靠版本字符串认定源/二进制相同，仍校验逐文件SHA。
-RELEASE_NAME='FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v5'
-DEFAULT_DIRECTORY=RELEASE_NAME
-RELEASE_VERSION='20261110.7'
-CONTROLLER_BUILD='FC01_RECOVERY_DIAGNOSTIC_V5_20261110'
-MANIFEST='FC01_RELEASE.json'
-MAX_FILES=512
-MAX_BYTES=8*1024*1024
+RELEASE_NAME = 'FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v5'
+DEFAULT_DIRECTORY = RELEASE_NAME
+RELEASE_VERSION = '20261110.7'
+CONTROLLER_BUILD = 'FC01_RECOVERY_DIAGNOSTIC_V5_20261110'
+MANIFEST = 'FC01_RELEASE.json'
+MAX_FILES = 512
+MAX_BYTES = 8 * 1024 * 1024
 # 运行机生成的构建/激活证据和部署配置不得被当作源码载荷移植到另一设备。
-RUNTIME_FILES={MANIFEST,'ARM64_BUILD_EVIDENCE.json','build-complete.json',
-               'OFFLINE_DEPLOYMENT.json','ACTIVATION_STATE.json','deployment-config.json'}
-CACHE_PARTS={'__pycache__','.build','build','install','.pytest_cache'}
+RUNTIME_FILES = {
+    MANIFEST,
+    'ARM64_BUILD_EVIDENCE.json',
+    'build-complete.json',
+    'OFFLINE_DEPLOYMENT.json',
+    'ACTIVATION_STATE.json',
+    'deployment-config.json',
+}
+CACHE_PARTS = {'__pycache__', '.build', 'build', 'install', '.pytest_cache'}
 
 # Keep this navigation entry independent of the control/autostart installers.
 # 解包载荷先验相邻整包SHA、归档SHA、CRC与512文件/8MiB/每项1MiB限制，再核对全部manifest。
 # 拒绝绝对/穿越/重复/链接路径；既有目标必须逐字节一致，新目录通过RENAME_NOREPLACE原子发布。
 # 原stdin经fd3保留；extract-only不运行部署，默认offline，显式activate仍需部署器合同确认。
 # 此大字符串保留原字节，避免中文化修改生成的shell/Python行为和现有SHA语义。
-HEADER=r'''#!/usr/bin/env bash
+HEADER = r'''#!/usr/bin/env bash
 # Source-only release. Default action builds offline and never activates a service.
 set -euo pipefail
 fc01_package_self="${BASH_SOURCE[0]}"
@@ -182,85 +188,138 @@ exit $?
 __FC01_PAYLOAD_BASE64__
 '''
 
+
 # 按明确后缀与native/tests/docs递归收当前文件，排除缓存/运行态和独立receive A/B；大小/链接不符即拒绝。
 def names(root):
     """Curated source paths from disk, including uncommitted and new files."""
-    root=Path(root)
-    roots=[p for p in root.iterdir() if p.is_file() and p.suffix in ('.py','.sh','.md','.json')
-           and p.name not in RUNTIME_FILES]
-    roots.extend(p for directory in ('native','tests','docs') for p in (root/directory).rglob('*')
-                 if p.is_file() and not (set(p.relative_to(root).parts)&CACHE_PARTS)
-                 and not p.is_relative_to(root/'native/tests/ros_receive_ab'))
-    result=sorted(str(p.relative_to(root)) for p in roots)
-    if len(result)+1>MAX_FILES or sum((root/p).stat().st_size for p in result)>MAX_BYTES:
+    root = Path(root)
+    roots = [
+        p
+        for p in root.iterdir()
+        if p.is_file()
+        and p.suffix in ('.py', '.sh', '.md', '.json')
+        and p.name not in RUNTIME_FILES
+    ]
+    roots.extend(
+        p
+        for directory in ('native', 'tests', 'docs')
+        for p in (root / directory).rglob('*')
+        if p.is_file()
+        and not (set(p.relative_to(root).parts) & CACHE_PARTS)
+        and not p.is_relative_to(root / 'native/tests/ros_receive_ab')
+    )
+    result = sorted(str(p.relative_to(root)) for p in roots)
+    if len(result) + 1 > MAX_FILES or sum((root / p).stat().st_size for p in result) > MAX_BYTES:
         raise RuntimeError('Curated source payload exceeds extractor bounds')
     for name in result:
-        if (root/name).is_symlink():
-            raise ValueError('Source payload cannot contain a symlink: '+name)
+        if (root / name).is_symlink():
+            raise ValueError('Source payload cannot contain a symlink: ' + name)
     return result
+
 
 # 摘要实际磁盘字节，记录验证时Git基线与dirty；清单自身排除以避免自引用。
 def make_manifest(root):
     """Describe actual payload bytes; callers may add verification metadata."""
-    root=Path(root)
-    hashes={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in names(root)}
+    root = Path(root)
+    hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names(root)}
+
     # Git不可用时保留None，不伪造提交身份；不会执行push/checkout或修改仓库。
     def git(*args):
-        result=subprocess.run(['git','-C',str(root),*args],capture_output=True,text=True)
-        return result.stdout.strip() if result.returncode==0 else None
-    return {'release_name':RELEASE_NAME,'version':RELEASE_VERSION,'controller_build':CONTROLLER_BUILD,
-            'source_commit':git('rev-parse','HEAD'),'working_tree_dirty':bool(git('status','--porcelain')),
-            'source_sha256':dict(hashes),'payload_sha256':hashes}
+        result = subprocess.run(['git', '-C', str(root), *args], capture_output=True, text=True)
+        return result.stdout.strip() if result.returncode == 0 else None
+
+    return {
+        'release_name': RELEASE_NAME,
+        'version': RELEASE_VERSION,
+        'controller_build': CONTROLLER_BUILD,
+        'source_commit': git('rev-parse', 'HEAD'),
+        'working_tree_dirty': bool(git('status', '--porcelain')),
+        'source_sha256': dict(hashes),
+        'payload_sha256': hashes,
+    }
+
 
 # 已存在清单必须与当前完整载荷/原生源SHA一致；不在打包时静默覆盖过期验收记录。
-def _release_bytes(root,files):
-    path=root/MANIFEST
+def _release_bytes(root, files):
+    path = root / MANIFEST
     if path.is_symlink():
         raise ValueError('FC01_RELEASE.json cannot be a symlink')
     if path.exists():
-        data=path.read_bytes();release=json.loads(data)
-        if any(release.get(key)!=value for key,value in
-               (('release_name',RELEASE_NAME),('version',RELEASE_VERSION),('controller_build',CONTROLLER_BUILD))):
-            raise ValueError('FC01_RELEASE.json release/version/controller identity differs from this release')
-        hashes={name:hashlib.sha256(content).hexdigest() for name,content in files.items()}
-        if release.get('payload_sha256')!=hashes:
-            raise ValueError('FC01_RELEASE.json payload_sha256 differs from the current source tree')
-        sources=release.get('source_sha256')
-        if not isinstance(sources,dict) or any(sources.get(name)!=hashes[name] for name in hashes if name.startswith('native/src/')):
+        data = path.read_bytes()
+        release = json.loads(data)
+        if any(
+            release.get(key) != value
+            for key, value in (
+                ('release_name', RELEASE_NAME),
+                ('version', RELEASE_VERSION),
+                ('controller_build', CONTROLLER_BUILD),
+            )
+        ):
+            raise ValueError(
+                'FC01_RELEASE.json release/version/controller identity differs from this release'
+            )
+        hashes = {name: hashlib.sha256(content).hexdigest() for name, content in files.items()}
+        if release.get('payload_sha256') != hashes:
+            raise ValueError(
+                'FC01_RELEASE.json payload_sha256 differs from the current source tree'
+            )
+        sources = release.get('source_sha256')
+        if not isinstance(sources, dict) or any(
+            sources.get(name) != hashes[name] for name in hashes if name.startswith('native/src/')
+        ):
             raise ValueError('FC01_RELEASE.json lacks current native/src source hashes')
-        if any(name not in hashes or hashes[name]!=value for name,value in sources.items()):
+        if any(name not in hashes or hashes[name] != value for name, value in sources.items()):
             raise ValueError('FC01_RELEASE.json source_sha256 differs from the current source tree')
         return data
-    return (json.dumps(make_manifest(root),indent=2,sort_keys=True)+'\n').encode()
+    return (json.dumps(make_manifest(root), indent=2, sort_keys=True) + '\n').encode()
+
 
 # 目录名只能是单层安全标识；固定ZIP时间与权限、嵌入摘要，再输出整包sidecar，不激活任何服务。
-def build(output,source=None,*,directory_name=DEFAULT_DIRECTORY):
-    if not directory_name or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-' for c in directory_name):
+def build(output, source=None, *, directory_name=DEFAULT_DIRECTORY):
+    if not directory_name or any(
+        c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'
+        for c in directory_name
+    ):
         raise ValueError('directory_name must be a plain directory name')
-    root=Path(source) if source else Path(__file__).resolve().parent
-    files={name:(root/name).read_bytes() for name in names(root)}
-    files[MANIFEST]=_release_bytes(root,files)
-    if len(files)>MAX_FILES or sum(map(len,files.values()))>MAX_BYTES or any(len(data)>1048576 for data in files.values()):
+    root = Path(source) if source else Path(__file__).resolve().parent
+    files = {name: (root / name).read_bytes() for name in names(root)}
+    files[MANIFEST] = _release_bytes(root, files)
+    if (
+        len(files) > MAX_FILES
+        or sum(map(len, files.values())) > MAX_BYTES
+        or any(len(data) > 1048576 for data in files.values())
+    ):
         raise RuntimeError('Source payload or release manifest exceeds extractor bounds')
-    stream=io.BytesIO()
-    with zipfile.ZipFile(stream,'w',zipfile.ZIP_DEFLATED) as archive:
-        for name,data in sorted(files.items()):
-            info=zipfile.ZipInfo(name,date_time=(2026,11,10,0,0,0))
-            info.create_system=3;info.external_attr=0o100600<<16;info.compress_type=zipfile.ZIP_DEFLATED
-            archive.writestr(info,data)
-    payload=stream.getvalue()
-    header=(HEADER.replace('__ARCHIVE_SHA256__',hashlib.sha256(payload).hexdigest())
-            .replace('__DIRECTORY_NAME__',directory_name).replace('__RELEASE_NAME__',RELEASE_NAME)
-            .replace('__RELEASE_VERSION__',RELEASE_VERSION).replace('__CONTROLLER_BUILD__',CONTROLLER_BUILD))
-    output=Path(output);output.parent.mkdir(parents=True,exist_ok=True)
-    data=header.encode()+base64.encodebytes(payload)
-    output.write_bytes(data);output.chmod(0o700)
-    Path(str(output)+'.sha256').write_text(hashlib.sha256(data).hexdigest()+'  '+output.name+'\n')
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, 'w', zipfile.ZIP_DEFLATED) as archive:
+        for name, data in sorted(files.items()):
+            info = zipfile.ZipInfo(name, date_time=(2026, 11, 10, 0, 0, 0))
+            info.create_system = 3
+            info.external_attr = 0o100600 << 16
+            info.compress_type = zipfile.ZIP_DEFLATED
+            archive.writestr(info, data)
+    payload = stream.getvalue()
+    header = (
+        HEADER.replace('__ARCHIVE_SHA256__', hashlib.sha256(payload).hexdigest())
+        .replace('__DIRECTORY_NAME__', directory_name)
+        .replace('__RELEASE_NAME__', RELEASE_NAME)
+        .replace('__RELEASE_VERSION__', RELEASE_VERSION)
+        .replace('__CONTROLLER_BUILD__', CONTROLLER_BUILD)
+    )
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    data = header.encode() + base64.encodebytes(payload)
+    output.write_bytes(data)
+    output.chmod(0o700)
+    Path(str(output) + '.sha256').write_text(
+        hashlib.sha256(data).hexdigest() + '  ' + output.name + '\n'
+    )
     return output
 
-if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output')
-    parser.add_argument('--directory-name',default=DEFAULT_DIRECTORY)
-    args=parser.parse_args()
-    print(build(args.output,directory_name=args.directory_name))
+    parser.add_argument('--directory-name', default=DEFAULT_DIRECTORY)
+    args = parser.parse_args()
+    print(build(args.output, directory_name=args.directory_name))

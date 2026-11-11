@@ -32,143 +32,245 @@ def main():
     from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
     from rcl_interfaces.srv import DescribeParameters, GetParameters, SetParameters
 
-    root=Path(__file__).resolve().parents[1]
-    params=dict(input_topic='/fc01_demo/odom',health_topic='/fc01_demo/health',
-                output_topic='/fc01_demo/state',source_id='synthetic-ros-smoke',
-                input_frame_id='demo_enu',input_body_frame_id='demo_flu',
-                world_convention='ENU',body_convention='FLU',
-                extrinsics_id='synthetic-identity',alignment_id='synthetic-identity',
-                body_from_sensor_wxyz='[1.0,0.0,0.0,0.0]',sensor_position_body_frd='[0.0,0.0,0.0]',
-                world_alignment_wxyz='[1.0,0.0,0.0,0.0]',world_translation_ned='[0.0,0.0,0.0]')
-    adapter_path = options.adapter or root/'native/tools/vision_odometry_adapter.py'
-    argv=[sys.executable,str(adapter_path),'--ros-args']
-    for name,value in params.items():argv+=['-p',name+':='+value]
+    root = Path(__file__).resolve().parents[1]
+    params = dict(
+        input_topic='/fc01_demo/odom',
+        health_topic='/fc01_demo/health',
+        output_topic='/fc01_demo/state',
+        source_id='synthetic-ros-smoke',
+        input_frame_id='demo_enu',
+        input_body_frame_id='demo_flu',
+        world_convention='ENU',
+        body_convention='FLU',
+        extrinsics_id='synthetic-identity',
+        alignment_id='synthetic-identity',
+        body_from_sensor_wxyz='[1.0,0.0,0.0,0.0]',
+        sensor_position_body_frd='[0.0,0.0,0.0]',
+        world_alignment_wxyz='[1.0,0.0,0.0,0.0]',
+        world_translation_ned='[0.0,0.0,0.0]',
+    )
+    adapter_path = options.adapter or root / 'native/tools/vision_odometry_adapter.py'
+    argv = [sys.executable, str(adapter_path), '--ros-args']
+    for name, value in params.items():
+        argv += ['-p', name + ':=' + value]
     with tempfile.TemporaryFile(mode='w+') as logs:
-        process=subprocess.Popen(argv,stdin=subprocess.DEVNULL,stdout=logs,stderr=subprocess.STDOUT)
-        node=None;rclpy.init()
+        process = subprocess.Popen(
+            argv, stdin=subprocess.DEVNULL, stdout=logs, stderr=subprocess.STDOUT
+        )
+        node = None
+        rclpy.init()
         try:
-            node=Node('fc01_vision_smoke_source')
-            sensor=QoSProfile(depth=5,reliability=ReliabilityPolicy.BEST_EFFORT)
-            reliable=QoSProfile(depth=5,reliability=ReliabilityPolicy.RELIABLE)
-            odom_pub=node.create_publisher(Odometry,params['input_topic'],sensor)
-            health_pub=node.create_publisher(VisionHealth,params['health_topic'],reliable)
-            received=[]
-            subscription=node.create_subscription(VisionState,params['output_topic'],received.append,sensor)
-            sequence=0
+            node = Node('fc01_vision_smoke_source')
+            sensor = QoSProfile(depth=5, reliability=ReliabilityPolicy.BEST_EFFORT)
+            reliable = QoSProfile(depth=5, reliability=ReliabilityPolicy.RELIABLE)
+            odom_pub = node.create_publisher(Odometry, params['input_topic'], sensor)
+            health_pub = node.create_publisher(VisionHealth, params['health_topic'], reliable)
+            received = []
+            subscription = node.create_subscription(
+                VisionState, params['output_topic'], received.append, sensor
+            )
+            sequence = 0
 
             # 经真实参数服务调用并有限等待，finally销毁client，不仅检查源码声明。
             def parameter_call(service_type, suffix, request):
                 # 参数必须经真实 ROS 服务验证，不能只检查源码中的只读声明。
                 client = node.create_client(service_type, '/fc01_vision_odometry_adapter/' + suffix)
                 try:
-                    if not client.wait_for_service(timeout_sec=5.):
+                    if not client.wait_for_service(timeout_sec=5.0):
                         raise RuntimeError('adapter parameter service unavailable: ' + suffix)
                     future = client.call_async(request)
-                    rclpy.spin_until_future_complete(node, future, timeout_sec=5.)
+                    rclpy.spin_until_future_complete(node, future, timeout_sec=5.0)
                     if not future.done():
                         raise RuntimeError('adapter parameter service timed out: ' + suffix)
                     return future.result()
                 finally:
                     node.destroy_client(client)
 
-            names = list(params) + ['qos_depth', 'output_reliable', 'odometry_reliable',
-                                    'health_reliable', 'pair_timeout', 'max_pending', 'use_sim_time']
-            descriptors = parameter_call(DescribeParameters, 'describe_parameters',
-                                        DescribeParameters.Request(names=names)).descriptors
+            names = list(params) + [
+                'qos_depth',
+                'output_reliable',
+                'odometry_reliable',
+                'health_reliable',
+                'pair_timeout',
+                'max_pending',
+                'use_sim_time',
+            ]
+            descriptors = parameter_call(
+                DescribeParameters, 'describe_parameters', DescribeParameters.Request(names=names)
+            ).descriptors
             if len(descriptors) != len(names) or not all(item.read_only for item in descriptors):
                 raise RuntimeError('startup adapter parameters must advertise read_only')
             # 检查来源、外参和时钟域：运行期拒绝修改，不能显示成功但继续使用旧配置。
             changes = [
-                Parameter(name='source_id', value=ParameterValue(
-                    type=ParameterType.PARAMETER_STRING, string_value='rejected-runtime-source')),
-                Parameter(name='world_translation_ned', value=ParameterValue(
-                    type=ParameterType.PARAMETER_DOUBLE_ARRAY, double_array_value=[100., 0., 0.])),
-                Parameter(name='use_sim_time', value=ParameterValue(
-                    type=ParameterType.PARAMETER_BOOL, bool_value=True)),
+                Parameter(
+                    name='source_id',
+                    value=ParameterValue(
+                        type=ParameterType.PARAMETER_STRING, string_value='rejected-runtime-source'
+                    ),
+                ),
+                Parameter(
+                    name='world_translation_ned',
+                    value=ParameterValue(
+                        type=ParameterType.PARAMETER_DOUBLE_ARRAY,
+                        double_array_value=[100.0, 0.0, 0.0],
+                    ),
+                ),
+                Parameter(
+                    name='use_sim_time',
+                    value=ParameterValue(type=ParameterType.PARAMETER_BOOL, bool_value=True),
+                ),
             ]
-            updates = parameter_call(SetParameters, 'set_parameters',
-                                     SetParameters.Request(parameters=changes)).results
+            updates = parameter_call(
+                SetParameters, 'set_parameters', SetParameters.Request(parameters=changes)
+            ).results
             if len(updates) != 3 or any(item.successful for item in updates):
                 raise RuntimeError('startup-only adapter parameter update silently succeeded')
-            visible = parameter_call(GetParameters, 'get_parameters',
-                                     GetParameters.Request(names=[item.name for item in changes])).values
-            if (visible[0].string_value != params['source_id']
-                    or list(visible[1].double_array_value) != [0., 0., 0.]
-                    or visible[2].bool_value):
-                raise RuntimeError('rejected adapter parameter update changed visible configuration')
+            visible = parameter_call(
+                GetParameters,
+                'get_parameters',
+                GetParameters.Request(names=[item.name for item in changes]),
+            ).values
+            if (
+                visible[0].string_value != params['source_id']
+                or list(visible[1].double_array_value) != [0.0, 0.0, 0.0]
+                or visible[2].bool_value
+            ):
+                raise RuntimeError(
+                    'rejected adapter parameter update changed visible configuration'
+                )
 
             # Odometry与Health使用同一时间戳；给出固定位置、速度、角速度和显式合成健康标记。
             def publish():
                 nonlocal sequence
-                sequence+=1;stamp=node.get_clock().now().to_msg()
-                odom=Odometry();odom.header.stamp=stamp;odom.header.frame_id='demo_enu';odom.child_frame_id='demo_flu'
-                odom.pose.pose.position.x=1.;odom.pose.pose.position.y=2.;odom.pose.pose.position.z=3.
-                odom.pose.pose.orientation.w=1.
-                odom.twist.twist.linear.x=.4;odom.twist.twist.linear.y=.5;odom.twist.twist.linear.z=.6
-                odom.twist.twist.angular.x=.1;odom.twist.twist.angular.y=.2;odom.twist.twist.angular.z=.3
-                health=VisionHealth();health.stamp=stamp;health.sequence=sequence;health.source_id=params['source_id']
-                health.frame_id='demo_enu';health.body_frame_id='demo_flu'
-                for flag in ('reset_valid','initialized','tracking','calibration_valid','frame_alignment_valid',
-                             'time_sync_valid','extrinsics_valid','metric_scale_valid','position_valid',
-                             'velocity_valid','attitude_valid','angular_velocity_valid','quality_valid'):
-                    setattr(health,flag,True)
-                health.angular_velocity_source='synthetic-imu';health.quality=1.
-                health.extrinsics_id=health.alignment_id='synthetic-identity'
-                health_pub.publish(health);odom_pub.publish(odom)
+                sequence += 1
+                stamp = node.get_clock().now().to_msg()
+                odom = Odometry()
+                odom.header.stamp = stamp
+                odom.header.frame_id = 'demo_enu'
+                odom.child_frame_id = 'demo_flu'
+                odom.pose.pose.position.x = 1.0
+                odom.pose.pose.position.y = 2.0
+                odom.pose.pose.position.z = 3.0
+                odom.pose.pose.orientation.w = 1.0
+                odom.twist.twist.linear.x = 0.4
+                odom.twist.twist.linear.y = 0.5
+                odom.twist.twist.linear.z = 0.6
+                odom.twist.twist.angular.x = 0.1
+                odom.twist.twist.angular.y = 0.2
+                odom.twist.twist.angular.z = 0.3
+                health = VisionHealth()
+                health.stamp = stamp
+                health.sequence = sequence
+                health.source_id = params['source_id']
+                health.frame_id = 'demo_enu'
+                health.body_frame_id = 'demo_flu'
+                for flag in (
+                    'reset_valid',
+                    'initialized',
+                    'tracking',
+                    'calibration_valid',
+                    'frame_alignment_valid',
+                    'time_sync_valid',
+                    'extrinsics_valid',
+                    'metric_scale_valid',
+                    'position_valid',
+                    'velocity_valid',
+                    'attitude_valid',
+                    'angular_velocity_valid',
+                    'quality_valid',
+                ):
+                    setattr(health, flag, True)
+                health.angular_velocity_source = 'synthetic-imu'
+                health.quality = 1.0
+                health.extrinsics_id = health.alignment_id = 'synthetic-identity'
+                health_pub.publish(health)
+                odom_pub.publish(odom)
 
             # 持续送一对新样本并spin，等断言成立；适配器提前退出或超时立即失败。
             def wait_for(predicate):
-                deadline=time.monotonic()+8
-                while time.monotonic()<deadline:
-                    if process.poll() is not None:raise RuntimeError('adapter exited before data check')
-                    publish();rclpy.spin_once(node,timeout_sec=.05)
-                    if predicate():return
+                deadline = time.monotonic() + 8
+                while time.monotonic() < deadline:
+                    if process.poll() is not None:
+                        raise RuntimeError('adapter exited before data check')
+                    publish()
+                    rclpy.spin_once(node, timeout_sec=0.05)
+                    if predicate():
+                        return
                 raise RuntimeError('ROS adapter data check timed out')
 
-            wait_for(lambda:any((x.valid_fields&71)==71 for x in received))
-            valid=next(x for x in reversed(received) if x.valid_fields&71==71)
-            for actual,want in zip(valid.position,(2.,1.,-3.)):
-                if abs(actual-want)>1e-8:raise RuntimeError('ENU position conversion mismatch')
-            for actual,want in zip(valid.velocity,(.5,.4,-.6)):
-                if abs(actual-want)>1e-8:raise RuntimeError('child-frame velocity conversion mismatch')
-            if abs(sum(x*x for x in valid.attitude)-1)>1e-8:raise RuntimeError('invalid output quaternion')
-            if valid.valid_fields&48 or not all(math.isnan(x) for x in valid.pose_covariance):
+            wait_for(lambda: any((x.valid_fields & 71) == 71 for x in received))
+            valid = next(x for x in reversed(received) if x.valid_fields & 71 == 71)
+            for actual, want in zip(valid.position, (2.0, 1.0, -3.0)):
+                if abs(actual - want) > 1e-8:
+                    raise RuntimeError('ENU position conversion mismatch')
+            for actual, want in zip(valid.velocity, (0.5, 0.4, -0.6)):
+                if abs(actual - want) > 1e-8:
+                    raise RuntimeError('child-frame velocity conversion mismatch')
+            if abs(sum(x * x for x in valid.attitude) - 1) > 1e-8:
+                raise RuntimeError('invalid output quaternion')
+            if valid.valid_fields & 48 or not all(math.isnan(x) for x in valid.pose_covariance):
                 raise RuntimeError('untransformed covariance was marked valid')
             # 新增第二个原始Odometry发布者，要求后续VisionState的valid_fields撤销到0。
-            last_sequence=valid.sequence
-            duplicate=node.create_publisher(Odometry,params['input_topic'],sensor)
-            wait_for(lambda:any(x.sequence>last_sequence and x.valid_fields==0 for x in received))
+            last_sequence = valid.sequence
+            duplicate = node.create_publisher(Odometry, params['input_topic'], sensor)
+            wait_for(
+                lambda: any(x.sequence > last_sequence and x.valid_fields == 0 for x in received)
+            )
             node.destroy_publisher(duplicate)
             # 从真实图查询适配器发布端点，不得出现/fmu/in硬件控制发布者。
-            endpoints=node.get_publisher_names_and_types_by_node('fc01_vision_odometry_adapter','/')
-            if any(name.startswith('/fmu/in/') for name,_ in endpoints):raise RuntimeError('unexpected hardware endpoint')
-            if subscription is None:raise RuntimeError('subscription was not retained')
+            endpoints = node.get_publisher_names_and_types_by_node(
+                'fc01_vision_odometry_adapter', '/'
+            )
+            if any(name.startswith('/fmu/in/') for name, _ in endpoints):
+                raise RuntimeError('unexpected hardware endpoint')
+            if subscription is None:
+                raise RuntimeError('subscription was not retained')
             # 正常 SIGINT 必须以零状态退出，不能被重复关闭上下文的异常覆盖。
             process.send_signal(signal.SIGINT)
-            process.wait(timeout=5.)
+            process.wait(timeout=5.0)
             logs.seek(0)
             final_log = logs.read()
             if process.returncode != 0 or 'Traceback (most recent call last)' in final_log:
                 raise RuntimeError('adapter failed clean SIGINT shutdown: ' + final_log[-2000:])
-            report = dict(passed=True, domain_id=domain, localhost_only=True,
-                          adapter_path=str(adapter_path),
-                          checks=['read_only_startup_parameters', 'valid_conversion',
-                                  'raw_conflict_revoked', 'no_fmu_publishers', 'sigint_clean_exit'],
-                          publisher_endpoints=endpoints, shutdown_exit_code=process.returncode)
+            report = dict(
+                passed=True,
+                domain_id=domain,
+                localhost_only=True,
+                adapter_path=str(adapter_path),
+                checks=[
+                    'read_only_startup_parameters',
+                    'valid_conversion',
+                    'raw_conflict_revoked',
+                    'no_fmu_publishers',
+                    'sigint_clean_exit',
+                ],
+                publisher_endpoints=endpoints,
+                shutdown_exit_code=process.returncode,
+            )
             if options.report is not None:
                 options.report.write_text(json.dumps(report, indent=2) + '\n')
-            print('REAL_ROS_VISION_ADAPTER_PASS valid_conversion=1 raw_conflict_revoked=1 fmu_publishers=0 read_only_parameters=1 sigint_clean_exit=1')
+            print(
+                'REAL_ROS_VISION_ADAPTER_PASS valid_conversion=1 raw_conflict_revoked=1 fmu_publishers=0 read_only_parameters=1 sigint_clean_exit=1'
+            )
         except Exception:
-            logs.seek(0);print(logs.read()[-5000:],file=sys.stderr);raise
+            logs.seek(0)
+            print(logs.read()[-5000:], file=sys.stderr)
+            raise
         # 失败也销毁ROS节点并结束适配器，避免测试残留影响下轮发现数量。
         finally:
-            if node is not None:node.destroy_node()
-            if rclpy.ok():rclpy.shutdown()
+            if node is not None:
+                node.destroy_node()
+            if rclpy.ok():
+                rclpy.shutdown()
             if process.poll() is None:
                 process.send_signal(signal.SIGINT)
-                try:process.wait(timeout=5)
-                except subprocess.TimeoutExpired:process.terminate();process.wait(timeout=5)
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.terminate()
+                    process.wait(timeout=5)
     return 0
 
 
-if __name__=='__main__':raise SystemExit(main())
+if __name__ == '__main__':
+    raise SystemExit(main())

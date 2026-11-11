@@ -21,19 +21,63 @@ import yaml
 ROOT = Path(__file__).resolve().parent
 INCLUDE = ROOT / 'native/src/jikl_fc01_system/include'
 # 状态是飞机实际测量，command 是目标指令；两套允许字段分别列出，未知字段直接拒绝以发现拼写/协议错误。
-STATE_KEYS = {'sequence', 'stamp_ns', 'reset_counter', 'frame_id', 'body_frame_id', 'source_id',
-              'angular_velocity_source', 'initialized', 'tracking', 'calibration_valid', 'valid_fields',
-              'position', 'velocity', 'attitude', 'angular_velocity', 'pose_covariance', 'twist_covariance',
-              'quality', 'received_age_seconds'}
-COMMAND_KEYS = {'sequence', 'stamp_ns', 'reset_counter', 'source_id', 'frame_id', 'mode', 'valid',
-                'position_valid', 'yaw_valid', 'sticks_valid', 'position', 'yaw', 'sticks',
-                'received_age_seconds'}
+STATE_KEYS = {
+    'sequence',
+    'stamp_ns',
+    'reset_counter',
+    'frame_id',
+    'body_frame_id',
+    'source_id',
+    'angular_velocity_source',
+    'initialized',
+    'tracking',
+    'calibration_valid',
+    'valid_fields',
+    'position',
+    'velocity',
+    'attitude',
+    'angular_velocity',
+    'pose_covariance',
+    'twist_covariance',
+    'quality',
+    'received_age_seconds',
+}
+COMMAND_KEYS = {
+    'sequence',
+    'stamp_ns',
+    'reset_counter',
+    'source_id',
+    'frame_id',
+    'mode',
+    'valid',
+    'position_valid',
+    'yaw_valid',
+    'sticks_valid',
+    'position',
+    'yaw',
+    'sticks',
+    'received_age_seconds',
+}
 MODES = {'Disabled': 0, 'Hold': 1, 'Cruise': 2, 'Follow': 3, 'Land': 4}
 # 候选参数仅限此白名单，不能在数据集里夹带任意 Runtime 配置或硬件入口。
-CANDIDATES = {'state_timeout', 'command_timeout', 'max_measurement_delay', 'future_tolerance',
-              'position_gain', 'velocity_gain', 'max_speed', 'max_acceleration', 'max_tilt_deg',
-              'max_yaw_rate', 'max_vertical_speed', 'max_radius', 'max_height', 'min_quality',
-              'max_position_jump', 'max_velocity_jump'}
+CANDIDATES = {
+    'state_timeout',
+    'command_timeout',
+    'max_measurement_delay',
+    'future_tolerance',
+    'position_gain',
+    'velocity_gain',
+    'max_speed',
+    'max_acceleration',
+    'max_tilt_deg',
+    'max_yaw_rate',
+    'max_vertical_speed',
+    'max_radius',
+    'max_height',
+    'min_quality',
+    'max_position_jump',
+    'max_velocity_jump',
+}
 
 
 # 区分输入合同错误与编译/进程错误，统一转换成命令行失败结果。
@@ -59,7 +103,7 @@ def number(value, where, nullable=False):
 
 
 # 序号、时间和计数是有范围的无符号整数；bool 虽是 Python int 子类也不能通过。
-def integer(value, where, maximum=2**64-1):
+def integer(value, where, maximum=2**64 - 1):
     if type(value) is not int or not 0 <= value <= maximum:
         raise InputError(f'{where} must be an unsigned integer <= {maximum}')
     return str(value)
@@ -91,15 +135,29 @@ def vector(value, length, where):
 # 按 C++ 驱动约定顺序编码实际状态；四元数 4 项，两个协方差各 36 项，valid_fields 独立表达可信性。
 def encode_state(obj):
     keys(obj, STATE_KEYS, 'state')
-    out = [integer(obj.get('sequence', 0), 'state.sequence'), integer(obj.get('stamp_ns', 0), 'state.stamp_ns'),
-           integer(obj.get('reset_counter', 0), 'state.reset_counter', 2**32-1),
-           number(obj.get('received_age_seconds', 0), 'state.received_age_seconds')]
-    out += [string(obj.get(k, ''), f'state.{k}') for k in
-            ('frame_id', 'body_frame_id', 'source_id', 'angular_velocity_source')]
-    out += [boolean(obj.get(k, False), f'state.{k}') for k in ('initialized', 'tracking', 'calibration_valid')]
+    out = [
+        integer(obj.get('sequence', 0), 'state.sequence'),
+        integer(obj.get('stamp_ns', 0), 'state.stamp_ns'),
+        integer(obj.get('reset_counter', 0), 'state.reset_counter', 2**32 - 1),
+        number(obj.get('received_age_seconds', 0), 'state.received_age_seconds'),
+    ]
+    out += [
+        string(obj.get(k, ''), f'state.{k}')
+        for k in ('frame_id', 'body_frame_id', 'source_id', 'angular_velocity_source')
+    ]
+    out += [
+        boolean(obj.get(k, False), f'state.{k}')
+        for k in ('initialized', 'tracking', 'calibration_valid')
+    ]
     out += [integer(obj.get('valid_fields', 0), 'state.valid_fields', 65535)]
-    for k, length in (('position', 3), ('velocity', 3), ('attitude', 4), ('angular_velocity', 3),
-                      ('pose_covariance', 36), ('twist_covariance', 36)):
+    for k, length in (
+        ('position', 3),
+        ('velocity', 3),
+        ('attitude', 4),
+        ('angular_velocity', 3),
+        ('pose_covariance', 36),
+        ('twist_covariance', 36),
+    ):
         out += vector(obj.get(k), length, f'state.{k}')
     out += [number(obj.get('quality'), 'state.quality', nullable=True)]
     return out
@@ -111,11 +169,19 @@ def encode_command(obj):
     mode = obj.get('mode', 'Disabled')
     if not isinstance(mode, str) or mode not in MODES:
         raise InputError(f'command.mode must be one of {list(MODES)}')
-    out = [integer(obj.get('sequence', 0), 'command.sequence'), integer(obj.get('stamp_ns', 0), 'command.stamp_ns'),
-           integer(obj.get('reset_counter', 0), 'command.reset_counter', 2**32-1),
-           number(obj.get('received_age_seconds', 0), 'command.received_age_seconds'),
-           string(obj.get('source_id', ''), 'command.source_id'), string(obj.get('frame_id', ''), 'command.frame_id'), str(MODES[mode])]
-    out += [boolean(obj.get(k, False), f'command.{k}') for k in ('valid', 'position_valid', 'yaw_valid', 'sticks_valid')]
+    out = [
+        integer(obj.get('sequence', 0), 'command.sequence'),
+        integer(obj.get('stamp_ns', 0), 'command.stamp_ns'),
+        integer(obj.get('reset_counter', 0), 'command.reset_counter', 2**32 - 1),
+        number(obj.get('received_age_seconds', 0), 'command.received_age_seconds'),
+        string(obj.get('source_id', ''), 'command.source_id'),
+        string(obj.get('frame_id', ''), 'command.frame_id'),
+        str(MODES[mode]),
+    ]
+    out += [
+        boolean(obj.get(k, False), f'command.{k}')
+        for k in ('valid', 'position_valid', 'yaw_valid', 'sticks_valid')
+    ]
     out += vector(obj.get('position'), 3, 'command.position')
     out += [number(obj.get('yaw'), 'command.yaw', nullable=True)]
     out += vector(obj.get('sticks'), 4, 'command.sticks')
@@ -126,6 +192,7 @@ def encode_command(obj):
 def load_jsonl(path):
     def constant(value):
         raise InputError(f'non-JSON constant {value}; use null for missing measurements')
+
     def unique(pairs):
         obj = {}
         for k, v in pairs:
@@ -133,6 +200,7 @@ def load_jsonl(path):
                 raise InputError(f'duplicate field {k}')
             obj[k] = v
         return obj
+
     records = []
     for n, line in enumerate(path.read_text().splitlines(), 1):
         if not line.strip():
@@ -144,8 +212,16 @@ def load_jsonl(path):
     if not records:
         raise InputError('empty JSONL session')
     session = records.pop(0)
-    keys(session, {'schema_version', 'kind', 'dataset_kind', 'description', 'candidate_parameters'}, 'session')
-    if session.get('schema_version') != 1 or type(session.get('schema_version')) is not int or session.get('kind') != 'session':
+    keys(
+        session,
+        {'schema_version', 'kind', 'dataset_kind', 'description', 'candidate_parameters'},
+        'session',
+    )
+    if (
+        session.get('schema_version') != 1
+        or type(session.get('schema_version')) is not int
+        or session.get('kind') != 'session'
+    ):
         raise InputError('first record must be kind=session, schema_version=1')
     if session.get('dataset_kind') not in ('synthetic', 'recorded'):
         raise InputError('session.dataset_kind must be synthetic or recorded')
@@ -160,24 +236,50 @@ def encode_records(session, records):
     keys(candidates, CANDIDATES, 'candidate_parameters')
     out = ['DATA ' + session['dataset_kind']]
     for name, value in sorted(candidates.items()):
-        out.append('V ' + string(name, 'candidate name') + ' ' + number(value, f'candidate_parameters.{name}'))
+        out.append(
+            'V '
+            + string(name, 'candidate name')
+            + ' '
+            + number(value, f'candidate_parameters.{name}')
+        )
     for index, row in enumerate(records, 2):
-        keys(row, {'kind', 'dt', 'ros_now_ns', 'state', 'command', 'state_publishers', 'command_publishers', 'px4'}, f'line {index}')
+        keys(
+            row,
+            {
+                'kind',
+                'dt',
+                'ros_now_ns',
+                'state',
+                'command',
+                'state_publishers',
+                'command_publishers',
+                'px4',
+            },
+            f'line {index}',
+        )
         if row.get('kind') != 'tick':
             raise InputError(f'line {index}: kind must be tick')
-        dt = row.get('dt', .05)
+        dt = row.get('dt', 0.05)
         number(dt, 'dt')
         if dt <= 0 or dt > 1:
             raise InputError('tick.dt must be > 0 and <= 1 second')
         px4 = row.get('px4')
         if px4 is not None:
             keys(px4, {'height', 'up_speed', 'yaw'}, 'px4')
-        parts = ['T', number(dt, 'dt'), integer(row.get('ros_now_ns', 0), 'ros_now_ns'),
-                 integer(row.get('state_publishers', 1), 'state_publishers'),
-                 integer(row.get('command_publishers', 1), 'command_publishers'), '1' if px4 is not None else '0']
+        parts = [
+            'T',
+            number(dt, 'dt'),
+            integer(row.get('ros_now_ns', 0), 'ros_now_ns'),
+            integer(row.get('state_publishers', 1), 'state_publishers'),
+            integer(row.get('command_publishers', 1), 'command_publishers'),
+            '1' if px4 is not None else '0',
+        ]
         if px4 is not None:
-            parts += [number(px4.get('height', .5), 'px4.height'), number(px4.get('up_speed', 0), 'px4.up_speed'),
-                      number(px4.get('yaw', 0), 'px4.yaw')]
+            parts += [
+                number(px4.get('height', 0.5), 'px4.height'),
+                number(px4.get('up_speed', 0), 'px4.up_speed'),
+                number(px4.get('yaw', 0), 'px4.yaw'),
+            ]
         parts += ['1' if row.get('state') is not None else '0']
         if row.get('state') is not None:
             parts += encode_state(row['state'])
@@ -191,13 +293,24 @@ def encode_records(session, records):
 # 从当前 ROS 参数头提取实际成员映射，避免离线驱动另维护一份易漂移的参数表；数量异常立即要求人工核对。
 def parameter_mapping():
     header = (INCLUDE / 'jikl_fc01_system/attitude_ros_parameters.hpp').read_text()
-    direct = re.findall(r'c\.([\w.]+)\s*=\s*node\.declare_parameter<(bool|double|std::string|std::int64_t)>\("([^"]+)"', header)
+    direct = re.findall(
+        r'c\.([\w.]+)\s*=\s*node\.declare_parameter<(bool|double|std::string|std::int64_t)>\("([^"]+)"',
+        header,
+    )
     doubles = re.findall(r'\{"([^"]+)",&c\.([\w.]+)\}', header)
     if len(direct) < 9 or len(doubles) < 45:
         raise RuntimeError('actual ROS parameter mapping changed; review replay mapping')
     lines = []
     for member, kind, name in direct:
-        expr = 'strict_bool(value)' if kind == 'bool' else 'std::stod(value)' if kind == 'double' else 'std::stoll(value)' if kind == 'std::int64_t' else 'value'
+        expr = (
+            'strict_bool(value)'
+            if kind == 'bool'
+            else (
+                'std::stod(value)'
+                if kind == 'double'
+                else 'std::stoll(value)' if kind == 'std::int64_t' else 'value'
+            )
+        )
         lines.append(f'if(key=="{name}"){{cfg.attitude.{member}={expr};return true;}}')
     for name, member in doubles:
         lines.append(f'if(key=="{name}"){{cfg.attitude.{member}=std::stod(value);return true;}}')
@@ -212,7 +325,11 @@ def driver():
     mapping = parameter_mapping()
     digest = hashlib.sha256(mapping.encode())
     # 依赖头文件和测试支持内容均进入摘要；任一变化都会选择新缓存，不能复用旧算法的回放结果。
-    sources = sorted((INCLUDE / 'jikl_fc01_system').glob('*.hpp')) + [ROOT / 'native/tools/vision_replay.cpp', ROOT / 'native/tests/vision_test_support.hpp', ROOT / 'native/tests/authority_test_support.hpp']
+    sources = sorted((INCLUDE / 'jikl_fc01_system').glob('*.hpp')) + [
+        ROOT / 'native/tools/vision_replay.cpp',
+        ROOT / 'native/tests/vision_test_support.hpp',
+        ROOT / 'native/tests/authority_test_support.hpp',
+    ]
     for path in sources:
         digest.update(path.read_bytes())
     cache = ROOT / '.superpowers/vision_replay' / digest.hexdigest()[:20]
@@ -222,8 +339,23 @@ def driver():
         (cache / 'vision_replay_parameters.inc').write_text(mapping)
         with tempfile.TemporaryDirectory(prefix='compile-', dir=cache) as td:
             target = Path(td) / 'vision_replay'
-            command = [compiler, '-std=c++17', '-O2', '-Wall', '-Wextra', '-pedantic', '-I', str(INCLUDE),
-                       '-I', str(ROOT / 'native/tests'), '-I', str(cache), str(ROOT / 'native/tools/vision_replay.cpp'), '-o', str(target)]
+            command = [
+                compiler,
+                '-std=c++17',
+                '-O2',
+                '-Wall',
+                '-Wextra',
+                '-pedantic',
+                '-I',
+                str(INCLUDE),
+                '-I',
+                str(ROOT / 'native/tests'),
+                '-I',
+                str(cache),
+                str(ROOT / 'native/tools/vision_replay.cpp'),
+                '-o',
+                str(target),
+            ]
             built = subprocess.run(command, capture_output=True, text=True, timeout=90)
             if built.returncode:
                 raise RuntimeError('native replay compilation failed:\n' + built.stderr)
@@ -264,8 +396,12 @@ def run_demo(binary, config, name):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('session', nargs='?', type=Path, help='version 1 JSONL replay session')
-    parser.add_argument('--demo', choices=('cruise', 'height'), help='ideal closed-loop synthetic scenario')
-    parser.add_argument('--config', type=Path, default=ROOT / 'native/config/attitude_altitude.yaml')
+    parser.add_argument(
+        '--demo', choices=('cruise', 'height'), help='ideal closed-loop synthetic scenario'
+    )
+    parser.add_argument(
+        '--config', type=Path, default=ROOT / 'native/config/attitude_altitude.yaml'
+    )
     args = parser.parse_args(argv)
     if bool(args.session) == bool(args.demo):
         parser.error('provide exactly one JSONL session or --demo')
@@ -274,8 +410,12 @@ def main(argv=None):
         if args.demo:
             return run_demo(driver(), params, args.demo)
         session, records = load_jsonl(args.session)
-        encoded = encode_records(session, records)  # Complete validation before compiling/starting native driver.
-        return subprocess.run([str(driver())], input='\n'.join(params + encoded) + '\n', text=True, timeout=30).returncode
+        encoded = encode_records(
+            session, records
+        )  # Complete validation before compiling/starting native driver.
+        return subprocess.run(
+            [str(driver())], input='\n'.join(params + encoded) + '\n', text=True, timeout=30
+        ).returncode
     except (InputError, OSError, RuntimeError, subprocess.TimeoutExpired, yaml.YAMLError) as exc:
         print(f'replay input: {exc}', file=sys.stderr)
         return 2

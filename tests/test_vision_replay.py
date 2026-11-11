@@ -18,8 +18,13 @@ class VisionReplay(unittest.TestCase):
     # 在主机子进程执行真实vision_replay，75秒内收集JSONL；预期失败时返回完整stderr供断言。
     def run_replay(self, *args, success=True):
         self.assertTrue(ENTRY.is_file(), 'the no-hardware replay entry point is missing')
-        p = subprocess.run([sys.executable, str(ENTRY), *map(str, args)], cwd=ROOT,
-                           capture_output=True, text=True, timeout=75)
+        p = subprocess.run(
+            [sys.executable, str(ENTRY), *map(str, args)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=75,
+        )
         if success:
             self.assertEqual(p.returncode, 0, p.stderr)
             return [json.loads(line) for line in p.stdout.splitlines() if line.strip()]
@@ -30,15 +35,22 @@ class VisionReplay(unittest.TestCase):
     def test_ideal_closed_loop_changes_real_attitude_and_reduces_point_error(self):
         rows = self.run_replay('--demo', 'cruise')
         self.assertGreater(len(rows), 50)
-        self.assertTrue(all(r['simulation'] and r['runtime_path'] == 'Runtime/RC/Core/dual_sink' for r in rows))
+        self.assertTrue(
+            all(r['simulation'] and r['runtime_path'] == 'Runtime/RC/Core/dual_sink' for r in rows)
+        )
         moving = [r for r in rows if r['active']]
         self.assertTrue(moving)
         self.assertTrue(all(r['phase'] == 'HEIGHT_HOLD' and r['allowed'] for r in moving))
-        self.assertTrue(any(abs(r['q'][1]) + abs(r['q'][2]) > .001 for r in moving))
-        self.assertLess(moving[-1]['position_error'], moving[0]['position_error'] * .4)
+        self.assertTrue(any(abs(r['q'][1]) + abs(r['q'][2]) > 0.001 for r in moving))
+        self.assertLess(moving[-1]['position_error'], moving[0]['position_error'] * 0.4)
         self.assertTrue(all(r['target_committed'] and r['heartbeat_committed'] for r in moving))
-        self.assertTrue(all(r.get('submitted_q') is not None and r.get('submitted_thrust') is not None for r in moving),
-                        'replay must expose the actual wire packet accepted by the target sink')
+        self.assertTrue(
+            all(
+                r.get('submitted_q') is not None and r.get('submitted_thrust') is not None
+                for r in moving
+            ),
+            'replay must expose the actual wire packet accepted by the target sink',
+        )
         self.assertEqual(rows[-1]['arm_commands'], 0)
         self.assertEqual(rows[-1]['mode_commands'], 0)
 
@@ -47,9 +59,11 @@ class VisionReplay(unittest.TestCase):
         rows = self.run_replay('--demo', 'height')
         moving = [r for r in rows if r['active']]
         self.assertGreater(max(r['target_height'] for r in moving), 1.55)
-        self.assertGreater(max(-r['thrust'][2] for r in moving), min(-r['thrust'][2] for r in moving) + .005)
-        self.assertAlmostEqual(rows[0]['baseline_hover_thrust'], .50)
-        self.assertAlmostEqual(rows[0]['baseline_height_gain'], .5)
+        self.assertGreater(
+            max(-r['thrust'][2] for r in moving), min(-r['thrust'][2] for r in moving) + 0.005
+        )
+        self.assertAlmostEqual(rows[0]['baseline_hover_thrust'], 0.50)
+        self.assertAlmostEqual(rows[0]['baseline_height_gain'], 0.5)
 
     # 缺视觉自身状态应保持等待，state_sequence为0，不能虚构零位姿并激活。
     def test_missing_state_waits_without_fabricating_valid_zero(self):
@@ -62,7 +76,9 @@ class VisionReplay(unittest.TestCase):
         rows = self.run_replay(FIXTURES / 'state_timeout.jsonl')
         self.assertTrue(rows[0]['active'])
         self.assertTrue(any(r['phase'] in ('DESCENT', 'RECOVERY_DESCENT') for r in rows[1:]))
-        first_descent = next(i for i, r in enumerate(rows) if r['phase'] in ('DESCENT', 'RECOVERY_DESCENT'))
+        first_descent = next(
+            i for i, r in enumerate(rows) if r['phase'] in ('DESCENT', 'RECOVERY_DESCENT')
+        )
         self.assertTrue(all(not r['active'] for r in rows[first_descent:]))
         self.assertTrue(all(r['allowed'] for r in rows))
 
@@ -81,7 +97,7 @@ class VisionReplay(unittest.TestCase):
         self.assertGreater(rows[0]['velocity_target'][0], 0)
         self.assertGreater(rows[0]['velocity_target'][1], 0)
         self.assertGreater(rows[0]['yaw'], 0)
-        self.assertGreater(rows[0]['target_height'], .5)
+        self.assertGreater(rows[0]['target_height'], 0.5)
         self.assertIn(rows[-1]['phase'], ('DESCENT', 'RECOVERY_DESCENT'))
         self.assertFalse(rows[-1]['active'])
 
@@ -94,13 +110,15 @@ class VisionReplay(unittest.TestCase):
 
     # 持续更新自身状态但不更新目标命令，command_sequence保持1并独立超时下降。
     def test_command_timeout_is_independent_of_new_state_samples(self):
-        records = [json.loads(s) for s in (FIXTURES / 'velocity_feedback.jsonl').read_text().splitlines()]
+        records = [
+            json.loads(s) for s in (FIXTURES / 'velocity_feedback.jsonl').read_text().splitlines()
+        ]
         initial = records[1]
         records = [records[0], initial]
         for seq in range(2, 10):
             stamp = 1_000_000_000 + seq * 50_000_000
             state = dict(initial['state'], sequence=seq, stamp_ns=stamp)
-            records.append(dict(kind='tick', dt=.05, ros_now_ns=stamp, state=state))
+            records.append(dict(kind='tick', dt=0.05, ros_now_ns=stamp, state=state))
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / 'commands_lost.jsonl'
             path.write_text('\n'.join(json.dumps(r) for r in records) + '\n')
@@ -113,13 +131,19 @@ class VisionReplay(unittest.TestCase):
 
     # 目标命令不断前进但自身状态反复同序号，不能续鲜，最终必须下降。
     def test_duplicate_state_sequence_does_not_renew_receiver_freshness(self):
-        records = [json.loads(s) for s in (FIXTURES / 'velocity_feedback.jsonl').read_text().splitlines()]
+        records = [
+            json.loads(s) for s in (FIXTURES / 'velocity_feedback.jsonl').read_text().splitlines()
+        ]
         initial = records[1]
         records = [records[0], initial]
         for seq in range(2, 10):
             stamp = 1_000_000_000 + seq * 50_000_000
             command = dict(initial['command'], sequence=seq, stamp_ns=stamp)
-            records.append(dict(kind='tick', dt=.05, ros_now_ns=stamp, state=initial['state'], command=command))
+            records.append(
+                dict(
+                    kind='tick', dt=0.05, ros_now_ns=stamp, state=initial['state'], command=command
+                )
+            )
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / 'state_duplicates.jsonl'
             path.write_text('\n'.join(json.dumps(r) for r in records) + '\n')
@@ -143,11 +167,14 @@ class VisionReplay(unittest.TestCase):
 
     # 错schema、错向量长度或NaN dt须在输入层拒绝，不能进入原生回放驱动。
     def test_invalid_record_is_rejected_before_host_driver(self):
-        for value in ('{"schema_version":2,"kind":"session","dataset_kind":"synthetic"}\n',
-                      '{"schema_version":1,"kind":"session","dataset_kind":"synthetic"}\n{"kind":"tick","state":{"position":[1,2]}}\n',
-                      '{"schema_version":1,"kind":"session","dataset_kind":"synthetic"}\n{"kind":"tick","dt":NaN}\n'):
+        for value in (
+            '{"schema_version":2,"kind":"session","dataset_kind":"synthetic"}\n',
+            '{"schema_version":1,"kind":"session","dataset_kind":"synthetic"}\n{"kind":"tick","state":{"position":[1,2]}}\n',
+            '{"schema_version":1,"kind":"session","dataset_kind":"synthetic"}\n{"kind":"tick","dt":NaN}\n',
+        ):
             with self.subTest(value=value), tempfile.TemporaryDirectory() as td:
-                path = Path(td) / 'invalid.jsonl'; path.write_text(value)
+                path = Path(td) / 'invalid.jsonl'
+                path.write_text(value)
                 result = self.run_replay(path, success=False)
                 self.assertIn('replay input:', result.stderr)
 

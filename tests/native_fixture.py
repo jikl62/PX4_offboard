@@ -31,15 +31,19 @@ with trace.open('w', buffering=1) as f:
         now = time.monotonic()
         # 延迟模拟解锁完成；即使操作员已退出，仍可能迟到变为 armed，供恢复链验证。
         if arm_until and now >= arm_until:
-            state.update(phase='DESCENT' if descent_until else 'HEIGHT_HOLD', armed=True,
-                         landed=False, at_rest=False)
+            state.update(
+                phase='DESCENT' if descent_until else 'HEIGHT_HOLD',
+                armed=True,
+                landed=False,
+                at_rest=False,
+            )
             arm_until = None
         # 模拟下降计时结束后才同时反馈接地、静止、上锁与 Stabilized。
         if descent_until and now >= descent_until:
             state.update(phase='SAFE_DISARMED', armed=False, landed=True, at_rest=True, nav_state=2)
             descent_until = None
         # 每次循环输出完整 JSON 状态行，必须由接收端处理分包/连续行。
-        conn.sendall((json.dumps(state)+'\n').encode())
+        conn.sendall((json.dumps(state) + '\n').encode())
         if stopping[0] and not state['armed'] and descent_until is None and arm_until is None:
             break
         if select.select([conn], [], [], 0.04)[0]:
@@ -50,22 +54,27 @@ with trace.open('w', buffering=1) as f:
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
                 seq, op, *values = line.decode().split()
-                f.write(json.dumps({'seq': int(seq), 'op': op, 'now': now})+'\n')
+                f.write(json.dumps({'seq': int(seq), 'op': op, 'now': now}) + '\n')
                 # READY 只建立模拟 Offboard 权限；不直接标记 armed。
                 if op == 'ATTITUDE_READY':
                     state = {**ready(), 'kind': 'state'}
                 elif op == 'TAKEOFF':
                     if pending_arm_fixture:
                         state.update(phase='REQUEST_ARM', relative_height_m=0.0)
-                        arm_until = now+0.4
+                        arm_until = now + 0.4
                     else:
-                        state.update(phase='HEIGHT_HOLD', armed=True, landed=False, at_rest=False,
-                                     relative_height_m=float(values[0]))
+                        state.update(
+                            phase='HEIGHT_HOLD',
+                            armed=True,
+                            landed=False,
+                            at_rest=False,
+                            relative_height_m=float(values[0]),
+                        )
                 # 待解锁期间收到 LAND 也要启动恢复下降，不能忽略尚未显现的 armed 风险。
                 elif op == 'LAND' and (state['armed'] or arm_until):
                     state.update(phase='DESCENT')
-                    descent_until = now+(0.8 if arm_until else 0.4)
+                    descent_until = now + (0.8 if arm_until else 0.4)
                 reply = {**state, 'kind': 'reply', 'seq': int(seq), 'accepted': True, 'message': op}
-                conn.sendall((json.dumps(reply)+'\n').encode())
+                conn.sendall((json.dumps(reply) + '\n').encode())
 # 测试 peer 结束后关闭自己持有的 socket；父进程另有退出与清理断言。
 conn.close()

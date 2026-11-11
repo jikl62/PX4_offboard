@@ -19,9 +19,9 @@ POSE_COVARIANCE, TWIST_COVARIANCE, QUALITY = 16, 32, 64
 REQUIRED = POSITION | VELOCITY | ATTITUDE | QUALITY
 NAN = math.nan
 # 世界系 NED 为北/东/下；机体系 FRD 为前/右/下。以下矩阵只改变轴约定。
-IDENTITY = ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.))
-ENU_TO_NED = ((0., 1., 0.), (1., 0., 0.), (0., 0., -1.))
-FLU_TO_FRD = ((1., 0., 0.), (0., -1., 0.), (0., 0., -1.))
+IDENTITY = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
+ENU_TO_NED = ((0.0, 1.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, -1.0))
+FLU_TO_FRD = ((1.0, 0.0, 0.0), (0.0, -1.0, 0.0), (0.0, 0.0, -1.0))
 
 
 def stamp_ns(stamp):
@@ -51,18 +51,18 @@ def _quaternion(values):
     q = _finite(values, 4)
     if q is None:
         return None
-    norm = math.sqrt(sum(x*x for x in q))
+    norm = math.sqrt(sum(x * x for x in q))
     # 5% 是既有输入模长容差；本轮只说明它，不放宽或修改姿态验收范围。
-    return tuple(x/norm for x in q) if norm and abs(norm - 1.) <= .05 else None
+    return tuple(x / norm for x in q) if norm and abs(norm - 1.0) <= 0.05 else None
 
 
 def _matrix(q):
     # 单位四元数转换成 3×3 旋转矩阵；保留原有乘加顺序，供后续链式旋转使用。
     w, x, y, z = q
     return (
-        (1.-2.*(y*y+z*z), 2.*(x*y-z*w), 2.*(x*z+y*w)),
-        (2.*(x*y+z*w), 1.-2.*(x*x+z*z), 2.*(y*z-x*w)),
-        (2.*(x*z-y*w), 2.*(y*z+x*w), 1.-2.*(x*x+y*y)),
+        (1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y - z * w), 2.0 * (x * z + y * w)),
+        (2.0 * (x * y + z * w), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z - x * w)),
+        (2.0 * (x * z - y * w), 2.0 * (y * z + x * w), 1.0 - 2.0 * (x * x + y * y)),
     )
 
 
@@ -74,63 +74,73 @@ def _transpose(m):
 def _mul(a, b):
     # 按 a(b(v)) 的顺序复合旋转；不能交换两矩阵来简化坐标转换。
     return tuple(
-        tuple(sum(a[i][k]*b[k][j] for k in range(3)) for j in range(3))
-        for i in range(3)
+        tuple(sum(a[i][k] * b[k][j] for k in range(3)) for j in range(3)) for i in range(3)
     )
 
 
 def _rotate(m, v):
     # 将三维向量 v 旋转到矩阵 m 的目标坐标系，不改变其物理单位。
-    return tuple(sum(m[i][k]*v[k] for k in range(3)) for i in range(3))
+    return tuple(sum(m[i][k] * v[k] for k in range(3)) for i in range(3))
 
 
 def _cross(a, b):
     # 叉乘用于计算角速度×杆臂带来的传感器线速度，结果单位为 m/s。
-    return (a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0])
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
 
 def _matrix_quaternion(m):
     # 选择平方分量最大的分支，使接近 180° 的姿态也不靠接近零的分量作除数。
     candidates = (
-        1.+m[0][0]+m[1][1]+m[2][2],
-        1.+m[0][0]-m[1][1]-m[2][2],
-        1.-m[0][0]+m[1][1]-m[2][2],
-        1.-m[0][0]-m[1][1]+m[2][2],
+        1.0 + m[0][0] + m[1][1] + m[2][2],
+        1.0 + m[0][0] - m[1][1] - m[2][2],
+        1.0 - m[0][0] + m[1][1] - m[2][2],
+        1.0 - m[0][0] - m[1][1] + m[2][2],
     )
     branch = max(range(4), key=lambda i: candidates[i])
-    s = 2.*math.sqrt(max(0., candidates[branch]))
+    s = 2.0 * math.sqrt(max(0.0, candidates[branch]))
     if branch == 0:
         q = (
-            s/4., (m[2][1]-m[1][2])/s,
-            (m[0][2]-m[2][0])/s, (m[1][0]-m[0][1])/s,
+            s / 4.0,
+            (m[2][1] - m[1][2]) / s,
+            (m[0][2] - m[2][0]) / s,
+            (m[1][0] - m[0][1]) / s,
         )
     elif branch == 1:
         q = (
-            (m[2][1]-m[1][2])/s, s/4.,
-            (m[0][1]+m[1][0])/s, (m[0][2]+m[2][0])/s,
+            (m[2][1] - m[1][2]) / s,
+            s / 4.0,
+            (m[0][1] + m[1][0]) / s,
+            (m[0][2] + m[2][0]) / s,
         )
     elif branch == 2:
         q = (
-            (m[0][2]-m[2][0])/s, (m[0][1]+m[1][0])/s,
-            s/4., (m[1][2]+m[2][1])/s,
+            (m[0][2] - m[2][0]) / s,
+            (m[0][1] + m[1][0]) / s,
+            s / 4.0,
+            (m[1][2] + m[2][1]) / s,
         )
     else:
         q = (
-            (m[1][0]-m[0][1])/s, (m[0][2]+m[2][0])/s,
-            (m[1][2]+m[2][1])/s, s/4.,
+            (m[1][0] - m[0][1]) / s,
+            (m[0][2] + m[2][0]) / s,
+            (m[1][2] + m[2][1]) / s,
+            s / 4.0,
         )
     # 输出继续使用单位四元数，并选择 w 非负的等价表示，保持原有协议结果。
-    norm = math.sqrt(sum(x*x for x in q))
-    return tuple(x/norm * (-1. if q[0] < 0. else 1.) for x in q)
+    norm = math.sqrt(sum(x * x for x in q))
+    return tuple(x / norm * (-1.0 if q[0] < 0.0 else 1.0) for x in q)
 
 
 def _vector(message):
     # 字段缺失时保留未知值，不能把缺少的轴伪造成静止的零值。
-    return _finite((
-        getattr(message, 'x', NAN),
-        getattr(message, 'y', NAN),
-        getattr(message, 'z', NAN),
-    ), 3)
+    return _finite(
+        (
+            getattr(message, 'x', NAN),
+            getattr(message, 'y', NAN),
+            getattr(message, 'z', NAN),
+        ),
+        3,
+    )
 
 
 @dataclass(frozen=True)
@@ -154,14 +164,17 @@ class AdapterConfig:
     def validate(self):
         # 每一份状态都必须能匹配具体来源、坐标、安装外参和世界对齐身份。
         for name in (
-            'source_id', 'input_frame_id', 'input_body_frame_id',
-            'extrinsics_id', 'alignment_id',
+            'source_id',
+            'input_frame_id',
+            'input_body_frame_id',
+            'extrinsics_id',
+            'alignment_id',
         ):
             if not isinstance(getattr(self, name), str) or not getattr(self, name).strip():
                 raise ValueError('explicit ' + name + ' is required')
-        if (
-            self.world_convention not in ('NED', 'ENU')
-            or self.body_convention not in ('FRD', 'FLU')
+        if self.world_convention not in ('NED', 'ENU') or self.body_convention not in (
+            'FRD',
+            'FLU',
         ):
             # 不从 frame 名称猜坐标约定；轴方向错误会直接改变速度和姿态方向。
             raise ValueError('explicit world ENU/NED and body FLU/FRD conventions are required')
@@ -170,7 +183,9 @@ class AdapterConfig:
             or _quaternion(self.world_alignment_wxyz) is None
         ):
             # 外参和对齐旋转必须本身有效，不能用默认零值代替未完成标定。
-            raise ValueError('explicit finite unit extrinsic/alignment wxyz quaternions are required')
+            raise ValueError(
+                'explicit finite unit extrinsic/alignment wxyz quaternions are required'
+            )
         if (
             _finite(self.sensor_position_body_frd, 3) is None
             or _finite(self.world_translation_ned, 3) is None
@@ -239,16 +254,22 @@ def _check_health_contract(odometry, health, config, out):
             out.reason = 'SOURCE_FRAME_OR_CALIBRATION_ID_MISMATCH'
             return False
     for name in (
-        'reset_valid', 'initialized', 'tracking', 'calibration_valid',
-        'frame_alignment_valid', 'time_sync_valid', 'extrinsics_valid',
-        'metric_scale_valid', 'quality_valid',
+        'reset_valid',
+        'initialized',
+        'tracking',
+        'calibration_valid',
+        'frame_alignment_valid',
+        'time_sync_valid',
+        'extrinsics_valid',
+        'metric_scale_valid',
+        'quality_valid',
     ):
         if not getattr(health, name, False):
             # 未确认尺度、时钟、跟踪或标定时拒绝，而不是让零值看起来像正常状态。
             out.reason = 'HEALTH_' + name.upper() + '_REQUIRED'
             return False
     quality = _finite((getattr(health, 'quality', NAN),), 1)
-    if quality is None or not 0. <= quality[0] <= 1.:
+    if quality is None or not 0.0 <= quality[0] <= 1.0:
         # 这里检查质量的协议范围；实际控制可接受的质量阈值由后续消费者另行判断。
         out.reason = 'QUALITY_UNKNOWN_OR_OUT_OF_RANGE'
         return False
@@ -274,13 +295,17 @@ def convert_odometry(odometry, health, config):
     world = _mul(_matrix(_quaternion(config.world_alignment_wxyz)), axis_world)
     body_sensor = _matrix(_quaternion(config.body_from_sensor_wxyz))
     position_sensor_body = config.sensor_position_body_frd
-    lever_arm = any(x != 0. for x in position_sensor_body)
+    lever_arm = any(x != 0.0 for x in position_sensor_body)
     raw_pose, raw_twist = odometry.pose.pose, odometry.twist.twist
     raw_q = raw_pose.orientation
-    q = _quaternion((
-        getattr(raw_q, 'w', NAN), getattr(raw_q, 'x', NAN),
-        getattr(raw_q, 'y', NAN), getattr(raw_q, 'z', NAN),
-    ))
+    q = _quaternion(
+        (
+            getattr(raw_q, 'w', NAN),
+            getattr(raw_q, 'x', NAN),
+            getattr(raw_q, 'y', NAN),
+            getattr(raw_q, 'z', NAN),
+        )
+    )
     orientation = None
     if getattr(health, 'attitude_valid', False) and q is not None:
         # 原四元数是 child → 原世界；再反向应用轴约定和安装旋转，得到机体 FRD → NED。
@@ -297,9 +322,11 @@ def convert_odometry(odometry, health, config):
         and (not lever_arm or orientation is not None)
     ):
         # 零杆臂时不依赖姿态；非零杆臂时必须先有可信姿态，才能确定世界系偏移。
-        p_sensor = tuple(a+b for a, b in zip(_rotate(world, position), config.world_translation_ned))
-        offset = _rotate(orientation, position_sensor_body) if lever_arm else (0., 0., 0.)
-        converted_position = _finite((a-b for a, b in zip(p_sensor, offset)), 3)
+        p_sensor = tuple(
+            a + b for a, b in zip(_rotate(world, position), config.world_translation_ned)
+        )
+        offset = _rotate(orientation, position_sensor_body) if lever_arm else (0.0, 0.0, 0.0)
+        converted_position = _finite((a - b for a, b in zip(p_sensor, offset)), 3)
         if converted_position is not None:
             # 中间旋转或平移可能溢出；只有有限的派生结果才允许设置 POSITION 位。
             out.position = converted_position
@@ -332,9 +359,10 @@ def convert_odometry(odometry, health, config):
         # 传感器安装偏离机体原点时，扣除 ω×r 带来的旋转线速度；缺角速度就不能置位。
         correction = (
             _rotate(orientation, _cross(out.angular_velocity, position_sensor_body))
-            if lever_arm else (0., 0., 0.)
+            if lever_arm
+            else (0.0, 0.0, 0.0)
         )
-        converted_velocity = _finite((a-b for a, b in zip(v_sensor, correction)), 3)
+        converted_velocity = _finite((a - b for a, b in zip(v_sensor, correction)), 3)
         if converted_velocity is not None:
             out.velocity = converted_velocity
             out.valid_fields |= VELOCITY
@@ -347,7 +375,8 @@ def convert_odometry(odometry, health, config):
 # 配对缓存只认同一测量纳秒；接收时间只控制等待寿命，不做最近时间插值或跨测量健康借用。
 class StampPairBuffer:
     """有容量上限的精确时间配对；重复包不能刷新等待时间或重复发布。"""
-    def __init__(self, timeout=.05, max_pending=32):
+
+    def __init__(self, timeout=0.05, max_pending=32):
         if not math.isfinite(timeout) or timeout <= 0 or max_pending < 1:
             raise ValueError('positive finite pair timeout and queue size required')
         # timeout 是本机单调接收时间的秒数，不是上游测量时间戳的差。
@@ -424,7 +453,8 @@ class GuardedOdometryAdapter:
     每次回调及无消息时的定时观察都要提供实际图数量；这里的准入只针对状态
     适配，不授予飞行权限，不生成目标速度或 PX4 动力指令。
     """
-    def __init__(self, config, pair_timeout=.05, max_pending=32):
+
+    def __init__(self, config, pair_timeout=0.05, max_pending=32):
         config.validate()
         self.config = config
         self.pairs = StampPairBuffer(pair_timeout, max_pending)
@@ -512,7 +542,9 @@ def main(args=None):
             def parameter(name, default):
                 # 配置只在启动时应用；运行期明确拒绝修改，避免显示值与实际转换不同。
                 return self.declare_parameter(
-                    name, default, descriptor=ParameterDescriptor(
+                    name,
+                    default,
+                    descriptor=ParameterDescriptor(
                         read_only=True,
                         description='Startup-only adapter configuration; restart to change.',
                     ),
@@ -523,8 +555,10 @@ def main(args=None):
                 raise ValueError('V1 adapter requires agreed ROS/system measurement stamps')
             # use_sim_time 已由 ROS 声明；固定其描述符，避免运行中切换测量时钟域。
             self.set_descriptor(
-                'use_sim_time', ParameterDescriptor(
-                    type=ParameterType.PARAMETER_BOOL, read_only=True,
+                'use_sim_time',
+                ParameterDescriptor(
+                    type=ParameterType.PARAMETER_BOOL,
+                    read_only=True,
                     description='V1 adapter requires the agreed ROS/system time domain.',
                 ),
             )
@@ -532,13 +566,20 @@ def main(args=None):
             values = {
                 name: parameter(name, '')
                 for name in (
-                    'source_id', 'input_frame_id', 'input_body_frame_id', 'world_convention',
-                    'body_convention', 'extrinsics_id', 'alignment_id',
+                    'source_id',
+                    'input_frame_id',
+                    'input_body_frame_id',
+                    'world_convention',
+                    'body_convention',
+                    'extrinsics_id',
+                    'alignment_id',
                 )
             }
             for name, length in (
-                ('body_from_sensor_wxyz', 4), ('sensor_position_body_frd', 3),
-                ('world_alignment_wxyz', 4), ('world_translation_ned', 3),
+                ('body_from_sensor_wxyz', 4),
+                ('sensor_position_body_frd', 3),
+                ('world_alignment_wxyz', 4),
+                ('world_translation_ned', 3),
             ):
                 # 未配置的旋转/平移保留 NaN，让校验拒绝，不能伪造单位旋转或零杆臂。
                 values[name] = tuple(parameter(name, [NAN] * length))
@@ -547,7 +588,9 @@ def main(args=None):
             input_topic, health_topic = parameter('input_topic', ''), parameter('health_topic', '')
             if not input_topic or not health_topic:
                 # 厂商话题名尚未通用约定，禁止自动猜测另一个传感器的数据入口。
-                raise ValueError('explicit input_topic and health_topic are required; vendor topics are unknown')
+                raise ValueError(
+                    'explicit input_topic and health_topic are required; vendor topics are unknown'
+                )
             output_topic = parameter('output_topic', '/fc01/vision/state')
             depth = parameter('qos_depth', 5)
             if depth < 1 or depth > 1000:
@@ -557,7 +600,8 @@ def main(args=None):
             def qos(reliable):
                 # 不保留历史消息给新订阅者；可靠性仍按每个接口的启动参数选择。
                 return QoSProfile(
-                    depth=depth, durability=DurabilityPolicy.VOLATILE,
+                    depth=depth,
+                    durability=DurabilityPolicy.VOLATILE,
                     reliability=(
                         ReliabilityPolicy.RELIABLE if reliable else ReliabilityPolicy.BEST_EFFORT
                     ),
@@ -565,39 +609,51 @@ def main(args=None):
 
             # 只发布 FC01 实际状态消息，不创建 PX4 控制、解锁或动力设定值发布者。
             self.publisher = self.create_publisher(
-                VisionState, output_topic, qos(parameter('output_reliable', False)),
+                VisionState,
+                output_topic,
+                qos(parameter('output_reliable', False)),
             )
             self.adapter = GuardedOdometryAdapter(
-                self.config, parameter('pair_timeout', .05), parameter('max_pending', 32),
+                self.config,
+                parameter('pair_timeout', 0.05),
+                parameter('max_pending', 32),
             )
             self.input_topic, self.health_topic = input_topic, health_topic
             self.last_reason = ''
             # 每个回调都重新观察本机时间与两个原始来源数量，再把结果送入适配器。
             self.odom_subscription = self.create_subscription(
-                Odometry, input_topic,
+                Odometry,
+                input_topic,
                 lambda message: self.emit(self.adapter.odometry(message, *self.source_context())),
                 qos(parameter('odometry_reliable', False)),
             )
             self.health_subscription = self.create_subscription(
-                VisionHealth, health_topic,
+                VisionHealth,
+                health_topic,
                 lambda message: self.emit(self.adapter.health(message, *self.source_context())),
                 qos(parameter('health_reliable', True)),
             )
             # 无消息时仍观察配对超时和图冲突；定时周期保持原来的 min(10 ms, 配对窗口)。
             self.expiry_timer = self.create_timer(
-                min(.01, self.adapter.pairs.timeout),
+                min(0.01, self.adapter.pairs.timeout),
                 lambda: self.emit(self.adapter.poll(*self.source_context())),
             )
             self.get_logger().info(
-                'Explicit V1 Odometry adapter; input=' + input_topic +
-                ' health=' + health_topic + ' output=' + output_topic
+                'Explicit V1 Odometry adapter; input='
+                + input_topic
+                + ' health='
+                + health_topic
+                + ' output='
+                + output_topic
             )
 
         def source_context(self):
             # 接收窗口使用单调秒数，测量/观察时间使用约定 ROS 纳秒；两者不能互相替代。
             return (
-                time.monotonic(), max(0, self.get_clock().now().nanoseconds),
-                self.count_publishers(self.input_topic), self.count_publishers(self.health_topic),
+                time.monotonic(),
+                max(0, self.get_clock().now().nanoseconds),
+                self.count_publishers(self.input_topic),
+                self.count_publishers(self.health_topic),
             )
 
         def emit(self, states):
@@ -609,23 +665,38 @@ def main(args=None):
                 message.stamp.nanosec = converted.stamp_ns % 1_000_000_000
                 # 消息身份与有效位原样传递，不在 ROS 输出层重新猜测测量可信性。
                 for name in (
-                    'schema_version', 'reset_counter', 'frame_id', 'body_frame_id', 'source_id',
-                    'angular_velocity_source', 'initialized', 'tracking', 'calibration_valid',
-                    'valid_fields', 'quality',
+                    'schema_version',
+                    'reset_counter',
+                    'frame_id',
+                    'body_frame_id',
+                    'source_id',
+                    'angular_velocity_source',
+                    'initialized',
+                    'tracking',
+                    'calibration_valid',
+                    'valid_fields',
+                    'quality',
                 ):
                     setattr(message, name, getattr(converted, name))
                 for name in (
-                    'position', 'velocity', 'attitude', 'angular_velocity',
-                    'pose_covariance', 'twist_covariance',
+                    'position',
+                    'velocity',
+                    'attitude',
+                    'angular_velocity',
+                    'pose_covariance',
+                    'twist_covariance',
                 ):
                     setattr(message, name, list(getattr(converted, name)))
                 self.publisher.publish(message)
                 if converted.reason != self.last_reason:
                     # 日志只记录原因变化；状态消息仍逐项发布，不能用日志节流丢弃撤销事件。
                     self.get_logger().info(
-                        'state_quality=' + converted.reason +
-                        ' canonical_sequence=' + str(converted.sequence) +
-                        ' raw_health_sequence=' + str(converted.raw_health_sequence)
+                        'state_quality='
+                        + converted.reason
+                        + ' canonical_sequence='
+                        + str(converted.sequence)
+                        + ' raw_health_sequence='
+                        + str(converted.raw_health_sequence)
                     )
                     self.last_reason = converted.reason
 

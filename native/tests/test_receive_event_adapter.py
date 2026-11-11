@@ -264,28 +264,74 @@ class ReceiveEventAdapterTest(unittest.TestCase):
     def test_pending_unsafe_payload_cannot_be_hidden_by_benign_head(self):
         with tempfile.TemporaryDirectory(prefix='fc01_safety_adapter_') as directory:
             root = Path(directory)
-            (root/'rclcpp').mkdir()
-            (root/'rclcpp/rclcpp.hpp').write_text(fixture.RCLCPP)
-            msg=root/'px4_msgs/msg';msg.mkdir(parents=True)
-            for filename,(name,version,fields) in fixture.MESSAGES.items():
-                const='' if version is None else f'static constexpr int MESSAGE_VERSION={version};'
-                (msg/(filename+'.hpp')).write_text('#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\nnamespace px4_msgs::msg {struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;std::uint64_t timestamp{};'+const+fields+'};}\n')
-            vision=root/'jikl_fc01_system/msg';vision.mkdir(parents=True)
-            (vision/'stamp.hpp').write_text('#pragma once\n#include <cstdint>\nnamespace jikl_fc01_system::msg {struct Stamp{std::int32_t sec{};std::uint32_t nanosec{};};}\n')
-            for filename,(name,fields) in fixture.VISION_MESSAGES.items():
-                (vision/(filename+'.hpp')).write_text('#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\n#include <string>\n#include "jikl_fc01_system/msg/stamp.hpp"\nnamespace jikl_fc01_system::msg {struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;std::uint16_t schema_version{1};'+fields+'};}\n')
-            source=(fixture.ROOT/'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
+            (root / 'rclcpp').mkdir()
+            (root / 'rclcpp/rclcpp.hpp').write_text(fixture.RCLCPP)
+            msg = root / 'px4_msgs/msg'
+            msg.mkdir(parents=True)
+            for filename, (name, version, fields) in fixture.MESSAGES.items():
+                const = (
+                    '' if version is None else f'static constexpr int MESSAGE_VERSION={version};'
+                )
+                (msg / (filename + '.hpp')).write_text(
+                    '#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\nnamespace px4_msgs::msg {struct '
+                    + name
+                    + '{using ConstSharedPtr=std::shared_ptr<const '
+                    + name
+                    + '>;std::uint64_t timestamp{};'
+                    + const
+                    + fields
+                    + '};}\n'
+                )
+            vision = root / 'jikl_fc01_system/msg'
+            vision.mkdir(parents=True)
+            (vision / 'stamp.hpp').write_text(
+                '#pragma once\n#include <cstdint>\nnamespace jikl_fc01_system::msg {struct Stamp{std::int32_t sec{};std::uint32_t nanosec{};};}\n'
+            )
+            for filename, (name, fields) in fixture.VISION_MESSAGES.items():
+                (vision / (filename + '.hpp')).write_text(
+                    '#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\n#include <string>\n#include "jikl_fc01_system/msg/stamp.hpp"\nnamespace jikl_fc01_system::msg {struct '
+                    + name
+                    + '{using ConstSharedPtr=std::shared_ptr<const '
+                    + name
+                    + '>;std::uint16_t schema_version{1};'
+                    + fields
+                    + '};}\n'
+                )
+            source = (fixture.ROOT / 'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
             # 只修改临时副本的可见性和main名称，使夹具能直接调用真实节点内部路径。
-            source=source.replace(' private:', ' public:', 1).replace('int main(', 'int adapter_program_main(', 1)
-            (root/'adapter_under_test.cpp').write_text(source)
-            (root/'test.cpp').write_text(HARNESS)
-            executable=root/'test'
-            subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-pthread',
-                '-I',str(root),'-I',str(fixture.ROOT/'src/jikl_fc01_system/include'),
-                '-I',str(fixture.ROOT/'tests'),str(root/'test.cpp'),'-o',str(executable)],check=True)
+            source = source.replace(' private:', ' public:', 1).replace(
+                'int main(', 'int adapter_program_main(', 1
+            )
+            (root / 'adapter_under_test.cpp').write_text(source)
+            (root / 'test.cpp').write_text(HARNESS)
+            executable = root / 'test'
+            subprocess.run(
+                [
+                    'g++',
+                    '-std=c++17',
+                    '-Wall',
+                    '-Wextra',
+                    '-Werror',
+                    '-pedantic',
+                    '-pthread',
+                    '-I',
+                    str(root),
+                    '-I',
+                    str(fixture.ROOT / 'src/jikl_fc01_system/include'),
+                    '-I',
+                    str(fixture.ROOT / 'tests'),
+                    str(root / 'test.cpp'),
+                    '-o',
+                    str(executable),
+                ],
+                check=True,
+            )
             # IPC socket置于同一临时目录；测试进程退出后不留下控制通道或二进制。
-            env=os.environ.copy();env['FC01_SOCKET']=str(root/'control.sock')
-            result=subprocess.run([str(executable)],env=env,capture_output=True,text=True)
-            self.assertEqual(result.returncode,0,result.stderr+'\n'+result.stdout)
+            env = os.environ.copy()
+            env['FC01_SOCKET'] = str(root / 'control.sock')
+            result = subprocess.run([str(executable)], env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr + '\n' + result.stdout)
 
-if __name__=='__main__':unittest.main()
+
+if __name__ == '__main__':
+    unittest.main()

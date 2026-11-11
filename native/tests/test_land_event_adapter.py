@@ -29,24 +29,32 @@ def replace_once(source, old, new):
 
 # 替换点仅构造测试输入：控制landed/at_rest、是否送达落地样本以及RC开关历史。
 for old, new in (
-    ('bool armed{},offboard{},landed{true};',
-     'bool armed{},offboard{},landed{true};'
-     'bool rest_input{true},deliver_land{true},bad_land_head{},bad_landed_input{};'
-     'std::uint8_t mode_input{6},arm_input{1};'),
+    (
+        'bool armed{},offboard{},landed{true};',
+        'bool armed{},offboard{},landed{true};'
+        'bool rest_input{true},deliver_land{true},bad_land_head{},bad_landed_input{};'
+        'std::uint8_t mode_input{6},arm_input{1};',
+    ),
     ('value.vz=.09f;value.z_deriv=-.15f;', 'value.vz=value.z_deriv=0;'),
-    ('status.pre_flight_checks_pass=status.power_input_valid=true;',
-     'status.pre_flight_checks_pass=status.power_input_valid=true;'
-     'status.armed_time=10;status.latest_arming_reason=2;'),
+    (
+        'status.pre_flight_checks_pass=status.power_input_valid=true;',
+        'status.pre_flight_checks_pass=status.power_input_valid=true;'
+        'status.armed_time=10;status.latest_arming_reason=2;',
+    ),
     ('land.landed=land.at_rest=landed;', 'land.landed=landed;land.at_rest=rest_input;'),
-    ('''    node.receive_event(land,node.land_,node.land_stamp_,fc01::SourceSlot::Land,
+    (
+        '''    node.receive_event(land,node.land_,node.land_stamp_,fc01::SourceSlot::Land,
       rclcpp::MessageInfo{},fc01::land_receive_event<Land>);''',
-     '''    if(bad_land_head){
+        '''    if(bad_land_head){
       auto bad=land;bad.timestamp-=1000;bad.landed=bad_landed_input;bad.at_rest=false;
       node.land_sub_->callback(std::make_shared<Land>(bad),rclcpp::MessageInfo{});
     }
-    if(deliver_land)node.land_sub_->callback(std::make_shared<Land>(land),rclcpp::MessageInfo{});'''),
-    ('switches.mode_slot=6;switches.arm_switch=switches.kill_switch=3;',
-     'switches.mode_slot=mode_input;switches.arm_switch=arm_input;switches.kill_switch=3;'),
+    if(deliver_land)node.land_sub_->callback(std::make_shared<Land>(land),rclcpp::MessageInfo{});''',
+    ),
+    (
+        'switches.mode_slot=6;switches.arm_switch=switches.kill_switch=3;',
+        'switches.mode_slot=mode_input;switches.arm_switch=arm_input;switches.kill_switch=3;',
+    ),
     ('assert(node.command_pub_->calls==0);', ''),
     ('assert(!fc01::attitude::nonzero(node.last_attitude_output_.thrust));', ''),
 ):
@@ -222,18 +230,44 @@ class LandEventAdapterTest(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='fc01_land_event_') as directory:
             root = Path(directory)
             fixture.write_fixture(root)
-            (root/'test.cpp').write_text(HARNESS)
-            subprocess.run(['g++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-pedantic', '-pthread',
-                '-I', str(root), '-I', str(fixture.recovery.fixture.ROOT/'src/jikl_fc01_system/include'),
-                '-I', str(fixture.recovery.fixture.ROOT/'tests'), str(root/'test.cpp'), '-o', str(root/'test')],
-                check=True)
-            result = subprocess.run([str(root/'test')],
-                env=dict(os.environ, FC01_SOCKET=str(root/'control.sock')), capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, result.stderr+'\n'+result.stdout[-12000:])
-            for marker in ('NORMAL_WAIT_DISARM', 'ARMED_BOUNCE_BOTH_TAIL_ORDERS',
-                           'CONSECUTIVE_STRESS_CUSTODY', 'DISARMED_TERMINAL_AND_RELEASE_VETO',
-                           'FATAL_SAFETY_REMAINS_SILENT', 'NORMAL_TERMINAL_AND_NEW_GROUND_RECOVERY'):
-                self.assertIn('LAND_EVENT_'+marker+'_PASS', result.stdout)
+            (root / 'test.cpp').write_text(HARNESS)
+            subprocess.run(
+                [
+                    'g++',
+                    '-std=c++17',
+                    '-Wall',
+                    '-Wextra',
+                    '-Werror',
+                    '-pedantic',
+                    '-pthread',
+                    '-I',
+                    str(root),
+                    '-I',
+                    str(fixture.recovery.fixture.ROOT / 'src/jikl_fc01_system/include'),
+                    '-I',
+                    str(fixture.recovery.fixture.ROOT / 'tests'),
+                    str(root / 'test.cpp'),
+                    '-o',
+                    str(root / 'test'),
+                ],
+                check=True,
+            )
+            result = subprocess.run(
+                [str(root / 'test')],
+                env=dict(os.environ, FC01_SOCKET=str(root / 'control.sock')),
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr + '\n' + result.stdout[-12000:])
+            for marker in (
+                'NORMAL_WAIT_DISARM',
+                'ARMED_BOUNCE_BOTH_TAIL_ORDERS',
+                'CONSECUTIVE_STRESS_CUSTODY',
+                'DISARMED_TERMINAL_AND_RELEASE_VETO',
+                'FATAL_SAFETY_REMAINS_SILENT',
+                'NORMAL_TERMINAL_AND_NEW_GROUND_RECOVERY',
+            ):
+                self.assertIn('LAND_EVENT_' + marker + '_PASS', result.stdout)
 
 
 if __name__ == '__main__':

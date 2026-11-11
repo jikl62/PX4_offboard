@@ -56,9 +56,12 @@ class Fixture:
         self.write("/boot/orangepiEnv.txt", "overlays=uart6\n$(touch MUST_NOT_EXIST)\n")
         self.commands = []
         self.fuser = {"status": "observed", "returncode": 1, "stdout": "", "stderr": ""}
-        self.getty = {"status": "observed", "returncode": 0,
-                      "stdout": "LoadState=loaded\nActiveState=inactive\nSubState=dead\nUnitFileState=disabled\n",
-                      "stderr": ""}
+        self.getty = {
+            "status": "observed",
+            "returncode": 0,
+            "stdout": "LoadState=loaded\nActiveState=inactive\nSubState=dead\nUnitFileState=disabled\n",
+            "stderr": "",
+        }
 
     # 把逻辑绝对路径重定位到临时树；字节设备树属性保留 NUL 与大端 phandle。
     def write(self, logical, data):
@@ -84,15 +87,22 @@ class Fixture:
         # two fixture nodes. Their contents still must never be opened.
         original = Path.stat
         dev = self.root / "dev"
+
         def device_stat(path, *args, **options):
             info = original(path, *args, **options)
             if path.parent == dev and path.name in ("ttyS6", "ttyS2"):
-                return SimpleNamespace(st_mode=stat.S_IFCHR | 0o660,
-                                       st_rdev=os.makedev(4, 70 if path.name == "ttyS6" else 66),
-                                       st_dev=info.st_dev, st_ino=info.st_ino)
+                return SimpleNamespace(
+                    st_mode=stat.S_IFCHR | 0o660,
+                    st_rdev=os.makedev(4, 70 if path.name == "ttyS6" else 66),
+                    st_dev=info.st_dev,
+                    st_ino=info.st_ino,
+                )
             return info
+
         with patch.object(Path, "stat", device_stat):
-            return audit.collect_report(paths=audit.SystemPaths(self.root), runner=self.runner, **kwargs)
+            return audit.collect_report(
+                paths=audit.SystemPaths(self.root), runner=self.runner, **kwargs
+            )
 
 
 # 逐个破坏设备、父节点、引脚、控制台、占用、固件映射与只读策略。
@@ -112,16 +122,25 @@ class UartPreflightTests(unittest.TestCase):
         report = self.fixture.report()
         self.assertEqual(report["summary"], "eligible_for_manual_review")
         self.assertEqual(report["hardware_validation"], "NOT_PERFORMED")
-        self.assertEqual(report["DECLARED_USER_MAPPING"]["primary"]["change_policy"], "DO_NOT_CHANGE")
+        self.assertEqual(
+            report["DECLARED_USER_MAPPING"]["primary"]["change_policy"], "DO_NOT_CHANGE"
+        )
         self.assertEqual(report["DECLARED_USER_MAPPING"]["candidate"]["tx_pin"], 24)
         self.assertEqual(report["DECLARED_USER_MAPPING"]["candidate"]["rx_pin"], 23)
         self.assertEqual(report["DECLARED_USER_MAPPING"]["candidate"]["ground_pin"], 25)
         checks = self.checks(report)
-        self.assertEqual(checks["candidate_driver_binding"]["driver"]["path"], "/sys/bus/platform/drivers/serial8250")
-        self.assertIn("serial6", [row["alias"] for row in checks["candidate_device_tree"]["aliases"]])
+        self.assertEqual(
+            checks["candidate_driver_binding"]["driver"]["path"],
+            "/sys/bus/platform/drivers/serial8250",
+        )
+        self.assertIn(
+            "serial6", [row["alias"] for row in checks["candidate_device_tree"]["aliases"]]
+        )
         self.assertEqual(checks["candidate_pinctrl"]["groups"][0]["function"]["value"], ["uart6"])
         self.assertEqual(checks["default_candidate_mapping"]["status"], "observed")
-        self.assertTrue(any(row["check"] == "physical_header_and_peer" for row in report["next_steps"]))
+        self.assertTrue(
+            any(row["check"] == "physical_header_and_peer" for row in report["next_steps"])
+        )
 
     # 保留用户声明的主/候选接线和未验证标志，不因更正飞控假设改动香橙派设备号。
     def test_corrected_fc01_hypothesis_keeps_orangepi_devices_and_pins(self):
@@ -129,19 +148,35 @@ class UartPreflightTests(unittest.TestCase):
         declaration = report["DECLARED_USER_MAPPING"]
         self.assertEqual(declaration["evidence_class"], "USER_REPORTED_PHYSICAL_CONNECTION")
         primary, candidate = declaration["primary"], declaration["candidate"]
-        self.assertEqual((primary["device"], primary["uart"], primary["tx_pin"], primary["rx_pin"], primary["baud"]),
-                         ("/dev/ttyS2", "UART2", 11, 13, 115200))
-        self.assertEqual((candidate["device"], candidate["uart"], candidate["tx_pin"], candidate["rx_pin"]),
-                         ("/dev/ttyS6", "UART6", 24, 23))
-        self.assertEqual((primary["peer_hardware_uart_claim"], primary["peer_physical_connector_claim"]),
-                         ("USART6", None))
-        self.assertEqual((candidate["peer_hardware_uart_claim"], candidate["peer_physical_connector_claim"]),
-                         ("UART4", "TELEM3"))
+        self.assertEqual(
+            (
+                primary["device"],
+                primary["uart"],
+                primary["tx_pin"],
+                primary["rx_pin"],
+                primary["baud"],
+            ),
+            ("/dev/ttyS2", "UART2", 11, 13, 115200),
+        )
+        self.assertEqual(
+            (candidate["device"], candidate["uart"], candidate["tx_pin"], candidate["rx_pin"]),
+            ("/dev/ttyS6", "UART6", 24, 23),
+        )
+        self.assertEqual(
+            (primary["peer_hardware_uart_claim"], primary["peer_physical_connector_claim"]),
+            ("USART6", None),
+        )
+        self.assertEqual(
+            (candidate["peer_hardware_uart_claim"], candidate["peer_physical_connector_claim"]),
+            ("UART4", "TELEM3"),
+        )
         self.assertEqual(primary["peer_verification"], "USER_REPORTED_PHYSICAL_CONNECTION")
         self.assertEqual(candidate["peer_verification"], "PENDING_ON_DEVICE")
         observation = report["ACTUAL_LOCAL_OBSERVATION"]
-        self.assertEqual((observation["requested_primary"], observation["requested_device"]),
-                         ("/dev/ttyS2", "/dev/ttyS6"))
+        self.assertEqual(
+            (observation["requested_primary"], observation["requested_device"]),
+            ("/dev/ttyS2", "/dev/ttyS6"),
+        )
         self.assertEqual(report["hardware_validation"], "NOT_PERFORMED")
 
     # 区分 STM32 UART、PX4 逻辑端口、selector 和 NuttX tty；相同 TELEM 字样不能互推。
@@ -151,14 +186,27 @@ class UartPreflightTests(unittest.TestCase):
         self.assertEqual(reference["evidence_class"], "LOCAL_FIRMWARE_SOURCE_REFERENCE")
         self.assertEqual(reference["on_device_firmware_match"], "NOT_VERIFIED")
         ports = {row["stm32_hardware_uart"]: row for row in reference["ports"]}
-        observed = [(ports[uart]["px4_logical_port"], ports[uart]["px4_selector"],
-                     ports[uart]["nuttx_device"], ports[uart]["baud_parameter"])
-                    for uart in ("UART4", "USART6", "UART7")]
-        self.assertEqual(observed, [("TELEM3", 103, "/dev/ttyS3", "SER_TEL3_BAUD"),
-                                    ("URT6", 6, "/dev/ttyS5", "SER_URT6_BAUD"),
-                                    ("TELEM4", 104, "/dev/ttyS6", "SER_TEL4_BAUD")])
+        observed = [
+            (
+                ports[uart]["px4_logical_port"],
+                ports[uart]["px4_selector"],
+                ports[uart]["nuttx_device"],
+                ports[uart]["baud_parameter"],
+            )
+            for uart in ("UART4", "USART6", "UART7")
+        ]
+        self.assertEqual(
+            observed,
+            [
+                ("TELEM3", 103, "/dev/ttyS3", "SER_TEL3_BAUD"),
+                ("URT6", 6, "/dev/ttyS5", "SER_URT6_BAUD"),
+                ("TELEM4", 104, "/dev/ttyS6", "SER_TEL4_BAUD"),
+            ],
+        )
         self.assertEqual(len({row["px4_selector"] for row in ports.values()}), 3)
-        self.assertNotEqual(ports["USART6"]["nuttx_device"], report["ACTUAL_LOCAL_OBSERVATION"]["requested_device"])
+        self.assertNotEqual(
+            ports["USART6"]["nuttx_device"], report["ACTUAL_LOCAL_OBSERVATION"]["requested_device"]
+        )
         self.assertTrue(all(cmd[0] in ("systemctl", "fuser") for cmd in self.fixture.commands))
 
     # 用户曾报告 UART 注册不代表当前设备仍存在，当前缺证据时必须 unknown。
@@ -183,10 +231,14 @@ class UartPreflightTests(unittest.TestCase):
         evidence = report["USER_PROVIDED_FC01_RUNTIME"]
         self.assertEqual(evidence["evidence_class"], "USER_PROVIDED_NSH_OUTPUT")
         self.assertEqual(evidence["capture_time"], "UNKNOWN")
-        self.assertEqual((evidence["UXRCE_DDS_CFG"], evidence["startup_device"], evidence["startup_baud"]),
-                         (103, "/dev/ttyS3", 115200))
+        self.assertEqual(
+            (evidence["UXRCE_DDS_CFG"], evidence["startup_device"], evidence["startup_baud"]),
+            (103, "/dev/ttyS3", 115200),
+        )
         self.assertNotIn("USER_PROVIDED_FC01_RUNTIME", report["ACTUAL_LOCAL_OBSERVATION"])
-        self.assertEqual(report["DECLARED_USER_MAPPING"]["candidate"]["peer_verification"], "PENDING_ON_DEVICE")
+        self.assertEqual(
+            report["DECLARED_USER_MAPPING"]["candidate"]["peer_verification"], "PENDING_ON_DEVICE"
+        )
         self.assertEqual(report["hardware_validation"], "NOT_PERFORMED")
         self.assertTrue(all(cmd[0] in ("systemctl", "fuser") for cmd in self.fixture.commands))
 
@@ -195,7 +247,9 @@ class UartPreflightTests(unittest.TestCase):
         report = self.fixture.report()
         comparison = report["FC01_EVIDENCE_RECONCILIATION"]
         self.assertEqual(report["summary"], "eligible_for_manual_review")
-        self.assertEqual(report["summary_scope"], "LOCAL_LINUX_CHECKS_ONLY_NOT_END_TO_END_LINK_READINESS")
+        self.assertEqual(
+            report["summary_scope"], "LOCAL_LINUX_CHECKS_ONLY_NOT_END_TO_END_LINK_READINESS"
+        )
         self.assertEqual(comparison["status"], "CONFLICT")
         self.assertEqual(comparison["source_mapped_runtime_hardware_uart"], "UART4")
         self.assertEqual(comparison["reported_primary_hardware_uart"], "USART6")
@@ -206,12 +260,15 @@ class UartPreflightTests(unittest.TestCase):
     def test_fc01_comparison_resolves_selector_and_device_without_linux_number_inference(self):
         runtime = copy.deepcopy(audit.USER_PROVIDED_FC01_RUNTIME)
         for selector, device, hardware, status in (
-                (103, "/dev/ttyS3", "UART4", "CONFLICT"),
-                (6, "/dev/ttyS5", "USART6", "CONSISTENT_DATED_EVIDENCE_ONLY"),
-                (104, "/dev/ttyS6", "UART7", "CONFLICT")):
+            (103, "/dev/ttyS3", "UART4", "CONFLICT"),
+            (6, "/dev/ttyS5", "USART6", "CONSISTENT_DATED_EVIDENCE_ONLY"),
+            (104, "/dev/ttyS6", "UART7", "CONFLICT"),
+        ):
             with self.subTest(selector=selector):
                 runtime.update(UXRCE_DDS_CFG=selector, startup_device=device)
-                row = audit.reconcile_fc01_evidence(audit.DECLARED_USER_MAPPING, runtime, audit.FC01_SOURCE_REFERENCE)
+                row = audit.reconcile_fc01_evidence(
+                    audit.DECLARED_USER_MAPPING, runtime, audit.FC01_SOURCE_REFERENCE
+                )
                 self.assertEqual(row["source_mapped_runtime_hardware_uart"], hardware)
                 self.assertEqual(row["status"], status)
                 self.assertEqual(row["candidate_availability"], "UNRESOLVED_DO_NOT_ENABLE")
@@ -220,11 +277,15 @@ class UartPreflightTests(unittest.TestCase):
     def test_missing_or_mismatched_runtime_evidence_cannot_resolve_fc01_conflict(self):
         runtime = copy.deepcopy(audit.USER_PROVIDED_FC01_RUNTIME)
         runtime["startup_device"] = "/dev/ttyS5"
-        row = audit.reconcile_fc01_evidence(audit.DECLARED_USER_MAPPING, runtime, audit.FC01_SOURCE_REFERENCE)
+        row = audit.reconcile_fc01_evidence(
+            audit.DECLARED_USER_MAPPING, runtime, audit.FC01_SOURCE_REFERENCE
+        )
         self.assertEqual(row["status"], "CONFLICT")
         self.assertIsNone(row["source_mapped_runtime_hardware_uart"])
         runtime.pop("UXRCE_DDS_CFG")
-        row = audit.reconcile_fc01_evidence(audit.DECLARED_USER_MAPPING, runtime, audit.FC01_SOURCE_REFERENCE)
+        row = audit.reconcile_fc01_evidence(
+            audit.DECLARED_USER_MAPPING, runtime, audit.FC01_SOURCE_REFERENCE
+        )
         self.assertEqual(row["status"], "UNKNOWN")
         self.assertEqual(row["candidate_availability"], "UNRESOLVED_DO_NOT_ENABLE")
 
@@ -237,7 +298,9 @@ class UartPreflightTests(unittest.TestCase):
         self.assertEqual(self.checks(missing)["candidate_character_device"]["status"], "unknown")
         self.assertNotEqual(missing["summary"], "eligible_for_manual_review")
         (self.root / "dev/ttyS2").unlink()
-        self.assertEqual(self.checks(self.fixture.report())["primary_character_device"]["status"], "unknown")
+        self.assertEqual(
+            self.checks(self.fixture.report())["primary_character_device"]["status"], "unknown"
+        )
 
     # 没有实时 model/compatible 和设备树，不能因用户描述认定当前机器是 Orange Pi。
     def test_missing_live_device_tree_cannot_claim_orangepi(self):
@@ -254,7 +317,9 @@ class UartPreflightTests(unittest.TestCase):
             with self.subTest(target=target):
                 self.fixture.write(target + "/status", b"disabled\x00")
                 report = self.fixture.report()
-                self.assertEqual(self.checks(report)["candidate_device_tree"]["status"], "not_ready")
+                self.assertEqual(
+                    self.checks(report)["candidate_device_tree"]["status"], "not_ready"
+                )
                 self.assertEqual(report["summary"], "not_ready")
                 self.fixture.write(target + "/status", b"okay\x00")
 
@@ -262,41 +327,85 @@ class UartPreflightTests(unittest.TestCase):
     def test_missing_or_permission_denied_dt_status_is_unknown(self):
         target = self.root / (self.fixture.node + "/status").lstrip("/")
         target.unlink()
-        self.assertEqual(self.checks(self.fixture.report())["candidate_device_tree"]["status"], "unknown")
+        self.assertEqual(
+            self.checks(self.fixture.report())["candidate_device_tree"]["status"], "unknown"
+        )
         self.fixture.write(self.fixture.node + "/status", "okay")
         original = os.open
+
         def denied(path, *args, **kwargs):
             if Path(path) == target:
                 raise PermissionError("fixture access denied")
             return original(path, *args, **kwargs)
+
         with patch.object(os, "open", denied):
-            self.assertEqual(self.checks(self.fixture.report())["candidate_device_tree"]["status"], "unknown")
+            self.assertEqual(
+                self.checks(self.fixture.report())["candidate_device_tree"]["status"], "unknown"
+            )
 
     # alias 和驱动注册表只描述名称/能力，不能代替实际设备驱动绑定。
     def test_serial_alias_is_not_a_binding_and_registered_driver_is_not_proof(self):
         (self.root / (self.fixture.platform + "/driver").lstrip("/")).unlink()
         report = self.fixture.report()
         self.assertEqual(self.checks(report)["candidate_driver_binding"]["status"], "unknown")
-        self.assertIn("not proof", report["ACTUAL_LOCAL_OBSERVATION"]["registered_tty_drivers"]["notice"])
+        self.assertIn(
+            "not proof", report["ACTUAL_LOCAL_OBSERVATION"]["registered_tty_drivers"]["notice"]
+        )
         (self.root / (self.fixture.platform + "/of_node").lstrip("/")).unlink()
-        self.assertEqual(self.checks(self.fixture.report())["candidate_device_tree"]["status"], "unknown")
+        self.assertEqual(
+            self.checks(self.fixture.report())["candidate_device_tree"]["status"], "unknown"
+        )
 
     # 缺 pin function 或 phandle 无法解析时，不能根据候选引脚列表臆测复用已生效。
     def test_missing_pinctrl_function_or_unresolved_phandle_is_unknown(self):
         target = self.root / (self.fixture.dt + "/soc/pinctrl/uart6-pins/function").lstrip("/")
         target.unlink()
-        self.assertEqual(self.checks(self.fixture.report())["candidate_pinctrl"]["status"], "unknown")
+        self.assertEqual(
+            self.checks(self.fixture.report())["candidate_pinctrl"]["status"], "unknown"
+        )
         self.fixture.write(self.fixture.node + "/pinctrl-0", (999).to_bytes(4, "big"))
-        self.assertEqual(self.checks(self.fixture.report())["candidate_pinctrl"]["status"], "unknown")
+        self.assertEqual(
+            self.checks(self.fixture.report())["candidate_pinctrl"]["status"], "unknown"
+        )
 
     # 0/1 返回码还需结合 PID、stderr 和命令状态；权限错误与超时不等于无人占用。
     def test_fuser_exit_codes_and_timeout_are_interpreted_conservatively(self):
         cases = [
-            ({"status": "observed", "returncode": 0, "stdout": " 123 456 ", "stderr": "/dev/ttyS6:"}, "not_ready", "occupied"),
-            ({"status": "observed", "returncode": 1, "stdout": "", "stderr": ""}, "observed", "no_users_observed"),
-            ({"status": "observed", "returncode": 1, "stdout": "", "stderr": "Permission denied"}, "unknown", "unknown"),
-            ({"status": "observed", "returncode": 2, "stdout": "", "stderr": "failure"}, "unknown", "unknown"),
-            ({"status": "observed", "returncode": 0, "stdout": "", "stderr": ""}, "unknown", "unknown"),
+            (
+                {
+                    "status": "observed",
+                    "returncode": 0,
+                    "stdout": " 123 456 ",
+                    "stderr": "/dev/ttyS6:",
+                },
+                "not_ready",
+                "occupied",
+            ),
+            (
+                {"status": "observed", "returncode": 1, "stdout": "", "stderr": ""},
+                "observed",
+                "no_users_observed",
+            ),
+            (
+                {
+                    "status": "observed",
+                    "returncode": 1,
+                    "stdout": "",
+                    "stderr": "Permission denied",
+                },
+                "unknown",
+                "unknown",
+            ),
+            (
+                {"status": "observed", "returncode": 2, "stdout": "", "stderr": "failure"},
+                "unknown",
+                "unknown",
+            ),
+            (
+                {"status": "observed", "returncode": 0, "stdout": "", "stderr": ""},
+                "unknown",
+                "unknown",
+            ),
             ({"status": "unknown", "reason": "command timeout"}, "unknown", "unknown"),
         ]
         for raw, status, occupancy in cases:
@@ -307,19 +416,24 @@ class UartPreflightTests(unittest.TestCase):
 
     # 串口或 alias 被 console 使用则冲突；无法映射的 earlycon 保持未知。
     def test_console_candidate_alias_and_earlycon(self):
-        for cmdline, expected in (("console=ttyS6,115200", "not_ready"),
-                                  ("console=serial6,115200", "not_ready"),
-                                  ("console=ttyS2,115200", "observed"),
-                                  ("earlycon=uart8250,mmio,0x2506000", "unknown")):
+        for cmdline, expected in (
+            ("console=ttyS6,115200", "not_ready"),
+            ("console=serial6,115200", "not_ready"),
+            ("console=ttyS2,115200", "observed"),
+            ("earlycon=uart8250,mmio,0x2506000", "unknown"),
+        ):
             with self.subTest(cmdline=cmdline):
                 self.fixture.write("/proc/cmdline", cmdline)
-                self.assertEqual(self.checks(self.fixture.report())["kernel_console"]["status"], expected)
+                self.assertEqual(
+                    self.checks(self.fixture.report())["kernel_console"]["status"], expected
+                )
 
     # 即使 cmdline 未指定候选，实际注册/活动控制台仍可占用它。
     def test_registered_and_active_consoles_detect_conflict_without_cmdline(self):
         for path, conflict, clear in (
-                ("/proc/consoles", "ttyS6 -W- (EC p a) 4:70\n", "ttyS2 -W- (EC p a) 4:66\n"),
-                ("/sys/class/tty/console/active", "tty0 ttyS6\n", "ttyS2\n")):
+            ("/proc/consoles", "ttyS6 -W- (EC p a) 4:70\n", "ttyS2 -W- (EC p a) 4:66\n"),
+            ("/sys/class/tty/console/active", "tty0 ttyS6\n", "ttyS2\n"),
+        ):
             with self.subTest(path=path):
                 self.fixture.write(path, conflict)
                 row = self.checks(self.fixture.report())["kernel_console"]
@@ -333,7 +447,9 @@ class UartPreflightTests(unittest.TestCase):
         for target in ("serial6:115200n8", "/soc/serial@2506000:115200n8"):
             with self.subTest(target=target):
                 self.fixture.write(stdout, target)
-                self.assertEqual(self.checks(self.fixture.report())["kernel_console"]["status"], "not_ready")
+                self.assertEqual(
+                    self.checks(self.fixture.report())["kernel_console"]["status"], "not_ready"
+                )
         (self.root / stdout.lstrip("/")).unlink()
         self.fixture.write(self.fixture.dt + "/chosen/linux,stdout-path", "serial6:115200n8")
         row = self.checks(self.fixture.report())["kernel_console"]
@@ -342,13 +458,17 @@ class UartPreflightTests(unittest.TestCase):
 
     # 控制台证据读不到或格式无法解释时不按空集合放行。
     def test_missing_uninterpretable_or_denied_console_evidence_is_unknown(self):
-        for path, restore in (("/proc/consoles", "ttyS2 -W- (EC p a) 4:66\n"),
-                              ("/sys/class/tty/console/active", "ttyS2\n"),
-                              (self.fixture.dt + "/chosen/stdout-path", "serial2:115200n8")):
+        for path, restore in (
+            ("/proc/consoles", "ttyS2 -W- (EC p a) 4:66\n"),
+            ("/sys/class/tty/console/active", "ttyS2\n"),
+            (self.fixture.dt + "/chosen/stdout-path", "serial2:115200n8"),
+        ):
             with self.subTest(path=path):
                 target = self.root / path.lstrip("/")
                 target.unlink()
-                self.assertEqual(self.checks(self.fixture.report())["kernel_console"]["status"], "unknown")
+                self.assertEqual(
+                    self.checks(self.fixture.report())["kernel_console"]["status"], "unknown"
+                )
                 self.fixture.write(path, restore)
         self.fixture.write(self.fixture.dt + "/chosen/stdout-path", "unresolved_alias:115200n8")
         self.assertEqual(self.checks(self.fixture.report())["kernel_console"]["status"], "unknown")
@@ -357,29 +477,36 @@ class UartPreflightTests(unittest.TestCase):
         denied_path = self.root / (self.fixture.dt + "/chosen/stdout-path").lstrip("/")
         # A denied primary property must not silently fall back to a different one.
         self.fixture.write(self.fixture.dt + "/chosen/linux,stdout-path", "serial2:115200n8")
+
         def denied(path, *args, **kwargs):
             if Path(path) == denied_path:
                 raise PermissionError("fixture console denied")
             return original(path, *args, **kwargs)
+
         with patch.object(os, "open", denied):
             row = self.checks(self.fixture.report())["kernel_console"]
         self.assertEqual(row["status"], "unknown")
         self.assertTrue(row["sources"]["device_tree_stdout"]["path"].endswith("/stdout-path"))
         self.fixture.write("/proc/cmdline", "console=ttyS6,115200")
         (self.root / "proc/consoles").unlink()
-        self.assertEqual(self.checks(self.fixture.report())["kernel_console"]["status"], "not_ready")
+        self.assertEqual(
+            self.checks(self.fixture.report())["kernel_console"]["status"], "not_ready"
+        )
 
     # 默认映射需要 alias、function、引脚组全吻合，任一观测冲突即 not_ready。
     def test_default_mapping_observed_alias_function_or_pin_mismatch_is_not_ready(self):
         group = self.fixture.dt + "/soc/pinctrl/uart6-pins"
         for path, mismatch, restore in (
-                (self.fixture.dt + "/aliases/serial6", "/soc/serial@2500800", "/soc/serial@2506000"),
-                (group + "/function", "uart2", "uart6"),
-                (group + "/pins", b"PB0\x00PB1\x00", b"PE0\x00PE1\x00")):
+            (self.fixture.dt + "/aliases/serial6", "/soc/serial@2500800", "/soc/serial@2506000"),
+            (group + "/function", "uart2", "uart6"),
+            (group + "/pins", b"PB0\x00PB1\x00", b"PE0\x00PE1\x00"),
+        ):
             with self.subTest(path=path):
                 self.fixture.write(path, mismatch)
                 report = self.fixture.report()
-                self.assertEqual(self.checks(report)["default_candidate_mapping"]["status"], "not_ready")
+                self.assertEqual(
+                    self.checks(report)["default_candidate_mapping"]["status"], "not_ready"
+                )
                 self.assertEqual(report["summary"], "not_ready")
                 self.fixture.write(path, restore)
 
@@ -390,7 +517,9 @@ class UartPreflightTests(unittest.TestCase):
         report = self.fixture.report()
         self.assertEqual(self.checks(report)["default_candidate_mapping"]["status"], "unknown")
         self.fixture.link("/dev/candidateAlias", "/dev/ttyS6")
-        custom = self.checks(self.fixture.report(device="candidateAlias"))["default_candidate_mapping"]
+        custom = self.checks(self.fixture.report(device="candidateAlias"))[
+            "default_candidate_mapping"
+        ]
         self.assertFalse(custom["applicable"])
         self.assertEqual(custom["status"], "unknown")
         self.assertNotIn("observed_pins", custom)
@@ -403,7 +532,9 @@ class UartPreflightTests(unittest.TestCase):
         self.fixture.write(other + "/phandle", (18).to_bytes(4, "big"))
         self.fixture.write(other + "/function", b"uart2\x00")
         self.fixture.write(other + "/pins", b"PE0\x00PE1\x00")
-        self.fixture.write(self.fixture.node + "/pinctrl-0", (17).to_bytes(4, "big") + (18).to_bytes(4, "big"))
+        self.fixture.write(
+            self.fixture.node + "/pinctrl-0", (17).to_bytes(4, "big") + (18).to_bytes(4, "big")
+        )
         row = self.checks(self.fixture.report())["default_candidate_mapping"]
         self.assertEqual(row["status"], "not_ready")
         self.assertEqual(row["observed_uart6_pins"], ["PB0", "PB1"])
@@ -421,14 +552,25 @@ class UartPreflightTests(unittest.TestCase):
     # getty 活动或开机启用均可能占用串口；不存在与命令失败需要区分。
     def test_getty_active_enabled_missing_and_command_failure(self):
         for fields, code, expected in (
-            ("LoadState=loaded\nActiveState=active\nSubState=running\nUnitFileState=disabled", 0, "not_ready"),
-            ("LoadState=loaded\nActiveState=inactive\nSubState=dead\nUnitFileState=enabled", 0, "not_ready"),
+            (
+                "LoadState=loaded\nActiveState=active\nSubState=running\nUnitFileState=disabled",
+                0,
+                "not_ready",
+            ),
+            (
+                "LoadState=loaded\nActiveState=inactive\nSubState=dead\nUnitFileState=enabled",
+                0,
+                "not_ready",
+            ),
             ("LoadState=not-found\nActiveState=inactive", 0, "unknown"),
             ("LoadState=loaded\nActiveState=inactive\nSubState=dead", 0, "unknown"),
-            ("", 1, "unknown")):
+            ("", 1, "unknown"),
+        ):
             with self.subTest(fields=fields):
                 self.fixture.getty.update(stdout=fields, returncode=code)
-                self.assertEqual(self.checks(self.fixture.report())["serial_getty"]["status"], expected)
+                self.assertEqual(
+                    self.checks(self.fixture.report())["serial_getty"]["status"], expected
+                )
 
     # 所有文本读取有上限，异常链接不能诱使探针打开 /dev 节点。
     def test_bounded_reads_and_abnormal_symlinks_never_open_a_device(self):
@@ -439,10 +581,12 @@ class UartPreflightTests(unittest.TestCase):
         status_path.symlink_to("/dev/ttyS6")
         original = os.open
         opened = []
+
         def guarded(path, *args, **kwargs):
             opened.append(str(path))
             self.assertFalse(str(path).startswith(str(self.root / "dev")))
             return original(path, *args, **kwargs)
+
         with patch.object(os, "open", guarded):
             report = self.fixture.report()
         self.assertEqual(self.checks(report)["candidate_device_tree"]["status"], "unknown")
@@ -451,20 +595,38 @@ class UartPreflightTests(unittest.TestCase):
     # 前后快照与命令白名单证明采集没有改文件、启动进程或写配置。
     def test_inspection_has_no_filesystem_or_process_mutations(self):
         def snapshot():
-            return {str(path.relative_to(self.root)):
-                    ("symlink", os.readlink(path)) if path.is_symlink() else
-                    ("file", path.read_bytes()) for path in self.root.rglob("*") if path.is_file() or path.is_symlink()}
+            return {
+                str(path.relative_to(self.root)): (
+                    ("symlink", os.readlink(path))
+                    if path.is_symlink()
+                    else ("file", path.read_bytes())
+                )
+                for path in self.root.rglob("*")
+                if path.is_file() or path.is_symlink()
+            }
+
         before = snapshot()
-        with patch.object(audit.subprocess, "run", side_effect=AssertionError("unexpected process")):
+        with patch.object(
+            audit.subprocess, "run", side_effect=AssertionError("unexpected process")
+        ):
             self.fixture.report()
         self.assertEqual(snapshot(), before)
-        self.assertEqual({tuple(cmd[:2]) for cmd in self.fixture.commands}, {("systemctl", "show"), ("fuser", "--")})
-        self.assertTrue(all("sudo" not in cmd and "start" not in cmd for cmd in self.fixture.commands))
+        self.assertEqual(
+            {tuple(cmd[:2]) for cmd in self.fixture.commands},
+            {("systemctl", "show"), ("fuser", "--")},
+        )
+        self.assertTrue(
+            all("sudo" not in cmd and "start" not in cmd for cmd in self.fixture.commands)
+        )
 
     # 使用 fixture 根目录时所有绝对链接也重定位，不能意外访问主机或运行系统命令。
     def test_injected_mounts_rebase_absolute_links_and_disable_host_commands(self):
-        paths = audit.SystemPaths(self.root / "unused", sys_root=self.root / "sys",
-                                  proc_root=self.root / "proc", dev_root=self.root / "dev")
+        paths = audit.SystemPaths(
+            self.root / "unused",
+            sys_root=self.root / "sys",
+            proc_root=self.root / "proc",
+            dev_root=self.root / "dev",
+        )
         self.assertEqual(audit.inspect_binding(paths, "/dev/ttyS6")["status"], "observed")
         with patch.object(audit, "run_readonly", side_effect=AssertionError("host command")):
             report = audit.collect_report(paths=paths)
@@ -478,47 +640,71 @@ class UartPreflightTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             audit.write_report(self.fixture.report(), output)
         self.assertEqual((output / "report.json").read_bytes(), content)
-        with patch.object(audit, "collect_report", side_effect=AssertionError("collected before output check")), \
-                self.assertRaises(SystemExit) as caught:
+        with (
+            patch.object(
+                audit, "collect_report", side_effect=AssertionError("collected before output check")
+            ),
+            self.assertRaises(SystemExit) as caught,
+        ):
             audit.main(["--output", str(output)])
         self.assertEqual(caught.exception.code, 2)
 
     # 设备参数与只读命令严格白名单，拒绝换行/路径/选项注入。
     def test_device_arguments_and_command_whitelist_reject_unsafe_forms(self):
-        for name in ("/tmp/ttyS6", "/dev/../etc/passwd", "/dev/ttyS6;touch x", "/dev/tty S6", "/dev/./ttyS6"):
+        for name in (
+            "/tmp/ttyS6",
+            "/dev/../etc/passwd",
+            "/dev/ttyS6;touch x",
+            "/dev/tty S6",
+            "/dev/./ttyS6",
+        ):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 audit.device_name(name)
-        for command in (["systemctl", "start", "serial-getty@ttyS6.service"],
-                        ["sudo", "fuser", "/dev/ttyS6"], ["fuser", "-k", "/dev/ttyS6"],
-                        ["fuser", "--", "/etc/passwd"]):
+        for command in (
+            ["systemctl", "start", "serial-getty@ttyS6.service"],
+            ["sudo", "fuser", "/dev/ttyS6"],
+            ["fuser", "-k", "/dev/ttyS6"],
+            ["fuser", "--", "/etc/passwd"],
+        ):
             with self.subTest(command=command), self.assertRaises(ValueError):
                 audit.run_readonly(command)
 
     # 允许的 systemctl/fuser 同样有超时且 shell=false，不能因外部工具卡住无界等待。
     def test_readonly_commands_have_timeout_and_no_shell(self):
         command = ["fuser", "--", "/dev/ttyS6"]
-        with patch.object(audit.subprocess, "run", return_value=SimpleNamespace(returncode=1)) as run:
+        with patch.object(
+            audit.subprocess, "run", return_value=SimpleNamespace(returncode=1)
+        ) as run:
             self.assertEqual(audit.run_readonly(command)["returncode"], 1)
         kwargs = run.call_args.kwargs
         self.assertEqual(kwargs["timeout"], audit.COMMAND_TIMEOUT)
         self.assertNotIn("shell", kwargs)
         self.assertEqual(kwargs["stdin"], subprocess.DEVNULL)
-        with patch.object(audit.subprocess, "run", side_effect=subprocess.TimeoutExpired(command, 4)):
+        with patch.object(
+            audit.subprocess, "run", side_effect=subprocess.TimeoutExpired(command, 4)
+        ):
             self.assertEqual(audit.run_readonly(command)["status"], "unknown")
 
     # 桌面主机 smoke 只能生成当前机器观察，不能冒充 Orange Pi 实物确认。
     @unittest.skipUnless(os.uname().machine in ("x86_64", "i386", "i686"), "x86 host smoke")
     def test_real_host_smoke_is_not_confirmed_on_orangepi(self):
         output = self.root / "host-smoke"
-        process = subprocess.run([sys.executable, str(ROOT / "uart_preflight.py"), "--output", str(output)],
-                                 capture_output=True, text=True, timeout=20, check=False)
+        process = subprocess.run(
+            [sys.executable, str(ROOT / "uart_preflight.py"), "--output", str(output)],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
         self.assertEqual(process.returncode, 0, process.stderr)
         report = json.loads((output / "report.json").read_text())
         self.assertEqual(report["board_confirmation"], "NOT_CONFIRMED_ON_ORANGEPI")
         self.assertNotEqual(report["summary"], "eligible_for_manual_review")
         self.assertEqual(report["hardware_validation"], "NOT_PERFORMED")
         self.assertTrue((output / "report.txt").is_file())
-        self.assertIn("FC01 dated evidence: CONFLICT; candidate: UNRESOLVED_DO_NOT_ENABLE", process.stdout)
+        self.assertIn(
+            "FC01 dated evidence: CONFLICT; candidate: UNRESOLVED_DO_NOT_ENABLE", process.stdout
+        )
 
 
 if __name__ == "__main__":

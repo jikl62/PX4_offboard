@@ -53,11 +53,14 @@ def summarize(path):
         # 兼容早期日志字段；缺失心跳不假装已开启，也不推断飞控实际采用目标。
         hb = r.get("heartbeat_enabled", r.get("attitude_output_enabled"))
         if phase_change:
-            events.append((time, "PHASE", f"{last_phase or 'START'} -> {phase}", r.get("reason", "")))
+            events.append(
+                (time, "PHASE", f"{last_phase or 'START'} -> {phase}", r.get("reason", ""))
+            )
         if hb is not None and truth(hb) != last_hb:
             events.append((time, "HEARTBEAT", "ON" if truth(hb) else "OFF", ""))
-        if ("DESCENT_TIMEOUT" in str(r.get("reason", "")) or
-                "LIFTOFF_TIMEOUT" in str(r.get("reason", ""))):
+        if "DESCENT_TIMEOUT" in str(r.get("reason", "")) or "LIFTOFF_TIMEOUT" in str(
+            r.get("reason", "")
+        ):
             if not events or events[-1][3] != r.get("reason", ""):
                 events.append((time, "TIMEOUT", phase, r.get("reason", "")))
         armed = truth(r.get("armed", r.get("px4_armed", False)))
@@ -76,7 +79,10 @@ def summarize(path):
         print(f"FIRST_UNVERIFIED_HANDOFF={armed_offboard_loss[0]}")
     # 没有可解析状态时明确返回 2，防止空日志显示“无故障”而误判通过。
     if n == 0:
-        print("NO_PARSED_STATE_ROWS: provide runtime JSONL or controller CSV; ULog is separate", file=sys.stderr)
+        print(
+            "NO_PARSED_STATE_ROWS: provide runtime JSONL or controller CSV; ULog is separate",
+            file=sys.stderr,
+        )
         return 2
     return 0
 

@@ -21,147 +21,280 @@ from unittest.mock import patch
 from types import SimpleNamespace
 import zipfile
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
+
+
 # 从当前native/tools文件加载工具，避免使用系统安装的同名模块。
 def module(name):
-    spec=importlib.util.spec_from_file_location(name,ROOT/'tools'/f'{name}.py')
-    result=importlib.util.module_from_spec(spec);spec.loader.exec_module(result);return result
+    spec = importlib.util.spec_from_file_location(name, ROOT / 'tools' / f'{name}.py')
+    result = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(result)
+    return result
+
 
 # 验证管理工具的副作用顺序与输出契约，全部路径落在临时目录。
 class ToolsTests(unittest.TestCase):
     # 模拟安装仅生成built-release，不能自动切换current；显式update才可切到新版本或旧版本。
     def test_install_never_switches_current_and_explicit_rollback(self):
         # External platform/ROS tools are fixtures; this is not a ROS build test.
-        for existing in (False,True):
+        for existing in (False, True):
             with tempfile.TemporaryDirectory() as directory:
-                p=Path(directory);source=p/'source';base=p/'system';bin_dir=p/'bin';bin_dir.mkdir()
-                shutil.copytree(ROOT,source,ignore=shutil.ignore_patterns('.git','__pycache__','core'))
-                (source/'scripts/test.sh').write_text('#!/bin/bash\nexit 0\n')
-                ros=p/'setup.bash';ros.write_text(':\n')
-                messages=p/'msgs';messages.mkdir();(messages/'package.xml').write_text('<package/>')
+                p = Path(directory)
+                source = p / 'source'
+                base = p / 'system'
+                bin_dir = p / 'bin'
+                bin_dir.mkdir()
+                shutil.copytree(
+                    ROOT, source, ignore=shutil.ignore_patterns('.git', '__pycache__', 'core')
+                )
+                (source / 'scripts/test.sh').write_text('#!/bin/bash\nexit 0\n')
+                ros = p / 'setup.bash'
+                ros.write_text(':\n')
+                messages = p / 'msgs'
+                messages.mkdir()
+                (messages / 'package.xml').write_text('<package/>')
                 module('deploy').write_vendor_manifest(messages)
-                wrapper='#!/bin/bash\nif [[ "$2" == check-platform ]]; then exit 0; fi\nexec '+shlex.quote(sys.executable)+' "$@"\n'
-                (bin_dir/'python3').write_text(wrapper)
-                (bin_dir/'colcon').write_text('#!/bin/bash\nset -e\nmkdir -p install/jikl_fc01_system/lib/jikl_fc01_system\nprintf "#!/bin/bash\\nexit 0\\n" > install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node\nchmod +x install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node\n')
-                (bin_dir/'systemctl').write_text('#!/bin/bash\nexit 3\n')
-                for tool in bin_dir.iterdir():tool.chmod(0o755)
-                old=base/'releases/old_verified';old_node=old/'workspace/install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node'
-                old_node.parent.mkdir(parents=True);old_node.write_text('#!/bin/bash\nexit 0\n');old_node.chmod(0o755)
-                if existing:(base/'current').symlink_to(old)
-                env=dict(os.environ,PATH=str(bin_dir)+':'+os.environ['PATH'],FC01_CLEAN_BUILD='1',FC01_HOME=str(base),ROS_SETUP=str(ros),FC01_SOCKET=str(p/'absent.sock'))
-                install=subprocess.run(['bash',str(source/'scripts/install.sh'),str(messages)],env=env,capture_output=True,text=True)
-                self.assertEqual(install.returncode,0,install.stdout+install.stderr)
-                if existing:self.assertEqual((base/'current').resolve(),old)
-                else:self.assertFalse((base/'current').exists() or (base/'current').is_symlink())
-                release=Path((base/'built-release').read_text().strip())
-                self.assertTrue(release.name.startswith((ROOT/'VERSION').read_text().strip()+'-'))
-                self.assertTrue((release/'config/attitude_altitude.yaml').is_file())
-                for target in (release,old):
-                    update=subprocess.run(['bash',str(source/'scripts/update.sh'),str(target)],env=env,capture_output=True,text=True)
-                    self.assertEqual(update.returncode,0,update.stdout+update.stderr)
-                    self.assertEqual((base/'current').resolve(),target)
+                wrapper = (
+                    '#!/bin/bash\nif [[ "$2" == check-platform ]]; then exit 0; fi\nexec '
+                    + shlex.quote(sys.executable)
+                    + ' "$@"\n'
+                )
+                (bin_dir / 'python3').write_text(wrapper)
+                (bin_dir / 'colcon').write_text(
+                    '#!/bin/bash\nset -e\nmkdir -p install/jikl_fc01_system/lib/jikl_fc01_system\nprintf "#!/bin/bash\\nexit 0\\n" > install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node\nchmod +x install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node\n'
+                )
+                (bin_dir / 'systemctl').write_text('#!/bin/bash\nexit 3\n')
+                for tool in bin_dir.iterdir():
+                    tool.chmod(0o755)
+                old = base / 'releases/old_verified'
+                old_node = (
+                    old / 'workspace/install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node'
+                )
+                old_node.parent.mkdir(parents=True)
+                old_node.write_text('#!/bin/bash\nexit 0\n')
+                old_node.chmod(0o755)
+                if existing:
+                    (base / 'current').symlink_to(old)
+                env = dict(
+                    os.environ,
+                    PATH=str(bin_dir) + ':' + os.environ['PATH'],
+                    FC01_CLEAN_BUILD='1',
+                    FC01_HOME=str(base),
+                    ROS_SETUP=str(ros),
+                    FC01_SOCKET=str(p / 'absent.sock'),
+                )
+                install = subprocess.run(
+                    ['bash', str(source / 'scripts/install.sh'), str(messages)],
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(install.returncode, 0, install.stdout + install.stderr)
+                if existing:
+                    self.assertEqual((base / 'current').resolve(), old)
+                else:
+                    self.assertFalse((base / 'current').exists() or (base / 'current').is_symlink())
+                release = Path((base / 'built-release').read_text().strip())
+                self.assertTrue(
+                    release.name.startswith((ROOT / 'VERSION').read_text().strip() + '-')
+                )
+                self.assertTrue((release / 'config/attitude_altitude.yaml').is_file())
+                for target in (release, old):
+                    update = subprocess.run(
+                        ['bash', str(source / 'scripts/update.sh'), str(target)],
+                        env=env,
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(update.returncode, 0, update.stdout + update.stderr)
+                    self.assertEqual((base / 'current').resolve(), target)
 
     # attitude-ready必须映射到ATTITUDE_READY操作码和空参数。
     def test_ready_command(self):
-        self.assertEqual(module('fcctl').parse_command('attitude-ready'),('ATTITUDE_READY',[],0.))
+        self.assertEqual(
+            module('fcctl').parse_command('attitude-ready'), ('ATTITUDE_READY', [], 0.0)
+        )
 
     # takeoff/vel/hold/land的一次性入口须要求实时交互台，不能连接任意目标。
     def test_single_flight_commands_never_connect(self):
-        for op in ('takeoff 1','vel 0 0 0 0 1','hold','land'):
-            result=subprocess.run([sys.executable,str(ROOT/'tools/fcctl.py'),'--socket','/no/such/controller','--command',op],capture_output=True,text=True)
-            self.assertEqual(result.returncode,2)
-            self.assertIn('live interactive console',result.stderr)
+        for op in ('takeoff 1', 'vel 0 0 0 0 1', 'hold', 'land'):
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / 'tools/fcctl.py'),
+                    '--socket',
+                    '/no/such/controller',
+                    '--command',
+                    op,
+                ],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('live interactive console', result.stderr)
 
     # 服务器先回pending，延迟再发OFFBOARD_READY；客户端必须等状态确认后返回。
     def test_ready_client_waits_for_confirmed_state(self):
         with tempfile.TemporaryDirectory() as directory:
-            path=str(Path(directory)/'control.sock');received=[];errors=[]
+            path = str(Path(directory) / 'control.sock')
+            received = []
+            errors = []
+
             # 只监听临时本地socket，按协议顺序发送reply和state并记录收到的命令。
             def server():
                 try:
-                    with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as listener:
-                        listener.bind(path);listener.listen(1)
+                    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
+                        listener.bind(path)
+                        listener.listen(1)
                         with listener.accept()[0] as client:
                             received.append(client.recv(4096).decode())
-                            client.sendall(b'{"kind":"reply","seq":1,"accepted":true,"message":"pending"}\n')
-                            time.sleep(.12)
-                            client.sendall(b'{"kind":"state","phase":"OFFBOARD_READY","armed":false,"nav_state":14,"estimate_valid":false,"ground_test":"NOT_RUN","reason":"confirmed"}\n')
-                except Exception as error:errors.append(str(error))
-            worker=threading.Thread(target=server);worker.start()
+                            client.sendall(
+                                b'{"kind":"reply","seq":1,"accepted":true,"message":"pending"}\n'
+                            )
+                            time.sleep(0.12)
+                            client.sendall(
+                                b'{"kind":"state","phase":"OFFBOARD_READY","armed":false,"nav_state":14,"estimate_valid":false,"ground_test":"NOT_RUN","reason":"confirmed"}\n'
+                            )
+                except Exception as error:
+                    errors.append(str(error))
+
+            worker = threading.Thread(target=server)
+            worker.start()
             for _ in range(100):
-                if Path(path).exists():break
+                if Path(path).exists():
+                    break
                 if errors:
                     worker.join(timeout=1)
-                    self.skipTest('AF_UNIX denied by execution sandbox; native console transport UNKNOWN')
-                time.sleep(.005)
-            start=time.monotonic()
-            result=subprocess.run([sys.executable,str(ROOT/'tools/fcctl.py'),'--socket',path,'--command','attitude-ready','--json'],capture_output=True,text=True,timeout=3)
+                    self.skipTest(
+                        'AF_UNIX denied by execution sandbox; native console transport UNKNOWN'
+                    )
+                time.sleep(0.005)
+            start = time.monotonic()
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / 'tools/fcctl.py'),
+                    '--socket',
+                    path,
+                    '--command',
+                    'attitude-ready',
+                    '--json',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=3,
+            )
             worker.join(timeout=1)
-            self.assertEqual(errors,[])
-            self.assertEqual(result.returncode,0,result.stderr)
-            self.assertGreaterEqual(time.monotonic()-start,.1)
-            self.assertIn('OFFBOARD_READY',result.stdout)
-            self.assertEqual(received,['1 ATTITUDE_READY\n'])
+            self.assertEqual(errors, [])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertGreaterEqual(time.monotonic() - start, 0.1)
+            self.assertIn('OFFBOARD_READY', result.stdout)
+            self.assertEqual(received, ['1 ATTITUDE_READY\n'])
 
     # 以伪TTY复现相同select/解析/等待流程，即使系统策略不允许AF_UNIX也能验证协议。
     def test_ready_protocol_over_pipe_fixture(self):
         # AF_UNIX is an external OS dependency. Exercise the real select/parse/wait
         # console with pipes when sandbox policy denies socket creation.
-        ctl=module('fcctl');responses=[]
+        ctl = module('fcctl')
+        responses = []
+
         # 最小传输替身保留文件描述符与延迟回包；退出时先join写线程再关闭描述符。
         class PipeTransport:
-            def __init__(self,*args):
-                self.read,self.write=os.openpty();tty.setraw(self.write);self.worker=None
-            def settimeout(self,*args):pass
-            def connect(self,*args):pass
-            def setblocking(self,*args):pass
-            def fileno(self):return self.read
-            def send(self,data):
+            def __init__(self, *args):
+                self.read, self.write = os.openpty()
+                tty.setraw(self.write)
+                self.worker = None
+
+            def settimeout(self, *args):
+                pass
+
+            def connect(self, *args):
+                pass
+
+            def setblocking(self, *args):
+                pass
+
+            def fileno(self):
+                return self.read
+
+            def send(self, data):
                 responses.append(data.decode())
+
                 def delayed():
-                    os.write(self.write,b'{"kind":"reply","seq":1,"accepted":true,"message":"pending"}\n')
-                    time.sleep(.1)
-                    os.write(self.write,b'{"kind":"state","phase":"OFFBOARD_READY","armed":false}\n')
-                self.worker=threading.Thread(target=delayed);self.worker.start();return len(data)
-            def recv(self,count):return os.read(self.read,count)
-            def __enter__(self):return self
-            def __exit__(self,*args):
-                if self.worker:self.worker.join(timeout=1)
-                os.close(self.read);os.close(self.write)
-        args=SimpleNamespace(command='attitude-ready',socket='fixture',timeout=2,json=True)
-        output=io.StringIO();start=time.monotonic()
-        with patch.object(ctl.socket,'socket',PipeTransport),contextlib.redirect_stdout(output):
-            self.assertEqual(ctl.run(args),0)
-        self.assertGreaterEqual(time.monotonic()-start,.1)
-        self.assertIn('OFFBOARD_READY',output.getvalue());self.assertEqual(responses,['1 ATTITUDE_READY\n'])
+                    os.write(
+                        self.write,
+                        b'{"kind":"reply","seq":1,"accepted":true,"message":"pending"}\n',
+                    )
+                    time.sleep(0.1)
+                    os.write(
+                        self.write, b'{"kind":"state","phase":"OFFBOARD_READY","armed":false}\n'
+                    )
+
+                self.worker = threading.Thread(target=delayed)
+                self.worker.start()
+                return len(data)
+
+            def recv(self, count):
+                return os.read(self.read, count)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                if self.worker:
+                    self.worker.join(timeout=1)
+                os.close(self.read)
+                os.close(self.write)
+
+        args = SimpleNamespace(command='attitude-ready', socket='fixture', timeout=2, json=True)
+        output = io.StringIO()
+        start = time.monotonic()
+        with patch.object(ctl.socket, 'socket', PipeTransport), contextlib.redirect_stdout(output):
+            self.assertEqual(ctl.run(args), 0)
+        self.assertGreaterEqual(time.monotonic() - start, 0.1)
+        self.assertIn('OFFBOARD_READY', output.getvalue())
+        self.assertEqual(responses, ['1 ATTITUDE_READY\n'])
 
     # 管道输入不满足实时TTY条件，须在连接前拒绝起飞请求。
     def test_piped_input_is_not_a_live_console(self):
-        result=subprocess.run([sys.executable,str(ROOT/'tools/fcctl.py'),'--socket','/no/such/controller'],input='takeoff 1\n',capture_output=True,text=True)
-        self.assertEqual(result.returncode,2)
-        self.assertIn('TTY',result.stderr)
+        result = subprocess.run(
+            [sys.executable, str(ROOT / 'tools/fcctl.py'), '--socket', '/no/such/controller'],
+            input='takeoff 1\n',
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('TTY', result.stderr)
 
     # 导出ZIP必须统一版本前缀并排除Git/缓存，同时保留默认配置。
     def test_portable_export_name_and_clean_source(self):
-        deploy=module('deploy')
+        deploy = module('deploy')
         with tempfile.TemporaryDirectory() as directory:
-            p=Path(directory);vendor=p/'msgs';vendor.mkdir();(vendor/'package.xml').write_text('<package/>')
+            p = Path(directory)
+            vendor = p / 'msgs'
+            vendor.mkdir()
+            (vendor / 'package.xml').write_text('<package/>')
             deploy.write_vendor_manifest(vendor)
-            output=deploy.export_bundle(vendor,p/'source.zip')
+            output = deploy.export_bundle(vendor, p / 'source.zip')
             with zipfile.ZipFile(output) as archive:
-                names=archive.namelist()
-                prefix='fc01_system_v'+(ROOT/'VERSION').read_text().strip()+'/'
+                names = archive.namelist()
+                prefix = 'fc01_system_v' + (ROOT / 'VERSION').read_text().strip() + '/'
                 self.assertTrue(all(name.startswith(prefix) for name in names))
                 self.assertFalse(any('/.git/' in name or '/__pycache__/' in name for name in names))
-                self.assertIn(prefix+'config/attitude_altitude.yaml',names)
-            deploy.validate_platform({'ID':'ubuntu','VERSION_ID':'22.04'},'aarch64')
+                self.assertIn(prefix + 'config/attitude_altitude.yaml', names)
+            deploy.validate_platform({'ID': 'ubuntu', 'VERSION_ID': '22.04'}, 'aarch64')
 
     # 生成厂商manifest后篡改文件，校验必须因哈希变化失败。
     def test_pinned_messages_refuse_wrong_vendor_hash(self):
-        deploy=module('deploy')
+        deploy = module('deploy')
         with tempfile.TemporaryDirectory() as directory:
-            p=Path(directory);(p/'file').write_text('first');deploy.write_vendor_manifest(p)
-            (p/'file').write_text('changed')
-            with self.assertRaises(ValueError):deploy.verify_vendor(p)
+            p = Path(directory)
+            (p / 'file').write_text('first')
+            deploy.write_vendor_manifest(p)
+            (p / 'file').write_text('changed')
+            with self.assertRaises(ValueError):
+                deploy.verify_vendor(p)
 
-if __name__=='__main__':unittest.main()
+
+if __name__ == '__main__':
+    unittest.main()

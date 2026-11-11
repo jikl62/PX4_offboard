@@ -12,11 +12,18 @@ import time
 import yaml
 
 # 读取监督器实际传入的会话配置，而不是测试中另造一份参数。
-config_path = Path(sys.argv[sys.argv.index('--params-file')+1])
+config_path = Path(sys.argv[sys.argv.index('--params-file') + 1])
 config = yaml.safe_load(config_path.read_text())['fc01_system']['ros__parameters']
-flags = ('flight_enabled', 'flight_actions_enabled', 'arm_enabled', 'takeoff_enabled',
-         'flight_parameters_confirmed', 'rc_takeover_confirmed',
-         'autonomous_failsafe_confirmed', 'bench_arm_only_enabled')
+flags = (
+    'flight_enabled',
+    'flight_actions_enabled',
+    'arm_enabled',
+    'takeoff_enabled',
+    'flight_parameters_confirmed',
+    'rc_takeover_confirmed',
+    'autonomous_failsafe_confirmed',
+    'bench_arm_only_enabled',
+)
 sock_path = next(x.split(':=', 1)[1] for x in sys.argv if x.startswith('socket_path:='))
 csv = config.get('csv_path', '')
 for value in sys.argv:
@@ -36,12 +43,19 @@ signal.signal(signal.SIGTERM, lambda *_: stopped.__setitem__(0, True))
 ops, buf = [], b''
 # 稳定发布未解锁 IDLE，直到收到 SIGTERM；测试可用 --test-no-ground 单独移除接地证据。
 while True:
-    state = dict(kind='state', phase='IDLE', status_fresh=True, local_fresh=True,
-                 land_fresh=True, armed=False, landed='--test-no-ground' not in sys.argv)
-    conn.sendall((json.dumps(state)+'\n').encode())
+    state = dict(
+        kind='state',
+        phase='IDLE',
+        status_fresh=True,
+        local_fresh=True,
+        land_fresh=True,
+        armed=False,
+        landed='--test-no-ground' not in sys.argv,
+    )
+    conn.sendall((json.dumps(state) + '\n').encode())
     if stopped[0]:
         break
-    if select.select([conn], [], [], .04)[0]:
+    if select.select([conn], [], [], 0.04)[0]:
         data = conn.recv(4096)
         if not data:
             break
@@ -49,8 +63,15 @@ while True:
         while b'\n' in buf:
             row, buf = buf.split(b'\n', 1)
             ops.append(row.decode().split()[1])
-(config_path.parent/'native_trace.json').write_text(json.dumps(
-    dict(ops=ops, csv_value=csv, external_file_logs_disabled='--disable-external-lib-logs' in sys.argv,
-         all_gates_closed=all(config[x] is False for x in flags))))
+(config_path.parent / 'native_trace.json').write_text(
+    json.dumps(
+        dict(
+            ops=ops,
+            csv_value=csv,
+            external_file_logs_disabled='--disable-external-lib-logs' in sys.argv,
+            all_gates_closed=all(config[x] is False for x in flags),
+        )
+    )
+)
 # 退出前写下命令及动作门证据，再释放继承连接；整个 fixture 不接触 PX4。
 conn.close()

@@ -185,36 +185,51 @@ int main(){
 
 # 生成最小API/消息替身，并仅在临时源码副本中公开私有成员、替换时钟与入口名。
 def write_fixture(root):
-    (root/'rclcpp').mkdir()
-    ros=fixture.RCLCPP.replace('return 1000000000;', 'return ::recovery_test_wall_ns;')
-    ros=ros.replace('void publish(const T&){};', 'unsigned calls{};void publish(const T&){++calls;};')
-    (root/'rclcpp/rclcpp.hpp').write_text(ros)
-    messages=root/'px4_msgs/msg';messages.mkdir(parents=True)
-    for filename,(name,version,fields) in fixture.MESSAGES.items():
-        constant='' if version is None else f'static constexpr int MESSAGE_VERSION={version};'
-        (messages/(filename+'.hpp')).write_text(
+    (root / 'rclcpp').mkdir()
+    ros = fixture.RCLCPP.replace('return 1000000000;', 'return ::recovery_test_wall_ns;')
+    ros = ros.replace(
+        'void publish(const T&){};', 'unsigned calls{};void publish(const T&){++calls;};'
+    )
+    (root / 'rclcpp/rclcpp.hpp').write_text(ros)
+    messages = root / 'px4_msgs/msg'
+    messages.mkdir(parents=True)
+    for filename, (name, version, fields) in fixture.MESSAGES.items():
+        constant = '' if version is None else f'static constexpr int MESSAGE_VERSION={version};'
+        (messages / (filename + '.hpp')).write_text(
             '#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\n'
-            'namespace px4_msgs::msg {struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;'
-            'std::uint64_t timestamp{};'+constant+fields+'};}\n')
-    vision=root/'jikl_fc01_system/msg';vision.mkdir(parents=True)
-    (vision/'stamp.hpp').write_text(
+            'namespace px4_msgs::msg {struct '
+            + name
+            + '{using ConstSharedPtr=std::shared_ptr<const '
+            + name
+            + '>;'
+            'std::uint64_t timestamp{};' + constant + fields + '};}\n'
+        )
+    vision = root / 'jikl_fc01_system/msg'
+    vision.mkdir(parents=True)
+    (vision / 'stamp.hpp').write_text(
         '#pragma once\n#include <cstdint>\nnamespace jikl_fc01_system::msg {'
-        'struct Stamp{std::int32_t sec{};std::uint32_t nanosec{};};}\n')
-    for filename,(name,fields) in fixture.VISION_MESSAGES.items():
-        (vision/(filename+'.hpp')).write_text(
+        'struct Stamp{std::int32_t sec{};std::uint32_t nanosec{};};}\n'
+    )
+    for filename, (name, fields) in fixture.VISION_MESSAGES.items():
+        (vision / (filename + '.hpp')).write_text(
             '#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\n#include <string>\n'
             '#include "jikl_fc01_system/msg/stamp.hpp"\nnamespace jikl_fc01_system::msg {'
-            'struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;'
-            'std::uint16_t schema_version{1};'+fields+'};}\n')
-    source=(fixture.ROOT/'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
+            'struct ' + name + '{using ConstSharedPtr=std::shared_ptr<const ' + name + '>;'
+            'std::uint16_t schema_version{1};' + fields + '};}\n'
+        )
+    source = (fixture.ROOT / 'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
     # 必须精确找到原steady实现再替换；匹配失败提示夹具更新，不悄悄改用真实时间。
-    clock='double steady(){return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();}'
-    if source.count(clock)!=1:
-        raise AssertionError('Update the deterministic clock fixture for the node clock implementation')
-    source=source.replace(clock,'double steady(){return recovery_test_steady;}',1)
-    source=source.replace(' private:',' public:',1).replace('int main(','int adapter_program_main(',1)
-    (root/'adapter_under_test.cpp').write_text(source)
-    (root/'test.cpp').write_text(HARNESS)
+    clock = 'double steady(){return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();}'
+    if source.count(clock) != 1:
+        raise AssertionError(
+            'Update the deterministic clock fixture for the node clock implementation'
+        )
+    source = source.replace(clock, 'double steady(){return recovery_test_steady;}', 1)
+    source = source.replace(' private:', ' public:', 1).replace(
+        'int main(', 'int adapter_program_main(', 1
+    )
+    (root / 'adapter_under_test.cpp').write_text(source)
+    (root / 'test.cpp').write_text(HARNESS)
 
 
 # 同时核对控制路径的成功标记和真实状态/事件JSON字段。
@@ -222,56 +237,110 @@ class RcRecoveryAdapterTest(unittest.TestCase):
     # 诊断速度差不能阻断恢复；不安全事件、armed/Offboard、后续完整性故障仍要否决，并核对停流边沿实测快照。
     def test_actual_tick_recovery_uses_current_stationary_evidence(self):
         with tempfile.TemporaryDirectory(prefix='fc01_recovery_tick_') as directory:
-            root=Path(directory);write_fixture(root)
-            executable=root/'test'
-            subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-pthread',
-                '-I',str(root),'-I',str(fixture.ROOT/'src/jikl_fc01_system/include'),
-                '-I',str(fixture.ROOT/'tests'),str(root/'test.cpp'),'-o',str(executable)],check=True)
-            env=os.environ.copy();env['FC01_SOCKET']=str(root/'control.sock')
-            result=subprocess.run([str(executable)],env=env,capture_output=True,text=True)
-            self.assertEqual(result.returncode,0,result.stderr+'\n'+result.stdout[-12000:])
-            for marker in ('ACTUAL_TICK_DIAGNOSTIC_EVENT_RECOVERY_PASS',
-                           'ACTUAL_TICK_QUEUED_UNSAFE_EVIDENCE_VETO_PASS',
-                           'ACTUAL_TICK_NO_ARMED_OR_OFFBOARD_REACQUIRE_PASS',
-                           'ACTUAL_TICK_LATER_FAULT_DIAGNOSTICS_PASS',
-                           'ACTUAL_TICK_STREAM_EDGE_CURRENT_STATUS_PASS'):
-                self.assertIn(marker,result.stdout)
-            rows=[json.loads(line) for line in result.stdout.splitlines() if line.startswith('{')]
-            reports=[row for row in rows if row.get('kind') in ('state','phase_event')]
-            self.assertTrue(any(row['kind']=='state' for row in reports))
-            self.assertTrue(any(row['kind']=='phase_event' for row in reports))
+            root = Path(directory)
+            write_fixture(root)
+            executable = root / 'test'
+            subprocess.run(
+                [
+                    'g++',
+                    '-std=c++17',
+                    '-Wall',
+                    '-Wextra',
+                    '-Werror',
+                    '-pedantic',
+                    '-pthread',
+                    '-I',
+                    str(root),
+                    '-I',
+                    str(fixture.ROOT / 'src/jikl_fc01_system/include'),
+                    '-I',
+                    str(fixture.ROOT / 'tests'),
+                    str(root / 'test.cpp'),
+                    '-o',
+                    str(executable),
+                ],
+                check=True,
+            )
+            env = os.environ.copy()
+            env['FC01_SOCKET'] = str(root / 'control.sock')
+            result = subprocess.run([str(executable)], env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr + '\n' + result.stdout[-12000:])
+            for marker in (
+                'ACTUAL_TICK_DIAGNOSTIC_EVENT_RECOVERY_PASS',
+                'ACTUAL_TICK_QUEUED_UNSAFE_EVIDENCE_VETO_PASS',
+                'ACTUAL_TICK_NO_ARMED_OR_OFFBOARD_REACQUIRE_PASS',
+                'ACTUAL_TICK_LATER_FAULT_DIAGNOSTICS_PASS',
+                'ACTUAL_TICK_STREAM_EDGE_CURRENT_STATUS_PASS',
+            ):
+                self.assertIn(marker, result.stdout)
+            rows = [json.loads(line) for line in result.stdout.splitlines() if line.startswith('{')]
+            reports = [row for row in rows if row.get('kind') in ('state', 'phase_event')]
+            self.assertTrue(any(row['kind'] == 'state' for row in reports))
+            self.assertTrue(any(row['kind'] == 'phase_event' for row in reports))
             for row in reports:
-                for field in ('rc_first_fault_reason','rc_latest_fault_reason',
-                              'rc_recovery_block_reason','rc_reprepare_block_reason'):
-                    self.assertIsInstance(row[field],str)
-                self.assertIsInstance(row['rc_recovery_ready'],bool)
-                self.assertIsInstance(row['rc_fault_recoverable'],bool)
+                for field in (
+                    'rc_first_fault_reason',
+                    'rc_latest_fault_reason',
+                    'rc_recovery_block_reason',
+                    'rc_reprepare_block_reason',
+                ):
+                    self.assertIsInstance(row[field], str)
+                self.assertIsInstance(row['rc_recovery_ready'], bool)
+                self.assertIsInstance(row['rc_fault_recoverable'], bool)
             # 后续完整性故障必须作为最新故障公开，首次接管原因仍保留；不可恢复原因不能被旧诊断遮住。
-            hidden=[row for row in reports if row['rc_latest_fault_reason']=='PUBLISHER_BOUNDARY_TEST_INTEGRITY']
+            hidden = [
+                row
+                for row in reports
+                if row['rc_latest_fault_reason'] == 'PUBLISHER_BOUNDARY_TEST_INTEGRITY'
+            ]
             self.assertTrue(hidden)
-            self.assertEqual(hidden[-1]['rc_first_fault_reason'],'OPERATOR_TAKEOVER_LATCHED')
-            self.assertEqual(hidden[-1]['rc_recovery_block_reason'],'RC_RECOVERY_FAULT_REQUIRES_RESTART')
-            self.assertEqual(hidden[-1]['rc_reprepare_block_reason'],'RC_CORE_RESTART_CONDITIONS_NOT_MET')
+            self.assertEqual(hidden[-1]['rc_first_fault_reason'], 'OPERATOR_TAKEOVER_LATCHED')
+            self.assertEqual(
+                hidden[-1]['rc_recovery_block_reason'], 'RC_RECOVERY_FAULT_REQUIRES_RESTART'
+            )
+            self.assertEqual(
+                hidden[-1]['rc_reprepare_block_reason'], 'RC_CORE_RESTART_CONDITIONS_NOT_MET'
+            )
             self.assertFalse(hidden[-1]['rc_fault_recoverable'])
             # 停流边沿须使用本轮armed/Offboard/landed与姿态，上一提交推力和时间则来自真实发布审计。
-            expected=[row for row in rows if row.get('kind')=='stream_edge_expected']
-            edges=[row for row in rows if row.get('kind')=='offboard_stream_edge' and
-                   row.get('reason')=='STREAM_EDGE_OBSERVED_STATUS_TEST']
-            self.assertEqual(len(edges),2)
-            self.assertEqual(len(expected),2)
-            for actual,wanted in zip(edges,expected):
-                for field in ('armed','offboard','landed','status_stamp','land_stamp',
-                              'local_stamp','previous_heartbeat_commit_monotonic_s','last_committed_target_thrust_z'):
-                    self.assertEqual(actual[field],wanted[field],field)
-                self.assertAlmostEqual(actual['attitude_tilt_deg'],wanted['attitude_tilt_deg'],places=5)
-                self.assertGreater(actual['monotonic_s'],actual['previous_heartbeat_commit_monotonic_s'])
+            expected = [row for row in rows if row.get('kind') == 'stream_edge_expected']
+            edges = [
+                row
+                for row in rows
+                if row.get('kind') == 'offboard_stream_edge'
+                and row.get('reason') == 'STREAM_EDGE_OBSERVED_STATUS_TEST'
+            ]
+            self.assertEqual(len(edges), 2)
+            self.assertEqual(len(expected), 2)
+            for actual, wanted in zip(edges, expected):
+                for field in (
+                    'armed',
+                    'offboard',
+                    'landed',
+                    'status_stamp',
+                    'land_stamp',
+                    'local_stamp',
+                    'previous_heartbeat_commit_monotonic_s',
+                    'last_committed_target_thrust_z',
+                ):
+                    self.assertEqual(actual[field], wanted[field], field)
+                self.assertAlmostEqual(
+                    actual['attitude_tilt_deg'], wanted['attitude_tilt_deg'], places=5
+                )
+                self.assertGreater(
+                    actual['monotonic_s'], actual['previous_heartbeat_commit_monotonic_s']
+                )
                 self.assertFalse(actual['local_target_this_tick'])
                 self.assertFalse(actual['local_heartbeat_this_tick'])
-            startups=[row for row in rows if row.get('kind')=='startup']
+            startups = [row for row in rows if row.get('kind') == 'startup']
             self.assertTrue(startups)
-            self.assertTrue(all(row['controller_build']=='FC01_RECOVERY_DIAGNOSTIC_V5_20261110'
-                                for row in startups))
+            self.assertTrue(
+                all(
+                    row['controller_build'] == 'FC01_RECOVERY_DIAGNOSTIC_V5_20261110'
+                    for row in startups
+                )
+            )
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     unittest.main()

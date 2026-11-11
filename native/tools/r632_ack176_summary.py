@@ -20,12 +20,23 @@ def main():
     last_state = None
     # 只摘取与 176 归属、候选 ACK、状态确认和时钟无归属有关的证据，避免 SAFETY 重复行淹没 ACK。
     fields = (
-        "phase", "nav_state", "armed", "reason", "offboard_ack",
-        "m1_176_ack_policy", "m1_176_ack_candidate", "m1_176_ack_accepted",
-        "m1_176_ack_confirmed_by_state", "m1_176_ack_disposition",
-        "m1_176_transaction_stage", "m1_176_local_generation",
-        "m1_176_wire_stamp", "m1_176_causal_floor", "m1_176_ack_stamp",
-        "m1_176_clock_unattributed_acks", "m1_176_verified_status_stamp",
+        "phase",
+        "nav_state",
+        "armed",
+        "reason",
+        "offboard_ack",
+        "m1_176_ack_policy",
+        "m1_176_ack_candidate",
+        "m1_176_ack_accepted",
+        "m1_176_ack_confirmed_by_state",
+        "m1_176_ack_disposition",
+        "m1_176_transaction_stage",
+        "m1_176_local_generation",
+        "m1_176_wire_stamp",
+        "m1_176_causal_floor",
+        "m1_176_ack_stamp",
+        "m1_176_clock_unattributed_acks",
+        "m1_176_verified_status_stamp",
     )
     with args.log.open(errors="replace") as stream:
         for line in stream:

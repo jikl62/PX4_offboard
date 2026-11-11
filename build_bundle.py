@@ -118,16 +118,27 @@ __FC01_PAYLOAD_BASE64__
 # 用归档字节SHA替换唯一占位再拼base64；源文本只做序列化，不运行shell。
 def render_archive(payload):
     header = HEADER.replace('__ARCHIVE_SHA256__', hashlib.sha256(payload).hexdigest())
-    return header.encode('utf8')+base64.encodebytes(payload)
+    return header.encode('utf8') + base64.encodebytes(payload)
 
 
 # 从显式旧入口与测试/文档文件清单打包，固定时间/权限以便重复生成；返回生成路径。
 def build(output, source=None):
     root = Path(source) if source is not None else Path(__file__).resolve().parent
-    names = ['fc01_control.py', 'launcher.py', 'start.sh', 'repair_existing.sh', 'build_bundle.py', 'README_zh.md', 'VERIFICATION.md']
-    names += sorted(str(p.relative_to(root)) for directory in ('tests', 'docs')
-                    for p in (root/directory).rglob('*')
-                    if p.is_file() and '__pycache__' not in p.parts and p.suffix in ('.py', '.yaml', '.md'))
+    names = [
+        'fc01_control.py',
+        'launcher.py',
+        'start.sh',
+        'repair_existing.sh',
+        'build_bundle.py',
+        'README_zh.md',
+        'VERIFICATION.md',
+    ]
+    names += sorted(
+        str(p.relative_to(root))
+        for directory in ('tests', 'docs')
+        for p in (root / directory).rglob('*')
+        if p.is_file() and '__pycache__' not in p.parts and p.suffix in ('.py', '.yaml', '.md')
+    )
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, 'w', zipfile.ZIP_DEFLATED) as z:
         for name in names:
@@ -135,7 +146,7 @@ def build(output, source=None):
             info.create_system = 3
             info.external_attr = 0o100600 << 16
             info.compress_type = zipfile.ZIP_DEFLATED
-            z.writestr(info, (root/name).read_bytes())
+            z.writestr(info, (root / name).read_bytes())
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(render_archive(stream.getvalue()))

@@ -18,7 +18,9 @@ import test_rc_recovery_adapter as recovery
 
 # 既有C++测试字符串逐字保留：用深度10队列和100ms传输滞后再现单次spin_some追不上。
 # 独立覆盖坏时钟的第一原因、恢复新地面窗口、冻结/回退采样、无XY估计准备、水平消费者和短暂高度越界。
-HARNESS = recovery.HARNESS.split('\nint main(){', 1)[0] + r'''
+HARNESS = (
+    recovery.HARNESS.split('\nint main(){', 1)[0]
+    + r'''
 #include <deque>
 #include <limits>
 
@@ -424,32 +426,43 @@ int main(){
   finite_height_excursions_restart_both_ground_proof_windows();
 }
 '''
+)
 
 
 # 扩展共享API替身以保存真实注册的回调；匹配点必须唯一，防止升级后测到错误替身。
 def write_fixture(root):
     recovery.write_fixture(root)
-    path=root/'rclcpp/rclcpp.hpp'
-    ros=path.read_text().replace('#include <functional>', '#include <functional>\n#include <type_traits>')
+    path = root / 'rclcpp/rclcpp.hpp'
+    ros = path.read_text().replace(
+        '#include <functional>', '#include <functional>\n#include <type_traits>'
+    )
     # 将最小Subscription替身扩为可调用回调容器；后续测试通过构造函数真正注册的回调送样本。
-    old='template<class T>struct Subscription {using SharedPtr=std::shared_ptr<Subscription<T>>;};'
-    new=('template<class T>struct Subscription {using SharedPtr=std::shared_ptr<Subscription<T>>;'
-         'std::function<void(typename T::ConstSharedPtr,const MessageInfo&)> callback;};')
-    if ros.count(old)!=1:
+    old = (
+        'template<class T>struct Subscription {using SharedPtr=std::shared_ptr<Subscription<T>>;};'
+    )
+    new = (
+        'template<class T>struct Subscription {using SharedPtr=std::shared_ptr<Subscription<T>>;'
+        'std::function<void(typename T::ConstSharedPtr,const MessageInfo&)> callback;};'
+    )
+    if ros.count(old) != 1:
         raise AssertionError('Update callback capture for the ROS API fixture')
-    ros=ros.replace(old,new,1)
-    old=('template<class T,class Qos,class Callback>typename Subscription<T>::SharedPtr '
-         'create_subscription(const std::string&,Qos,Callback){return std::make_shared<Subscription<T>>();}')
-    new=('template<class T,class Qos,class Callback>typename Subscription<T>::SharedPtr '
-         'create_subscription(const std::string&,Qos,Callback callback){'
-         'auto sub=std::make_shared<Subscription<T>>();'
-         'sub->callback=[callback](typename T::ConstSharedPtr msg,const MessageInfo& info){'
-         'if constexpr(std::is_invocable_v<Callback,typename T::ConstSharedPtr,const MessageInfo&>)'
-         'callback(msg,info);else callback(msg);};return sub;}')
-    if ros.count(old)!=1:
+    ros = ros.replace(old, new, 1)
+    old = (
+        'template<class T,class Qos,class Callback>typename Subscription<T>::SharedPtr '
+        'create_subscription(const std::string&,Qos,Callback){return std::make_shared<Subscription<T>>();}'
+    )
+    new = (
+        'template<class T,class Qos,class Callback>typename Subscription<T>::SharedPtr '
+        'create_subscription(const std::string&,Qos,Callback callback){'
+        'auto sub=std::make_shared<Subscription<T>>();'
+        'sub->callback=[callback](typename T::ConstSharedPtr msg,const MessageInfo& info){'
+        'if constexpr(std::is_invocable_v<Callback,typename T::ConstSharedPtr,const MessageInfo&>)'
+        'callback(msg,info);else callback(msg);};return sub;}'
+    )
+    if ros.count(old) != 1:
         raise AssertionError('Update subscription construction for the ROS API fixture')
-    path.write_text(ros.replace(old,new,1))
-    (root/'test.cpp').write_text(HARNESS)
+    path.write_text(ros.replace(old, new, 1))
+    (root / 'test.cpp').write_text(HARNESS)
 
 
 # 检查队列追赶的九类场景标记，并验证公开状态的类型与新鲜度含义。
@@ -457,38 +470,72 @@ class SafetyReceiveAdapterTest(unittest.TestCase):
     # 停止输出可排空积压，但坏载荷/坏时钟仍否决恢复，冻结样本不续鲜，活跃控制与溢出门不改变。
     def test_output_silent_safety_catches_up_without_losing_recovery_vetoes(self):
         with tempfile.TemporaryDirectory(prefix='fc01_safety_receive_') as directory:
-            root=Path(directory);write_fixture(root)
-            subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-pthread',
-                '-I',str(root),'-I',str(recovery.fixture.ROOT/'src/jikl_fc01_system/include'),
-                '-I',str(recovery.fixture.ROOT/'tests'),str(root/'test.cpp'),'-o',str(root/'test')],check=True)
-            env=os.environ.copy();env['FC01_SOCKET']=str(root/'control.sock')
-            result=subprocess.run([str(root/'test')],env=env,capture_output=True,text=True)
-            self.assertEqual(result.returncode,0,result.stderr+'\n'+result.stdout[-12000:])
-            self.assertEqual(result.stdout.count('SAFETY_BACKLOG_PASS'),6)
-            for marker in ('SAFETY_CATCHUP_UNSAFE_PAYLOAD_VETO_PASS',
-                           'SAFETY_CATCHUP_UNSAFE_TIMING_AND_FIRST_CAUSE_PASS',
-                           'SAFETY_CATCHUP_FRESH_GROUND_RECOVERY_PASS',
-                           'SAFETY_CATCHUP_FROZEN_AND_REGRESSED_SAMPLE_GATES_PASS',
-                           'SAFETY_CATCHUP_ACTIVE_AND_OVERFLOW_GATES_PASS',
-                           'PREPARATION_UNAVAILABLE_XY_BACKLOG_RECOVERY_PASS',
-                           'HORIZONTAL_CONSUMERS_KEEP_INVALID_FEEDBACK_EVENTS_PASS',
-                           'GROUND_PROOF_RETAINED_HEIGHT_EXCURSION_AND_STABLE_RETRY_PASS'):
-                self.assertIn(marker,result.stdout)
-            states=[json.loads(line) for line in result.stdout.splitlines() if line.startswith('{')]
-            states=[row for row in states if row.get('kind')=='state']
+            root = Path(directory)
+            write_fixture(root)
+            subprocess.run(
+                [
+                    'g++',
+                    '-std=c++17',
+                    '-Wall',
+                    '-Wextra',
+                    '-Werror',
+                    '-pedantic',
+                    '-pthread',
+                    '-I',
+                    str(root),
+                    '-I',
+                    str(recovery.fixture.ROOT / 'src/jikl_fc01_system/include'),
+                    '-I',
+                    str(recovery.fixture.ROOT / 'tests'),
+                    str(root / 'test.cpp'),
+                    '-o',
+                    str(root / 'test'),
+                ],
+                check=True,
+            )
+            env = os.environ.copy()
+            env['FC01_SOCKET'] = str(root / 'control.sock')
+            result = subprocess.run([str(root / 'test')], env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr + '\n' + result.stdout[-12000:])
+            self.assertEqual(result.stdout.count('SAFETY_BACKLOG_PASS'), 6)
+            for marker in (
+                'SAFETY_CATCHUP_UNSAFE_PAYLOAD_VETO_PASS',
+                'SAFETY_CATCHUP_UNSAFE_TIMING_AND_FIRST_CAUSE_PASS',
+                'SAFETY_CATCHUP_FRESH_GROUND_RECOVERY_PASS',
+                'SAFETY_CATCHUP_FROZEN_AND_REGRESSED_SAMPLE_GATES_PASS',
+                'SAFETY_CATCHUP_ACTIVE_AND_OVERFLOW_GATES_PASS',
+                'PREPARATION_UNAVAILABLE_XY_BACKLOG_RECOVERY_PASS',
+                'HORIZONTAL_CONSUMERS_KEEP_INVALID_FEEDBACK_EVENTS_PASS',
+                'GROUND_PROOF_RETAINED_HEIGHT_EXCURSION_AND_STABLE_RETRY_PASS',
+            ):
+                self.assertIn(marker, result.stdout)
+            states = [
+                json.loads(line) for line in result.stdout.splitlines() if line.startswith('{')
+            ]
+            states = [row for row in states if row.get('kind') == 'state']
             self.assertTrue(states)
             for row in states:
-                for field in ('local_payload_z_valid','local_payload_vz_valid','px4_user_takeover_reported'):
-                    self.assertIsInstance(row[field],bool)
-                for field in ('receive_timing_block_source','receive_timing_block_reason'):
-                    self.assertIsInstance(row[field],str)
+                for field in (
+                    'local_payload_z_valid',
+                    'local_payload_vz_valid',
+                    'px4_user_takeover_reported',
+                ):
+                    self.assertIsInstance(row[field], bool)
+                for field in ('receive_timing_block_source', 'receive_timing_block_reason'):
+                    self.assertIsInstance(row[field], str)
             # 保留原始载荷z/vz有效位，同时要求过期样本的综合z_valid/vz_valid为false，防止界面混淆。
-            expired=[row for row in states if not row['local_fresh'] and row['local_payload_z_valid']]
+            expired = [
+                row for row in states if not row['local_fresh'] and row['local_payload_z_valid']
+            ]
             self.assertTrue(expired)
-            self.assertTrue(all(not row['z_valid'] and not row['vz_valid'] and row['local_payload_vz_valid']
-                                for row in expired))
+            self.assertTrue(
+                all(
+                    not row['z_valid'] and not row['vz_valid'] and row['local_payload_vz_valid']
+                    for row in expired
+                )
+            )
             self.assertTrue(any(row['px4_user_takeover_reported'] for row in states))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     unittest.main()

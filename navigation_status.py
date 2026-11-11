@@ -5,8 +5,17 @@
 import math
 
 # 只对这些原生准备阶段解释地面等待；故障阶段由独立恢复解释器处理。
-PREPARATION_PHASES = frozenset(('IDLE', 'SELF_CHECK', 'PRESTREAM', 'REQUEST_OFFBOARD',
-                               'RC_PRESTREAM', 'RC_READY_WAIT_ARM', 'RC_ARMED_WAIT_NAVIGATION'))
+PREPARATION_PHASES = frozenset(
+    (
+        'IDLE',
+        'SELF_CHECK',
+        'PRESTREAM',
+        'REQUEST_OFFBOARD',
+        'RC_PRESTREAM',
+        'RC_READY_WAIT_ARM',
+        'RC_ARMED_WAIT_NAVIGATION',
+    )
+)
 
 
 # 同一boot/控制PID与足够新的IPC快照才可作为当前控制器证据；不表示飞机传感器仍新鲜。
@@ -17,7 +26,11 @@ def controller_state_current(row, *, age=None):
         return False
     if row.get('status') in ('STARTING', 'STALE', 'STOPPING', 'STOPPED'):
         return False
-    if row.get('ipc_error') or row.get('controller_returncode') is not None or row.get('retry_in_seconds') is not None:
+    if (
+        row.get('ipc_error')
+        or row.get('controller_returncode') is not None
+        or row.get('retry_in_seconds') is not None
+    ):
         return False
     controller_pid, state_pid = row.get('controller_pid'), row.get('state_controller_pid')
     if (controller_pid is not None or state_pid is not None) and controller_pid != state_pid:
@@ -34,9 +47,19 @@ def aircraft_feedback_current(state, elapsed):
     finite = lambda value: type(value) in (int, float) and math.isfinite(value)
     if not finite(elapsed) or elapsed < 0:
         return False
-    if any(state.get(name) is False for name in
-           ('status_fresh', 'land_fresh', 'local_fresh', 'attitude_fresh',
-            'local_sample_fresh', 'attitude_sample_fresh', 'battery_fresh', 'source_clock_valid')):
+    if any(
+        state.get(name) is False
+        for name in (
+            'status_fresh',
+            'land_fresh',
+            'local_fresh',
+            'attitude_fresh',
+            'local_sample_fresh',
+            'attitude_sample_fresh',
+            'battery_fresh',
+            'source_clock_valid',
+        )
+    ):
         return False
     timings = state.get('source_timing')
     if not isinstance(timings, dict):
@@ -47,8 +70,12 @@ def aircraft_feedback_current(state, elapsed):
         if not isinstance(item, dict):
             return False
         timeout = item.get('timeout_s')
-        if (not finite(timeout) or timeout <= 0 or item.get('source_reason') != 'VALID'
-                or item.get('receipt_reason') != 'VALID'):
+        if (
+            not finite(timeout)
+            or timeout <= 0
+            or item.get('source_reason') != 'VALID'
+            or item.get('receipt_reason') != 'VALID'
+        ):
             return False
         names = ('envelope_age_s', 'receipt_age_s')
         if topic in ('local', 'attitude'):
@@ -59,7 +86,7 @@ def aircraft_feedback_current(state, elapsed):
                 return False
             # Native VALID may include a source timestamp slightly ahead of
             # the host clock. It must not buy extra display lifetime.
-            if max(0., age)+elapsed >= timeout:
+            if max(0.0, age) + elapsed >= timeout:
                 return False
     return True
 
@@ -70,32 +97,40 @@ def preparation_wait_details(state):
     if state.get('phase') not in PREPARATION_PHASES:
         return []
     details = []
-    for name, text in (('status_fresh', '飞控状态反馈过期'),
-                       ('land_fresh', '接地反馈过期'),
-                       ('local_fresh', '位置/垂直速度反馈过期'),
-                       ('attitude_fresh', '姿态反馈过期'),
-                       ('source_clock_valid', '源消息时间戳过期或无效'),
-                       ('rc_link_ready', '遥控源/链路未就绪'),
-                       ('rc_switches_ready', '遥控开关反馈未就绪'),
-                       ('preflight', '飞控预检未通过')):
+    for name, text in (
+        ('status_fresh', '飞控状态反馈过期'),
+        ('land_fresh', '接地反馈过期'),
+        ('local_fresh', '位置/垂直速度反馈过期'),
+        ('attitude_fresh', '姿态反馈过期'),
+        ('source_clock_valid', '源消息时间戳过期或无效'),
+        ('rc_link_ready', '遥控源/链路未就绪'),
+        ('rc_switches_ready', '遥控开关反馈未就绪'),
+        ('preflight', '飞控预检未通过'),
+    ):
         if state.get(name) is False:
             details.append(text)
     for topic, label in (('local', '位置/垂直速度'), ('attitude', '姿态')):
-        if state.get(topic+'_sample_fresh') is False and state.get(topic+'_fresh') is not False:
-            details.append(label+'采样过期')
+        if state.get(topic + '_sample_fresh') is False and state.get(topic + '_fresh') is not False:
+            details.append(label + '采样过期')
     if state.get('battery_fresh') is False or state.get('battery_connected') is False:
         details.append('电池反馈未就绪')
     if state.get('rc_axes_safe') is False or state.get('rc_sticks_moving') is True:
         details.append('油门/摇杆未归位')
     reason = state.get('reason', '')
-    ground_wait = reason in ('RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND',
-                            'RC_WAIT_CONTINUOUS_SAFE_GROUND', 'RC_WAIT_SAFE_GROUND',
-                            'RC_PRESTREAM_GROUND_CHANGED', 'RC_READY_GROUND_CHANGED')
+    ground_wait = reason in (
+        'RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND',
+        'RC_WAIT_CONTINUOUS_SAFE_GROUND',
+        'RC_WAIT_SAFE_GROUND',
+        'RC_PRESTREAM_GROUND_CHANGED',
+        'RC_READY_GROUND_CHANGED',
+    )
     # 仅对已知地面等待原因解释Stabilized、CH5上锁、CH6有效非导航档和连续静止窗口。
     if ground_wait:
-        for name, expected, text in (('armed', False, '飞控仍解锁'),
-                                     ('landed', True, '未确认接地'),
-                                     ('at_rest', True, '未确认静止')):
+        for name, expected, text in (
+            ('armed', False, '飞控仍解锁'),
+            ('landed', True, '未确认接地'),
+            ('at_rest', True, '未确认静止'),
+        ):
             if type(state.get(name)) is bool and state[name] is not expected:
                 details.append(text)
         if type(state.get('nav_state')) is int and state['nav_state'] != 15:
@@ -114,10 +149,21 @@ def preparation_wait_details(state):
             details.append(f'垂直速度超出地面阈值（{vz:.3f} / ±{limit:.3f} m/s）')
         if not details:
             details.append('等待原生地面/遥控条件确认；本次状态未指明缺失项')
-    elif reason in ('RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE', 'RC_PRESTREAM_REBUILD_GROUND_REFERENCE'):
-        samples, elapsed = state.get('rc_ground_reference_samples'), state.get('rc_ground_reference_seconds')
-        seconds = f'{elapsed:.2f} 秒' if type(elapsed) in (int, float) and math.isfinite(elapsed) else '时间未知'
-        details.append(f'等待新的地面参考样本（{samples if type(samples) is int else "数量未知"}，{seconds}）')
+    elif reason in (
+        'RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE',
+        'RC_PRESTREAM_REBUILD_GROUND_REFERENCE',
+    ):
+        samples, elapsed = state.get('rc_ground_reference_samples'), state.get(
+            'rc_ground_reference_seconds'
+        )
+        seconds = (
+            f'{elapsed:.2f} 秒'
+            if type(elapsed) in (int, float) and math.isfinite(elapsed)
+            else '时间未知'
+        )
+        details.append(
+            f'等待新的地面参考样本（{samples if type(samples) is int else "数量未知"}，{seconds}）'
+        )
     return details
 
 
@@ -130,16 +176,24 @@ def recovery_wait_details(state):
     finite = lambda value: type(value) in (int, float) and math.isfinite(value) and value >= 0
     timings = state.get('source_timing')
     if isinstance(timings, dict):
-        for topic, label in (('local', '位置/垂直速度'), ('attitude', '姿态'),
-                             ('status', '飞控状态'), ('land', '接地'),
-                             ('flags', '失效保护'), ('battery', '电池')):
+        for topic, label in (
+            ('local', '位置/垂直速度'),
+            ('attitude', '姿态'),
+            ('status', '飞控状态'),
+            ('land', '接地'),
+            ('flags', '失效保护'),
+            ('battery', '电池'),
+        ):
             item = timings.get(topic)
-            if not isinstance(item, dict) or item.get('source_reason') not in ('ENVELOPE_EXPIRED', 'SAMPLE_EXPIRED'):
+            if not isinstance(item, dict) or item.get('source_reason') not in (
+                'ENVELOPE_EXPIRED',
+                'SAMPLE_EXPIRED',
+            ):
                 continue
             ages = [item.get(name) for name in ('envelope_age_s', 'sample_age_s')]
             ages = [value for value in ages if finite(value)]
             limit = item.get('timeout_s')
-            text = label+'消息过期'
+            text = label + '消息过期'
             if ages and finite(limit) and limit > 0:
                 text += f'（消息年龄 {max(ages):.3f} 秒，阈值 {limit:.3f} 秒）'
             details.append(text)
@@ -166,14 +220,19 @@ def preparation_diagnostic_reason(state):
     """A native phase describes feedback progress, not permission to take off."""
     if state.get('phase') not in PREPARATION_PHASES:
         return ''
-    closed = [name+'=false' for name in ('flight_actions_enabled', 'takeoff_enabled')
-              if state.get(name) is False]
-    return '诊断模式：'+'、'.join(closed)+'；本次禁止起飞和导航。' if closed else ''
+    closed = [
+        name + '=false'
+        for name in ('flight_actions_enabled', 'takeoff_enabled')
+        if state.get(name) is False
+    ]
+    return '诊断模式：' + '、'.join(closed) + '；本次禁止起飞和导航。' if closed else ''
 
 
 # 只根据RC路线三门提示人工步骤；arm_enabled=false是人工解锁合同，不应被误认为故障。
 def manual_rc_guidance_allowed(state):
     # arm_enabled=false disables programmatic arming, and is required by the
     # independent manual-RC route. flight_enabled belongs to another profile.
-    return all(state.get(name) is True for name in
-               ('flight_actions_enabled', 'takeoff_enabled', 'rc_navigation_enabled'))
+    return all(
+        state.get(name) is True
+        for name in ('flight_actions_enabled', 'takeoff_enabled', 'rc_navigation_enabled')
+    )

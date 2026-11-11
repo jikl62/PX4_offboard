@@ -26,34 +26,61 @@ def load_api(test):
 # 构造完整未解锁地面证据；ground_vz_ned 单位 m/s、NED 向下为正，此处 -0.004 表示微小向上漂移。
 def ground():
     return {
-        'kind': 'state', 'phase': 'IDLE', 'nav_state': 2,
-        'armed': False, 'landed': True, 'at_rest': True,
-        'status_fresh': True, 'local_fresh': True, 'land_fresh': True,
-        'attitude_fresh': True, 'failsafe_fresh': True, 'battery_fresh': True,
-        'local_sample_fresh': True, 'attitude_sample_fresh': True,
-        'source_clock_valid': True, 'source_clock_validated': True,
-        'z_valid': True, 'vz_valid': True, 'arming_state_known': True,
-        'battery_connected': True, 'preflight': True,
-        'rc_link_ready': True, 'rc_switches_ready': True,
-        'rc_source_clock_valid': True, 'rc_switch_clock_valid': True,
-        'rc_sticks_moving': False, 'rc_kill_latched': False,
-        'publication_fault_latched': False, 'operator_takeover_latched': False,
-        'stationary_seconds': 3.0, 'required_ground_seconds': 2.0,
-        'source_counts': [1, 1, 1], 'authority_mode': 'UNSET',
-        'authority_ready': False, 'authority_locked': False,
-        'authority_attempt_mode': 'UNSET', 'm1_176_ack_accepted': False,
+        'kind': 'state',
+        'phase': 'IDLE',
+        'nav_state': 2,
+        'armed': False,
+        'landed': True,
+        'at_rest': True,
+        'status_fresh': True,
+        'local_fresh': True,
+        'land_fresh': True,
+        'attitude_fresh': True,
+        'failsafe_fresh': True,
+        'battery_fresh': True,
+        'local_sample_fresh': True,
+        'attitude_sample_fresh': True,
+        'source_clock_valid': True,
+        'source_clock_validated': True,
+        'z_valid': True,
+        'vz_valid': True,
+        'arming_state_known': True,
+        'battery_connected': True,
+        'preflight': True,
+        'rc_link_ready': True,
+        'rc_switches_ready': True,
+        'rc_source_clock_valid': True,
+        'rc_switch_clock_valid': True,
+        'rc_sticks_moving': False,
+        'rc_kill_latched': False,
+        'publication_fault_latched': False,
+        'operator_takeover_latched': False,
+        'stationary_seconds': 3.0,
+        'required_ground_seconds': 2.0,
+        'source_counts': [1, 1, 1],
+        'authority_mode': 'UNSET',
+        'authority_ready': False,
+        'authority_locked': False,
+        'authority_attempt_mode': 'UNSET',
+        'm1_176_ack_accepted': False,
         'm1_176_ack_policy': 'R632_ACK176_STATE_CANDIDATE_V1',
-        'ground_vz_ned': -0.004, 'ground_vz_tolerance': 0.1,
+        'ground_vz_ned': -0.004,
+        'ground_vz_tolerance': 0.1,
     }
 
 
 # 在地面反馈上仅补齐 Offboard/权限合同，保留未解锁状态，供起飞提交门检查。
 def ready():
     s = ground()
-    s.update(phase='OFFBOARD_READY', nav_state=14,
-             authority_mode='RC_TAKEOVER', authority_ready=True,
-             authority_locked=True, authority_attempt_mode='RC_TAKEOVER',
-             m1_176_ack_accepted=True)
+    s.update(
+        phase='OFFBOARD_READY',
+        nav_state=14,
+        authority_mode='RC_TAKEOVER',
+        authority_ready=True,
+        authority_locked=True,
+        authority_attempt_mode='RC_TAKEOVER',
+        m1_176_ack_accepted=True,
+    )
     return s
 
 
@@ -61,18 +88,29 @@ def ready():
 class ProfileTests(unittest.TestCase):
     def setUp(self):
         self.api = load_api(self)
-        self.base = yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text())
+        self.base = yaml.safe_load((ROOT / 'tests/fixtures/base.yaml').read_text())
 
     # 诊断入口必须覆盖输入中的所有危险动作门，不能因为源 YAML 曾启用就获得权限。
     def test_default_cannot_enable_actions_even_if_input_flags_are_true(self):
         p = self.base['fc01_system']['ros__parameters']
-        p.update(flight_enabled=True, arm_enabled=True, takeoff_enabled=True,
-                 autonomous_failsafe_confirmed=True, bench_arm_only_enabled=True)
+        p.update(
+            flight_enabled=True,
+            arm_enabled=True,
+            takeoff_enabled=True,
+            autonomous_failsafe_confirmed=True,
+            bench_arm_only_enabled=True,
+        )
         out = self.api.runtime_profile(self.base, False)['fc01_system']['ros__parameters']
-        for key in ('flight_enabled', 'flight_actions_enabled', 'arm_enabled',
-                    'takeoff_enabled', 'flight_parameters_confirmed',
-                    'rc_takeover_confirmed', 'autonomous_failsafe_confirmed',
-                    'bench_arm_only_enabled'):
+        for key in (
+            'flight_enabled',
+            'flight_actions_enabled',
+            'arm_enabled',
+            'takeoff_enabled',
+            'flight_parameters_confirmed',
+            'rc_takeover_confirmed',
+            'autonomous_failsafe_confirmed',
+            'bench_arm_only_enabled',
+        ):
             self.assertIs(out[key], False)
 
     # 授权只改变会话副本的动作门；保留原输入及 0.50/0.04/0.80 推力候选值等控制包络。
@@ -81,8 +119,13 @@ class ProfileTests(unittest.TestCase):
         out = self.api.runtime_profile(self.base, True)['fc01_system']['ros__parameters']
         self.assertEqual(self.base, before)
         self.assertIs(out['flight_enabled'], False)
-        for key in ('flight_actions_enabled', 'arm_enabled',
-                    'takeoff_enabled', 'flight_parameters_confirmed', 'rc_takeover_confirmed'):
+        for key in (
+            'flight_actions_enabled',
+            'arm_enabled',
+            'takeoff_enabled',
+            'flight_parameters_confirmed',
+            'rc_takeover_confirmed',
+        ):
             self.assertIs(out[key], True)
         self.assertIs(out['autonomous_failsafe_confirmed'], False)
         self.assertIs(out['bench_arm_only_enabled'], False)
@@ -97,9 +140,13 @@ class ProfileTests(unittest.TestCase):
 
     # 错误控制模式、模拟时钟、越界高度及非有限参数均不能生成飞行会话。
     def test_incompatible_profile_or_sim_clock_refused(self):
-        for key, value in [('profile', 'flight'), ('use_sim_time', True),
-                           ('aa_max_height', 6.0), ('aa_hover_thrust', float('nan')),
-                           ('aa_land_sample_max_gap', 0.5)]:
+        for key, value in [
+            ('profile', 'flight'),
+            ('use_sim_time', True),
+            ('aa_max_height', 6.0),
+            ('aa_hover_thrust', float('nan')),
+            ('aa_land_sample_max_gap', 0.5),
+        ]:
             base = copy.deepcopy(self.base)
             base['fc01_system']['ros__parameters'][key] = value
             with self.subTest(key=key), self.assertRaises(self.api.ControlError):
@@ -115,8 +162,9 @@ class MissionTests(unittest.TestCase):
     # 先登记已发送事务再注入同序号回复，避免测试绕过真实因果关联。
     def send(self, seq, op, at):
         self.m.sent(seq, op)
-        self.m.reply({'kind': 'reply', 'seq': seq, 'accepted': True,
-                      'message': op+'_ACCEPTED'}, at)
+        self.m.reply(
+            {'kind': 'reply', 'seq': seq, 'accepted': True, 'message': op + '_ACCEPTED'}, at
+        )
 
     # 依次消费 AUTHORITY_RC 与 ATTITUDE_READY，尚未提供最终 ready 反馈前不得提交起飞。
     def prepare(self):
@@ -163,8 +211,15 @@ class MissionTests(unittest.TestCase):
         self.m.request_takeoff(0.5, 1.0)
         self.m.poll(1.0)
         self.m.sent(4, 'AUTHORITY_RC')
-        self.m.reply({'kind': 'reply', 'seq': 4, 'accepted': False,
-                      'message': 'AUTHORITY_SAFE_GROUND_REQUIRED'}, 1.1)
+        self.m.reply(
+            {
+                'kind': 'reply',
+                'seq': 4,
+                'accepted': False,
+                'message': 'AUTHORITY_SAFE_GROUND_REQUIRED',
+            },
+            1.1,
+        )
         self.m.observe(ready(), 1.2)
         self.assertIsNone(self.m.poll(1.2))
         self.assertFalse(self.m.submitted)
@@ -179,12 +234,17 @@ class MissionTests(unittest.TestCase):
 
     # ACK 未确认、权限未就绪/锁定或飞机已经解锁，任一条件均应拦住新起飞提交。
     def test_candidate_ack_or_unready_authority_cannot_request_takeoff(self):
-        for key, value in [('m1_176_ack_accepted', False), ('authority_ready', False),
-                           ('authority_locked', False), ('armed', True)]:
+        for key, value in [
+            ('m1_176_ack_accepted', False),
+            ('authority_ready', False),
+            ('authority_locked', False),
+            ('armed', True),
+        ]:
             with self.subTest(key=key):
                 self.m = self.api.Mission(5.0)
                 self.prepare()
-                s = ready(); s[key] = value
+                s = ready()
+                s[key] = value
                 self.m.observe(s, 1.1)
                 self.assertIsNone(self.m.poll(1.1))
                 self.assertFalse(self.m.submitted)
@@ -210,7 +270,8 @@ class MissionTests(unittest.TestCase):
             with self.subTest(key=key):
                 self.m = self.api.Mission(5.0)
                 self.prepare()
-                s = ready(); s[key] = True
+                s = ready()
+                s[key] = True
                 self.m.observe(s, 1.1)
                 self.assertIsNone(self.m.poll(1.2))
                 self.assertFalse(self.m.submitted)
@@ -224,17 +285,25 @@ class MissionTests(unittest.TestCase):
 
     # 缺少 RC、时钟、新样本或电池证据时，不应排入准备命令。
     def test_no_rc_or_clock_evidence_means_no_preparation(self):
-        for key in ('rc_link_ready', 'rc_switches_ready', 'source_clock_valid',
-                    'attitude_sample_fresh', 'battery_connected'):
+        for key in (
+            'rc_link_ready',
+            'rc_switches_ready',
+            'source_clock_valid',
+            'attitude_sample_fresh',
+            'battery_connected',
+        ):
             with self.subTest(key=key):
                 m = self.api.Mission(5.0)
-                s = ground(); s[key] = False
-                m.observe(s, 1.0); m.request_takeoff(0.5, 1.0)
+                s = ground()
+                s[key] = False
+                m.observe(s, 1.0)
+                m.request_takeoff(0.5, 1.0)
                 self.assertIsNone(m.poll(1.1))
 
     # 原无 GPS 垂向起飞不要求 XY 有效位；不能误把水平估计缺失升级为垂向禁飞。
     def test_gps_denied_xy_flags_do_not_replace_vertical_health(self):
-        s = ground(); s.update(xy_valid=False, vxy_valid=False, estimate_valid=False)
+        s = ground()
+        s.update(xy_valid=False, vxy_valid=False, estimate_valid=False)
         self.assertEqual(self.api.readiness_issues(s), [])
 
 
