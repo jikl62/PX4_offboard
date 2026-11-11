@@ -52,11 +52,13 @@ class NativeProfileContract(unittest.TestCase):
         # Derive parameter -> member mappings from the actual ROS adapter; call
         # the actual Config::validate(), not a Python reproduction of its rules.
         header = (include / 'jikl_fc01_system/attitude_ros_parameters.hpp').read_text()
+        # 与回放入口一样，仅兼容 token 间排版；不放宽参数/类型/成员或最少映射数量。
         direct = re.findall(
-            r'c\.([\w.]+)\s*=\s*node\.declare_parameter<(bool|double|std::string|std::int64_t)>\("([^"]+)"',
+            r'c\.([\w.]+)\s*=\s*node\.declare_parameter\s*<\s*'
+            r'(bool|double|std::string|std::int64_t)\s*>\s*\(\s*"([^"]+)"',
             header,
         )
-        doubles = re.findall(r'\{"([^"]+)",&c\.([\w.]+)\}', header)
+        doubles = re.findall(r'\{\s*"([^"]+)"\s*,\s*&\s*c\.([\w.]+)\s*\}', header)
         if len(direct) < 9 or len(doubles) < 45:
             raise AssertionError('native adapter mapping changed; contract probe must be reviewed')
         lines = ['cfg.profile=p.at("profile");', 'cfg.flight_enabled=boolean("flight_enabled");']

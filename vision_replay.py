@@ -293,11 +293,13 @@ def encode_records(session, records):
 # 从当前 ROS 参数头提取实际成员映射，避免离线驱动另维护一份易漂移的参数表；数量异常立即要求人工核对。
 def parameter_mapping():
     header = (INCLUDE / 'jikl_fc01_system/attitude_ros_parameters.hpp').read_text()
+    # 只忽略 C++ token 间的空白/换行；参数名、类型和成员路径仍逐字提取。
     direct = re.findall(
-        r'c\.([\w.]+)\s*=\s*node\.declare_parameter<(bool|double|std::string|std::int64_t)>\("([^"]+)"',
+        r'c\.([\w.]+)\s*=\s*node\.declare_parameter\s*<\s*'
+        r'(bool|double|std::string|std::int64_t)\s*>\s*\(\s*"([^"]+)"',
         header,
     )
-    doubles = re.findall(r'\{"([^"]+)",&c\.([\w.]+)\}', header)
+    doubles = re.findall(r'\{\s*"([^"]+)"\s*,\s*&\s*c\.([\w.]+)\s*\}', header)
     if len(direct) < 9 or len(doubles) < 45:
         raise RuntimeError('actual ROS parameter mapping changed; review replay mapping')
     lines = []
