@@ -41,12 +41,21 @@ def run():
 
     # 每个源文件映射独立内容键，先生成进程专属 pending 文件，再原子发布完整可执行文件。
     def build(source):
-        key = hashlib.sha256(common + source.read_bytes()).hexdigest()[:24]
+        # 只有日志资源测试需要系统调用注入，保持与 native/tests/CMakeLists.txt 一致；
+        # 将实际链接参数计入内容键，不能沿用没有故障注入的旧二进制。
+        links = (
+            ['-Wl,--wrap=fcntl', '-Wl,--wrap=write', '-ldl']
+            if source.stem == 'test_stage3_async_log_resources'
+            else []
+        )
+        key = hashlib.sha256(common + source.read_bytes() + repr(links).encode()).hexdigest()[:24]
         binary = cache / (source.stem + '_' + key)
         if not binary.exists():
             pending = binary.with_suffix('.pending_' + str(os.getpid()))
             p = subprocess.run(
-                ['g++', *flags, str(source), '-o', str(pending)], capture_output=True, text=True
+                ['g++', *flags, str(source), *links, '-o', str(pending)],
+                capture_output=True,
+                text=True,
             )
             if p.returncode:
                 raise RuntimeError(source.name + ' compile:\n' + p.stdout + p.stderr)
