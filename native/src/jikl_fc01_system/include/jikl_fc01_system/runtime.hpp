@@ -724,7 +724,7 @@ class Runtime {
           const auto watermark=std::max({p.baseline,p.last_ack,p.status_at_wire});
           const bool unresolved=cmd==400&&p.sent&&
             (p.ack_ambiguous||!p.accepted||!p.state_verified);
-          if(cmd==400&&p.requested)command400_history_.push_back(p);
+          if(cmd==400&&p.requested)archive_command400(p); // 仅归档旧事务；待处理事务和因果水位仍按原流程更新。
           p={};p.baseline=watermark;p.previous400_unresolved=unresolved;
           track(cmd,s,now,out.attitude.command);
         }
@@ -775,6 +775,15 @@ class Runtime {
     return out;
   }
  private:
+  void archive_command400(const Pending& transaction){
+    // 这里只保留最近128笔审计记录，避免常驻服务每次任务结束后无限增加内存。
+    // 全进程提交次数、每笔generation及ACK因果水位独立保存，不能随展示缓存淘汰而清零。
+    constexpr std::size_t retained_transactions=128;
+    if(command400_history_.size()>=retained_transactions){
+      command400_history_.erase(command400_history_.begin()); // 淘汰最旧展示记录，保留其余事务的先后顺序。
+    }
+    command400_history_.push_back(transaction); // 复制旧事务证据；该缓存不授予控制权，也不参与ACK匹配。
+  }
   bool ended_rc_disarm_terminal(const Pending& p,const Snapshot& s)const{
     return attitude_core_.rc_fault_recovery_ready()&&p.command400_kind==Command400Kind::Disarm&&
       p.sent&&p.published&&!p.sink_denied&&s.arming_state_known&&
