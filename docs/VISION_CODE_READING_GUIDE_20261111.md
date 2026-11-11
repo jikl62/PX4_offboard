@@ -4,6 +4,8 @@
 
 后续边界修复见 [边界问题与验证](VISION_BOUNDARY_REVIEW_20261111.md)：补充时钟回退、事件副本、外参不可变和姿态小角度计算。本文末尾的差分结果对应此前的纯重构，当前实现另有这几项有意的行为修复。
 
+最新整体验证和原始 Odometry 适配器整理见 [工程审查](FC01_ENGINEERING_REVIEW_20261111.md)。该轮另修复配对超时、适配器参数和退出、安装完整性、长期审计缓存及生产视觉算术边界；没有打开视觉飞行开关。
+
 ## 先分清两种速度
 
 | 名称 | 例子 | 来源 |
@@ -14,6 +16,16 @@
 它们分别存储。只有同时拿到可信实际状态和有效目标，才有计算误差的条件。目标不能填进实际速度字段，消息收到了也不等于飞机开始执行。
 
 当前可以单独运行的两个节点是：`vision_odometry_adapter.py` 把 `Odometry + VisionHealth` 转成 `VisionState`；`velocity_command_diagnostic.py` 订阅目标速度并保存诊断。`vision_state_validation.py` 是额外的纯计算校验工具，`velocity_command_input.hpp` 是额外的离线预览工具，两者尚未自动串成生产闭环。正式服务继续保持 `visual_navigation_enabled=false`。
+
+## 先看原始实际状态如何转换
+
+文件：`native/tools/vision_odometry_adapter.py`。先读 `AdapterConfig` 和 `ConvertedState`，再读 `convert_odometry()`。配置明确来源、原始世界/机体坐标、机体外参和世界对齐；结果里的每个有效位都代表实际检查，不能由默认数值推断。
+
+`convert_odometry()` 先检查测量时间及配套健康合同，再计算坐标和姿态，随后处理位置、角速度与杆臂速度，最后决定哪些实际状态有效。非零杆臂下，传感器旋转会产生额外线速度，需要实测角速度修正。原始协方差还没有完整转换，所以输出保留未知值并清除对应有效位。
+
+`StampPairBuffer` 只拼完全相同 stamp 的两半消息。每次回调先过期旧项，迟到的一半不能绕过配对超时；同回调若同时产生撤销和正常新帧，撤销先返回。`GuardedOdometryAdapter` 另外核对原始两个话题各自的真实发布者数量，不能只看输出话题有一个适配器就认定上游单一来源。
+
+文件最后的 `main()` 才导入 ROS 并建立节点。启动参数只读，改参数需重启这个独立适配器；停止它不执行解锁或飞行模式切换。
 
 ## 1. 看目标速度怎么接收
 

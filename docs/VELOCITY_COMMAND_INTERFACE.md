@@ -1,5 +1,7 @@
 # VelocityCommand 接口与独立只读诊断
 
+最新工程状态见 [整体验证与修改](FC01_ENGINEERING_REVIEW_20261111.md) 和 [下一阶段准备](FC01_NEXT_STAGE_PREPARATION_20261111.md)。下文记录各阶段接口决策，早期提交和测试数量是历史记录；当前源码以最新验证清单为准。
+
 后续五项边界修复及验证见 [视觉接口审查修复记录](VISION_INTERFACE_REVIEW_FIXES_20261111.md)。本页的诊断参数均为启动时配置，运行中修改会明确拒绝；以新参数重启独立诊断进程后生效。
 
 完整文件核对、干净构建和当前 215 项 Python 补验见 [后续验证记录](VISION_INTERFACE_FOLLOWUP_20261111.md)，包含本轮保存的原始输出及日志归档说明。
