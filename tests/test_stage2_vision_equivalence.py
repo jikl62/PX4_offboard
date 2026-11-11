@@ -18,7 +18,7 @@ class VisionRefactorEquivalenceTests(unittest.TestCase):
     """比较配置声明、QoS、回调事件消费、消息/日志顺序与拒绝文本，不用数值容差。"""
 
     def test_main_external_contract_matches_both_baselines(self):
-        """六种确定性场景的全部 JSON 轨迹严格相同；信号策略由独立退出回归验证。"""
+        """正常场景 JSON 严格相同；启动拒绝只允许本轮修复新增的有序 Node 销毁。"""
         if shutil.which('git') is None or not (ROOT / '.git').exists():
             self.skipTest('historical differential needs a Git checkout and baseline objects')
         traces = {}
@@ -62,7 +62,24 @@ class VisionRefactorEquivalenceTests(unittest.TestCase):
             for revision in BASELINES:
                 for scenario, expected in traces[revision].items():
                     with self.subTest(revision=revision, scenario=scenario):
-                        self.assertEqual(expected, traces['current'][scenario])
+                        current = traces['current'][scenario]
+                        if scenario == 'callbacks':
+                            self.assertEqual(expected, current)
+                        else:
+                            # Stage 3 有意修复：基类 Node 成功后接线失败也必须先销毁。
+                            # 不过滤任意事件，只接受此唯一指定事件在指定位置新增一次；
+                            # 配置声明、异常文本、QoS 和其他所有字段继续逐项严格相同。
+                            self.assertEqual(
+                                expected['events'],
+                                ['context.init', 'node.create', 'context.shutdown'],
+                            )
+                            self.assertEqual(
+                                current['events'],
+                                ['context.init', 'node.create', 'node.destroy', 'context.shutdown'],
+                            )
+                            self.assertEqual(expected['details'], current['details'])
+                            self.assertEqual(expected['error'], current['error'])
+                            self.assertEqual(set(expected), set(current))
         publications = [
             entry for entry in traces['current']['callbacks']['details'] if entry[0] == 'publish'
         ]

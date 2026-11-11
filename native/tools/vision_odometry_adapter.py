@@ -539,12 +539,20 @@ def _adapter_node_type():
 
     class OdometryAdapterNode(Node):
         def __init__(self):
-            """按时钟→标定→话题/QoS→输出→配对器→输入的原顺序创建适配节点。
+            """只构造 ROS 基类节点；成功返回后由 main 持有并负责 destroy_node。
 
-            无输入参数或返回值；持有发布器、订阅、定时器和配对状态。必须在 rclpy.init 后调用，
-            首个回调只能在 main 注册 executor 后运行；本节点永不创建飞控控制端点。
+            无输入参数或返回值。适配器配置和接线推迟到 configure_adapter，避免后续异常
+            使 main 丢失已经创建的 Node。基类构造自己失败时，仍由 rclpy 管理其内部资源。
             """
             super().__init__('fc01_vision_odometry_adapter')
+
+        def configure_adapter(self):
+            """按时钟→标定→话题/QoS→输出→配对器→输入的原顺序完成接线。
+
+            无输入参数或返回值；持有发布器、订阅、定时器和配对状态。main 必须先持有
+            成功构造的节点；本方法失败也由 main 销毁，不在异常配置上运行回调。
+            首个回调只能在 main 注册 executor 后运行，本节点不创建飞控控制端点。
+            """
             self.configure_measurement_clock()
             self.load_conversion_config()
             input_topic, health_topic = self.input_topics()
@@ -767,6 +775,57 @@ def _adapter_node_type():
     return OdometryAdapterNode
 
 
+def _release_adapter_resources(actions, primary_error):
+    """逐项尝试 main 所有者提供的清理动作，保留主异常并按失败顺序连接清理异常。
+
+    actions 只含无参数清理函数，调用次序由 main 明确列出；本函数不启动 ROS、执行回调
+    或改变控制数据。primary_error 是正在向外传播的异常或 None，不能被 destroy/shutdown
+    的次生错误覆盖。没有主异常时传播首个清理错误；每项失败也不阻止后续动作。
+    """
+    errors = []
+    for release in actions:
+        try:
+            release()
+        except BaseException as cleanup_error:
+            errors.append(cleanup_error)
+
+    failure = primary_error if primary_error is not None else (errors[0] if errors else None)
+    if failure is None:
+        return
+    seen = set()
+
+    def visible_chain_tail(error):
+        """沿 traceback 实际显示的 cause/context 找尾部；只剪断指回已见异常的循环边。"""
+        while True:
+            seen.add(id(error))
+            following = error.__cause__
+            if following is None and not error.__suppress_context__:
+                following = error.__context__
+            if following is None:
+                return error
+            if id(following) in seen:
+                if error.__cause__ is following:
+                    error.__cause__ = None
+                    error.__suppress_context__ = True
+                if error.__context__ is following:
+                    error.__context__ = None
+                return error
+            error = following
+
+    tail = visible_chain_tail(failure)
+    for cleanup_error in errors:
+        if id(cleanup_error) in seen:
+            continue
+        next_tail = visible_chain_tail(cleanup_error)
+        # 不直接覆盖主异常的 cause：原本通过 implicit context 显示的业务首错也要保留。
+        # 清理错误由 finally 自动带回主异常的 context 已在上面的遍历中剪掉。
+        tail.__cause__ = cleanup_error
+        tail.__suppress_context__ = True
+        tail = next_tail
+    if primary_error is None:
+        raise failure
+
+
 def main(args=None):
     """以可选 ROS 命令行 args 运行适配器；正常停止无返回值，非停止异常继续向上传播。
 
@@ -796,36 +855,43 @@ def main(args=None):
         signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)
     }
     node = None
+    executor = None
+    context_owned = False
+    primary_error = None
     try:
         for signum in previous_handlers:
             signal.signal(signum, request_stop)
+        # 仅清理由本入口从未初始化状态取得的默认 context；调用者已有的活动 context
+        # 会让 rclpy.init 按原合同报错，不能因本次失败而把调用者的 context 关闭。
+        context_owned = not rclpy.ok()
         rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
         node = OdometryAdapterNode()
+        node.configure_adapter()
         executor = rclpy.get_global_executor()
-        try:
-            executor.add_node(node)
-            # 100 ms 只是空闲等待上限；已开始的回调和清理耗时不属于硬实时保证。
-            # 已开始的回调先完整结束；与 rclpy.spin 相同，每次仍只执行 executor 的一项工作。
-            while executor.context.ok() and not stop_requested:
-                executor.spin_once(timeout_sec=0.1)
-        finally:
-            executor.remove_node(node)
+        executor.add_node(node)
+        # 100 ms 只是空闲等待上限；已开始的回调和清理耗时不属于硬实时保证。
+        # 已开始的回调先完整结束；与 rclpy.spin 相同，每次仍只执行 executor 的一项工作。
+        while executor.context.ok() and not stop_requested:
+            executor.spin_once(timeout_sec=0.1)
     except (KeyboardInterrupt, ExternalShutdownException):
         # Python 停止信号或外部关闭属于正常停止；其他运行错误必须继续传播。
         pass
+    except BaseException as error:
+        primary_error = error
+        raise
     finally:
         stop_requested = True
-        try:
-            if node is not None:
-                node.destroy_node()
-        finally:
-            try:
-                # 先销毁节点，再关闭仍存活的 context；错误不能阻止恢复调用者的信号处理器。
-                if rclpy.ok():
-                    rclpy.shutdown()
-            finally:
-                for signum, handler in previous_handlers.items():
-                    signal.signal(signum, handler)
+        # 清理仍由主线程依序完成；重复停止信号只置标志，不中断回调或释放动作。
+        actions = []
+        if executor is not None and node is not None:
+            actions.append(lambda: executor.remove_node(node))
+        if node is not None:
+            actions.append(node.destroy_node)
+        if context_owned:
+            actions.append(lambda: rclpy.shutdown() if rclpy.ok() else None)
+        for signum, handler in previous_handlers.items():
+            actions.append(lambda signum=signum, handler=handler: signal.signal(signum, handler))
+        _release_adapter_resources(actions, primary_error)
 
 
 if __name__ == '__main__':
