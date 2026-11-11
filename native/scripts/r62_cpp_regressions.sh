@@ -10,8 +10,13 @@ pass=0
 # 每个程序独立执行，任一编译/断言失败即停止；通过数不代表 ROS 或实飞验收。
 for test_file in "$root"/tests/test_*.cpp; do
   base="$(basename "$test_file" .cpp)"
+  # 与当前CMake/Python runner保持同一专属链接合同；每轮清空，不改变其余测试的编译参数。
+  link_flags=()
+  if [[ "$base" == test_stage3_async_log_resources ]]; then
+    link_flags=(-Wl,--wrap=fcntl -Wl,--wrap=write -ldl)
+  fi
   g++ -std=c++17 -Wall -Wextra -Werror -pedantic \
-    -I "$root/src/jikl_fc01_system/include" "$test_file" -o "$workspace/$base"
+    -I "$root/src/jikl_fc01_system/include" "$test_file" "${link_flags[@]}" -o "$workspace/$base"
   "$workspace/$base"
   pass=$((pass+1))
 done
