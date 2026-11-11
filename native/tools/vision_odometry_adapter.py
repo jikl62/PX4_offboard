@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # 实际状态适配层：输入 Odometry+VisionHealth，输出 VisionState；从不将目标速度解释成自身测量。
-# 本文件已有坐标链、杆臂、严格配对与撤销说明；本轮完整复核后仅补模块与输出结构职责。
+# 坐标转换与配对保持独立；ROS 端按启动合同、端点接线、状态消息与退出生命周期分层。
 """将严格配对的 Odometry / VisionHealth 转换成 FC01 的实际状态。
 
 阅读顺序：convert_odometry() 做坐标转换；StampPairBuffer 按测量时间配对；
@@ -525,14 +525,13 @@ class GuardedOdometryAdapter:
         return states
 
 
-def main(args=None):
-    # 只有显式运行入口才加载 ROS；纯转换与配对测试不需要真实通信图。
-    import signal
+def _adapter_node_type():
+    """延迟加载 ROS 并返回适配节点类；无参数，不创建节点、上下文或通信端点。
 
-    import rclpy
+    可在纯转换模块导入后按需调用；返回类必须在 main 初始化 ROS 后实例化。
+    将启动配置、端点接线与逐状态输出分开，但保留其原有执行先后顺序。
+    """
     from rclpy.node import Node
-    from rclpy.executors import ExternalShutdownException
-    from rclpy.signals import SignalHandlerOptions
     from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
     from rcl_interfaces.msg import ParameterDescriptor, ParameterType
     from nav_msgs.msg import Odometry
@@ -540,19 +539,63 @@ def main(args=None):
 
     class OdometryAdapterNode(Node):
         def __init__(self):
+            """按时钟→标定→话题/QoS→输出→配对器→输入的原顺序创建适配节点。
+
+            无输入参数或返回值；持有发布器、订阅、定时器和配对状态。必须在 rclpy.init 后调用，
+            首个回调只能在 main 注册 executor 后运行；本节点永不创建飞控控制端点。
+            """
             super().__init__('fc01_vision_odometry_adapter')
+            self.configure_measurement_clock()
+            self.load_conversion_config()
+            input_topic, health_topic = self.input_topics()
+            output_topic = self.startup_parameter('output_topic', '/fc01/vision/state')
+            depth = self.startup_parameter('qos_depth', 5)
+            if depth < 1 or depth > 1000:
+                # 保留既有队列容量范围，限制 DDS 缓冲规模。
+                raise ValueError('qos_depth must be in [1,1000]')
 
-            def parameter(name, default):
-                # 配置只在启动时应用；运行期明确拒绝修改，避免显示值与实际转换不同。
-                return self.declare_parameter(
-                    name,
-                    default,
-                    descriptor=ParameterDescriptor(
-                        read_only=True,
-                        description='Startup-only adapter configuration; restart to change.',
-                    ),
-                ).value
+            # 只发布 FC01 实际状态消息，不创建 PX4 控制、解锁或动力设定值发布者。
+            self.publisher = self.create_publisher(
+                VisionState,
+                output_topic,
+                self.qos(depth, self.startup_parameter('output_reliable', False)),
+            )
+            self.adapter = GuardedOdometryAdapter(
+                self.config,
+                self.startup_parameter('pair_timeout', 0.05),
+                self.startup_parameter('max_pending', 32),
+            )
+            self.input_topic, self.health_topic = input_topic, health_topic
+            self.last_reason = ''
+            self.connect_inputs(input_topic, health_topic, depth)
+            self.get_logger().info(
+                'Explicit V1 Odometry adapter; input='
+                + input_topic
+                + ' health='
+                + health_topic
+                + ' output='
+                + output_topic
+            )
 
+        def startup_parameter(self, name, default):
+            """声明一个启动只读参数并返回其值；name/default 原样交给 ROS，不做隐式转换。
+
+            副作用是按构造调用顺序声明参数；必须在创建对应端点前完成，运行时不能续改标定或时钟。
+            """
+            return self.declare_parameter(
+                name,
+                default,
+                descriptor=ParameterDescriptor(
+                    read_only=True,
+                    description='Startup-only adapter configuration; restart to change.',
+                ),
+            ).value
+
+        def configure_measurement_clock(self):
+            """拒绝模拟时钟并固定系统测量时钟描述符；无返回值，仅修改参数描述符。
+
+            在读取标定和创建端点之前执行；不将单调等待时间解释成 ROS 测量时间。
+            """
             if self.get_parameter('use_sim_time').value:
                 # 当前接口只接受已约定的 ROS/系统测量时钟，不能自动改用模拟时钟。
                 raise ValueError('V1 adapter requires agreed ROS/system measurement stamps')
@@ -565,9 +608,16 @@ def main(args=None):
                     description='V1 adapter requires the agreed ROS/system time domain.',
                 ),
             )
+
+        def load_conversion_config(self):
+            """按原字段次序读取显式坐标/外参并校验，成功后保存在 self.config；无返回值。
+
+            米制 NED/FRD 和 wxyz 约定由 AdapterConfig 验证；缺项仍用 NaN 拒绝，不填充虚构标定。
+            必须先完成时钟检查，失败时仍在创建任何数据端点之前抛出原异常。
+            """
             # 没有通用的相机坐标或安装默认值；启动者必须明确填写接口合同。
             values = {
-                name: parameter(name, '')
+                name: self.startup_parameter(name, '')
                 for name in (
                     'source_id',
                     'input_frame_id',
@@ -585,69 +635,61 @@ def main(args=None):
                 ('world_translation_ned', 3),
             ):
                 # 未配置的旋转/平移保留 NaN，让校验拒绝，不能伪造单位旋转或零杆臂。
-                values[name] = tuple(parameter(name, [NAN] * length))
+                values[name] = tuple(self.startup_parameter(name, [NAN] * length))
             self.config = AdapterConfig(**values)
             self.config.validate()
-            input_topic, health_topic = parameter('input_topic', ''), parameter('health_topic', '')
+
+        def input_topics(self):
+            """声明并返回 (Odometry, Health) 输入话题；只声明参数，缺一项则按原文本拒绝。
+
+            此步骤在标定验证后、输出话题与 QoS 参数前执行，保持首个错误及声明顺序。
+            """
+            input_topic, health_topic = self.startup_parameter(
+                'input_topic', ''
+            ), self.startup_parameter('health_topic', '')
             if not input_topic or not health_topic:
                 # 厂商话题名尚未通用约定，禁止自动猜测另一个传感器的数据入口。
                 raise ValueError(
                     'explicit input_topic and health_topic are required; vendor topics are unknown'
                 )
-            output_topic = parameter('output_topic', '/fc01/vision/state')
-            depth = parameter('qos_depth', 5)
-            if depth < 1 or depth > 1000:
-                # 保留既有队列容量范围，限制 DDS 缓冲规模。
-                raise ValueError('qos_depth must be in [1,1000]')
+            return input_topic, health_topic
 
-            def qos(reliable):
-                # 不保留历史消息给新订阅者；可靠性仍按每个接口的启动参数选择。
-                return QoSProfile(
-                    depth=depth,
-                    durability=DurabilityPolicy.VOLATILE,
-                    reliability=(
-                        ReliabilityPolicy.RELIABLE if reliable else ReliabilityPolicy.BEST_EFFORT
-                    ),
-                )
+        def qos(self, depth, reliable):
+            """按给定队列深度和可靠性构造 QoS；返回新配置，不修改节点或保存历史消息。
 
-            # 只发布 FC01 实际状态消息，不创建 PX4 控制、解锁或动力设定值发布者。
-            self.publisher = self.create_publisher(
-                VisionState,
-                output_topic,
-                qos(parameter('output_reliable', False)),
+            depth 已先通过 [1,1000] 校验；VOLATILE 与可靠性选择保持原接口合同。
+            """
+            return QoSProfile(
+                depth=depth,
+                durability=DurabilityPolicy.VOLATILE,
+                reliability=(
+                    ReliabilityPolicy.RELIABLE if reliable else ReliabilityPolicy.BEST_EFFORT
+                ),
             )
-            self.adapter = GuardedOdometryAdapter(
-                self.config,
-                parameter('pair_timeout', 0.05),
-                parameter('max_pending', 32),
-            )
-            self.input_topic, self.health_topic = input_topic, health_topic
-            self.last_reason = ''
+
+        def connect_inputs(self, input_topic, health_topic, depth):
+            """按 Odometry→Health→超时定时器次序建立输入，保存三个句柄；无返回值。
+
+            输入参数是已校验的话题和队列深度。self.adapter/publisher/话题状态必须先存在；
+            回调逐次重新取单调秒、ROS 纳秒和来源数，不能缓存来源授权或改变撤销事件顺序。
+            """
             # 每个回调都重新观察本机时间与两个原始来源数量，再把结果送入适配器。
             self.odom_subscription = self.create_subscription(
                 Odometry,
                 input_topic,
                 lambda message: self.emit(self.adapter.odometry(message, *self.source_context())),
-                qos(parameter('odometry_reliable', False)),
+                self.qos(depth, self.startup_parameter('odometry_reliable', False)),
             )
             self.health_subscription = self.create_subscription(
                 VisionHealth,
                 health_topic,
                 lambda message: self.emit(self.adapter.health(message, *self.source_context())),
-                qos(parameter('health_reliable', True)),
+                self.qos(depth, self.startup_parameter('health_reliable', True)),
             )
             # 无消息时仍观察配对超时和图冲突；定时周期保持原来的 min(10 ms, 配对窗口)。
             self.expiry_timer = self.create_timer(
                 min(0.01, self.adapter.pairs.timeout),
                 lambda: self.emit(self.adapter.poll(*self.source_context())),
-            )
-            self.get_logger().info(
-                'Explicit V1 Odometry adapter; input='
-                + input_topic
-                + ' health='
-                + health_topic
-                + ' output='
-                + output_topic
             )
 
         def source_context(self):
@@ -659,49 +701,86 @@ def main(args=None):
                 self.count_publishers(self.health_topic),
             )
 
+        def state_message(self, converted):
+            """将一个已转换状态映射成 VisionState；返回新消息，不发布、不修改配对或日志状态。
+
+            测量/撤销观察时间仍按整数纳秒拆分；字段、有效位和 NaN 原样保留，不能在输出层补有效性。
+            """
+            message = VisionState()
+            message.sequence = converted.sequence
+            # 精确保留测量/撤销观察时间，按 ROS 的 sec + nanosec 格式拆分。
+            message.stamp.sec = converted.stamp_ns // 1_000_000_000
+            message.stamp.nanosec = converted.stamp_ns % 1_000_000_000
+            # 消息身份与有效位原样传递，不在 ROS 输出层重新猜测测量可信性。
+            for name in (
+                'schema_version',
+                'reset_counter',
+                'frame_id',
+                'body_frame_id',
+                'source_id',
+                'angular_velocity_source',
+                'initialized',
+                'tracking',
+                'calibration_valid',
+                'valid_fields',
+                'quality',
+            ):
+                setattr(message, name, getattr(converted, name))
+            for name in (
+                'position',
+                'velocity',
+                'attitude',
+                'angular_velocity',
+                'pose_covariance',
+                'twist_covariance',
+            ):
+                setattr(message, name, list(getattr(converted, name)))
+            return message
+
+        def report_reason_change(self, converted):
+            """仅在原因变化时记录原日志文本，成功写日志后更新 last_reason；无返回值。
+
+            必须在该状态消息发布后调用，日志节流不允许删去撤销消息；日志异常仍原样暴露。
+            """
+            if converted.reason != self.last_reason:
+                # 日志只记录原因变化；状态消息仍逐项发布，不能用日志节流丢弃撤销事件。
+                self.get_logger().info(
+                    'state_quality='
+                    + converted.reason
+                    + ' canonical_sequence='
+                    + str(converted.sequence)
+                    + ' raw_health_sequence='
+                    + str(converted.raw_health_sequence)
+                )
+                self.last_reason = converted.reason
+
         def emit(self, states):
+            """按输入顺序发布每个转换/撤销状态，再记录原因变化；无返回值。
+
+            states 由配对/来源监控产生；本函数只更新发布器与 last_reason，不授予飞行控制权限。
+            消息映射→实际发布→原因日志的顺序与异常传播保持不变。
+            """
             for converted in states:
-                message = VisionState()
-                message.sequence = converted.sequence
-                # 精确保留测量/撤销观察时间，按 ROS 的 sec + nanosec 格式拆分。
-                message.stamp.sec = converted.stamp_ns // 1_000_000_000
-                message.stamp.nanosec = converted.stamp_ns % 1_000_000_000
-                # 消息身份与有效位原样传递，不在 ROS 输出层重新猜测测量可信性。
-                for name in (
-                    'schema_version',
-                    'reset_counter',
-                    'frame_id',
-                    'body_frame_id',
-                    'source_id',
-                    'angular_velocity_source',
-                    'initialized',
-                    'tracking',
-                    'calibration_valid',
-                    'valid_fields',
-                    'quality',
-                ):
-                    setattr(message, name, getattr(converted, name))
-                for name in (
-                    'position',
-                    'velocity',
-                    'attitude',
-                    'angular_velocity',
-                    'pose_covariance',
-                    'twist_covariance',
-                ):
-                    setattr(message, name, list(getattr(converted, name)))
-                self.publisher.publish(message)
-                if converted.reason != self.last_reason:
-                    # 日志只记录原因变化；状态消息仍逐项发布，不能用日志节流丢弃撤销事件。
-                    self.get_logger().info(
-                        'state_quality='
-                        + converted.reason
-                        + ' canonical_sequence='
-                        + str(converted.sequence)
-                        + ' raw_health_sequence='
-                        + str(converted.raw_health_sequence)
-                    )
-                    self.last_reason = converted.reason
+                self.publisher.publish(self.state_message(converted))
+                self.report_reason_change(converted)
+
+    return OdometryAdapterNode
+
+
+def main(args=None):
+    """以可选 ROS 命令行 args 运行适配器；正常停止无返回值，非停止异常继续向上传播。
+
+    仅此入口持有节点、executor 和临时信号处理器。SIGINT/SIGTERM 只请求停止，
+    先结束当前回调，再移出/销毁节点、关闭 context、恢复调用者的处理器。
+    100 ms 只是空闲 executor 等待上限，不是包含回调/清理的硬实时退出保证。
+    """
+    import signal
+
+    import rclpy
+    from rclpy.executors import ExternalShutdownException
+    from rclpy.signals import SignalHandlerOptions
+
+    OdometryAdapterNode = _adapter_node_type()
 
     # ROS 的异步信号处理会先关闭 context，可能打断正在取消息/查询来源的回调。
     # Python 信号处理器仅置停止标志；不在 C 扩展取消息期间抛异常或关闭 context。
@@ -725,7 +804,7 @@ def main(args=None):
         executor = rclpy.get_global_executor()
         try:
             executor.add_node(node)
-            # 秒为单调等待上限，不改变输入的 ROS 测量时间；空闲时也能在 100 ms 内观察停止。
+            # 100 ms 只是空闲等待上限；已开始的回调和清理耗时不属于硬实时保证。
             # 已开始的回调先完整结束；与 rclpy.spin 相同，每次仍只执行 executor 的一项工作。
             while executor.context.ok() and not stop_requested:
                 executor.spin_once(timeout_sec=0.1)
