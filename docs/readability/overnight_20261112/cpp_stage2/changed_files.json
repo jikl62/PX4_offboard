@@ -1,0 +1,186 @@
+{
+  "initial_head": "5b86eeb4094ada009903c0140f66289cfe89411e",
+  "source_commit": "39a7c8f844bb66655735bf41e8b33f5b1044d862",
+  "files": [
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "baseline_sha256": "e53fdf955b4923a0cb17f8c5feba22cd3cbb1436c09b167654c13c8f80f78108",
+      "current_sha256": "c7e9b9951f02cc7380d7d06e62b889ac22a1ba349871c952718f529a77820d26",
+      "lines": 2905,
+      "reason": "阶段条件、同帧状态转移、推力调度、四层结果及故障恢复；翻译英文业务注释。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp",
+      "baseline_sha256": "725f64546fe2cdbd29ac091fe352933af5be664fa51e1280ea3378b29d2b3137",
+      "current_sha256": "6b583b4db3477b13aee41112761dbf0f89fe8378d6d4bd636491e3d12a49b43c",
+      "lines": 80,
+      "reason": "数组/引用/optional与归一化、yaw半角、活动参考重置。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+      "baseline_sha256": "248a1a4ae902861401ef7887b3612fd1d05577eba291157adaba84b51897d010",
+      "current_sha256": "d857a1e0c585dba543fb72c9cecfd168c9888685b489167afa30bad2d136a8aa",
+      "lines": 390,
+      "reason": "配置/观测/事务/计划的数据字典、物理单位、默认值和有效性条件。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp",
+      "baseline_sha256": "1c91dd2b0244d2c0a400d8d16ccf90e1f7421a4332b30476c9687b7d0203567e",
+      "current_sha256": "207c609b1484a0fbe3816dcdc9cfe8181d2440714cd5a3769fe66728100df92a",
+      "lines": 54,
+      "reason": "模板消息身份、optional/pair、精确零及double到float的线格式边界。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority.hpp",
+      "baseline_sha256": "b4d9118975249b7eb27bb3c4678c10b2a8595b6fa2224a8581db5034da8f446c",
+      "current_sha256": "76149d4ccda64d63c3d3e13dadd62e3095143f4287f7427e0d9e7914eeaa26d1",
+      "lines": 97,
+      "reason": "权限路线、锁存优先级、只读判定和参数合同。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp",
+      "baseline_sha256": "32236143b48192825626d20cfd5a9eebc1402a70ab4312fade0ef12ea0362b7b",
+      "current_sha256": "98677753de1b5c5e1097777aee54307acdedf60ed6ab7ae57673155155789d04",
+      "lines": 67,
+      "reason": "危险/恢复边沿FIFO、值所有权、借用指针与确认/清溢出区别。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_audit.hpp",
+      "baseline_sha256": "1e64e3f407409786af5ebb7a11c0b30692a859fc43731875e9c1200d3289cbea",
+      "current_sha256": "00fe894691b8676a9b8a43dc2e6ced36a3e2f2c6196107cb152e764ef4ddfcf2",
+      "lines": 47,
+      "reason": "本地双sink审计、主机单调时间和部分提交事实。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+      "baseline_sha256": "4b21d5ebdc7bac69351686e0a2255722ccf8e232cd1c176edb3dbf0a13958e94",
+      "current_sha256": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+      "lines": 140,
+      "reason": "三次重采样、同步lambda与转发引用、可空证据指针及异常传播。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+      "baseline_sha256": "5eaed14da1a55806d4cb63440ea5073b0d198839802cec4e386a2051f12de300",
+      "current_sha256": "242d7d64d137d835fae4e682ead34e71998d6aaa90fd80860235e67eb8389ab6",
+      "lines": 704,
+      "reason": "逐出口健康/权限/地面/状态/输出门、拒绝顺序和零流例外。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "baseline_sha256": "b973a96663a6c0485f859d82ec8c85d326a95c0c074fc254ea3dee6635ab681b",
+      "current_sha256": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+      "lines": 570,
+      "reason": "READY零流、人工边沿、固定配对期限、地面独立证据和optional销毁。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp",
+      "baseline_sha256": "4cb467ea2c288484a94157c6820be30b213616a1800ee946c4cca1699cd9c9f9",
+      "current_sha256": "4757cd5a450ff4e6ff883c480ab5bfc3a10e9e8496e385fec76c9edf3ab171b9",
+      "lines": 103,
+      "reason": "离散/恢复边沿、元组比较、采样遗漏与纯垂向未使用字段。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp",
+      "baseline_sha256": "d44ecf9f80acd7adc19012c807f0d6354a9a794708f9da054bd1ce58f2a742b4",
+      "current_sha256": "0ac823c9daaa1d001db0908dc4d5a5bc9d0f823f655eede874421e7b06250253",
+      "lines": 131,
+      "reason": "累计计数、协作式预算、事件优先级、第一轮例外及回调不可抢占。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "baseline_sha256": "a0bc3838b62fbc496c90cca4866d860c4155e3322fafb8ad956fa1791bc3f1a5",
+      "current_sha256": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+      "lines": 1698,
+      "reason": "request/ack/step与事务字段、176时钟候选、400歧义、所有权和状态寿命。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp",
+      "baseline_sha256": "3bb7a0b3ab46ad368a22b7d62de4254e36b314bb8a19f8acb909b1a03b3ecb92",
+      "current_sha256": "35d3c0b30c77d22c3598be88b2555eafd4b71bdd01ee386f9db66b3f26e55a18",
+      "lines": 104,
+      "reason": "源微秒/单调秒、原始样本进展、无符号安全相减和严格时间边界。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp",
+      "baseline_sha256": "44528f63376e5e998ff5b3b3b4dc6fbd98de409698bac97b1c11b20aa2f2eb5b",
+      "current_sha256": "4be400538893b36756edb8a2da0f81d6130772f1f9eb9f8832176c61a2017645",
+      "lines": 159,
+      "reason": "异步双源离地证明、双时间窗口、弹跳及共同估计漂移限制。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+      "baseline_sha256": "69b86aabeb6715775e89aefe1bba4eeea3b4f00a17accf4bc27553edcb3b5b9a",
+      "current_sha256": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+      "lines": 224,
+      "reason": "高度外环/速度PI、试算积分、抗饱和、共享slew、单位和数值例。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+      "baseline_sha256": "caf94bf879a3115e5214c841fa2fb2749d0ae206f067a4981c3f1e656bbde15e",
+      "current_sha256": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+      "lines": 168,
+      "reason": "梯形积分、严格新样本、水位和诊断/硬拒绝分工。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "baseline_sha256": "535aa142fb718c28371b3b35b9b637c8ce1bf078891575e542940f9f6d2cf47f",
+      "current_sha256": "ce6536cbbd115996a42ccdd8097fe33ed89e7460a4d3baba2f5cb1bf6e29a51c",
+      "lines": 2305,
+      "reason": "订阅与RAII、八段tick、计划/提交/状态层次、缓存水位、关闭与诊断。",
+      "executable_tokens_equal": true,
+      "function_extractions": 0,
+      "intentional_behavior_changes": []
+    }
+  ]
+}
