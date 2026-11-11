@@ -29,6 +29,8 @@ PY
 mkdir -p "$release/workspace/src"
 cp -a "$messages" "$release/workspace/src/px4_msgs"
 cp -a "$release/src/jikl_fc01_system" "$release/workspace/src/jikl_fc01_system"
+# CMake 从包目录的 ../../tools 安装视觉工具；保留复制后工作区内的同一相对布局。
+cp -a "$release/tools" "$release/workspace/tools"
 set +u
 source "$ros_setup"
 set -u

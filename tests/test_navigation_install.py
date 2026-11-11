@@ -196,6 +196,62 @@ class InstallTests(unittest.TestCase):
                 self.assertEqual(first,m.source_key(root,root/'base'))
                 os.utime(compiler,ns=(st.st_atime_ns,st.st_mtime_ns+1))
                 self.assertNotEqual(first,m.source_key(root,root/'base'))
+    def test_installed_tool_source_changes_select_a_new_build_key(self):
+        m=self.module()
+        with tempfile.TemporaryDirectory() as d:
+            entry=Path(d);tool=entry/'native/tools/vision_odometry_adapter.py'
+            tool.parent.mkdir(parents=True);tool.write_text('old tool\n')
+            before=m.source_key(entry,entry/'sdk')
+            # 控制器源码没变，但 CMake 安装的 Python 工具变化也需要重新安装。
+            tool.write_text('new tool\n')
+            self.assertNotEqual(before,m.source_key(entry,entry/'sdk'))
+    def test_completion_covers_tools_typesupport_and_generated_messages(self):
+        m=self.module()
+        installed_names=(
+            'lib/jikl_fc01_system/velocity_command_diagnostic.py',
+            'lib/libjikl_fc01_system__rosidl_typesupport_cpp.so',
+            'lib/python3.10/site-packages/jikl_fc01_system/msg/_velocity_command.py',
+        )
+        for changed_name in installed_names:
+            for action in ('modify','remove','add'):
+                with self.subTest(file=changed_name,action=action),tempfile.TemporaryDirectory() as d:
+                    entry=Path(d);prefix=entry/'.build/key/install';commands=[]
+                    def run(argv,**kwargs):
+                        commands.append(argv)
+                        if argv[1]=='--install':
+                            # 构建替身只生成安装结果；不会运行控制器或修改服务。
+                            for name in (*installed_names,'lib/jikl_fc01_system/fc01_system_node',
+                                         'lib/jikl_fc01_system/fc01_config_check'):
+                                path=prefix/name;path.parent.mkdir(parents=True,exist_ok=True)
+                                path.write_text('original '+name)
+                    with patch.object(m.shutil,'which',return_value='/usr/bin/tool'):
+                        m.build_native(entry,prefix,entry/'.build/key/build',run=run)
+                        self.assertTrue(m.build_complete(prefix))
+                        m.build_native(entry,prefix,entry/'.build/key/build',run=run)
+                        self.assertEqual(len(commands),3) # 完全一致的安装树仍可复用。
+                        changed=prefix/changed_name
+                        if action=='modify':changed.write_text('changed artifact')
+                        elif action=='remove':changed.unlink()
+                        else:changed.with_name(changed.name+'.extra').write_text('unrecorded artifact')
+                        self.assertFalse(m.build_complete(prefix))
+                        # 不覆盖可能仍被服务使用的旧前缀，重试必须选择独立的新目录。
+                        with self.assertRaisesRegex(RuntimeError,'已有构建目录不完整或被修改'):
+                            m.build_native(entry,prefix,entry/'.build/key/build',run=run)
+                        self.assertNotEqual(m.staging_path(entry,'key'),prefix.parent)
+                        self.assertTrue(prefix.is_dir())
+    def test_legacy_binary_only_completion_record_is_not_reused(self):
+        import hashlib
+        m=self.module()
+        with tempfile.TemporaryDirectory() as d:
+            entry=Path(d);prefix=entry/'.build/key/install';saved={}
+            for name in ('fc01_system_node','fc01_config_check'):
+                binary=prefix/'lib/jikl_fc01_system'/name
+                binary.parent.mkdir(parents=True,exist_ok=True);binary.write_bytes(b'original')
+                saved[name]=hashlib.sha256(binary.read_bytes()).hexdigest()
+            # 旧证据缺少消息和工具摘要，不能把它升级解释成完整安装验收。
+            (prefix.parent/'build-complete.json').write_text(json.dumps(saved))
+            self.assertFalse(m.build_complete(prefix))
+            self.assertNotEqual(m.staging_path(entry,'key'),prefix.parent)
     def test_partial_install_prefix_is_retained_and_retry_selects_a_new_stage(self):
         m=self.module()
         with tempfile.TemporaryDirectory() as d:

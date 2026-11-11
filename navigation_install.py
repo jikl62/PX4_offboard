@@ -16,6 +16,7 @@ import time
 
 from autostart import MARKER as OLD_MARKER,quote
 from launcher import PROJECT,private_dir,process_list
+from navigation_build_evidence import BuildEvidenceError, tree_fingerprint
 
 SERVICE='fc01-navigation.service'
 OLD='fc01-standby.service'
@@ -78,7 +79,8 @@ X-GNOME-Autostart-enabled=true
 
 def source_key(entry,project):
     h=hashlib.sha256()
-    for root in (entry/'native/src',project/'install_r632/px4_msgs/include'):
+    # CMake 还会安装 native/tools 中的 Python 工具；它们变化也必须选择新构建目录。
+    for root in (entry/'native/src',entry/'native/tools',project/'install_r632/px4_msgs/include'):
         for p in sorted(root.rglob('*')):
             if p.is_file():h.update(str(p.relative_to(root)).encode());h.update(p.read_bytes())
     h.update(os.uname().machine.encode())
@@ -92,8 +94,10 @@ def build_complete(prefix):
     binaries=[prefix/'lib/jikl_fc01_system'/name for name in ('fc01_system_node','fc01_config_check')]
     try:
         saved=json.loads((prefix.parent/'build-complete.json').read_text())
-        return saved=={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in binaries}
-    except (OSError,ValueError):return False
+        # 两个 ELF 未变不代表消息库、Python 模块和工具未变；旧版二进制清单不再复用。
+        return (saved.get('schema')==2 and all(p.is_file() for p in binaries) and
+                saved.get('installed_files')==tree_fingerprint(prefix))
+    except (OSError,ValueError,AttributeError,BuildEvidenceError):return False
 
 def staging_path(entry,key):
     for attempt in range(1000):
@@ -112,7 +116,9 @@ def build_native(entry,prefix,build,run=subprocess.run):
     run(['cmake','--install',str(build)],check=True)
     binaries=[prefix/'lib/jikl_fc01_system'/name for name in ('fc01_system_node','fc01_config_check')]
     if all(p.is_file() for p in binaries):
-        (prefix.parent/'build-complete.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in binaries}))
+        # 完整安装树是复用证据；新增、删除或修改任一实际安装文件均使本目录失效。
+        (prefix.parent/'build-complete.json').write_text(json.dumps(
+            {'schema':2,'installed_files':tree_fingerprint(prefix)}))
 
 def boot(entry,home,project,action,*args):
     from standby import rotating_logger
