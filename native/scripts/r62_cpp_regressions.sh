@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
+# R6.2 离线测试集合：逐个严格编译 C++、检查适配接口并只读回放历史 CSV。
 # Offline C++ unit tests and API syntax fixture; does not access PX4 or hardware.
 set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+# 所有临时程序放入 mktemp 目录，EXIT trap 仅清理本次创建的目录。
 workspace="$(mktemp -d)"
 trap 'rm -rf -- "$workspace"' EXIT
 pass=0
+# 每个程序独立执行，任一编译/断言失败即停止；通过数不代表 ROS 或实飞验收。
 for test_file in "$root"/tests/test_*.cpp; do
   base="$(basename "$test_file" .cpp)"
   g++ -std=c++17 -Wall -Wextra -Werror -pedantic \

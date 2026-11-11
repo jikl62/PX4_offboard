@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 全量原生离线回归入口：严格编译断言测试、保留历史反例回放，再检查适配器与 Python 测试。
 set -euo pipefail
 ulimit -c 0
 export PYTHONDONTWRITEBYTECODE=1
@@ -6,6 +7,7 @@ root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 test_dir="$(mktemp -d)"
 trap 'rm -rf -- "$test_dir"' EXIT
 inc="$root/src/jikl_fc01_system/include"
+# 当前正向安全回归必须全部成功；历史反例原字节单独保存，其旧漏洞断言不能冒充当前失败。
 for test_file in "$root"/tests/test_*.cpp; do
   bin="$test_dir/$(basename "$test_file" .cpp)"
   g++ -std=c++17 -Wall -Wextra -Werror -pedantic -I "$inc" "$test_file" -o "$bin"
@@ -24,6 +26,7 @@ done
 # C11/C12 assert that old vulnerabilities exist. Preserve their exact bytes
 # and replay each independently; expected vulnerability-assert aborts are
 # diagnostic only. test_m1_r4_ack_isolation above proves positive safety.
+# 回放器负责解释历史预期中止；之后才执行当前接口及 Python 回归。
 python3 "$root/tests/replay_c11_c12.py"
 python3 "$root/tests/adapter_compile_check.py"
 if compgen -G "$root/tests/test_*.py" >/dev/null; then

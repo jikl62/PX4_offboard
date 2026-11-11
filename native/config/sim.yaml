@@ -1,10 +1,19 @@
+# 仅用于独立 DDS 域的仿真 profile；flight_enabled=true 只适用于模拟链路，不能部署实机。
 fc01_system:
   ros__parameters:
+    # 使用系统实测时间；当前生产节点拒绝模拟时间，不能混用回放时钟。
     use_sim_time: false
+    # 选择控制路径；attitude_altitude 使用姿态+推力定高，flight/sim 是另一通用速度路径。
     profile: sim
+    # 通用速度飞行入口的独立门；false 不等于其它姿态动作门自动获得权限。
     flight_enabled: true
+    # 通用速度路径相对任务原点向上最大高度，单位 m。
     max_height_m: 8.0
+    # 通用速度路径距任务原点的水平最大半径，单位 m。
     max_radius_m: 20.0
+    # 通用速度路径水平合速度上限，单位 m/s，不是每轴独立上限。
     max_xy_speed: 0.8
+    # 通用速度路径垂直速度绝对值上限，单位 m/s；发送 PX4 NED 时向下为正。
     max_z_speed: 0.5
+    # 通用速度路径偏航角速度绝对值上限，单位 rad/s。
     max_yaw_rate: 0.5

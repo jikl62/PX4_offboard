@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
+# 旧版入口门控的一次性修补工具：仅匹配已知代码片段、先备份再写入，随后显式调用旧入口 --flight。
+# 此脚本确实会启动旧交互流程；不是本轮离线检查命令，不应在审查时执行。
 fc01_existing_entry=${FC01_CONTROL_INSTALL_DIR:-"$HOME/FC01_OrangePi_Control_20261027"}
+# 内嵌 Python 是原始修补载荷，保持字节不变；符号链接/未知版本拒绝修改。
 if FC01_EXISTING_ENTRY="$fc01_existing_entry" python3 - <<'PY'
 import os
 from pathlib import Path
@@ -22,6 +25,7 @@ elif s.count(new) != 1:
     raise SystemExit('入口版本不匹配，未修改')
 print('已修正：flight_enabled=false，使用独立姿态定高动作开关。')
 PY
+# 只有修补检查成功才调用旧启动器；旧启动器内部的确认与飞行门仍然生效。
 then
   bash "$fc01_existing_entry/start.sh" --flight
 else

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
+# 部署环境共享函数：SDK 选择优先级为显式环境、部署配置、既有默认目录；路径/环境不完整即拒绝。
 # Source this helper; changes apply only to the calling deployment process.
+# 返回经过真实路径解析且具有 install_r632/local_setup.bash 的 SDK；子 Python 仅输出所选路径。
 fc01_resolve_sdk() {
   local fc01_env_entry="$1" fc01_env_sdk
   fc01_env_sdk=$(/usr/bin/python3 - "$fc01_env_entry" "${FC01_PROJECT_ROOT:-}" <<'PY'
@@ -30,6 +32,7 @@ PY
   export FC01_PROJECT_ROOT="$fc01_env_sdk"
 }
 
+# 保存调用方 nounset 状态，临时允许 ROS setup 读取未设置变量，结束时恢复原选项。
 fc01_load_environment() {
   local fc01_env_entry="$1" fc01_env_nounset=0 fc01_env_result=0
   fc01_resolve_sdk "$fc01_env_entry" || return $?
@@ -37,6 +40,7 @@ fc01_load_environment() {
     echo 'FC01_SDK_ENVIRONMENT_FAILED: ROS 2 Humble setup is missing' >&2
     return 2
   fi
+  # 不能假定调用方已关闭 -u；ROS/SDK source 失败应保留退出码并拒绝继续。
   case "$-" in *u*) fc01_env_nounset=1 ;; esac
   set +u
   source /opt/ros/humble/setup.bash || fc01_env_result=$?
@@ -52,5 +56,6 @@ fc01_load_environment() {
     echo 'FC01_SDK_ENVIRONMENT_FAILED: ROS_DISTRO must be humble' >&2
     return 2
   fi
+  # 正式链路使用域 0 和网络可见 DDS；此设置是现有部署合同，不代表已证明带宽或来源正确。
   export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0 PYTHONUNBUFFERED=1
 }
