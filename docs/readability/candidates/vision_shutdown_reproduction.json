@@ -1,0 +1,442 @@
+{
+  "recorded_utc": "2026-11-11T13:57:42.969942+00:00",
+  "run_dir": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710",
+  "original_installed_suite_passed": false,
+  "production_source_modified_for_candidate": false,
+  "candidate_applied": false,
+  "build_fresh": true,
+  "build_architecture": "x86_64",
+  "stages": {
+    "build": {
+      "returncode": 0,
+      "duration_sec": 43.94371988600142,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/build.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/build.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/build.log"
+    },
+    "verify_install": {
+      "returncode": 0,
+      "duration_sec": 0.4650259139998525,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/verify_install.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/verify_install.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/verify_install.log"
+    },
+    "vision_smoke": {
+      "returncode": 1,
+      "duration_sec": 1.1758424620002188,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/vision_smoke.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/vision_smoke.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/vision_smoke.log"
+    },
+    "vision_smoke_retry": {
+      "returncode": 1,
+      "duration_sec": 0.96910283500074,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/vision_smoke_retry.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/vision_smoke_retry.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/vision_smoke_retry.log"
+    },
+    "velocity_command_smoke": {
+      "returncode": 0,
+      "duration_sec": 6.135775426000691,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/velocity_command_smoke.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/velocity_command_smoke.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/velocity_command_smoke.log"
+    },
+    "baseline_vision_smoke": {
+      "returncode": 0,
+      "duration_sec": 0.9186051119995682,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/baseline_vision_smoke.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/baseline_vision_smoke.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/baseline_vision_smoke.log"
+    },
+    "baseline_adapter_same_environment": {
+      "returncode": 1,
+      "duration_sec": 0.9177650569999969,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/baseline_adapter_same_environment.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/baseline_adapter_same_environment.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/baseline_adapter_same_environment.log"
+    },
+    "candidate_vision_smoke_174": {
+      "returncode": 0,
+      "duration_sec": 0.9192459799996868,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_vision_smoke_174.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_vision_smoke_174.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_vision_smoke_174.log"
+    },
+    "candidate_vision_smoke_175": {
+      "returncode": 0,
+      "duration_sec": 1.018483716999981,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_vision_smoke_175.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_vision_smoke_175.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_vision_smoke_175.log"
+    },
+    "candidate_active_exception_probe": {
+      "returncode": 0,
+      "duration_sec": 0.46738897700015514,
+      "command_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_active_exception_probe.command.sh",
+      "result_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_active_exception_probe.result.json",
+      "log_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_active_exception_probe.log"
+    }
+  },
+  "installed_verification": {
+    "passed": true,
+    "python": "/usr/bin/python3",
+    "px4_msgs_path": [
+      "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/install_r632/px4_msgs/local/lib/python3.10/dist-packages/px4_msgs"
+    ],
+    "prefix": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/install/jikl_fc01_system",
+    "installed_tools": [
+      {
+        "name": "vision_odometry_adapter.py",
+        "path": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/install/jikl_fc01_system/lib/jikl_fc01_system/vision_odometry_adapter.py",
+        "source_sha256": "f3685cff75f4ab00cc726eff3b65ef4dce9c8f1bfa0a1a6bdfad118db97e9dd5",
+        "installed_sha256": "f3685cff75f4ab00cc726eff3b65ef4dce9c8f1bfa0a1a6bdfad118db97e9dd5",
+        "byte_identical": true
+      },
+      {
+        "name": "velocity_command_diagnostic.py",
+        "path": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/install/jikl_fc01_system/lib/jikl_fc01_system/velocity_command_diagnostic.py",
+        "source_sha256": "3030f59eb01a151e076daedd0232ec6634923d51e466172df75aafcea28c42f9",
+        "installed_sha256": "3030f59eb01a151e076daedd0232ec6634923d51e466172df75aafcea28c42f9",
+        "byte_identical": true
+      },
+      {
+        "name": "vision_state_validation.py",
+        "path": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/install/jikl_fc01_system/lib/jikl_fc01_system/vision_state_validation.py",
+        "source_sha256": "f35a5ad3307cdd75fdb4a27271e0f5d91af08b9d5bb034a58931e7b2705677d0",
+        "installed_sha256": "f35a5ad3307cdd75fdb4a27271e0f5d91af08b9d5bb034a58931e7b2705677d0",
+        "byte_identical": true
+      }
+    ],
+    "interfaces": [
+      {
+        "type": "jikl_fc01_system/msg/VisionState",
+        "module": "jikl_fc01_system.msg._vision_state",
+        "module_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_vision_state.py",
+        "fields": {
+          "schema_version": "uint16",
+          "sequence": "uint64",
+          "stamp": "builtin_interfaces/Time",
+          "reset_counter": "uint32",
+          "frame_id": "string",
+          "body_frame_id": "string",
+          "source_id": "string",
+          "angular_velocity_source": "string",
+          "initialized": "boolean",
+          "tracking": "boolean",
+          "calibration_valid": "boolean",
+          "valid_fields": "uint16",
+          "position": "double[3]",
+          "velocity": "double[3]",
+          "attitude": "double[4]",
+          "angular_velocity": "double[3]",
+          "pose_covariance": "double[36]",
+          "twist_covariance": "double[36]",
+          "quality": "double"
+        },
+        "schema_version_default": 1,
+        "cdr_round_trip": true,
+        "cdr_bytes": 756,
+        "installed_msg_byte_identical": true
+      },
+      {
+        "type": "jikl_fc01_system/msg/NavigationCommand",
+        "module": "jikl_fc01_system.msg._navigation_command",
+        "module_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_navigation_command.py",
+        "fields": {
+          "schema_version": "uint16",
+          "sequence": "uint64",
+          "stamp": "builtin_interfaces/Time",
+          "reset_counter": "uint32",
+          "source_id": "string",
+          "frame_id": "string",
+          "mode": "uint8",
+          "valid": "boolean",
+          "position_valid": "boolean",
+          "yaw_valid": "boolean",
+          "sticks_valid": "boolean",
+          "position": "double[3]",
+          "yaw": "double",
+          "sticks": "double[4]"
+        },
+        "schema_version_default": 1,
+        "cdr_round_trip": true,
+        "cdr_bytes": 116,
+        "installed_msg_byte_identical": true
+      },
+      {
+        "type": "jikl_fc01_system/msg/VelocityCommand",
+        "module": "jikl_fc01_system.msg._velocity_command",
+        "module_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_velocity_command.py",
+        "fields": {
+          "schema_version": "uint16",
+          "sequence": "uint64",
+          "stamp": "builtin_interfaces/Time",
+          "reset_counter": "uint32",
+          "source_id": "string",
+          "frame_id": "string",
+          "valid": "boolean",
+          "vx": "double",
+          "vy": "double",
+          "vz": "double"
+        },
+        "schema_version_default": 1,
+        "cdr_round_trip": true,
+        "cdr_bytes": 76,
+        "installed_msg_byte_identical": true
+      },
+      {
+        "type": "jikl_fc01_system/msg/VisionHealth",
+        "module": "jikl_fc01_system.msg._vision_health",
+        "module_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_vision_health.py",
+        "fields": {
+          "schema_version": "uint16",
+          "stamp": "builtin_interfaces/Time",
+          "sequence": "uint64",
+          "source_id": "string",
+          "frame_id": "string",
+          "body_frame_id": "string",
+          "reset_counter": "uint32",
+          "reset_valid": "boolean",
+          "initialized": "boolean",
+          "tracking": "boolean",
+          "calibration_valid": "boolean",
+          "frame_alignment_valid": "boolean",
+          "time_sync_valid": "boolean",
+          "extrinsics_valid": "boolean",
+          "metric_scale_valid": "boolean",
+          "position_valid": "boolean",
+          "velocity_valid": "boolean",
+          "attitude_valid": "boolean",
+          "angular_velocity_valid": "boolean",
+          "angular_velocity_source": "string",
+          "quality_valid": "boolean",
+          "quality": "double",
+          "extrinsics_id": "string",
+          "alignment_id": "string"
+        },
+        "schema_version_default": 1,
+        "cdr_round_trip": true,
+        "cdr_bytes": 97,
+        "installed_msg_byte_identical": true
+      },
+      {
+        "type": "jikl_fc01_system/msg/AttitudeThrustPreview",
+        "module": "jikl_fc01_system.msg._attitude_thrust_preview",
+        "module_file": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_attitude_thrust_preview.py",
+        "fields": {
+          "schema_version": "uint16",
+          "stamp": "builtin_interfaces/Time",
+          "accepted": "boolean",
+          "active": "boolean",
+          "request_land": "boolean",
+          "reason": "string",
+          "mode": "uint8",
+          "state_sequence": "uint64",
+          "command_sequence": "uint64",
+          "reset_counter": "uint32",
+          "frame_id": "string",
+          "body_frame_id": "string",
+          "attitude": "double[4]",
+          "thrust_body": "double[3]",
+          "target_height": "double",
+          "yaw": "double",
+          "velocity_target": "double[3]",
+          "acceleration_target": "double[3]",
+          "attitude_sink_allowed": "boolean",
+          "thrust_sink_allowed": "boolean"
+        },
+        "schema_version_default": 1,
+        "cdr_round_trip": true,
+        "cdr_bytes": 190,
+        "installed_msg_byte_identical": true
+      }
+    ],
+    "nodes_started": false
+  },
+  "original_vision_smoke": {
+    "passed": false,
+    "exit_code": 1,
+    "successful_report_generated": false,
+    "assertion_groups_reached_before_shutdown_failure": [
+      "read_only_startup_parameters",
+      "valid_conversion",
+      "raw_conflict_revoked",
+      "no_fmu_publishers"
+    ],
+    "failed_check": "sigint_clean_exit",
+    "error": "rclpy pending subscription take_message RuntimeError during SIGINT shutdown",
+    "rollup_note": "Original script returns failure and writes no successful JSON; do not report this installation as 5/5 passed."
+  },
+  "velocity_smoke": {
+    "domain_id": 172,
+    "localhost_only": true,
+    "control_authority": false,
+    "interface": {
+      "type": "jikl_fc01_system/msg/VelocityCommand",
+      "fields": {
+        "schema_version": "uint16",
+        "sequence": "uint64",
+        "stamp": "builtin_interfaces/Time",
+        "reset_counter": "uint32",
+        "source_id": "string",
+        "frame_id": "string",
+        "valid": "boolean",
+        "vx": "double",
+        "vy": "double",
+        "vz": "double"
+      },
+      "default_frame_id": "",
+      "serialization_round_trip": true
+    },
+    "checks": [
+      "startup_overrides_and_read_only_runtime_parameters",
+      "best_effort_type_and_payload",
+      "unconfigured_policy_does_not_qualify_cache",
+      "duplicate_and_out_of_order",
+      "invalid_and_retained_anomaly",
+      "reset_and_source_changes",
+      "source_count_and_reliable_to_best_effort",
+      "explicit_test_timeout",
+      "diagnostic_has_no_fmu_publishers",
+      "reliable_to_reliable",
+      "sigint_final_snapshot_and_forced_anomaly_flush"
+    ],
+    "test_timeout_sec": 1.0,
+    "timeout_is_test_fixture": true,
+    "diagnostic_publishers": [
+      [
+        "/parameter_events",
+        [
+          "rcl_interfaces/msg/ParameterEvent"
+        ]
+      ],
+      [
+        "/rosout",
+        [
+          "rcl_interfaces/msg/Log"
+        ]
+      ]
+    ],
+    "passed": true
+  },
+  "baseline_comparison": {
+    "same_environment_domain_171_returncode": 1,
+    "same_error": true,
+    "different_domain_173_returncode": 0,
+    "interpretation": "Original baseline reproduces the same shutdown issue in domain171 and passes once in domain173; observed behavior is timing sensitive and does not establish a new Chinese-comment regression."
+  },
+  "candidate": {
+    "manifest": {
+      "applied_to_production": false,
+      "source_path": "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tools/vision_odometry_adapter.py",
+      "source_sha256": "f3685cff75f4ab00cc726eff3b65ef4dce9c8f1bfa0a1a6bdfad118db97e9dd5",
+      "candidate_path": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_sigint/vision_odometry_adapter.py",
+      "candidate_sha256": "44d2d886977c1fb272f180005144e3b5885f25958b7d6ab76a9f492c6e39d590",
+      "change": "SIGINT handled by Python KeyboardInterrupt; retain ROS SIGTERM handler; no exception swallowing",
+      "production_source_unchanged_since_candidate_copy": true
+    },
+    "smokes": [
+      {
+        "passed": true,
+        "domain_id": 174,
+        "localhost_only": true,
+        "adapter_path": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_sigint/vision_odometry_adapter.py",
+        "checks": [
+          "read_only_startup_parameters",
+          "valid_conversion",
+          "raw_conflict_revoked",
+          "no_fmu_publishers",
+          "sigint_clean_exit"
+        ],
+        "publisher_endpoints": [
+          [
+            "/fc01_demo/state",
+            [
+              "jikl_fc01_system/msg/VisionState"
+            ]
+          ],
+          [
+            "/parameter_events",
+            [
+              "rcl_interfaces/msg/ParameterEvent"
+            ]
+          ],
+          [
+            "/rosout",
+            [
+              "rcl_interfaces/msg/Log"
+            ]
+          ]
+        ],
+        "shutdown_exit_code": 0
+      },
+      {
+        "passed": true,
+        "domain_id": 175,
+        "localhost_only": true,
+        "adapter_path": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_sigint/vision_odometry_adapter.py",
+        "checks": [
+          "read_only_startup_parameters",
+          "valid_conversion",
+          "raw_conflict_revoked",
+          "no_fmu_publishers",
+          "sigint_clean_exit"
+        ],
+        "publisher_endpoints": [
+          [
+            "/fc01_demo/state",
+            [
+              "jikl_fc01_system/msg/VisionState"
+            ]
+          ],
+          [
+            "/parameter_events",
+            [
+              "rcl_interfaces/msg/ParameterEvent"
+            ]
+          ],
+          [
+            "/rosout",
+            [
+              "rcl_interfaces/msg/Log"
+            ]
+          ]
+        ],
+        "shutdown_exit_code": 0
+      }
+    ],
+    "active_exception_probe": {
+      "passed": true,
+      "adapter_path": "/home/jikl62/.cache/fc01-chinese-20261111/ros/clean-20261111T134428Z-54710/candidate_sigint/vision_odometry_adapter.py",
+      "control_node_started": false,
+      "fmu_publishers_created": false,
+      "context_active_when_error_injected": true,
+      "sigint_is_python_default_handler": true,
+      "ros_signal_handler_options": "SignalHandlerOptions.SIGTERM",
+      "active_runtime_error_propagated": true,
+      "context_closed_by_finally": true,
+      "node_destroyed_by_finally": true
+    },
+    "changed_logic": "ROS SIGINT handler not installed; Python default SIGINT raises KeyboardInterrupt, then existing finally destroys node before shutting down context; ROS SIGTERM handling unchanged.",
+    "exception_policy": "No RuntimeError catch; active RuntimeError still propagates.",
+    "scope": "Only candidate adapter in cache; deployed/installed adapter unchanged.",
+    "initial_probe_error": "First active probe incorrectly assumed Node.handle becomes None after destroy_node. Logs preserved as candidate_active_exception_probe_attempt1.*; corrected probe verifies get_name raises InvalidHandle.",
+    "ast_scope": {
+      "passed": true,
+      "only_executable_differences": [
+        "main imports SignalHandlerOptions",
+        "rclpy.init signal_handler_options=SignalHandlerOptions.SIGTERM"
+      ],
+      "all_other_ast_equal": true
+    },
+    "git_apply_check_passed": true
+  },
+  "limitations": [
+    "Isolated localhost ROS 2 Humble synthetic message smoke only",
+    "No control node, MicroXRCE Agent, serial, systemd change or /fmu/in publisher started",
+    "No Orange Pi ARM64 build or actual-flight validation",
+    "SIGTERM behavior is retained and was not broadened by this candidate",
+    "Two candidate smoke runs establish these observed cases, not all shutdown interleavings"
+  ]
+}

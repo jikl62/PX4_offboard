@@ -1,387 +1,795 @@
 {
-  "method": "Python AST ignoring docstrings and source locations; embedded string contents remain exact",
-  "checks": [
-    {
-      "path": "autostart.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "build_autostart_bundle.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "build_bundle.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "build_navigation_bundle.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "fc01_control.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "feedback_age_probe.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "launcher.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/scripts/r62_failure_replay.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/adapter_compile_check.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/replay_c11_c12.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/ros_receive_ab/probe_smoke.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/ros_receive_ab/run.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_authority_harness.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_authority_tools.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_land_event_adapter.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_r62c_review_console.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_r62c_review_package.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_r62c_review_supervisor.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_r6_preflight_audit.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_r6_process_failures.py",
-      "ast_equal_except_docstrings": true
-    },
+  "baseline": {
+    "kind": "git",
+    "revision": "053eb2c",
+    "commit": "053eb2c3be90240e6ed5521714efdcc0113c2b33"
+  },
+  "phase": "final tree after separate offline/test compatibility fixes",
+  "kind": "python_ast",
+  "passed": 91,
+  "total": 95,
+  "documented_differences": [
     {
       "path": "native/tests/test_rc_recovery_adapter.py",
-      "ast_equal_except_docstrings": true
+      "reason": "fixture insertion accepts only same C++ tokens with new whitespace"
     },
     {
       "path": "native/tests/test_receive_event_adapter.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_s10_timeline.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_safety_receive_adapter.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_socket_safety.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tests/test_tools.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/deploy.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/fcctl.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/pc.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/r632_ack176_summary.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/r63_config_check.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/r6_preflight_audit.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/replay_vertical_feedback.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/replay_vertical_refinement.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/s10_timeline.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/socket_safety.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/start.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/update.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/velocity_command_diagnostic.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/vision_odometry_adapter.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "native/tools/vision_state_validation.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation_build_evidence.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation_collect.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation_deploy.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation_install.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation_probe.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation_report.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation_restore.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation_service.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "navigation_status.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "standby.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/benchmark_vision_interfaces.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/native_fixture.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/navigation_peer.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/ros_offline_timing_smoke.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/ros_velocity_command_smoke.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/ros_vision_smoke.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/run_native_cpp.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/standby_native.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/standby_peer.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_autostart.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_control.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_feedback_age_probe.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_installer.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_integration.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_launcher.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_native_install_layout.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_native_log_records.py",
-      "ast_equal_except_docstrings": true
+      "reason": "fixture visibility/main insertion verified exactly once"
     },
     {
       "path": "tests/test_native_profile.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_build_evidence.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_collect.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_deploy.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_deployment_activation.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_diagnostics.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_feedback_freshness.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_install.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_native.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_report.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_restore.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_navigation_service.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_standby.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_standby_writer.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_takeoff_configuration.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_uart_preflight.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_velocity_command_diagnostic.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_vertical_diagnostic_bundle.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_vision_adapter.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_vision_replay.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_vision_settings.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "tests/test_vision_state_validation.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "uart_preflight.py",
-      "ast_equal_except_docstrings": true
-    },
-    {
-      "path": "vision_config.py",
-      "ast_equal_except_docstrings": true
+      "reason": "same 80 mappings with whitespace tolerant extraction"
     },
     {
       "path": "vision_replay.py",
-      "ast_equal_except_docstrings": true
+      "reason": "offline same 80 mappings with whitespace tolerant extraction"
+    }
+  ],
+  "files": [
+    {
+      "path": "autostart.py",
+      "kind": "python_ast",
+      "baseline_sha256": "aca812a3c8480fa5380f976678f57024a5364cdd20e8c16e836372c5d83295e5",
+      "current_sha256": "5c8d49ccb938b1b9e4b1955ebdaaab71e9c474c748486f7644e68afaca0d7528",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "build_autostart_bundle.py",
+      "kind": "python_ast",
+      "baseline_sha256": "89da07e11e356774bf1d3d650426fe51b9ccc3bc7306a8aacdf68a0351ec9209",
+      "current_sha256": "bd3002b574b9585aa51a3ecde2fe0d98230a3a467d7c1fbe4dc8673773945583",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "build_bundle.py",
+      "kind": "python_ast",
+      "baseline_sha256": "7237c22c4647c887b69736c100c63a60a5414f2c12bed5039667435c3aafc8e0",
+      "current_sha256": "3456feef08191c9ef85cce17b1ef0ad8ec53edbfa8ae3c3dc49921c82d384499",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "build_navigation_bundle.py",
+      "kind": "python_ast",
+      "baseline_sha256": "18a41e8e37cb95acda33a2af5448bb8d7c6285dc3b69cedbe9c34b291d98a0d7",
+      "current_sha256": "850f5f92658f9229aacac99c99ed1593c145fbf20d960f896091ee1516f3e2c7",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "fc01_control.py",
+      "kind": "python_ast",
+      "baseline_sha256": "d3c0dad9f599d49175f8c2daea3ee5aa9da24c0f3c5d3c3bbb0ad062397c66a9",
+      "current_sha256": "29f269d0bf12d102f9c8b4e20db4cb833ec5147612cb608eeea054ae04059357",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "feedback_age_probe.py",
+      "kind": "python_ast",
+      "baseline_sha256": "0a3fc4d34b4a12314221732a55cf96a3013780f2694ccd414cca57a23bcc09ee",
+      "current_sha256": "394cea7b753124e72cc9db87688234387eddbc03dfd744f6f59694d08514f1c5",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "launcher.py",
+      "kind": "python_ast",
+      "baseline_sha256": "a40812cc172075668d3b8bc27fdf13ff57892eb3438a40aac6fc3e5e0cecf5ac",
+      "current_sha256": "903eaefcf348300bc73f436abe6d65ced84311dd19246b5b635692b0c7f0b8e8",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/scripts/r62_failure_replay.py",
+      "kind": "python_ast",
+      "baseline_sha256": "00ffa8b67921ca2eeaeea35487e6aeb308e5b7c07293329baeb90810798b932d",
+      "current_sha256": "910c76d885cbdc3ba9a08d947da2178d476619a1ff454f650f169ea931f76366",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/adapter_compile_check.py",
+      "kind": "python_ast",
+      "baseline_sha256": "2915998a516dd2b8e1726d1cc63387f56fe32a5b961777584f2e24b039c6269b",
+      "current_sha256": "e2d1805707ba755d77e00247a0432c1a3908d77f11a764d667b162b8b1cd8e12",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/replay_c11_c12.py",
+      "kind": "python_ast",
+      "baseline_sha256": "749b631a5bd56b0bdfc3bb8df990771289b05fc465007b811cd16b69125d8669",
+      "current_sha256": "5e157301f5a22349bbcf5c63cf4f923e8eadd1a9ae6729934481214df67880d1",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/ros_receive_ab/probe_smoke.py",
+      "kind": "python_ast",
+      "baseline_sha256": "95f9c91ecedc64de0968649770acaac63d5209f877154c6ae222e8046fcce611",
+      "current_sha256": "db1f162f856203731c1b1e280724a80a7896e96b06ddbb57281797ae5b366477",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/ros_receive_ab/run.py",
+      "kind": "python_ast",
+      "baseline_sha256": "16880469e1ff7c6f097eb3c8d78574d1bf2c5d2c69ed4a4f02c638f03fbe9d04",
+      "current_sha256": "b6cc126eda0f7064f885c4a54b1a430f1ec0ffb568151b516a00bc6eb5d78460",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_authority_harness.py",
+      "kind": "python_ast",
+      "baseline_sha256": "2537d751d06c2460be62c2f3f88c0236af527ac7f4eaf6ad4f5d3840636e1573",
+      "current_sha256": "eeb02d8295aa3cd09199f874e11e3c925576f3069e4f3f45feebd8b30af4d185",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_authority_tools.py",
+      "kind": "python_ast",
+      "baseline_sha256": "acc73bd7850ce477e47ba795320938c63d4b44843b4f525d96f4fa575c3680cd",
+      "current_sha256": "363dda481b93d7da191c3c6cb7e86558334fdd4b0fccd28bc7a1aa77ee02827e",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_land_event_adapter.py",
+      "kind": "python_ast",
+      "baseline_sha256": "78ea4f3f6bdca775c588fa7846a6fc68b12e0bccd35c074a927e427ee73cd0b3",
+      "current_sha256": "299eb732bb300e586828a395f88d64ed67b3002fea91868d5e8991084bf1e008",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_r62c_review_console.py",
+      "kind": "python_ast",
+      "baseline_sha256": "5e01d679dcffefee5bde3f808ebcab365af8839010e41894379c5cfc5574ec1a",
+      "current_sha256": "88c795b2d9d89260f5dd9841bf1e2ae39a50f164fab8f8dc468556a92fe3d692",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_r62c_review_package.py",
+      "kind": "python_ast",
+      "baseline_sha256": "4b6dd350f01c421e49c3c8c6a3e60541d0577cc5f019cfe38ba4f4e37c99b0f1",
+      "current_sha256": "8fa02402105f7c69ec5494f4c06980bb9d287d7b134af8bc30286a4217031433",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_r62c_review_supervisor.py",
+      "kind": "python_ast",
+      "baseline_sha256": "50de29aea2b55af50d8102ace627382a54edc36704542bb071974a2577aba90d",
+      "current_sha256": "8eb2dc18c6651a44aa888a82d6d17a9c5f71727c1ff92877193a199fe0021545",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_r6_preflight_audit.py",
+      "kind": "python_ast",
+      "baseline_sha256": "dd5bbf224c1b77915ca2089ba1be9d7181acbac6294f3b264ca2089e820c49b3",
+      "current_sha256": "cd0f344d43df82f3e319a6888c7c42e5feb90f006679dbdfbdbbbccdc6ad8e6f",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_r6_process_failures.py",
+      "kind": "python_ast",
+      "baseline_sha256": "be56e0e1f8162dc99b627186912c754d0b11cfce1beab018e3e3ed283c3f9509",
+      "current_sha256": "25fdb589149cef28e2842267e1e7ce7f403ce340b99ec9de6a7344e16e05189d",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_rc_recovery_adapter.py",
+      "kind": "python_ast",
+      "baseline_sha256": "13480eaab386b63f56b6432a0819befb5b6f969f57a94f9aa606976c7cc27428",
+      "current_sha256": "1850021c64b933c8582d81223274c6979b1a2078367461b4c0020b006397141a",
+      "bytes_equal": false,
+      "status": "fail",
+      "error": "CheckError: protected structure differs"
+    },
+    {
+      "path": "native/tests/test_receive_event_adapter.py",
+      "kind": "python_ast",
+      "baseline_sha256": "57e09cea2ebecf3fbe5f2e147a413ad7a627bcee9de3ed48d53e97cdd57a8463",
+      "current_sha256": "936d920085bffa2683a17dfb46053f37bbac0fe5ce7e3940f7b27753cd152c62",
+      "bytes_equal": false,
+      "status": "fail",
+      "error": "CheckError: protected structure differs"
+    },
+    {
+      "path": "native/tests/test_s10_timeline.py",
+      "kind": "python_ast",
+      "baseline_sha256": "6676cfa770758c548e0d0880e4f9d7035f8eec4ac12963bc49bca867142a7685",
+      "current_sha256": "77964d0bb4a4aa4890c5793e7664bd4aa956a3a4c05fcf5070d616994b077c4a",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_safety_receive_adapter.py",
+      "kind": "python_ast",
+      "baseline_sha256": "95be64142064bf4f910ffd0064ceb9583e15428c8dafd4b64da19afd568559cf",
+      "current_sha256": "84fbf9283f817a737a4a96fa3f5dd5afefe4a5af966be552ff10847d6eccb8fe",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_socket_safety.py",
+      "kind": "python_ast",
+      "baseline_sha256": "06f15b7bae10688f24dfca700a3f1f2b8be61475e72d09e5dd99068ec4d58296",
+      "current_sha256": "e5ff9101f8d666cb6a8b49dd33d45e9b1d15484862356b75235c60c71595e6d4",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tests/test_tools.py",
+      "kind": "python_ast",
+      "baseline_sha256": "7b7dd1a7befeb9e6423e76c1422544ca8cc014571b7c753d1c991ec83b27cae9",
+      "current_sha256": "f4a44283bebc97456ea9d4cdf248197559bba46295aef1731a95562c59631959",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/deploy.py",
+      "kind": "python_ast",
+      "baseline_sha256": "98c1af524d0e5172d41aee9de9d4cd330d7bea1ad296a8bb3b72b4097b5546a2",
+      "current_sha256": "11f3d507fcdd42579d80ec90b0cad4a184acd4bc59a58be9355c5714269571cc",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/fcctl.py",
+      "kind": "python_ast",
+      "baseline_sha256": "b253556a40d4277e6e3cd7c2ba5eb998d5a9d5d89d5eb571b1975656ce938ffb",
+      "current_sha256": "526286b7fedb27ee5e775dc32dd3919ab4a7f26998dcf1c6eb8d561116963dba",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/pc.py",
+      "kind": "python_ast",
+      "baseline_sha256": "ca8ac56b7cd0f4f0afd54f0b555769ebc1c1d0e14dc2c65fe0e9d32150adf840",
+      "current_sha256": "d6858422248686e30d6d970de646dbd3f54a880e31ded39670c2c42353082f71",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/r632_ack176_summary.py",
+      "kind": "python_ast",
+      "baseline_sha256": "4d55c4baf0bc1625ef4a705b9dde76fadba03530ac1c8dece604425647a8feef",
+      "current_sha256": "13805c9b5919d0d37de0bff00c5e909d837b75485df2a4ed5ae82db1abb92e97",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/r63_config_check.py",
+      "kind": "python_ast",
+      "baseline_sha256": "3150a8e88a0becdb091694ed377ca946e8e9ea3cec6aafc1f3acf1e5e5c3a627",
+      "current_sha256": "a24672e22eed00ef9c894c518fbbfdaaa059d658ddf1659ed26bfbe4c6edecc4",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/r6_preflight_audit.py",
+      "kind": "python_ast",
+      "baseline_sha256": "78568ee9c7479598231ffd56da2e30d28846327bdcacdba2b45a1c1513fff483",
+      "current_sha256": "1b6654260205c6888cc3819461dc184c6418a9c1729a0f8899ce032df3c86004",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/replay_vertical_feedback.py",
+      "kind": "python_ast",
+      "baseline_sha256": "c58d4e7bbc936c2d853b3e297a14d8e745789a2103312ad80d8c814ac23b2eec",
+      "current_sha256": "8d9cebf3e3c7606f6a7bc48d23639e0eb9dee287383f3c3948f303792ec4c655",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/replay_vertical_refinement.py",
+      "kind": "python_ast",
+      "baseline_sha256": "f0fa8baad54783bddd0d119559c763ff847afeb7d1b69a10ba857d234aa05d55",
+      "current_sha256": "905781fe8384c0ae17223c81dc1fff24db01c49ab0d20175419d66c19e646807",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/s10_timeline.py",
+      "kind": "python_ast",
+      "baseline_sha256": "6852a989550071d6e84f63a5b91592b9188401b09d664037204b73feebfa0990",
+      "current_sha256": "85e0138881d6e297cadcfc96fd6d527dc49d890efbe5a0fcf2ffb7364209eb50",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/socket_safety.py",
+      "kind": "python_ast",
+      "baseline_sha256": "ccde51fe06c9a82d97513373d2a0e88bd66121c1f7ff0f73b731da5aeb9c45c4",
+      "current_sha256": "9ad70f57cad037790d5b168ef04d2aea585758b80e743671ad469fb3ea1e7785",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/start.py",
+      "kind": "python_ast",
+      "baseline_sha256": "abe7c6dddcfdaa84dd33dba17b20ed975b947ec1154fd29315b57b0b0d090b2c",
+      "current_sha256": "13a550ccc8e86d2255b71f63e2f7447cfadf9aa4e1b4d2cb074aec06cf9ed416",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/update.py",
+      "kind": "python_ast",
+      "baseline_sha256": "16e44c981776c5aeb6c121101d33e7d9904d6dc5ea67e71dd5931bb6231a7776",
+      "current_sha256": "bd523481f1285fbb82a4f5bb2325a6e216c565fb1c33b4ac65fbd8cbaa048b12",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/velocity_command_diagnostic.py",
+      "kind": "python_ast",
+      "baseline_sha256": "53e088ae1fcfded50bf1e2979547e41ad2f1af978dc05b5d8129745a3dc09899",
+      "current_sha256": "3030f59eb01a151e076daedd0232ec6634923d51e466172df75aafcea28c42f9",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/vision_odometry_adapter.py",
+      "kind": "python_ast",
+      "baseline_sha256": "f10bbf5196abc46d3ae7a177d1df050eae4d867b10b272f54452832c324e0c15",
+      "current_sha256": "f3685cff75f4ab00cc726eff3b65ef4dce9c8f1bfa0a1a6bdfad118db97e9dd5",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "native/tools/vision_state_validation.py",
+      "kind": "python_ast",
+      "baseline_sha256": "4037b223b18cb7e4cdc38fccb1f68554f207ab8a92c0a944234b584f4af02d53",
+      "current_sha256": "f35a5ad3307cdd75fdb4a27271e0f5d91af08b9d5bb034a58931e7b2705677d0",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation.py",
+      "kind": "python_ast",
+      "baseline_sha256": "e88890ce4b94d54803a3d040d6a194ffbf0571d9cdd4f54961681380bd0cc6d0",
+      "current_sha256": "da393ad6a5bf3c48158a6f240bd07c0363171971cd8db5a227fe3a6f4455af66",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation_build_evidence.py",
+      "kind": "python_ast",
+      "baseline_sha256": "3863c0d255b1f13bc9cd07a9ebb863bb38219d1623be765fe8348c2e53d4520e",
+      "current_sha256": "c085a7aec63543d95b561e4b71e6a088738b4b73857c0ff94ed1d9f4373fe770",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation_collect.py",
+      "kind": "python_ast",
+      "baseline_sha256": "6be1874c374b94df6f107973993f1d38a68e11008280c50298aab6db56d09d2a",
+      "current_sha256": "490e6ac77a420b9c03302829bb30b2a3f6bcd00b9278b90330d221366225360e",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation_deploy.py",
+      "kind": "python_ast",
+      "baseline_sha256": "81ed58802f9b11973745ba22dacefff93c603df21f9379421660c419bbe071db",
+      "current_sha256": "2a69e7da1deb71346179aa8e74344046ad78f6080b54713874ec1cffdd8b71c8",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation_install.py",
+      "kind": "python_ast",
+      "baseline_sha256": "d755dc4d72a561fc667115fb60d9e4c611ec72e8146a6d17d132d76a5571b210",
+      "current_sha256": "7af60a179163ecca119f68e6ace418244a0954d19bb20fcc37c647e0cda10467",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation_probe.py",
+      "kind": "python_ast",
+      "baseline_sha256": "09a5ee64a850f22df193a2366662c78b31ba0b40c04118f9c87fa3403ceea8cb",
+      "current_sha256": "5d395466bff15b1bb103e2a084f16a79f933906bfedfb8d60ac9660ab6720f5f",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation_report.py",
+      "kind": "python_ast",
+      "baseline_sha256": "9db6c0723da9b138e2ec4e7dfbd9e158543fde19849690408d059bb19f128d1f",
+      "current_sha256": "8fb9b026ccd71e17eabae0bda5c0f685b3ce60d1cd1566795ee300f05d6a7fc3",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation_restore.py",
+      "kind": "python_ast",
+      "baseline_sha256": "84ae80aea3c87c9c1d1afa6ebaf49d00eb20f06d9e9c16e5158528d41ca3db50",
+      "current_sha256": "5c9d73bfd7db973cff6343d6ed3182a899d48319f10f1e9d9b813d5bb63a6b6a",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation_service.py",
+      "kind": "python_ast",
+      "baseline_sha256": "74cb97ae8216d674d5fdb5f1238bdbb02c037abaf80382376552a8a5d5e85f30",
+      "current_sha256": "c1ac79b23787ac4982ca69c248d03812efd49c4fca31369b9c6dfe70e800ec72",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "navigation_status.py",
+      "kind": "python_ast",
+      "baseline_sha256": "980b27676d8876ce98a85c5cd0a2a8429f505c8d958cc36f4b9e9f90f7441b5f",
+      "current_sha256": "8151395023ac7bb6701d6c08e7600373518cf0bd0e927746b0644272c0e84668",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "standby.py",
+      "kind": "python_ast",
+      "baseline_sha256": "49473144e91c0cf04afedfadd445e8f0edfe57581ee1a59a79d234c5084ade28",
+      "current_sha256": "9e340100224c9965df6c06a9152684e522c5f7cb7c4cf3c749c31b0cf13fa22e",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/benchmark_vision_interfaces.py",
+      "kind": "python_ast",
+      "baseline_sha256": "bb6e4f66e7c09eed9ddd6afa6eea9066c124d0292fe4cc4c518f2950475b93dc",
+      "current_sha256": "70ef362d65b8c4f5062d84616361db4a3a10516000775036f244a73e486f0161",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/native_fixture.py",
+      "kind": "python_ast",
+      "baseline_sha256": "f1e51c1e909ee017f66033b985a64877d29d15d2e580ce562011ccba2b07fb88",
+      "current_sha256": "f1b08d90db89430f85b6ee190c74f02c8230ddc86ede20302687ae5ab7f912fd",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/navigation_peer.py",
+      "kind": "python_ast",
+      "baseline_sha256": "625c239c238d501f034f924d8fd9eec70cee7741b38e20a72a50e9e298efa9b0",
+      "current_sha256": "6f3c59e641412f92332d0f4091feaf414986ef91f518bc5944c52f55c53228dd",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/ros_offline_timing_smoke.py",
+      "kind": "python_ast",
+      "baseline_sha256": "4604fe6f2dff2406fe446f37553f728b361fcad20dd21f3ef5e50be1153a0c33",
+      "current_sha256": "0c009d0f63e9aef5ddcd986cc3e466626a03829913839c3607e36a20822ba9c0",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/ros_velocity_command_smoke.py",
+      "kind": "python_ast",
+      "baseline_sha256": "d4c639d2ec17b70bafe02b9bdf378d7470ab930a3a6e8eaf3748340ef2af43ff",
+      "current_sha256": "5bdd03e33d74d1be18966cd0dbb28f54bda726c279c9615a2bc90da69276ab6b",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/ros_vision_smoke.py",
+      "kind": "python_ast",
+      "baseline_sha256": "8047543b898ccc68ac7c51a3715c84fdd631d2888a261ac571ecd8dbadb0379f",
+      "current_sha256": "1c06ad5ccba54246137b60b85a59bae0fea6729388d1d7e5a61262d89c79fb1e",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/run_native_cpp.py",
+      "kind": "python_ast",
+      "baseline_sha256": "ac07845843f9ac658c2a6772f909f7fb723da153c1b8b3dc7e7b2df0e68632e1",
+      "current_sha256": "c97508dff4529cbc6448effaed3d58423970a801ec24b4a5b6196aa2f9ba65c6",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/standby_native.py",
+      "kind": "python_ast",
+      "baseline_sha256": "1f31d300f039984629155ff1d15a60aa6fdeae40e087b5eb2fa52c6b2c9eedfe",
+      "current_sha256": "4f77ffcfd5e9de7b2fdc3b87f11ad0eb52f3247fb03aa50a08e285f372fb4fb4",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/standby_peer.py",
+      "kind": "python_ast",
+      "baseline_sha256": "b89a1f2fe81cc6cca0cbc33ddeaf795b8805538cf0cd5c7323fb73fc8fd6f9a3",
+      "current_sha256": "cc3601c02c118fbd6f4edb5cae39173e1b2734b051692360a1e451e7c9a9c190",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_autostart.py",
+      "kind": "python_ast",
+      "baseline_sha256": "cecc6d8b207cd915323e553c0b10c03570abd45d02b59c770313aa1365f8a2c0",
+      "current_sha256": "ffd30ba07a830156ccc8b7a4bc681170db298b898f2b9114e461aa742dbb467d",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_control.py",
+      "kind": "python_ast",
+      "baseline_sha256": "0a775b44d25db5a3de0d2dad69818b97c73c3fc927cc751d0e41d56a359139e4",
+      "current_sha256": "1f2466750be4bc935f3fff65a1632462449a427873a72ba176ba73f5b678071e",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_feedback_age_probe.py",
+      "kind": "python_ast",
+      "baseline_sha256": "19d05f69c03350eb67bf56bc18a8ce0cea2d20b190f3da0d4d70f9766a64208a",
+      "current_sha256": "3896cb94eef7a5e58a8a02df5531a4aaa6ffc649685ff508c82fc85a67f9ff19",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_installer.py",
+      "kind": "python_ast",
+      "baseline_sha256": "2ea3da17ff46ad9a89b83198b95fa282012d4d731fd7922e520619ff4b84b31c",
+      "current_sha256": "10e25d77f3e124110ae8f7c8763c03ef800fc453a1057648fdffdb363757a7c1",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_integration.py",
+      "kind": "python_ast",
+      "baseline_sha256": "10a798a5f46cdc7ec04f369303779fe137ed819db38ffe1e786b69fe39b00265",
+      "current_sha256": "d5fad168b6b3d5f4bf754ebca7b18561e1cebb032dc12bc4e53e44b49adcd5af",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_launcher.py",
+      "kind": "python_ast",
+      "baseline_sha256": "67ebd166e958e9827c1e41a3c3296539329d73129c304b0aa97deeee0eb43466",
+      "current_sha256": "4d1c094173fa727facaf4dc2a538314aec2ba9a4103d999399c5433c5d85afae",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_native_install_layout.py",
+      "kind": "python_ast",
+      "baseline_sha256": "0a02f9a8d6399af6a7a936e19936335305e7539f6781be23a997315177332fc0",
+      "current_sha256": "9f9e92eafbfa158ebafd6b63379c949608af677fd157388a4d4237e54988bf73",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_native_log_records.py",
+      "kind": "python_ast",
+      "baseline_sha256": "47d3d53d033c4c004fd29b83736cb0367147925ba7904e9fbb71c92c3b2de7ea",
+      "current_sha256": "5b7bff23bb022228eb5bbfa0cbf3d18034339c7f627e740b91ccc695b89ebe1e",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_native_profile.py",
+      "kind": "python_ast",
+      "baseline_sha256": "17123f02ef1b8b5a9c3e0b75a3dd7a7c3fc517abaebc3f167ead80857def4dc7",
+      "current_sha256": "b4fd383964634194d3f84e6d6c00aa0545fefe28ff4d96e47df626e79f866775",
+      "bytes_equal": false,
+      "status": "fail",
+      "error": "CheckError: protected structure differs"
+    },
+    {
+      "path": "tests/test_navigation_build_evidence.py",
+      "kind": "python_ast",
+      "baseline_sha256": "0cbc40264e2861d679a0434f7c618a18f0613fab910252388dbc96e845338e99",
+      "current_sha256": "fc87f5c73fa34622171abd883b6d7ed84211a442b4c07d5caaec797ec28a6c8e",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_collect.py",
+      "kind": "python_ast",
+      "baseline_sha256": "37b396a52ee8d94c33c3f91914408c952131a7b5eb16259676cd6d3d6310a61b",
+      "current_sha256": "449f9ea43bcf199f96596659ccbf700d9818bc3397cad873a7e887bc5ee4bd89",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_deploy.py",
+      "kind": "python_ast",
+      "baseline_sha256": "4bf3878a70f429592fe97c445f5b85a38ddee6fc81ab50f2d21add635c4143c5",
+      "current_sha256": "1798bed1544371d2774d966e001999fe552cc10c3bf07dc2ef97a46b61523547",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_deployment_activation.py",
+      "kind": "python_ast",
+      "baseline_sha256": "df53eaad604cb28037c5d382d463834924d4cbe20a867b73638e1d4394baebcc",
+      "current_sha256": "4a80faee92a786f487bfc53fb463cae459bb18e6ed3c615dd1d99549c4171700",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_diagnostics.py",
+      "kind": "python_ast",
+      "baseline_sha256": "26a1106b134825a03fcc3d36f8df3e5854fbff1589dbc26a31b68792843e1f7d",
+      "current_sha256": "a076551e756b854ab1f5e3bf540bedbc194a51de9b3f903780607bf10bd96790",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_feedback_freshness.py",
+      "kind": "python_ast",
+      "baseline_sha256": "6b0e45b9fd4babe113c0cdb80793d80f053069f605cc53cca0e9fc99f6f420c2",
+      "current_sha256": "72939c900c5d260748a942f6543c8869e6c5ca3869d3f6f235e3aa882711a523",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_install.py",
+      "kind": "python_ast",
+      "baseline_sha256": "2fcd3557770c84822e220adc8327791a869aa258d5ac0c5d914cf81b026add3a",
+      "current_sha256": "58c3713ac73bd179d921cf72e40014d399bdeaa531a7e2bdd792c118387f8924",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_native.py",
+      "kind": "python_ast",
+      "baseline_sha256": "74e2bed7740b24b810119c3a2bea9c1030c73badc1ad64e7881c067eca355625",
+      "current_sha256": "b0bff4f875fe96f4eb889d65c77ec674db7b6844d237336117d888f0850cc017",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_report.py",
+      "kind": "python_ast",
+      "baseline_sha256": "9223639193b083324b1f917c9b5d9f1dab9f07f97e8fc0030d1763fe735bfe9a",
+      "current_sha256": "903eacedd73bac32e75b452835845f8093833cbb78e93288d2466327187aaa8a",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_restore.py",
+      "kind": "python_ast",
+      "baseline_sha256": "404dc717b732542bbed21faec314ba4a24ef9ece50c687386db42588fae66928",
+      "current_sha256": "b6a269daddbeeeb7468767bb5ca1c5ee56e1d41b0f47c728f9c5546508170a36",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_navigation_service.py",
+      "kind": "python_ast",
+      "baseline_sha256": "c0443747e48e9049228128b998b2b4749ed98aefe7784d7eaa0dc7a51c2c8b6d",
+      "current_sha256": "1fa2908d6880a65836fb2bb64715f03d4db410fd84da22bf2d93397e5516f7dd",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_standby.py",
+      "kind": "python_ast",
+      "baseline_sha256": "48986b894910f6ebb8549435e731287570d8c658bc22992864815fa4fb4335d0",
+      "current_sha256": "0aaec0aa37209562c1f4233836ef7d546cc6c2edc6d180b8b502affca7e876be",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_standby_writer.py",
+      "kind": "python_ast",
+      "baseline_sha256": "814c15b3414787f5d5dabc84264ec043c4161d25025c4cd06f8d751e6a8038d8",
+      "current_sha256": "91ebd5faa95ae712bd2c39d0e1fbe0e40157fcdd3fde586d9564a75c960d7937",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_takeoff_configuration.py",
+      "kind": "python_ast",
+      "baseline_sha256": "7cb45961f251a0218d2c0eaa5deec8f4ab6ba08c8031dbd5f4f97eb3d132b17c",
+      "current_sha256": "31585ee9e0bd588a00cd8a22e72d07b17998c4be758ee019efba3a62f8a40562",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_uart_preflight.py",
+      "kind": "python_ast",
+      "baseline_sha256": "1de59042cf49bf702a5d765140e73395dd5256f3a043b0fcc9bd99e5d5adf43b",
+      "current_sha256": "71b165a897841608380d883759910d444c034bd0026d4a92cd4e11ce1e57c656",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_velocity_command_diagnostic.py",
+      "kind": "python_ast",
+      "baseline_sha256": "6a2cd1d513624e7bced662e09f6c64853f5edd989600c6d9d822772f6478bcf9",
+      "current_sha256": "c3603629525f042ef260a16bad0de6b13fe5495fcbad745f2b485e3bbac44085",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_vertical_diagnostic_bundle.py",
+      "kind": "python_ast",
+      "baseline_sha256": "25e68873f20ea16b1469c956dfaab00784e9abb5f3537dca550bdbfa7981ce25",
+      "current_sha256": "c187846bde053e92969f24851544ac2f982a02c5db04bc1a9a0ed3990f77aa51",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_vision_adapter.py",
+      "kind": "python_ast",
+      "baseline_sha256": "467b2f7bd0ea98582f0c632fcba37372a861cd4d09d14e67446d90936b30d3d7",
+      "current_sha256": "c1a15d7e1fe7e6e60f162240f944b613ba1e26f92c9c3bbe33193a35c1476b0e",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_vision_replay.py",
+      "kind": "python_ast",
+      "baseline_sha256": "b31c1397887fce4b38603055f2cf7e36f081141d19c884959c253e4cbdfe840c",
+      "current_sha256": "d2cad1173cfaaa6d77f4233a42eb2c2fed5a130ce1f561c89f0c1654f9352b44",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_vision_settings.py",
+      "kind": "python_ast",
+      "baseline_sha256": "5ab26f98cd0c804c4fc61ca32a226dbfd313c77adff19a51443d76b5f86a7d7a",
+      "current_sha256": "04c1b544bffa8ae469d88bc0de3f4125ab5c931cf7ec7ab3a33cf7d6a17c1622",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "tests/test_vision_state_validation.py",
+      "kind": "python_ast",
+      "baseline_sha256": "5efe873ab44cb3d48bedd298680cc45b346c9eac95f701f6c2eed25c62345c6c",
+      "current_sha256": "55874405a2da09cfc31da66bdbcf01aac7193c93477f0dc42cab24bc5eb2514b",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "uart_preflight.py",
+      "kind": "python_ast",
+      "baseline_sha256": "ca3458dc0934589fb18c20115e22a5f086b221fde3f5544a579d3d89839927b2",
+      "current_sha256": "71a1d16d74ca1b77bb0dab80ea8235c55de2de86ab7a5e6ed66a373a9342d88c",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "vision_config.py",
+      "kind": "python_ast",
+      "baseline_sha256": "eb5917728a03cf5ad97bb87a99bc9ee05d477c17e1b9f0293994c593db3dbd9e",
+      "current_sha256": "eb3e6fef3d7b6c1da145249fc015cd033d4026814ef3c1ac6ccc9896bc820fdc",
+      "bytes_equal": false,
+      "status": "pass"
+    },
+    {
+      "path": "vision_replay.py",
+      "kind": "python_ast",
+      "baseline_sha256": "201778a571d264a41f6b36d48ca116dbbb894ab53b1cf9fe728dd4c992657f75",
+      "current_sha256": "f97caa1ac62eabf30b7fd8c98da308ae00ac202ae855186d00468743cbd0edff",
+      "bytes_equal": false,
+      "status": "fail",
+      "error": "CheckError: protected structure differs"
     },
     {
       "path": "vision_settings.py",
-      "ast_equal_except_docstrings": true
+      "kind": "python_ast",
+      "baseline_sha256": "910d813cc86f141c2ac2cb36f8069d095bfb611ffc7657d3bfd853b203d1fb3b",
+      "current_sha256": "db3146e388649a69ce3c0d734ac96180eb047e79f8441261abe57c4899d07ead",
+      "bytes_equal": false,
+      "status": "pass"
     }
-  ],
-  "passed": 95,
-  "not_equal": []
+  ]
 }

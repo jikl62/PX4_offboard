@@ -1,1110 +1,990 @@
 {
-  "baseline_commit": "053eb2c3be90240e6ed5521714efdcc0113c2b33",
-  "method": "Clang raw tokens; drop comments and whitespace only; string and numeric literals unchanged; directives not preprocessed",
-  "checks": [
+  "baseline": {
+    "kind": "git",
+    "revision": "053eb2c",
+    "commit": "053eb2c3be90240e6ed5521714efdcc0113c2b33"
+  },
+  "phase": "final tree after separate offline/test compatibility fixes",
+  "kind": "cpp_raw_tokens",
+  "passed": 122,
+  "total": 122,
+  "documented_differences": [],
+  "files": [
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
-      "baseline_tokens": 926,
-      "current_tokens": 926,
-      "equal": true,
-      "sha256": "8e68a64093aeb7398d833a8e3dc074fcdc19434ae3f0be54d76d25f8b80e0d24",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "58814aa13575701a459118f8de6dc2c65c3bdb1fd2d5fda3735d4d8c94425762",
+      "current_sha256": "897d64eba9d872ffb2e45b1542599171fc63fc4cc745a34abb0a57c74fb5825a",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
-      "baseline_tokens": 17290,
-      "current_tokens": 17290,
-      "equal": true,
-      "sha256": "011f8569438be2ff879608c9ab75e277fb990cebef94a209236a21169f4b7312",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "ae9da5be415e4f4d722d3e5dd929dace970edd52cedcae41764bc38baae840d4",
+      "current_sha256": "a7f6d3e9169cbf30769c86aaeb4c20f6ebf2d1359780ad59c14a4233d77087dd",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_diagnostics.hpp",
-      "baseline_tokens": 435,
-      "current_tokens": 435,
-      "equal": true,
-      "sha256": "a5ce69fc01ee8b41c635c3e91e2de70704b56c71f672b06755e6c4582a0d8873",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "80eccaeed44728327375937b3fa194e81d9faedaceccba0ea8707ca9abe45002",
+      "current_sha256": "3b71a16bf710bdf632a44507df87aa53286169ce34c5a32655a77a888532bfb2",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp",
-      "baseline_tokens": 422,
-      "current_tokens": 422,
-      "equal": true,
-      "sha256": "fd45a848934573baa8e9eb37fdc412afec05c5b0ce78c52da35602c8000028f3",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "55d1f6e87bce01ea90ddf6827cabe24a357608ed66286fb9360e8ca995a11bd7",
+      "current_sha256": "725f64546fe2cdbd29ac091fe352933af5be664fa51e1280ea3378b29d2b3137",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp",
-      "baseline_tokens": 1010,
-      "current_tokens": 1010,
-      "equal": true,
-      "sha256": "e59fd018cd15dbe17deb56c25c9aac4139caa3273ec0a0de82eeac2fc4879f32",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "62f794fcede2788df0cf5c9ed0cd8c455b52d75d2f31e3918c1a7ebcf5443527",
+      "current_sha256": "6fd46af65a4687d1e211f5202338471a571c6cd0a981b24f585bb584a50000b8",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
-      "baseline_tokens": 2177,
-      "current_tokens": 2177,
-      "equal": true,
-      "sha256": "f77d1bdbb2d08d0f436b0570a3c77da33880e863fbbb1198fe1ab7bf8dad33f9",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "a43eb4f5cf69a6323d860d6222aa382174d4be12c845b7a506b2cdd0275b1231",
+      "current_sha256": "c332ba1d1f459301393da4b47990a76a581e0ae235227fd4d9b12fb7804bd37a",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp",
-      "baseline_tokens": 315,
-      "current_tokens": 315,
-      "equal": true,
-      "sha256": "9f5c645fb0c2041f1682086943cea3db582b4217363c6a203baeec832dc90389",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "d251f5d71c4a32362cea2f4a0294828f4df7b123aeefabb8b9ae3ccad5a0a121",
+      "current_sha256": "1c91dd2b0244d2c0a400d8d16ccf90e1f7421a4332b30476c9687b7d0203567e",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority.hpp",
-      "baseline_tokens": 399,
-      "current_tokens": 399,
-      "equal": true,
-      "sha256": "4817a5dfdd12488a31e6c0cbbd295516689f78e46f64f877992ea32cd8b61992",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "59a7a1f9649f8132f0899e2b7671a7ccfdff129e5c28746a0694d36f50825d97",
+      "current_sha256": "b4d9118975249b7eb27bb3c4678c10b2a8595b6fa2224a8581db5034da8f446c",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp",
-      "baseline_tokens": 1428,
-      "current_tokens": 1428,
-      "equal": true,
-      "sha256": "bf7f27aa91fbbd007ab49f4be94bfc7bf03a126d49fb35425672b1056e1171ee",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "ff8460cb3f826ecdcf05b6d5ec8c00918af43439998cbd5dd798a4e504fd017f",
+      "current_sha256": "c5eb44f02224af2424a7a7ce840eddb1c9671b0d5e216da01a7102875527d424",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/control_diagnostics.hpp",
-      "baseline_tokens": 360,
-      "current_tokens": 360,
-      "equal": true,
-      "sha256": "1a0b1b88c862a8fe8d2f8b4ea373e4bc5aee152398ce2c185f2096b64e51f131",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "fcc4b8a573c414fe13d72f45407dac288a001e221db964518e57adda6e2ea131",
+      "current_sha256": "57549f2b5bd371b940055533bd747beacbf1b948c664ba1b495954b366c1df1e",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp",
-      "baseline_tokens": 251,
-      "current_tokens": 251,
-      "equal": true,
-      "sha256": "ffa4cf938d750363b4bc6fbb23dfbbce2027c4f6412737986e260b937d19f948",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "68e85125a24fce12319361869eea3dd383985eb4eacd5b4d8a2d313951dab586",
+      "current_sha256": "32236143b48192825626d20cfd5a9eebc1402a70ab4312fade0ef12ea0362b7b",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp",
-      "baseline_tokens": 1250,
-      "current_tokens": 1250,
-      "equal": true,
-      "sha256": "1e3b85e79b3f9e6f63a0c04f995d135e7113654a4248355a5ecaabd159921243",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "2fecf8bec7959e5972e9b166726e986391a16a7219c0b40b7368b09c4a2c4588",
+      "current_sha256": "e8a5f20a9c71ebde17bd0f05be40095c2a2d02504a2e9b6833571bb562a1d6d7",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp",
-      "baseline_tokens": 70,
-      "current_tokens": 70,
-      "equal": true,
-      "sha256": "08f859b07c8a941c99777eb95298d44d9df62922e7e6d014772162af2ec77954",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "b7a00429fc0cf6eeffbfc34be52ebc7d42f18e75dcf4cb09ad653f2c1e48f955",
+      "current_sha256": "6d065715a7405718ccc18dfc66a1e4e0d5d4d66833a6fe4f906884b57de8d398",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp",
-      "baseline_tokens": 390,
-      "current_tokens": 390,
-      "equal": true,
-      "sha256": "85f2c4970c3edec9817f5b8b70edc363a25c7fd341bd5ac9a4d7c15c4e82c451",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "393ad2ccd9280d314bd4e4623ff5f0b567fe3739626d6f10899b7079f80f16e8",
+      "current_sha256": "fa425c26f8f11346b0a08bc064635f267ab282e03f8898493f87207faf1b6a64",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_audit.hpp",
-      "baseline_tokens": 225,
-      "current_tokens": 225,
-      "equal": true,
-      "sha256": "4213cab6b397c43dce3c1e8d3c2c02a686d2b511bd7555366ab6991ce003eb4d",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "4d822fac8cb0d8b833eaf69704f99e9b00bf600cb99af4dc7dcebe03385ed276",
+      "current_sha256": "1e64e3f407409786af5ebb7a11c0b30692a859fc43731875e9c1200d3289cbea",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
-      "baseline_tokens": 729,
-      "current_tokens": 729,
-      "equal": true,
-      "sha256": "2d005846f148016532dd7d0e79edfc77bddecff3dec4c72ad3a317ef6d2577d0",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "332c0d3a4e742b400be1c535581c808b193b08d39fb9b261072940b339c12a0e",
+      "current_sha256": "4b21d5ebdc7bac69351686e0a2255722ccf8e232cd1c176edb3dbf0a13958e94",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
-      "baseline_tokens": 4768,
-      "current_tokens": 4768,
-      "equal": true,
-      "sha256": "99a6c4df941db63e0e816cc9713c9687eddeaf0e1e10260f90019591a3a0254c",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "aed2651aeaed0adeea0a6b439851b5cdc371c10d515189b783736efcf277dc72",
+      "current_sha256": "920ba240275b89716dd1b4f2217634aa0ede08fe8cf74fbcdb852a98701b70ea",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
-      "baseline_tokens": 3904,
-      "current_tokens": 3904,
-      "equal": true,
-      "sha256": "7d7f0a0cfc7372a480178ecd57f2e04036afdcc3cadb3713567d93c90814c0b0",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "ed9da9ec30a02693f3fbf042dfe71b5c4f49bddc077662ac4da340c891d2f836",
+      "current_sha256": "88db59d0ecbbc07d774d19771dff20200bae9c96a7cdef69580d9d95d0cf4b2c",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp",
-      "baseline_tokens": 869,
-      "current_tokens": 869,
-      "equal": true,
-      "sha256": "a96920e57cb3daf659b75d70aac26f93f65e2b0ce5092fc6a0d59689a68d5be1",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "91986f4407d4f4d101c75ef761644af8b87b91aca46e130c8ea124e1c384dd0b",
+      "current_sha256": "4cb467ea2c288484a94157c6820be30b213616a1800ee946c4cca1699cd9c9f9",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp",
-      "baseline_tokens": 506,
-      "current_tokens": 506,
-      "equal": true,
-      "sha256": "909048facef718436bec3497560bceab28f4db6e067bf420c070f172192c53e1",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "039a7dd6e34385424de8e5ea48b164d17607d2e389b36ee1866da6a732522562",
+      "current_sha256": "d44ecf9f80acd7adc19012c807f0d6354a9a794708f9da054bd1ce58f2a742b4",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/ros_config.hpp",
-      "baseline_tokens": 275,
-      "current_tokens": 275,
-      "equal": true,
-      "sha256": "e0974e073404ee60288944fec7d33e17fc47b5f6f8555fa99ba68cc55223b8c5",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "725e6837661c3fd135605d5fc633ea40dc8e7e3027cce5009c682d0782349499",
+      "current_sha256": "5aac083c7fc0ea8c9932108db66581eac94b6713d241d17b17d0eae0e453085f",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
-      "baseline_tokens": 10650,
-      "current_tokens": 10650,
-      "equal": true,
-      "sha256": "fb3e8935e4938a9d508457b5badadbe37bfc2935e71e6905317fd19f56a5e75d",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "3c43b1fa2b652376f23cf747623a8831426d98764502889c5897de6bf7551dd7",
+      "current_sha256": "d3be1089c35e3c8a61538069f736469d6589f018ef14bcce5505aae9911edabf",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp",
-      "baseline_tokens": 187,
-      "current_tokens": 187,
-      "equal": true,
-      "sha256": "4360fe4269a6320bef2d10dafa59bdcfeb3da421ea8e347c7bd7a351b3d95862",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "1d93123b5118426fb99968ba9f443cbcd95573be8cd6b39357ad6efe37682638",
+      "current_sha256": "740f9f544379ee999c41617fa44f06f18cd79f67cc0a943c94f5f00559bfe5ea",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp",
-      "baseline_tokens": 396,
-      "current_tokens": 396,
-      "equal": true,
-      "sha256": "c0b5a5fcf4b250a8b6efc862e07d20be3e20266d78af627fabf823cfc6551a62",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "1f2e0c4ca84b71ab20cd63177dfbedd9a920591f5daf5b65be8604e128909b58",
+      "current_sha256": "7acd051d9862c91493f57013c3247f9199c45113098056259e37834d03f7adef",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp",
-      "baseline_tokens": 486,
-      "current_tokens": 486,
-      "equal": true,
-      "sha256": "5a53db2cd8802bd95c71ad1ba57584ba2fcd53da34317a62644e8dbfedac7a9a",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "806ee5c76b2e415533d71fad76454147cd1329d42fe1031ab2edbf0814182efe",
+      "current_sha256": "3bb7a0b3ab46ad368a22b7d62de4254e36b314bb8a19f8acb909b1a03b3ecb92",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/source_diagnostics.hpp",
-      "baseline_tokens": 1587,
-      "current_tokens": 1587,
-      "equal": true,
-      "sha256": "9db6dc99fe794b832b73b7a22ff30c907a67d5a006f9a56c8cc05c9056a5cb31",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "6cb3cdb603d92a54d3231d17a6889a8a99588f16e2e1625536d2e0862de4d716",
+      "current_sha256": "27c83843885fff781584f43f445e1a10fe101183d966d00dec82dcd0823b3402",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp",
-      "baseline_tokens": 904,
-      "current_tokens": 904,
-      "equal": true,
-      "sha256": "cb8708387f9433e7e2e9d48a9f9412315af65c7d87c064489ea8a3c67e7dce5d",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "f905e6e3e7c29903ce169e4487496ac7ad8771ce550a61d2e76993621afdbf1c",
+      "current_sha256": "44528f63376e5e998ff5b3b3b4dc6fbd98de409698bac97b1c11b20aa2f2eb5b",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
-      "baseline_tokens": 1134,
-      "current_tokens": 1134,
-      "equal": true,
-      "sha256": "5235251e8d7738f12391c628da0f7dd233bb013196932d8024f01e4ed4585875",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "e450d86a6b47fe06d596a2354083ead6231833dc661abe766e82f145f7258858",
+      "current_sha256": "32531d631afb244c7ca2af178cfad469eda062e5fcfe7d15210d744b30a1ce26",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp",
-      "baseline_tokens": 3203,
-      "current_tokens": 3203,
-      "equal": true,
-      "sha256": "ef62390380576d33ed1c7d84d0ba76765186264321bd7dd5777497c94fdeddd9",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "c5ba83fb8126abe2003a46b3a7e7b2925c59f6813fe70838440e265a7235b487",
+      "current_sha256": "0ddc03bba81386f39efb1c9dd431fb1ff292388dfd849163092835abd9689937",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
-      "baseline_tokens": 3381,
-      "current_tokens": 3381,
-      "equal": true,
-      "sha256": "1898287658da1e4e94665e3eb4ff9b0919517d974fbf747e4ceb9b790f87ad4b",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "4b691b760e549494343bd4bb19f35aa4ee156e8e4b65e513d20065adf05b630f",
+      "current_sha256": "6f411d990663ec0d585fb9bfed5c87c53869f87bf8e36f5cd98b0dd0dd78e334",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
-      "baseline_tokens": 1269,
-      "current_tokens": 1269,
-      "equal": true,
-      "sha256": "603c4466d05aa0576146fd1025776afd47bd600815127e87aa0c54576fcd7bb9",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "5bd639a4baa304ba9d19adb51446bb0b00d00a2c055178a7cd84402bb938908f",
+      "current_sha256": "3d1cd34925a754078ce3b4ba49f45d8852b03b4571181cd401e95969ad9be576",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
-      "baseline_tokens": 688,
-      "current_tokens": 688,
-      "equal": true,
-      "sha256": "e41f995595c5c77fe8744610c147edb4eed84ef79c2d84356499369509bb00ec",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "44ec7c56ea688473a69db2b181cfaf7ee0e28f79f433d6d917bf8400ce1d8861",
+      "current_sha256": "e739fb87381a4c58440a1c72ab1b2eb94e0933b723e3f4f0c3f3bbbe6b1cfaa3",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
-      "baseline_tokens": 5422,
-      "current_tokens": 5422,
-      "equal": true,
-      "sha256": "6e6722f560d36f531c98f0ab80d1aeb36e3367eddd718aa06daf039f1f435e98",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "77643976fbfae710feba89d0ef2ef738950ee23bfd3cb6a40140537b8a21627d",
+      "current_sha256": "2fffdae319ac177cf420194381ee5829a5926bf5d4a28344998b1fa4a3b4959f",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp",
-      "baseline_tokens": 500,
-      "current_tokens": 500,
-      "equal": true,
-      "sha256": "9ddb8b3a175fa825267a07804455a56d78850414985125677557343d98f26ba8",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "96c65d94662ffc5cd67ff33150b0ea7e5973a74ef9a5cda56c22891bdaf4945a",
+      "current_sha256": "55b68b9b7614e3a679752a7af635032b9b9e42e51a8f902dce86aa5825a56411",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/src/fc01_config_check.cpp",
-      "baseline_tokens": 130,
-      "current_tokens": 130,
-      "equal": true,
-      "sha256": "d363eb434e2f47de11ac1bcc568c0c679b63d63fd3603de7315c067dde4efa63",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "daa3a3fc63c275aaeb76ea0ffb755f7b625298814b5d0ef68711f5dc604703ff",
+      "current_sha256": "888fbd8a1f34cd0eb4412428f9e510799b236cd6cbadc0854ae08d9b3e915005",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
-      "baseline_tokens": 18130,
-      "current_tokens": 18130,
-      "equal": true,
-      "sha256": "0b9912f87e52bf396c0214990994f33fb18982ebbc07d0de8ac51c8d5dd4dd48",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "9fcf4339d1bbddd70064dd7b83026c181b064d6be5c8ce390754cddb1017fc75",
+      "current_sha256": "e8437494ea3955d556ca2e6c7855d1a6d4df8d526152d1040b6e58b2a79382ee",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/authority_harness.cpp",
-      "baseline_tokens": 3139,
-      "current_tokens": 3139,
-      "equal": true,
-      "sha256": "67b27ce5f836886c5737a5085894979a4d7de2e3380540ca4d968ff244e0cd3b",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "ab5d4fa4755696957c114e05aea4f6f965cd487990342630d2b29d97d8ee2947",
+      "current_sha256": "28e7453f481fb8160ba1c6ba142d3897d43b471bd9a51a47ab12e09d90aa5231",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/authority_status_dump.cpp",
-      "baseline_tokens": 211,
-      "current_tokens": 211,
-      "equal": true,
-      "sha256": "45e765b073a685f096c2312adeadab69eb4d2edb42a17af7a2b3afbc9c3e8b50",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "d0f3b48c868559d5949e4fc072e7aa51af4c194e53c7da8c67897f6d201d4fd5",
+      "current_sha256": "a09114606f08a85ff24a935621db3d860e0993ed15cb9db8dd03c42e709f82d2",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/authority_test_support.hpp",
-      "baseline_tokens": 868,
-      "current_tokens": 868,
-      "equal": true,
-      "sha256": "b08aa15af858946462ab7442375c7f827be4424808708ee0baa7dfde690338aa",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "2c48b32cb58a9581e3c63ce17b1eea25847de65e711be76e5447593d97d06560",
+      "current_sha256": "b8ba7726b9be3a58c44e3678cd9784fb53ce523b7946437081e727a161ce7a2e",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/r6_fault_child.cpp",
-      "baseline_tokens": 547,
-      "current_tokens": 547,
-      "equal": true,
-      "sha256": "ebd28058f669cfa919cf48f696b92dd3d17340a4ecb948f209f97882eb3ef7b4",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "42a3d235b10cb0cf22c8f7f84aaaff3e355bc46d03d547c0e5a6a0b8a3975abd",
+      "current_sha256": "910666fbd51011d406cb60b0874cf35a0aa2b5492b0db637ca870eabbb3cc30f",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/ramp_guard_test_support.hpp",
-      "baseline_tokens": 766,
-      "current_tokens": 766,
-      "equal": true,
-      "sha256": "5f944a30f2bae5dc4651fe49013b743d292ea0270ece2f5223423a23feab5f9d",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "35df56c1d2b66603790b09821bdcd3f4a1aa2322908fff5b81e4706ced7b06c4",
+      "current_sha256": "136e0485c52f097c35b48765c25befce1c9c18b8770fe1ab9a57b2a9ae8f56e3",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/replay_reference_publication.cpp",
-      "baseline_tokens": 733,
-      "current_tokens": 733,
-      "equal": true,
-      "sha256": "94d7b57cff80fb6a31a55513ab77e43d3a1527fc8b71f79bfc673dbc711ebc86",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "0f99cecbf3c97fee6cb6bf271f7ce0a94f844251c6a8a5aec70820b39b885f54",
+      "current_sha256": "cdbf097e63dd229eb01029f95285428af33916dce2095c5e08c8cd7da0fc8b14",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/review_bench_support.hpp",
-      "baseline_tokens": 1013,
-      "current_tokens": 1013,
-      "equal": true,
-      "sha256": "62314d023322f82fc23eb59d51c6d2513ac081a5844c029d05523fe5aa0c918a",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "902292f8fcf03d5856632d1f626a4361241bd1271fe92f106b06a54bf2de0bdd",
+      "current_sha256": "752c0c97277a2ecbe7a008d097a25ea02ab83b3388de44fdd5cf53ae5723ec6c",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/review_clock_support.hpp",
-      "baseline_tokens": 888,
-      "current_tokens": 888,
-      "equal": true,
-      "sha256": "108dda78a4d554941657de3ffb615973b5835e402b0e77ebc7e9798c39268e77",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "9d87d39537c31b17e20508b7416122c0b93a49f785990a52f61e8bbee2f35556",
+      "current_sha256": "efc2307a323f51fc552267551e754c020925d93a92a6d632cfd18f1a7fdff60d",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/ros_receive_ab/receive_ab.cpp",
-      "baseline_tokens": 1467,
-      "current_tokens": 1467,
-      "equal": true,
-      "sha256": "e72a67e88b8fa289c1e45fae914f18647f7e4c860e893c5576780fa98465d367",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "d8b55fb8c8073e9634f91f926c1e93a62daeebc58868f48dfa103c226e461c9c",
+      "current_sha256": "1492605f04037f25a3bfd477e49e8c695ee14462303bcd41d9d5f666237cce98",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_ack_lifecycle.cpp",
-      "baseline_tokens": 1956,
-      "current_tokens": 1956,
-      "equal": true,
-      "sha256": "1748ece095bb4fb7d76af25236b2dbdb90dcc08794220e96d59af771a8afdb3e",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "33a5f3e292dd8b19da1ae3b54c4f11d6443dc48dcec796c3bd506d016b5f007f",
+      "current_sha256": "a2c618f02d222445de322611be6882210749ee8a31e699a8dd613f3e510f18dd",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_async_log.cpp",
-      "baseline_tokens": 386,
-      "current_tokens": 386,
-      "equal": true,
-      "sha256": "2bcb2f20139b5aee7e23f2bf9692aee2de9d2a3cc80cca9ffbcb087926f8696a",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "d1854afc4adbe23c270e272b9e498f5804d1580a9f84b2191726691c6475d727",
+      "current_sha256": "e0ea5f54354123e3c95a055bdcb2158049f08f9c37fd0d48583f584ef7ac3cd1",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_attitude_runtime.cpp",
-      "baseline_tokens": 5799,
-      "current_tokens": 5799,
-      "equal": true,
-      "sha256": "0a3bf19241e119bda7b0cf02019d38a036aed8657c59bb1bc6d561817b3bd2d0",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "0788f5b8dd61d0d6b995c3ff433653528ba4aae3b9467ec54309be75f1b43a2a",
+      "current_sha256": "6974e5eda726bc48cb440d8949ed1b30ab127528bf9499e5525a4b2daad22b2b",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_attitude_vertical.cpp",
-      "baseline_tokens": 1483,
-      "current_tokens": 1483,
-      "equal": true,
-      "sha256": "73f98fa8fd436a7267fc10e841fe5d99f5e4cfff4a18104f42a65352c1a33a51",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "f1369367727e026f56b016b3c7e07f576949a9e0db1812c3b8facfbd10c4aa61",
+      "current_sha256": "61d5580c79966adfa5f577bab9371c9c70561eb04946778117ed74395d7e37c6",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_attitude_wire.cpp",
-      "baseline_tokens": 604,
-      "current_tokens": 604,
-      "equal": true,
-      "sha256": "59fb40ca1838aea628f7bfb65008acca9cd5b0a6e06ab39a3bcc7ee24bc67a52",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "e049922dd63f2f62d8dd0af9b142d3a75c67abee9d07b2abc1ccab67e4efb8df",
+      "current_sha256": "09818f72b54cc0a56512a475722ad09626928cc4f782967f3ad367d3b60f9090",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_authority_boundary.cpp",
-      "baseline_tokens": 1313,
-      "current_tokens": 1313,
-      "equal": true,
-      "sha256": "5be32b4f1bbf119641d365d2facb63edccc0fedb25cef4508c603a395275641a",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "3bda9209146de68f16099e6483177b5efe1b372d28a12a10e267489afeaca764",
+      "current_sha256": "23f1da104cef5b92583b653990c34d28a82bd3146be75f49163d9454621e6c68",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_authority_review.cpp",
-      "baseline_tokens": 1886,
-      "current_tokens": 1886,
-      "equal": true,
-      "sha256": "e2e887b8d809d958c30f4b1722f70f5100682dc441b13d912e47d70d75837ba9",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "c62bc312f50b17bc09671e8c71685af30835713b1c614e07b2ce5ec5506619bb",
+      "current_sha256": "1b8241def9eef70e5d220c06fa26c8dfdafe116846d77c3eaa5cbfe7a6526dc3",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_authority_runtime.cpp",
-      "baseline_tokens": 2732,
-      "current_tokens": 2732,
-      "equal": true,
-      "sha256": "f69c350fe0c13363d86e333c8e48a62ffd4748e239618e0105ec8e9804a281f2",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "20c94fe0cb7c1e8362bf699ced0da7691774a4ae22deec7776fb847151b47d22",
+      "current_sha256": "12d83edfb7db51adac7d4553cc3ec4e46bcd7ae4d22b89525a80fb6cd5db87fd",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_authority_telemetry.cpp",
-      "baseline_tokens": 1003,
-      "current_tokens": 1003,
-      "equal": true,
-      "sha256": "e4867b1a00443e67067960951dbb897d7aecc45e326bcdcf11c4272bd8921f55",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "81cf93af9b49452e52fbc95a95cc6c20e8c0a7f6e4aea910e54cb53287aa50b2",
+      "current_sha256": "05cdbcb2627a7b1203cdffb37f4ae0a4237d493650ad08fe4dd358e2004b8ca1",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_c_m1_r2_regressions.cpp",
-      "baseline_tokens": 3377,
-      "current_tokens": 3377,
-      "equal": true,
-      "sha256": "d1a1b2a5f214dd6cf76f83dac04d519daca6b77e4d7a8f0765ddd2e09cf123ba",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "2fa9f3f5eed86ce49f6ef8fcb21019cc07c58f5f92fc87dd41e38931ae08451e",
+      "current_sha256": "0626accfd843e35972dbe03b19a9cbc379f29e10d9e356c3ce222f7b6d452c00",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_control_diagnostics.cpp",
-      "baseline_tokens": 1788,
-      "current_tokens": 1788,
-      "equal": true,
-      "sha256": "d9a6c71798edfa27e8b95e8010884d381f0afcb7566b0a4545ca768b42d0f53a",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "facb8d0dba3f991b0180510ff55114c8bc68ba1805217aa83c54847446e8b155",
+      "current_sha256": "90cb83f0ffb91991b3c1a15a8d834d2428564e3d3408ab02b81e9536327f39b3",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_m1_r3_interleavings.cpp",
-      "baseline_tokens": 3468,
-      "current_tokens": 3468,
-      "equal": true,
-      "sha256": "4501439581f90365d3aed0dcc956491b0e14091c038347290b1e6bd3e903ba0c",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "2a9eece675c187af5a104eb3695b1d7d8c50250334a6f9d84143ef328ee673a6",
+      "current_sha256": "fd904334a926f886885e30f36c61f8315ec9cfd1d50036b51f6f5ebe9bbb209b",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_m1_r4_ack_isolation.cpp",
-      "baseline_tokens": 4620,
-      "current_tokens": 4620,
-      "equal": true,
-      "sha256": "41ed774497011ce63bb1a34a06c740d310867f9a5b16482f550a50bb3eb125a2",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "7490a3939558ece1865ec3b2c9febd64e5a31bcc01d42bd785bf2401b95eb007",
+      "current_sha256": "9cc6da83d36b69b51e1426c457cb257f3fe96cd2b1a38a100c7473de88359674",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_m1_r6_recovery.cpp",
-      "baseline_tokens": 2624,
-      "current_tokens": 2624,
-      "equal": true,
-      "sha256": "aadff547711e09f43075ca8cc6ce68fcaecf441eb566c9bb2b86e648a7f12dc7",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "4054a13c775d4d2115560253f727596e53914b2f6ca04a6e2a18d49894646140",
+      "current_sha256": "69145ecf644ee87a3de3ea2728a5a01addc2eb7fec29e488bfe2e2e7602493da",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_m1_s10_1hz_recovery.cpp",
-      "baseline_tokens": 1888,
-      "current_tokens": 1888,
-      "equal": true,
-      "sha256": "5724b97de92509b7ac367bd23faaedfbd402f5e02a6ea8a0918ec2f0f36fc2f0",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "d3dceb7684f715c261295b4bed6d37da04c01d50ecd4c611b635f05b0ba7d574",
+      "current_sha256": "a075cf94f6d6ac0ac75cf8b3adbe8c79220874baad9ca1bbde55184833d67fe5",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_m1_safety.cpp",
-      "baseline_tokens": 2557,
-      "current_tokens": 2557,
-      "equal": true,
-      "sha256": "719ce7e6c89362d283d4988fc58ae66bc1f6ee3c5e0f9c774fdd6075bce340ac",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "d8db62f3f8379e8cd6c7b2a72ade8499f73d51133995a202040f61afb48461f2",
+      "current_sha256": "b63636bcb172739d6e66178462b4437189c4f339b5336665781faac7704f6758",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_offline_timing.cpp",
-      "baseline_tokens": 3294,
-      "current_tokens": 3294,
-      "equal": true,
-      "sha256": "4aad786693afac9ffd8ab4213a78431d36c5ff9dce119d78254d8725c04c3bee",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "57c59f02cd7e8ca93e546c4aa4a4d61afd0e71be920f56701cfa75511528b9a0",
+      "current_sha256": "d854a63ee94cfa42ffb778457c7f497a59470c11289886701a500f45a8475379",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_p0_attitude_audit.cpp",
-      "baseline_tokens": 405,
-      "current_tokens": 405,
-      "equal": true,
-      "sha256": "4616d15e8098be7abcbad67206c707a9431caf646ad61fb9b83c12bfdddc0665",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "83a0f374563a820bcfdd37c0a4b84fae443321950225ec6082b0c61943c10a17",
+      "current_sha256": "dcd4e31fa596732da6ca1a644deb98bf3d07c7ce431b7dcdec952db287aa5e2d",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_p0_tilt_trigger_evidence.cpp",
-      "baseline_tokens": 405,
-      "current_tokens": 405,
-      "equal": true,
-      "sha256": "19fb91196cda8ca80c100db962ab5f713b6fdff96736f11f32451a74d67ba10f",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "ca3be7fe3a0a5d920b45ae7af911c085e65261ac8843e8fc357c3ee08cee9444",
+      "current_sha256": "f601807e2da389bcc55b2f2a5b5252c3ad8b0c1346a05ea68ca3699882caf03f",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_parent_lifetime.cpp",
-      "baseline_tokens": 480,
-      "current_tokens": 480,
-      "equal": true,
-      "sha256": "efef860e94625ef469b7f961afa04b6f909bb16728981113d5659f83f0214328",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "76fe85df23c3f69ab63b58f144d2bc19d93aad320b8b78bbe1469c014f236134",
+      "current_sha256": "7e08995f766dc928d049cd34bad76ca6dc9e9983d9b82a6d78fb82e36946b02f",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_publication_boundary.cpp",
-      "baseline_tokens": 2167,
-      "current_tokens": 2167,
-      "equal": true,
-      "sha256": "39f6d4c5642a9cc62a00043a3757f82a0738e91c2c9eda9449f8650ec619c93f",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "654fefacc71e77b8b9439f365140d668dbcf9ad3c83c016e2b06a7589c10ee1a",
+      "current_sha256": "8ee6b995392d4aca54bd1947168ec05efcacf36c293e9baf31d46b2e68d8d9ef",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_publication_runtime.cpp",
-      "baseline_tokens": 829,
-      "current_tokens": 829,
-      "equal": true,
-      "sha256": "ab5c9099a5f49011a80cf96946f4bdc04012af782807a89f1af4751d58d33391",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "b6a9b0b94366cf0a20d079655ca29788774fb306b0e2cd680b2a10bbf531c46f",
+      "current_sha256": "cfbbb451a259c425303d065be8a811b6c92dd32c0b4187496ebee09de92fcc6c",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62_armed_ground.cpp",
-      "baseline_tokens": 1322,
-      "current_tokens": 1322,
-      "equal": true,
-      "sha256": "93ad18c4c4f417396469c39754c9ece2fcee0520e0c825e22da23f7de4d6ff67",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "efe1905ea5ecf9528697a43eb8543008fb3a8c5e13d4af5e48bc9f4cb5955505",
+      "current_sha256": "07a63672c69e885855082f0b8cc4c5c5f3e90427e45b3e310c5135bce2df68e8",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62_disarmed_prep_progress.cpp",
-      "baseline_tokens": 913,
-      "current_tokens": 913,
-      "equal": true,
-      "sha256": "ccb7973ec8aa0b29821f7f671eed624a626917174cdb6308d8f2e0f10617f120",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "6a653842442e144695e0efdc686b7bf5ef88e1d581891cc325c5281898fb2eed",
+      "current_sha256": "db52a85afd00aea213452e59ef6216e83ad436df262345624094b67d72f41133",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62b_ground_release.cpp",
-      "baseline_tokens": 1034,
-      "current_tokens": 1034,
-      "equal": true,
-      "sha256": "79bcbfbbc24f6f6131c9a08d5929d2cf9b0546d58d96bf252e9a990862c93af1",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "92a56ad4b5a5fa395642dbb0564b5a2c630296de423373f964a2ef3fe1aa7b3d",
+      "current_sha256": "21a22d6745d207ea9e168453f411dd6fcb271bfe07c68aed3abfbeea488b6124",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_arm_only.cpp",
-      "baseline_tokens": 1501,
-      "current_tokens": 1501,
-      "equal": true,
-      "sha256": "61280f424594c3c2b36071702eb16d758377593c850f8416f10075eaec80e7aa",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "352d7c3a055df70baa1001dbaa1d2b6f4814603b16e46a9a05497bc317d528eb",
+      "current_sha256": "059aca136bbba54cdb991822592978cefa4310299490744c06a9981ba4ebcadb",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_review2_disarm.cpp",
-      "baseline_tokens": 2073,
-      "current_tokens": 2073,
-      "equal": true,
-      "sha256": "ae8eab0117ba8da346201a1649adf809312e7fc706a8af58ea377b54faf7e4a3",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "b957cfb5eb2089f63d1b9376899649f808fc43398591e159ed1e795e815cc882",
+      "current_sha256": "38330eb0fc2e8ea969d65fe17cde31f097d6651424c5427558a7e28f6071119d",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_review2_recorded_trace.cpp",
-      "baseline_tokens": 612,
-      "current_tokens": 612,
-      "equal": true,
-      "sha256": "424e29e6baecb88e61a9156195e108e10e17d6391aacc51dcc59f175e7217d40",
-      "changed_during_check": false,
-      "location_sensitive_macros": [
-        "__FILE__"
-      ]
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "351987d94cf896c67226cfd723c0b4e9fdfa84894481030a015c45fbf932b616",
+      "current_sha256": "b7c291e70f5448b46a1b5dcfa00499f2906ad3d3a553fe5f9340d628dde26c16",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_review3_bench_grace.cpp",
-      "baseline_tokens": 2777,
-      "current_tokens": 2777,
-      "equal": true,
-      "sha256": "c8992b5e84771e0c3089d4fd7787fcaa538a84e7bfa887157dc8672d87937f28",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "d699b0ffa95d1d56a8ca0e35e456446a1c61c6ad718dab56157bb6d29a4de97d",
+      "current_sha256": "f0c9beb49efb2d380f19c3eb299dd87cf8cbba69b5fbfbfa94bfa212629ee0d5",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_review4_post_disarm.cpp",
-      "baseline_tokens": 3240,
-      "current_tokens": 3240,
-      "equal": true,
-      "sha256": "d01e640527f41a200a20e00565ae2a661ff951286c9718e736bfb7acb9ce66ed",
-      "changed_during_check": false,
-      "location_sensitive_macros": [
-        "__FILE__"
-      ]
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "51b89b6cf184f74e034c4cdedf72934a57f878bfa0bafe2af7674b3f3a5cf31f",
+      "current_sha256": "d62b9fed1fa44724ed2c15d390264ed76dcba5f7356c897a87ead2d36e247fb0",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_review_admission.cpp",
-      "baseline_tokens": 574,
-      "current_tokens": 574,
-      "equal": true,
-      "sha256": "1f5f5c63c5d182fc2c0c6229285540029ba4f61d18f9698c73b00201752012f8",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "348085833c4571437b7d4eaed1dce2295cd2209636716854147def61cfb699ac",
+      "current_sha256": "d373c29a0a27db894a60ee864e37fcbc7e4b1ab844c2c054e172bf6a15820947",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_review_clock.cpp",
-      "baseline_tokens": 3301,
-      "current_tokens": 3301,
-      "equal": true,
-      "sha256": "97f355bc3953fbc3be01ec9a04c2914ef71f96c1519b516051859a00ee8fc177",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "b49e8933be9a5e47331f98a9fab410d21f581493a2904e7ff818fed4316c166e",
+      "current_sha256": "6a195c4a7a8e3235c8d843e69ca2d87aa0beda6a7c7a9ad062c40aad2dd3603b",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_review_diagnostics.cpp",
-      "baseline_tokens": 267,
-      "current_tokens": 267,
-      "equal": true,
-      "sha256": "e53319b5bdeec4ee20151f344ce10c3221a39c639e691bfa4434f423e6216042",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "6fff258893257cda1d69c149d47bab06f9b035758072078a087de0e847564424",
+      "current_sha256": "68f77c813706f18764547f896f2216998c374db0b14b06db00373a2bcdf7006f",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_review_exit.cpp",
-      "baseline_tokens": 1676,
-      "current_tokens": 1676,
-      "equal": true,
-      "sha256": "bd8d463ce85016835f18e28c9df5e553b61ffbd53b201d1a70d5aef8f0d7ce24",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "ab9dcb3df479fa18fadc4b19b175ebd7817a6c634718518676f5ff65ed164357",
+      "current_sha256": "4f48de9f999296d18554d1384b2bc800871dbdae03e18175c3159604e1c16579",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r62c_review_sample.cpp",
-      "baseline_tokens": 1127,
-      "current_tokens": 1127,
-      "equal": true,
-      "sha256": "883601ccea24b8a31869ad3d892ac2843b6d195b70f267f185b80210c0b986d4",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "498a65acda70be62b85ea262e0bb9992706bb23b5ab3e3a2d7b5b0757e1da930",
+      "current_sha256": "bd19cc88b1f506a2eceaf9e57766eb3332cce8f1deec48a4d9dfdfb29d46fa25",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r632_bounded_liftoff_reserve.cpp",
-      "baseline_tokens": 1206,
-      "current_tokens": 1206,
-      "equal": true,
-      "sha256": "c3c2d561d6bfda9ae0fe078a2c8061af7c38ee05fbab1003bac0fe4447cfb572",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "dbd00ed7546f9c43e030a83215893d9eb807627337c3cd905d9f64cf08318c41",
+      "current_sha256": "eec67771a45a440c44caa8971f579eba57586b0b0486f7a5e62bbff161144554",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r632_height_tracking.cpp",
-      "baseline_tokens": 1906,
-      "current_tokens": 1906,
-      "equal": true,
-      "sha256": "a1aaf612bcafb104d811978f0b3eff2ed3840d7ecb60866d935616ac45f817e3",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "f2968eb9cb6d9bb2adb63ccd1e4a24196bea4921e636d48f6bf25cd07da5fa09",
+      "current_sha256": "9278c538a0fd47edf3a846f317cba5fe2f227319eef2b272c8efb53afc7869cd",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r632_prompt_176_ack.cpp",
-      "baseline_tokens": 673,
-      "current_tokens": 673,
-      "equal": true,
-      "sha256": "96fc32b15e7ee1cd9c8a73f9d1d06a381c4a6e9058fad66c43f9c14d0da32ff3",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "e025ea0f041b9459b3d45f66d673e2f083a2bf3259b9e9924357d335af4a43cd",
+      "current_sha256": "f17429160ca8dc1a8cc333fdc5799284d4532b2f4f68deda67a765330a9efedb",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r632_ramp_height_guard.cpp",
-      "baseline_tokens": 2077,
-      "current_tokens": 2077,
-      "equal": true,
-      "sha256": "53318bef200ec03504dd3f6633e0b3c10ad2c770832033cd656fdeb836ec384f",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "1ff1edc40e0b0a6b1d02ef1340c55542692e3c2118305724d52aaab81fec5967",
+      "current_sha256": "e2244896a31b2cd285a62d6ff691dac8e3e076224232e36a6f765a4a482d5fb3",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r632_ramp_schedule.cpp",
-      "baseline_tokens": 426,
-      "current_tokens": 426,
-      "equal": true,
-      "sha256": "cd51b775e9b6f14e103154912d7872b72f25c690e244f6d24cf8e26cb0efa8b5",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "87f605975065693a349685c99ba5f8813dda6d096ac6ea991aa61222a78648be",
+      "current_sha256": "edbe913e61bfa8540ca05926a2d877f3e91361e9de5389a81d61bbe13856df8b",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r632_skewed_176_ack.cpp",
-      "baseline_tokens": 3457,
-      "current_tokens": 3457,
-      "equal": true,
-      "sha256": "04bfeebffc13f5081a873aa54fe4113eb3c18ffd7d5870b79fe36bf04407d85c",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "f7285fa758de1938054f1dcde2e834d276d392f0752149347a80eda9dbb9b398",
+      "current_sha256": "e8cd8cdd9c62334d42f083777a57d7b2c3ced7b92cd6928a2f316ddecc843090",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r632_takeoff_plant.cpp",
-      "baseline_tokens": 1362,
-      "current_tokens": 1362,
-      "equal": true,
-      "sha256": "a2e3ebb24716428d1366a4e92c72bd415889eb1a5700ee4d5df46df5210271ab",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "2d34feb85940db9becebd469a9e90a98822eb49749d4dc5a267d1c5bb1bd711b",
+      "current_sha256": "16227f34a8a854cdea8c01c1fe19460474621be565d1493aff3bd6f6a516e47a",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r63_normal_arm_evidence.cpp",
-      "baseline_tokens": 1400,
-      "current_tokens": 1400,
-      "equal": true,
-      "sha256": "a72c76826df56896cd9a360e5651129238be56d9cf043888014eec9572eff6a0",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "85d749b95f388f3f3e2d8ca16df54d02fcabad1161a42581996e580d1abca4fd",
+      "current_sha256": "207dab5e2749188ed559bcb5bf369fd66c54db9e27a1133070e2f389074fe2f5",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r63_takeoff_candidate.cpp",
-      "baseline_tokens": 1712,
-      "current_tokens": 1712,
-      "equal": true,
-      "sha256": "3a2a5af5689e2a72f9f2a6543e371aa2bf11b5a8febb33a1894e70571e643ef2",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "f9a777d3df4468cd9910579ea7b9c21a932041cda2ab4a5a4581cfb003c4fec2",
+      "current_sha256": "fb50e6bf0820eda56c3658cd7b88c9380eb0195d8ec1547fe46a573dbf51960e",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r6_1_recovery_custody.cpp",
-      "baseline_tokens": 1971,
-      "current_tokens": 1971,
-      "equal": true,
-      "sha256": "5591d0f033472e6726a7eee50f010300ed65de7264b4aafeb361e072d45084d4",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "2e365ccc5abcc9368fc6d000cba8a8e906c960f22ec97ff2412538da0cf9090f",
+      "current_sha256": "d223a74685f0f804b501db7e4ab19554c2b4ff400ecd5bb80fed01f29f426115",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r6_partial_sinks.cpp",
-      "baseline_tokens": 419,
-      "current_tokens": 419,
-      "equal": true,
-      "sha256": "98b182587f176d80f187b7d0774784b599edd899cddc19f53fc0be5fe166bb30",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "884253cf329c59d907f9c14325a61ec15c85d1bbbcd0f7faf96472a235084ccc",
+      "current_sha256": "302c08236d5e298edaacda597bc788c6198fdf2afb2740f7f7135aa87f0cd8c4",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_r6_publication_audit.cpp",
-      "baseline_tokens": 240,
-      "current_tokens": 240,
-      "equal": true,
-      "sha256": "309112d59a332bebda1e01c185c00fcc56700b3da1d580630d3f8a2801e22ec3",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "7d76d7440208c0a42fe2f69ae6ad69a0884c82ff372443dc3aef9c5bd92928cb",
+      "current_sha256": "9df66fdf0eb64e0356bb4fe4745d3265f01778b9e37742c5692e47e0253dcb6b",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_before_ready_recovery.cpp",
-      "baseline_tokens": 1730,
-      "current_tokens": 1730,
-      "equal": true,
-      "sha256": "ddd1250c63e6161713fca4080bd6ab0cdb921089b7f593568bf474591b2f8950",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "777cd3a086cae77835a7d253d89df636267a068468b9f4c67209eba024fe197c",
+      "current_sha256": "34d8f6ecb4605eec4d545477cb64821d68ee2c1b0f46d7a2e692df5fc2df7415",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_interface.cpp",
-      "baseline_tokens": 1308,
-      "current_tokens": 1308,
-      "equal": true,
-      "sha256": "52c22b4630013433fa004b230a06fda15c570ce7e173fd7eeaaaaf7ebcfdcc64",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "0749d4aa3eaaf36c8a250bb79a3e72804402e919d0c80e4dcc397ab3b7f6b56b",
+      "current_sha256": "0f97c77d907bae1082c52292664c639d6613fb14b2966bbf732735a94104b999",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_navigation.cpp",
-      "baseline_tokens": 14600,
-      "current_tokens": 14600,
-      "equal": true,
-      "sha256": "4085b29c160cfdc3680bbf09f8d64520b02b306f415b6af9307a2c283a2f2ade",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "a081fec7d372aa5867d0b5988bf4419e8f82642994428229f80cf4e8de6bd32a",
+      "current_sha256": "de0ed642be059a959ad21602c794ad6f5100f45fc94bafad0cb97559ec72ecdf",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_navigation_telemetry.cpp",
-      "baseline_tokens": 457,
-      "current_tokens": 457,
-      "equal": true,
-      "sha256": "f56e6a5fe7599694054692e4ba9208a7eb27bf400dbae31cc3fe511b4fada004",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "617c8384c709aba2e873d6237bbcab01a605513b5a0defe15fa781f32516601e",
+      "current_sha256": "eeed2874fe469400bb7344dd6c2ff3c6e07bac07ec47d4b438766394be3ca8b5",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_preparation_defer.cpp",
-      "baseline_tokens": 2357,
-      "current_tokens": 2357,
-      "equal": true,
-      "sha256": "b33d6a13346c5f196ddd4ca5ed6cff3cf5ba2b7f89f004fa195b84bb100005c0",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "9ece46bfdb2ce7d09d59effa53d22bdd656e21b3ae4f2a3cfa63be3c22721105",
+      "current_sha256": "017a2e2b7e6f5a8adeb0c09dbc109e24eb1d86765f6c541d4b651e384211635e",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_recovery_boundaries.cpp",
-      "baseline_tokens": 1817,
-      "current_tokens": 1817,
-      "equal": true,
-      "sha256": "392a4d6ecf669d6b0a6d8dded3a5d59bc48d9a195c80c41724ed8f9e11d20b1b",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "b91485a5aa334c665064a5cccd363c92cc2c1203945eeb8a48a320d2974b6208",
+      "current_sha256": "70bf22967db95c54154784d22517551f10ed2f1da06c4220e1521a47a2c51579",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_recovery_progress.cpp",
-      "baseline_tokens": 2102,
-      "current_tokens": 2102,
-      "equal": true,
-      "sha256": "67528f4c3a4358acc2d56a41db99e73a681fe4fef6c5f09bf8ccb559d7c2000c",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "34cecc95ed9b7b60bca2b12ec575de8b8b8b77942b6c0b4308024ceaa223bdd2",
+      "current_sha256": "70c723357090dc8ccf0138a85b5144a92cdbd8d7761a811d2713cd8eb5fdb63d",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_reprepare_admission.cpp",
-      "baseline_tokens": 887,
-      "current_tokens": 887,
-      "equal": true,
-      "sha256": "a3ee32c7b7c70e28b368cab2bcf1b908b27ae8e17e6f325bd505609ed65c0fe8",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "ea3e7ad9779772a4547fa738fc9bdfe5086cbc7092ef4cc17bace2d12739b083",
+      "current_sha256": "f1edd071e47c23f7e6a5ae755af7fe3dc0eb95dd6a0b9e9199d54c61aac0ca30",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_reprepare_diagnostics.cpp",
-      "baseline_tokens": 833,
-      "current_tokens": 833,
-      "equal": true,
-      "sha256": "f6a96378289d2946ccd1646ab88cb9a2ba48c83c962e831f2ca9354bdb922187",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "14f58bc61f766ac021549beb66cac622ec9974e331409a3e88ca023c03685837",
+      "current_sha256": "ed5e4e4603e0e8304bb4889591db221179da8206ba3379e53e1d968f54e9b624",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_takeoff_stage.cpp",
-      "baseline_tokens": 1124,
-      "current_tokens": 1124,
-      "equal": true,
-      "sha256": "e03e4e9011945e40574a3e5e50e38fda1affb908d5d235d5ba7717a4ab940fb3",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "8438746180f288501a5f580d15f5ad6f777eab1eddff21ebcce61ac90ce3e6f3",
+      "current_sha256": "16b6f4ae1c79a98aa29a65ae11278a70d648ce06e52dd3f003a1342f038bdbbc",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_rc_timing_recovery.cpp",
-      "baseline_tokens": 860,
-      "current_tokens": 860,
-      "equal": true,
-      "sha256": "db11b7098a730bc52e140e9acac7089168af488a57cc0dc352e070d8f1c5fb4a",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "b724efc25a45973f30f663844ca0a2c875bab0832843ae496fe276ddcaa95249",
+      "current_sha256": "f9966a9464b9bcb533784869d1968444bb67be1ec40324f354e89bd9e9ae08ee",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_receive_events.cpp",
-      "baseline_tokens": 6004,
-      "current_tokens": 6004,
-      "equal": true,
-      "sha256": "a06a76aaf7f3807521a91901ff51263ae6230ea4a337cfa81089a7e8e41a3f70",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "9205432ab0933192c8941fd4c4b8f2c7d57bdd437a994707337fa0c5b37c461a",
+      "current_sha256": "c5ea639bae323751927f7cf927c3468cf35133a44917fbfb0b067b7db280cf48",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_receive_schedule.cpp",
-      "baseline_tokens": 1908,
-      "current_tokens": 1908,
-      "equal": true,
-      "sha256": "9ea0c16efeb48da387a0c5639c1647c3c6372917d44d6b1dbea380d88c92c332",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "64a24d024e723703acc255ca8740da2bd874372a9112d9284efb87488e6e5486",
+      "current_sha256": "33892cabc22130e9fe78d022056b8a7d8f56727ef91c66fecf9019d72ffa8f94",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_receive_schedule_safety.cpp",
-      "baseline_tokens": 407,
-      "current_tokens": 407,
-      "equal": true,
-      "sha256": "6b301890c478ec0aca0198dbacfeb70273b2cf289e1447248535393e26883b80",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "5fd2c241338f37fabcb61e7222728d60eccd0aca92ddb94ccbeca15366177c0d",
+      "current_sha256": "11d4cc7ff7ae373d90846b88ad73f9decaa178b38d46535f217bec9648473e99",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_runtime_history_capacity.cpp",
-      "baseline_tokens": 1021,
-      "current_tokens": 1021,
-      "equal": true,
-      "sha256": "2bdab84e9cbc62ebb243e92aa8b0e9ae9178a287738963e93ba79eca9110a05b",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "1a89e0a8a8d71c33163ae0956edf49372cd1399e4567f99769b4ffa6a11c3ef6",
+      "current_sha256": "42153a9ea7b188572f91b4d881720385b08d5567b47fce1f523da0d65ea3ac9a",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_socket.cpp",
-      "baseline_tokens": 370,
-      "current_tokens": 370,
-      "equal": true,
-      "sha256": "0613c20db4a818c10abc335789837e75f22ccb9a65039a2499485e316de1dbe5",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "93294556d6f20c741ec7d0adf610fa547d5c3e0c262cb5e177cdd8fdb0fa57a5",
+      "current_sha256": "56a9c2ad16fd9ca27f4fe697eddf5d7191d947bfa05d7e0f49ac047578b9b8f6",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_socket_boundary.cpp",
-      "baseline_tokens": 389,
-      "current_tokens": 389,
-      "equal": true,
-      "sha256": "002352f9619fe69a522b20beb95203cdbf26ad0c1037ffced5a72ec8af88a210",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "fbac45e78ee75fa020498db72ad273c5a23bb546dd2c75c3892a8002a0901365",
+      "current_sha256": "ba5d64163bfa3a0ac62d4af077ed2ccd16f661446de02a2601bdaf5ec9bae103",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_takeoff_evidence.cpp",
-      "baseline_tokens": 1497,
-      "current_tokens": 1497,
-      "equal": true,
-      "sha256": "07ab70499d2c4b55bfd744f59eefd6a9d5a8edfb017fb1e07a93f5854b5ab3f3",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "66b8e2a3b2ba767c3471fa82da2b16cb6e1e1e0fd09ab38effd18bd38faad0b6",
+      "current_sha256": "7cc8182ca82ae086ca8896b3156271ecbff465ec6ac09a26888fb320d18cdb8c",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_velocity_command_input.cpp",
-      "baseline_tokens": 4710,
-      "current_tokens": 4710,
-      "equal": true,
-      "sha256": "5fc95aa8bb7141b715af94459166208c5d3cbfb1babee8c0c29ab3365235769b",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "4b5235ea88d8294bf34b440a38c49d9113f87a15ba9869361eaa581d23653039",
+      "current_sha256": "6dd27574dca8152cebeac6bced2b810fcc94e8323ab5351f76a760400123f8b6",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_vertical_feedback_guard.cpp",
-      "baseline_tokens": 1720,
-      "current_tokens": 1720,
-      "equal": true,
-      "sha256": "4976a3bb47f3ad7dea52b074efd6090926acb175aa9c7facf45e85e952901979",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "76b2fd080972a431c87de9370cb8dddf8f69c8a0deb9fba242e5b69fc4756d93",
+      "current_sha256": "8165afca76f1792816a554392cc22b42219bac310ed563d45a0defcd96679789",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_vertical_feedback_regression.cpp",
-      "baseline_tokens": 1481,
-      "current_tokens": 1481,
-      "equal": true,
-      "sha256": "8b251c05a8df6ed59adfcf26e02dadfd242b51f0ef3b2e5bf445128490c297f9",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "d71b9c94b374665d5d75bf2a14237233b51ae420ef7879780ebb13397ab65407",
+      "current_sha256": "0ad198a4eb662f5563d4f938ccb4400d58f07941983f49acca31a15da31b5519",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_vertical_feedforward.cpp",
-      "baseline_tokens": 500,
-      "current_tokens": 500,
-      "equal": true,
-      "sha256": "adb184b76aa54eb5175f7f194bc62aeb66f2d9258f217107a7b0db9b3e29af6c",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "91372a693f2ca581b4d05638f18b5968c7d1db0ec182a6f9e93b08dc8557961b",
+      "current_sha256": "eca3125a414cf06f877b9e5c6b81d7eb80939ed28172dcdae6b7559225c5b4a0",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_vertical_integral_reversal.cpp",
-      "baseline_tokens": 426,
-      "current_tokens": 426,
-      "equal": true,
-      "sha256": "f62d5523832977c034234e74a6a9d2af1310a0be8b8e7de31dd705b02b94be07",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "a3e5daba48692c86bfe18c52cafa48ba683d122ee03b0a8aa2a4ed649ef7efdd",
+      "current_sha256": "0ecdea5f059eb290e12ff3f6c9147a06d7521d6fdb3dcbe9832bd7e6405f4223",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_vertical_takeoff_ceiling.cpp",
-      "baseline_tokens": 782,
-      "current_tokens": 782,
-      "equal": true,
-      "sha256": "427e1747663818a3f4c7fb6efc2e66cbf9bd2587348dc469f0bd40aa36ec1f84",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "c77a05207eab901be4ff5f0d1f0f52f4113f355aa6280deaaa7e3fbe71c4b8cc",
+      "current_sha256": "e4a91516bb782cbe37766081fc3fba7d64d491c2e06c44394f2c9da2da561826",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_vision_navigation.cpp",
-      "baseline_tokens": 6759,
-      "current_tokens": 6759,
-      "equal": true,
-      "sha256": "af74dc5645c1cd1b191664db90f832fa5baa25971afbf6261b9e64b49dee53ed",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "af74dc5645c1cd1b191664db90f832fa5baa25971afbf6261b9e64b49dee53ed",
+      "current_sha256": "ff8e7d6ef38f3c5ce8b9b0e41b685020e95738a992b31f2fad38d5f889e0bab7",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/test_visual_runtime.cpp",
-      "baseline_tokens": 2029,
-      "current_tokens": 2029,
-      "equal": true,
-      "sha256": "7d1b0a32a4a5735e7ef4485f62e6e129dd0dfb06c964f10fc69597501c9ed795",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "7d1b0a32a4a5735e7ef4485f62e6e129dd0dfb06c964f10fc69597501c9ed795",
+      "current_sha256": "06d0d6341426e146901cd5a60f173efef81294e7ec242089f537f3ca09502170",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/vertical_control_replay.cpp",
-      "baseline_tokens": 417,
-      "current_tokens": 417,
-      "equal": true,
-      "sha256": "112d13179f66f45eb88562dd80fbb5f3b017e9e1f8022f9d4dff44587a2fba21",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "112d13179f66f45eb88562dd80fbb5f3b017e9e1f8022f9d4dff44587a2fba21",
+      "current_sha256": "dcbf428de0b8b31352fdc003cd108ee7a559bb943506fc7a61c6a5b22b1903d4",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/vertical_feedback_replay.cpp",
-      "baseline_tokens": 154,
-      "current_tokens": 154,
-      "equal": true,
-      "sha256": "c7f1bfbb97b4df3b8a83cac9f88405bd43ae0b9edde599a151b0680a90b578da",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "c7f1bfbb97b4df3b8a83cac9f88405bd43ae0b9edde599a151b0680a90b578da",
+      "current_sha256": "5b1de8376f2433c9abd7ab2e74cb2dc68d2f5edb0eea0b2ebab8f02a0624b196",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tests/vision_test_support.hpp",
-      "baseline_tokens": 1258,
-      "current_tokens": 1258,
-      "equal": true,
-      "sha256": "2888d8d256083156deec6fde5031e7627b03e825467a10b1ed9680835d386203",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "2888d8d256083156deec6fde5031e7627b03e825467a10b1ed9680835d386203",
+      "current_sha256": "62a1cdbd7061396fa77e83b7cf783a7fc0a4c78391552e540b042efadc8a0c8f",
+      "bytes_equal": false,
+      "status": "pass"
     },
     {
       "path": "native/tools/vision_replay.cpp",
-      "baseline_tokens": 3010,
-      "current_tokens": 3010,
-      "equal": true,
-      "sha256": "125d30abef4d45e9ac868451176f3d3ec18d372da27b903e3c0d1cd1a256dc7d",
-      "changed_during_check": false,
-      "location_sensitive_macros": []
+      "kind": "cpp_raw_tokens",
+      "baseline_sha256": "ed353ce1d6f91aafd99d231fb5bbb82534e302c694a0ce96febb5becd796b9aa",
+      "current_sha256": "3f4207d299e58c193ab611dc8cc91011677f619c4f1cb8e1b7028a707cf358c7",
+      "bytes_equal": false,
+      "status": "pass"
     }
-  ],
-  "passed": 122,
-  "failed": []
+  ]
 }
