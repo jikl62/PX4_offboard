@@ -1,0 +1,368 @@
+{
+  "schema_version": 1,
+  "verification_complete": true,
+  "created_utc": "2026-11-11T04:38:41.193092+00:00",
+  "baseline_commit": "950ac04df5305fe94e901ea8239d6fd153247444",
+  "branch": "release/fc01-recovery-v5-20261110",
+  "scope": "source development; x86_64 ROS 2 Humble; no flight authority or hardware",
+  "architecture": "x86_64",
+  "source_sha256": {
+    "native/src/jikl_fc01_system/CMakeLists.txt": "d34234a73f9abbb5e0c92955fddb4d1e4212a0ad9c072397037470cb69920b18",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp": "811864f7c6d34a2d1834663e624960ccae7367ffa4654e37180e9a0d680b54db",
+    "native/src/jikl_fc01_system/msg/VelocityCommand.msg": "c44f303ee7f229869472f23035fad2a97c3661a4fd9dd5bdc2274d4864ffb28a",
+    "native/tests/test_velocity_command_input.cpp": "b3ca066169bf23271fb10af298c67e6a576da90660dd1c1b96effe3c9a6558aa",
+    "native/tools/velocity_command_diagnostic.py": "106def5da332d63b07e7de45bf146ff0962d0f54e0455b2df8f2be143290f2f6",
+    "native/tools/vision_state_validation.py": "817611e9d6ff0f5649caf6b8de50bf730fd79f9859dbb15d13e140afbab9ab95",
+    "navigation_report.py": "9db6c0723da9b138e2ec4e7dfbd9e158543fde19849690408d059bb19f128d1f",
+    "tests/benchmark_vision_interfaces.py": "bb6e4f66e7c09eed9ddd6afa6eea9066c124d0292fe4cc4c518f2950475b93dc",
+    "tests/ros_velocity_command_smoke.py": "af41e752018564def66b2fc340d1c0773158752d56d5e2d462f45b51823759f6",
+    "tests/test_navigation_report.py": "9223639193b083324b1f917c9b5d9f1dab9f07f97e8fc0030d1763fe735bfe9a",
+    "tests/test_velocity_command_diagnostic.py": "4219562227ec56fd1ddbe852f779ff26b8ec8f080df124b228b1dc15eb403188",
+    "tests/test_vision_state_validation.py": "b207c513cb38e0f9c1abf309bfb489f9fa04464dbd5772caf9b18f3dc9b61342"
+  },
+  "build": {
+    "passed": true,
+    "ros_distro": "humble",
+    "full_build_seconds_reported": 49.0,
+    "final_install_passed": true,
+    "observed_compiler_warnings": 0,
+    "px4_msgs_prefix": "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/install_r632/px4_msgs",
+    "installed_tools": {
+      "passed": true,
+      "sha256": {
+        "velocity_command_diagnostic.py": "106def5da332d63b07e7de45bf146ff0962d0f54e0455b2df8f2be143290f2f6",
+        "vision_state_validation.py": "817611e9d6ff0f5649caf6b8de50bf730fd79f9859dbb15d13e140afbab9ab95",
+        "vision_odometry_adapter.py": "a328c287e8df58151b893918136f925f676dd939c6c3570009feded764dc2197"
+      }
+    }
+  },
+  "tests": {
+    "python_related": {
+      "passed": 181,
+      "failed": 0,
+      "module_case_counts": {
+        "test_velocity_command_diagnostic": 33,
+        "test_vision_state_validation": 37,
+        "test_vision_adapter": 19,
+        "test_vision_settings": 15,
+        "test_navigation_report": 9,
+        "test_takeoff_configuration": 4,
+        "test_navigation_service": 26,
+        "test_navigation_feedback_freshness": 8,
+        "test_navigation_diagnostics": 30
+      },
+      "execution": "170 cases first; after fixes reran only affected diagnostic (33) and state (37); counts above refer to the final distinct cases"
+    },
+    "packaging": {
+      "passed": 22,
+      "failed": 0,
+      "module_case_counts": {
+        "test_vertical_diagnostic_bundle": 9,
+        "test_navigation_build_evidence": 13
+      },
+      "scope": "temporary fixtures and harmless build stubs; not an ARM64 build"
+    },
+    "native": {
+      "passed": 11,
+      "failed": 0,
+      "executables": [
+        {
+          "name": "velocity_command_input",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "VELOCITY_COMMAND_INPUT_PREVIEW_ONLY_PASS checks=409 control_authority=false\n"
+        },
+        {
+          "name": "vision_navigation",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "VISION_NAVIGATION_INBOX_CLOCKS_VALIDITY_XY_FEEDBACK_FOUR_AXES_FINAL_CURRENT_LANDING_LATCH_PASS\n"
+        },
+        {
+          "name": "visual_runtime",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "VISUAL_RUNTIME_CONTROL_PASS\n"
+        },
+        {
+          "name": "attitude_runtime",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "attitude-altitude runtime tests: PASS (stage locks, ACK+status, faults, full flight lifecycle, sequential 400)\n"
+        },
+        {
+          "name": "authority_runtime",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "authority Runtime admission/selection/phase locks/takeover/ground reset/pending400: PASS\n"
+        },
+        {
+          "name": "rc_navigation",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "RC_GROUND_REFERENCE_OFFSETS_DRIFT_RECOVERY_PASS\nRC_GROUND_REFERENCE_RESET_TIMESTAMP_GUARDS_PASS\nRC_DIAGNOSTIC_VELOCITY_GROUND_RECOVERY_PASS\nRC_PRODUCTION_NO_VISION_1P5M_VERTICAL_ONLY_FLIGHT_ENABLED_FALSE_PASS\nRC_NAVIGATION_CONTRACT_PASS\n"
+        },
+        {
+          "name": "rc_before_ready_recovery",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "RC_ARM_OR_NAVIGATION_BEFORE_READY rebuilt=1 frozen_reason= current_block=RC_RECOVERY_NO_ENDED_FAULT\nRC_ARM_OR_NAVIGATION_BEFORE_READY rebuilt=1 frozen_reason= current_block=RC_RECOVERY_NO_ENDED_FAULT\nRC_ARM_SOURCE_BEFORE_READY rebuilt=1 frozen_reason=RC_RECOVERY_WAIT_NEW_STATUS current_block=RC_RECOVERY_NO_ENDED_FAULT\nRC_ARM_STATE_BEFORE_READY rebuilt=1 frozen_reason=RC_RECOVERY_WAIT_NEW_STATUS current_block=RC_RECOVERY_NO_ENDED_FAULT\nRC_BEFORE_READY_CAUSAL_GROUND_RECOVERY_PASS all\n"
+        },
+        {
+          "name": "publication_runtime",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "runtime_to_final_boundary_stage_one_ready_with_four_gates_false_one_shot_and_disconnect: PASS\n"
+        },
+        {
+          "name": "receive_schedule_safety",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "Safety catch-up retains receive budgets, limits and clock/counter guards: PASS\n"
+        },
+        {
+          "name": "m1_safety",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "M1 disarm final-sink TOCTOU and transaction evidence: PASS\nM1 nonzero commanded q 90-degree roll / yaw injection: PASS\nM1 Offboard release mode command is disarmed-ground-only: PASS\nM1 dwell, armed at_rest=false, no timer-only liftoff, jump abort: PASS\nM1 queued STOP / mode 176 ACK-status handshake / zero release: PASS\n"
+        },
+        {
+          "name": "authority_boundary",
+          "passed": true,
+          "compiler_diagnostics": "",
+          "output": "authority final Arm/nonzero sinks, both routes, lock identity and exact-zero regression: PASS\n"
+        }
+      ],
+      "compile_flags": [
+        "-std=c++17",
+        "-O1",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-pthread",
+        "-I",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include"
+      ]
+    },
+    "ubsan": {
+      "passed": true,
+      "checks": 409,
+      "execution_reported_by": "independent vision_controller agent",
+      "command": "g++ -std=c++17 -O1 -g -Wall -Wextra -Wpedantic -Werror -fsanitize=undefined -fno-sanitize-recover=undefined -I native/src/jikl_fc01_system/include native/tests/test_velocity_command_input.cpp -o /tmp/fc01_test_velocity_command_input_ubsan",
+      "output": "VELOCITY_COMMAND_INPUT_PREVIEW_ONLY_PASS checks=409 control_authority=false",
+      "binary_sha256": "bc43e62378d2838b46f315bb7167945f5fbc38e0d97994adb47f21c335dac698"
+    },
+    "ros_velocity_installed_node": {
+      "domain_id": 188,
+      "localhost_only": true,
+      "control_authority": false,
+      "interface": {
+        "type": "jikl_fc01_system/msg/VelocityCommand",
+        "fields": {
+          "schema_version": "uint16",
+          "sequence": "uint64",
+          "stamp": "builtin_interfaces/Time",
+          "reset_counter": "uint32",
+          "source_id": "string",
+          "frame_id": "string",
+          "valid": "boolean",
+          "vx": "double",
+          "vy": "double",
+          "vz": "double"
+        },
+        "default_frame_id": "",
+        "serialization_round_trip": true
+      },
+      "checks": [
+        "best_effort_type_and_payload",
+        "unconfigured_policy_does_not_qualify_cache",
+        "duplicate_and_out_of_order",
+        "invalid_and_retained_anomaly",
+        "reset_and_source_changes",
+        "source_count_and_reliable_to_best_effort",
+        "explicit_test_timeout",
+        "diagnostic_has_no_fmu_publishers",
+        "reliable_to_reliable"
+      ],
+      "test_timeout_sec": 1.0,
+      "timeout_is_test_fixture": true,
+      "diagnostic_publishers": [
+        [
+          "/parameter_events",
+          [
+            "rcl_interfaces/msg/ParameterEvent"
+          ]
+        ],
+        [
+          "/rosout",
+          [
+            "rcl_interfaces/msg/Log"
+          ]
+        ]
+      ],
+      "passed": true
+    },
+    "ros_odometry": {
+      "passed": true,
+      "domain_id": 189,
+      "localhost_only": true,
+      "output": "REAL_ROS_VISION_ADAPTER_PASS valid_conversion=1 raw_conflict_revoked=1 fmu_publishers=0"
+    },
+    "python_total_distinct": 203
+  },
+  "invariants": {
+    "control_authority": false,
+    "visual_navigation_enabled": false,
+    "target_height_m": 1.5,
+    "aa_hover_thrust": 0.5,
+    "aa_takeoff_reserve_thrust": 0.04,
+    "aa_thrust_max": 0.8,
+    "unchanged_vs_baseline_sha256": {
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp": "a88a8d760084c30846d2d8b20a26d38758b24390779b698de91d2fed30654a89",
+      "native/src/jikl_fc01_system/src/fc01_system_node.cpp": "9fcf4339d1bbddd70064dd7b83026c181b064d6be5c8ce390754cddb1017fc75",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp": "91986f4407d4f4d101c75ef761644af8b87b91aca46e130c8ea124e1c384dd0b",
+      "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp": "44ec7c56ea688473a69db2b181cfaf7ee0e28f79f433d6d917bf8400ce1d8861",
+      "native/tools/vision_odometry_adapter.py": "a328c287e8df58151b893918136f925f676dd939c6c3570009feded764dc2197",
+      "native/config/attitude_altitude.yaml": "723ba74ade0a474a6221e79a57428fec7c0639805d5419775105873353b16783",
+      "navigation_service.py": "74cb97ae8216d674d5fdb5f1238bdbb02c037abaf80382376552a8a5d5e85f30",
+      "navigation_settings.json": "a3ecf4759adad9901bd0efbae4eff0a7860ad3e4a4a91afdb7c0b1fe8d516131",
+      "vision_settings.json": "64eb13852f432ac1f39142f7daff13d04e4edd20c1abdc4dae3c5722e5f6e361"
+    },
+    "production_controller_started": false,
+    "agent_started": false,
+    "serial_opened": false,
+    "systemd_changed": false,
+    "dist_regenerated": false
+  },
+  "performance": {
+    "schema_version": 1,
+    "host": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+    "architecture": "x86_64",
+    "python": "3.10.12 (main, Jul 15 2026, 23:40:17) [GCC 11.4.0]",
+    "measurement_scope": "host_only_no_ros_graph_or_hardware",
+    "cdr_bytes": {
+      "VelocityCommand": 108,
+      "Odometry": 732,
+      "VisionHealth": 184,
+      "VisionState": 812,
+      "OffboardControlMode": 20,
+      "VehicleAttitudeSetpoint": 48,
+      "VehicleOdometry": 120
+    },
+    "measurements": {
+      "command_serialize": {
+        "samples": 5000,
+        "wall_seconds": 0.01597358099934354,
+        "cpu_seconds": 0.015910087000000184,
+        "mean_wall_us": 3.194716199868708,
+        "mean_cpu_us": 3.1820174000000367,
+        "p50_us": 3.0589999369112775,
+        "p95_us": 3.2080006349133328,
+        "p99_us": 3.4889999369625,
+        "max_us": 76.11499859194737
+      },
+      "command_diagnostic": {
+        "samples": 5000,
+        "wall_seconds": 0.0710160349990474,
+        "cpu_seconds": 0.07101153500000001,
+        "mean_wall_us": 14.203206999809481,
+        "mean_cpu_us": 14.202307000000003,
+        "p50_us": 13.996999769005924,
+        "p95_us": 14.691000615130179,
+        "p99_us": 16.239999240497127,
+        "max_us": 23.32499934709631
+      },
+      "odometry_conversion": {
+        "samples": 5000,
+        "wall_seconds": 0.25432990599983896,
+        "cpu_seconds": 0.254322108,
+        "mean_wall_us": 50.86598119996779,
+        "mean_cpu_us": 50.8644216,
+        "p50_us": 50.40700125391595,
+        "p95_us": 52.88300053507555,
+        "p99_us": 56.48399928759318,
+        "max_us": 527.9480010358384
+      },
+      "state_validation_with_raw_covariance": {
+        "samples": 5000,
+        "wall_seconds": 1.8702755039994372,
+        "cpu_seconds": 1.8701920569999997,
+        "mean_wall_us": 374.05510079988744,
+        "mean_cpu_us": 374.0384113999999,
+        "p50_us": 372.3320005519781,
+        "p95_us": 388.8589999405667,
+        "p99_us": 400.1810011686757,
+        "max_us": 795.6660010677297
+      }
+    },
+    "process_peak_rss_kib": 59204,
+    "scenarios": {
+      "local_vision_at_50_hz": {
+        "cdr_bytes_per_second": 91800,
+        "added_px4_uart_bytes_per_second": 0
+      },
+      "existing_attitude_pair_at_20_hz": {
+        "cdr_bytes_per_second": 1360
+      },
+      "hypothetical_px4_vehicle_odometry_at_50_hz": {
+        "implemented": false,
+        "cdr_bytes_per_second": 6000
+      },
+      "uart_115200_8n1": {
+        "raw_bytes_per_second": 11520.0
+      }
+    },
+    "limitations": [
+      "No Orange Pi CPU, memory, latency or deadline validation.",
+      "Peak RSS includes Python and ROS imports; it is not incremental module memory.",
+      "Mean synchronous costs exclude DDS discovery, scheduling, queueing and file I/O.",
+      "Per-operation percentiles include host timer overhead and are not hard realtime bounds.",
+      "Command and state policy values are explicit synthetic fixtures, not flight limits.",
+      "CDR sizes depend on fixture string lengths and exclude transport overhead.",
+      "UART carries other telemetry; this is not a remaining-bandwidth estimate.",
+      "Vision topics remain local; no PX4 EKF injection is implemented."
+    ]
+  },
+  "independent_review": {
+    "completed": true,
+    "reviewers": [
+      "vision_ingress",
+      "vision_controller"
+    ],
+    "resolved_findings": [
+      "rclpy context property collision",
+      "rejected packet watermark poisoning",
+      "receive gap hidden by healthy tail",
+      "continuity baseline erased by rejection",
+      "query/receive clock watermark mismatch",
+      "retired epoch replay",
+      "covariance scale masking indefinite subblock",
+      "returned covariance aliasing",
+      "quaternion continuity and attitude sample skew",
+      "history eviction losing replay evidence",
+      "cross-epoch measurement time regression"
+    ],
+    "remaining_new_module_blockers": []
+  },
+  "limitations": [
+    "No ARM64 or Orange Pi validation.",
+    "No real camera/VIO data, extrinsic or time-sync verification.",
+    "No PX4 EKF injection or live horizontal/vertical velocity control integration.",
+    "Raw covariance is validated but not transformed with full Jacobians; transformed covariance validity remains unset.",
+    "Existing flight-core behavior and prior defects are not validated away by these interfaces.",
+    "QoS and timing/quality/continuity policies require measured integration values before any control use."
+  ],
+  "artifact_log_directory": "/tmp/fc01_velocity_development_kdwvCj",
+  "log_sha256": {
+    "build.log": "4a0ca00f16569c0c55abb2c47826594ee769de2fbf6725cfc67ae441603b088b",
+    "build-installed-final.log": "05c7d7fa46208448670d2d5919c6c76e67925e14ce46ad502529b3b261e322d5",
+    "python_regression.log": "12b6832a833b15819b7cb7f9dc685e59564ff2c7b8fa699bf45a7ebffa11aaa2",
+    "diagnostic_final.log": "9c628cc5960a618061c8856d1dea6f3fa44ff7d26196480227d513f71a03d3da",
+    "state_final.log": "d8d6ed64631c437a7a4a33dba0892b4b331f9e35d8ff14e95f85670138795acc",
+    "ros_velocity_smoke_final.log": "e95de5fbb141514d5b099b528d5b554e5dcf8e2945b423070b81a48f0e0ca2ea",
+    "ros_odometry_smoke.log": "a60a85eac26662982faa810b498cca37864bcd8163fb9d8f5ac25ac2cd940baa",
+    "packaging_final.log": "b18641718537e806c9e8fa698e4cece088f4475281821bb85669780d51a98d85"
+  },
+  "completed_utc": "2026-11-11T04:39:46.601921+00:00"
+}

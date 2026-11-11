@@ -15,7 +15,9 @@ import zipfile
 SERVICE = 'fc01-navigation.service'
 BASE_FILES = ('status.json', 'runtime.yaml', 'standby.log', 'standby.log.1', 'standby.log.2',
               'controller.log', 'controller.log.1', 'controller.log.2', 'install.log',
-              'install.log.1', 'install.log.2', 'probe.json', 'install-runtime.yaml')
+              'install.log.1', 'install.log.2', 'probe.json', 'install-runtime.yaml',
+              'velocity_command_diagnostic.json', 'velocity_command_diagnostic.log',
+              'velocity_command_diagnostic.log.1')
 ENTRY_FILES = ('FC01_RELEASE.json', 'HOST_VERIFICATION.json', 'ARM64_BUILD_EVIDENCE.json',
                'OFFLINE_DEPLOYMENT.json', 'ACTIVATION_STATE.json', 'build-complete.json',
                'deployment-config.json')

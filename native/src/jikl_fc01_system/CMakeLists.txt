@@ -12,6 +12,7 @@ find_package(Threads REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/VisionState.msg"
   "msg/NavigationCommand.msg"
+  "msg/VelocityCommand.msg"
   "msg/VisionHealth.msg"
   "msg/AttitudeThrustPreview.msg"
   DEPENDENCIES builtin_interfaces)
@@ -31,6 +32,9 @@ install(TARGETS fc01_system_node DESTINATION lib/${PROJECT_NAME})
 install(TARGETS fc01_config_check DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY include/ DESTINATION include)
 install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vision_odometry_adapter.py"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/velocity_command_diagnostic.py"
+  DESTINATION lib/${PROJECT_NAME})
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vision_state_validation.py"
   DESTINATION lib/${PROJECT_NAME})
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()

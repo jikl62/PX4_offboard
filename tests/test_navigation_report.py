@@ -73,6 +73,58 @@ class NavigationReportTests(unittest.TestCase):
                 item=json.loads(archive.read('REPORT_CAPTURE.json'))['files']['controller.log']
                 self.assertEqual(item['tail_offset'],404);self.assertTrue(item['truncated'])
 
+    def test_velocity_command_diagnostics_are_captured_without_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home,folder,entry,_,_=self.setup_tree(directory)
+            diagnostic_files={
+                'velocity_command_diagnostic.json':json.dumps(dict(
+                    control_effect='none',source_id='test-session',frame_id='body_frd',
+                    sequence=7,valid=False,vx=0.2,vy=-0.1,vz=-0.3)).encode(),
+                'velocity_command_diagnostic.log':b'{"event":"invalid_command"}\n',
+                'velocity_command_diagnostic.log.1':b'{"event":"receiver_started"}\n',
+            }
+            for name,data in diagnostic_files.items():(folder/name).write_bytes(data)
+            target=report.collect_report(home,entry=entry,runner=self.reader)
+            with zipfile.ZipFile(target) as archive:
+                capture=json.loads(archive.read('REPORT_CAPTURE.json'))
+                for name,data in diagnostic_files.items():
+                    self.assertEqual(archive.read(name),data)
+                    self.assertEqual((folder/name).read_bytes(),data)
+                    item=capture['files'][name]
+                    self.assertEqual(item['result'],'CAPTURED')
+                    self.assertEqual(item['sha256'],hashlib.sha256(data).hexdigest())
+
+    def test_velocity_diagnostic_log_tail_retains_existing_size_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home,folder,entry,_,_=self.setup_tree(directory)
+            snapshot=b'{"diagnostic_only":true}'
+            (folder/'velocity_command_diagnostic.json').write_bytes(snapshot)
+            for name in ('velocity_command_diagnostic.log','velocity_command_diagnostic.log.1'):
+                (folder/name).write_bytes(b'X'*500+b'LAST')
+            with patch.object(report,'MAX_LOG',100):
+                target=report.collect_report(home,entry=entry,runner=self.reader)
+            with zipfile.ZipFile(target) as archive:
+                self.assertEqual(archive.read('velocity_command_diagnostic.json'),snapshot)
+                capture=json.loads(archive.read('REPORT_CAPTURE.json'))
+                for name in ('velocity_command_diagnostic.log','velocity_command_diagnostic.log.1'):
+                    self.assertEqual(archive.read(name),b'X'*96+b'LAST')
+                    self.assertEqual(capture['files'][name]['tail_offset'],404)
+                    self.assertTrue(capture['files'][name]['truncated'])
+
+    def test_velocity_diagnostic_symlinks_are_not_collected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home,folder,entry,_,_=self.setup_tree(directory)
+            outside=home/'not-a-diagnostic';outside.write_text('do not collect')
+            names=('velocity_command_diagnostic.json','velocity_command_diagnostic.log',
+                   'velocity_command_diagnostic.log.1')
+            for name in names:(folder/name).symlink_to(outside)
+            target=report.collect_report(home,entry=entry,runner=self.reader)
+            with zipfile.ZipFile(target) as archive:
+                capture=json.loads(archive.read('REPORT_CAPTURE.json'))
+                for name in names:
+                    self.assertNotIn(name,archive.namelist())
+                    self.assertEqual(capture['files'][name]['result'],'UNAVAILABLE')
+
     def test_missing_metadata_and_symlink_logs_do_not_stop_capture(self):
         with tempfile.TemporaryDirectory() as directory:
             home,folder,entry,_,_=self.setup_tree(directory)
