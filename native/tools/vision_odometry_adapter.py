@@ -527,9 +527,12 @@ class GuardedOdometryAdapter:
 
 def main(args=None):
     # 只有显式运行入口才加载 ROS；纯转换与配对测试不需要真实通信图。
+    import signal
+
     import rclpy
     from rclpy.node import Node
     from rclpy.executors import ExternalShutdownException
+    from rclpy.signals import SignalHandlerOptions
     from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
     from rcl_interfaces.msg import ParameterDescriptor, ParameterType
     from nav_msgs.msg import Odometry
@@ -700,20 +703,50 @@ def main(args=None):
                     )
                     self.last_reason = converted.reason
 
-    rclpy.init(args=args)
+    # ROS 的异步信号处理会先关闭 context，可能打断正在取消息/查询来源的回调。
+    # Python 信号处理器仅置停止标志；不在 C 扩展取消息期间抛异常或关闭 context。
+    stop_requested = False
+
+    def request_stop(_signum, _frame):
+        # 参数由 Python 提供；仅设置 main 拥有的停止标志，重复信号仍为幂等操作。
+        # 不在异步信号中抛异常：待当前回调完整返回后，再退出 executor 循环并清理。
+        nonlocal stop_requested
+        stop_requested = True
+
+    previous_handlers = {
+        signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)
+    }
     node = None
     try:
+        for signum in previous_handlers:
+            signal.signal(signum, request_stop)
+        rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
         node = OdometryAdapterNode()
-        rclpy.spin(node)
+        executor = rclpy.get_global_executor()
+        try:
+            executor.add_node(node)
+            # 秒为单调等待上限，不改变输入的 ROS 测量时间；空闲时也能在 100 ms 内观察停止。
+            # 已开始的回调先完整结束；与 rclpy.spin 相同，每次仍只执行 executor 的一项工作。
+            while executor.context.ok() and not stop_requested:
+                executor.spin_once(timeout_sec=0.1)
+        finally:
+            executor.remove_node(node)
     except (KeyboardInterrupt, ExternalShutdownException):
-        # SIGINT 或外部关闭属于正常停止；上下文可能已被 ROS 的信号处理器关闭。
+        # Python 停止信号或外部关闭属于正常停止；其他运行错误必须继续传播。
         pass
     finally:
-        if node is not None:
-            node.destroy_node()
-        # 只关闭仍存活的上下文，避免正常退出被第二次 shutdown 的异常覆盖。
-        if rclpy.ok():
-            rclpy.shutdown()
+        stop_requested = True
+        try:
+            if node is not None:
+                node.destroy_node()
+        finally:
+            try:
+                # 先销毁节点，再关闭仍存活的 context；错误不能阻止恢复调用者的信号处理器。
+                if rclpy.ok():
+                    rclpy.shutdown()
+            finally:
+                for signum, handler in previous_handlers.items():
+                    signal.signal(signum, handler)
 
 
 if __name__ == '__main__':
