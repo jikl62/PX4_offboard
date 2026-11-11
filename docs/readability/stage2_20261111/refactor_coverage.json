@@ -1,0 +1,1139 @@
+{
+  "baseline": "5198d33f25aaaf2abc7e4b078169ae84d5c4b2c4",
+  "formal_list": "../source_coverage_20261111.json#structural_refactor_pending",
+  "counts": {
+    "targeted_debt_resolved": 9,
+    "partial": 12,
+    "retained_unchanged": 1
+  },
+  "modified": 21,
+  "comment_only_files": 0,
+  "metrics_method": "Python AST物理行/所属控制嵌套；C++ Clang14 JSON AST，else-if按AST嵌套计数，不是复杂度万能指标。",
+  "files": [
+    {
+      "path": "launcher.py",
+      "original_debt": [
+        "run_console：204物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。",
+        "main：176物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。"
+      ],
+      "status": "partial",
+      "responsibilities": [
+        "输入解析/命令分派",
+        "状态行节流",
+        "参数解析",
+        "会话配置派生/写入",
+        "参数说明",
+        "资源所有权与会话循环"
+      ],
+      "metrics": {
+        "run_console": {
+          "before": {
+            "physical_lines": 204,
+            "max_control_nesting": 9,
+            "body_statement_count": 16,
+            "line": 492
+          },
+          "after": {
+            "physical_lines": 167,
+            "max_control_nesting": 7,
+            "body_statement_count": 16,
+            "line": 548
+          }
+        },
+        "main": {
+          "before": {
+            "physical_lines": 176,
+            "max_control_nesting": 3,
+            "body_statement_count": 24,
+            "line": 756
+          },
+          "after": {
+            "physical_lines": 133,
+            "max_control_nesting": 3,
+            "body_statement_count": 16,
+            "line": 838
+          }
+        }
+      },
+      "remaining": [
+        "交互循环与异常恢复的早返回顺序仍集中；未分离持有channel的异常恢复循环，避免关闭/续租所有权变化。"
+      ],
+      "new_functions": {
+        "_handle_console_input": {
+          "physical_lines": 38,
+          "max_control_nesting": 5,
+          "body_statement_count": 3,
+          "line": 491
+        },
+        "_show_console_state": {
+          "physical_lines": 14,
+          "max_control_nesting": 3,
+          "body_statement_count": 4,
+          "line": 531
+        },
+        "_parse_launcher_args": {
+          "physical_lines": 21,
+          "max_control_nesting": 1,
+          "body_statement_count": 11,
+          "line": 774
+        },
+        "_write_console_config": {
+          "physical_lines": 24,
+          "max_control_nesting": 1,
+          "body_statement_count": 8,
+          "line": 797
+        },
+        "_announce_console_configuration": {
+          "physical_lines": 12,
+          "max_control_nesting": 1,
+          "body_statement_count": 4,
+          "line": 823
+        }
+      },
+      "sha256": "cf9dc10bc8b609c3599dbba614a90de3b5a0f1c2dbaba660b48531e41c05c095",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "original_debt": [
+        "Core::step：Safety/RC汇合/时钟/接管/健康/权限/重置/离地/闭环/触地/上锁/释放共处。；保留早返回、同tick下降输出和事务确认先后顺序；未拆分主状态机。",
+        "Core::observe_safety_event：不同来源危险载荷与故障水位、本轮恢复否决交织。；保留逐事件观察，不能只检查最新快照；同周期A→B→A必须可见。",
+        "Core::observe_rc_recovery：多个独立来源新样本、窗口/reset/输出静默/开关复位证据串联。；保留独立计数、首个拒绝原因与窗口清零顺序。"
+      ],
+      "status": "partial",
+      "responsibilities_before": "公共安全/健康/参考/控制权、所有飞行阶段、程序Arm恢复、推力斜坡、RC恢复证据集中。",
+      "responsibilities_after": "主步保持公共门和阶段分派；程序Arm与斜坡独立命名；恢复来源提交、恢复等待文本分别独立。",
+      "remaining": [
+        "Core::step仍795行，公共检查和其余阶段转移仍耦合。",
+        "observe_safety_event保留128行逐来源拒绝优先级和健康尾帧不能清故障合同。",
+        "observe_rc_recovery仍91行，窗口断续/首拒绝条件和就绪计算仍连续保留。"
+      ],
+      "reason": "同tick下降、活动估计器参考、地面/上锁/释放以及多次早返回共同决定输出；当前抽取有精确差分，未覆盖所有状态空间，保留复杂判断并明确债务。",
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 933,
+            "start": 1145,
+            "end": 2077,
+            "max_control_nesting": 16,
+            "control_statement_count": 163
+          },
+          "after": {
+            "physical_lines": 795,
+            "start": 1145,
+            "end": 1939,
+            "max_control_nesting": 16,
+            "control_statement_count": 139
+          }
+        },
+        "observe_safety_event": {
+          "before": {
+            "physical_lines": 128,
+            "start": 1015,
+            "end": 1142,
+            "max_control_nesting": 8,
+            "control_statement_count": 35
+          },
+          "after": {
+            "physical_lines": 128,
+            "start": 1015,
+            "end": 1142,
+            "max_control_nesting": 8,
+            "control_statement_count": 35
+          }
+        },
+        "observe_rc_recovery": {
+          "before": {
+            "physical_lines": 122,
+            "start": 2166,
+            "end": 2287,
+            "max_control_nesting": 6,
+            "control_statement_count": 22
+          },
+          "after": {
+            "physical_lines": 91,
+            "start": 2227,
+            "end": 2317,
+            "max_control_nesting": 1,
+            "control_statement_count": 13
+          }
+        }
+      },
+      "new_helpers": [
+        "advance_requested_arm",
+        "advance_thrust_ramp",
+        "record_rc_recovery_sources",
+        "update_rc_recovery_reason"
+      ],
+      "source_sha256": "e53fdf955b4923a0cb17f8c5feba22cd3cbb1436c09b167654c13c8f80f78108",
+      "comments": "每个新增helper说明输入/返回值、状态所有权、单位/时间域（适用时）及必须保持的调用先后；协议英文值未翻译。",
+      "sha256": "e53fdf955b4923a0cb17f8c5feba22cd3cbb1436c09b167654c13c8f80f78108",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+      "original_debt": [
+        "Config::validate：视觉/RC/准备/bench/动力包络跨字段校验较多。；不改跨字段关系、短路和异常优先级；未改为表驱动。"
+      ],
+      "status": "targeted_debt_resolved",
+      "responsibilities_before": "Config::validate同时处理视觉/RC交叉约束、准备时限、bench/恢复和动力包络。",
+      "responsibilities_after": "入口21行维持视觉/RC优先；准备/恢复合同与完整动力包络分为两个只读校验阶段。",
+      "remaining": [],
+      "reason": "跨字段表达式和首异常顺序保持原样；不做表驱动或改变参数默认值。",
+      "targets": {
+        "validate": {
+          "before": {
+            "physical_lines": 67,
+            "start": 68,
+            "end": 134,
+            "max_control_nesting": 3,
+            "control_statement_count": 17
+          },
+          "after": {
+            "physical_lines": 21,
+            "start": 68,
+            "end": 88,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          }
+        }
+      },
+      "new_helpers": [
+        "validate_flight_limits",
+        "validate_preparation"
+      ],
+      "source_sha256": "248a1a4ae902861401ef7887b3612fd1d05577eba291157adaba84b51897d010",
+      "comments": "每个新增helper说明输入/返回值、状态所有权、单位/时间域（适用时）及必须保持的调用先后；协议英文值未翻译。",
+      "sha256": "248a1a4ae902861401ef7887b3612fd1d05577eba291157adaba84b51897d010",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp",
+      "original_debt": [
+        "AuthorityTelemetry::manual：选中RC源失效撤销、raw预检查、两帧进展与轴安全集中。；重复样本不续期，缺轴/非有限值不能补成中杆低油门。",
+        "AuthorityTelemetry::switches：开关双时间戳、代数和Kill锁存共处。；时钟无效ON可否决，OFF不能擦除已知Kill；保留此不对称性。"
+      ],
+      "status": "targeted_debt_resolved",
+      "responsibilities_before": "manual和switches同时持有源时间合法性、源选择及轴/开关载荷变更。",
+      "responsibilities_after": "入口负责双源时间水位/来源资格；轴证据、开关载荷/generation/Kill分别由私有方法提交。",
+      "remaining": [],
+      "reason": "Kill无效时钟ON/OFF不对称性仍显式留在入口；Facts继续只读组合独立新鲜度。",
+      "targets": {
+        "manual": {
+          "before": {
+            "physical_lines": 67,
+            "start": 36,
+            "end": 102,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "after": {
+            "physical_lines": 57,
+            "start": 36,
+            "end": 92,
+            "max_control_nesting": 2,
+            "control_statement_count": 7
+          }
+        },
+        "switches": {
+          "before": {
+            "physical_lines": 52,
+            "start": 105,
+            "end": 156,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "after": {
+            "physical_lines": 31,
+            "start": 95,
+            "end": 125,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          }
+        },
+        "facts": {
+          "before": {
+            "physical_lines": 57,
+            "start": 159,
+            "end": 215,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "after": {
+            "physical_lines": 57,
+            "start": 128,
+            "end": 184,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "new_helpers": [
+        "observe_manual_axes",
+        "observe_switch_values"
+      ],
+      "source_sha256": "d2e4465c57b9046ec08d0c79286e6b7214bf33d1076e9dfc2fe1e4de9ac68611",
+      "comments": "每个新增helper说明输入/返回值、状态所有权、单位/时间域（适用时）及必须保持的调用先后；协议英文值未翻译。",
+      "sha256": "d2e4465c57b9046ec08d0c79286e6b7214bf33d1076e9dfc2fe1e4de9ac68611",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+      "original_debt": [
+        "publish_attitude_resampled：长度适中但三次上下文、两次非原子sink及部分提交异常构成关键复杂度。；不合并上下文；首sink前拒绝返回与目标提交后异常继续分开。"
+      ],
+      "status": "retained_unchanged",
+      "responsibilities": [
+        "原三次重采样与两次非原子sink保持可见"
+      ],
+      "remaining": [
+        "不抽三时点检查/双sink：目标已发后失败必须抛完整性异常，不能与首sink前拒绝合并。"
+      ],
+      "reason": "函数本身长度适中，进一步分拆会遮蔽时序边界；生产字节与5198d33一致。",
+      "sha256": "4b21d5ebdc7bac69351686e0a2255722ccf8e232cd1c176edb3dbf0a13958e94",
+      "modified": false
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+      "original_debt": [
+        "attitude_publication_policy：阶段白名单/目标绑定/RC待证零流/释放/动作门/非零包络集中。；第一拒绝原因、阶段例外和double精确非零具有语义，未抽成简单布尔合取。"
+      ],
+      "status": "partial",
+      "responsibilities": [
+        "目标姿态匹配独立",
+        "人工RC准备零流合同独立",
+        "总策略仍按原序返回首个拒绝"
+      ],
+      "remaining": [
+        "主策略125行，阶段白名单和动力后包络仍集中；短路顺序具有权限语义。"
+      ],
+      "reason": "不将不同阶段例外改成简单布尔合取。",
+      "sha256": "5eaed14da1a55806d4cb63440ea5073b0d198839802cec4e386a2051f12de300",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "original_debt": [
+        "RcNavigationStart::step：READY前窗口、新开关边沿、人工Arm与实际Offboard独立消息配对集中。；过期先拒绝再配对，授权撤销不复活，armed_time不跨域。",
+        "RcNavigationStart::observe_ground_reference：未解锁地面、新样本计数、reset/重复/大间隔与缓慢漂移参考更新共处。；保留每源独立推进，不能强求每个回调成对计数；armed时不重建地面参考。"
+      ],
+      "status": "partial",
+      "responsibilities_before": "step将READY前准备、开关边沿、人工Arm、模式确认并列串联。",
+      "responsibilities_after": "预发送、固定导航配对窗口和终止本轮分别命名；主步保留健康门、边沿与WaitArm→WaitNavigation同帧衔接。",
+      "remaining": [
+        "observe_ground_reference仍87行，独立DDS源计数/窗口不连续/参考重捕获集中。",
+        "step仍109行，公共健康门和WaitArm转换保留。"
+      ],
+      "reason": "本轮不把地面时钟/源计数重写为合并采样，也不拆开必须同帧执行的阶段转换。",
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 201,
+            "start": 202,
+            "end": 402,
+            "max_control_nesting": 3,
+            "control_statement_count": 48
+          },
+          "after": {
+            "physical_lines": 109,
+            "start": 202,
+            "end": 310,
+            "max_control_nesting": 3,
+            "control_statement_count": 25
+          }
+        },
+        "observe_ground_reference": {
+          "before": {
+            "physical_lines": 87,
+            "start": 414,
+            "end": 500,
+            "max_control_nesting": 1,
+            "control_statement_count": 8
+          },
+          "after": {
+            "physical_lines": 87,
+            "start": 426,
+            "end": 512,
+            "max_control_nesting": 1,
+            "control_statement_count": 8
+          }
+        }
+      },
+      "new_helpers": [
+        "block",
+        "step_prestream",
+        "step_wait_navigation"
+      ],
+      "source_sha256": "b973a96663a6c0485f859d82ec8c85d326a95c0c074fc254ea3dee6635ab681b",
+      "comments": "每个新增helper说明输入/返回值、状态所有权、单位/时间域（适用时）及必须保持的调用先后；协议英文值未翻译。",
+      "sha256": "b973a96663a6c0485f859d82ec8c85d326a95c0c074fc254ea3dee6635ab681b",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "original_debt": [
+        "Runtime::request：profile、维护/关闭、控制台权限及事务历史仲裁集中。；RC控制台只读门必须先于其他动作分支，arity/有限数与错误优先级不变。",
+        "Runtime::ack：176偏斜候选、400复用歧义、源时钟与事务终态过滤共处。；ACK接受不等于物理状态，迟到/复用ACK不能归属新事务。",
+        "Runtime::step：三路线调度、Core调用、独立状态取证和pending事务归档集中。；候选证据必须同tick通过Core健康/参考/权限后才锁定事务完成。"
+      ],
+      "status": "partial",
+      "responsibilities": [
+        "request保留统一语法/权限门，姿态请求独立",
+        "ACK水位过滤与结果分类分离",
+        "Core执行后才终态取证，再追踪新动作"
+      ],
+      "remaining": [
+        "request/ack/step仍137/112/151行；同步域候选与400歧义必须保留独立状态确认。"
+      ],
+      "reason": "不能把不同阶段的事务观察压成一个判断或清除历史以简化。",
+      "sha256": "a0bc3838b62fbc496c90cca4866d860c4155e3322fafb8ad956fa1791bc3f1a5",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
+      "original_debt": [
+        "UnixServer::poll：非阻塞接入、发送背压、接收分帧、序号与回调异常处理集中。；保留每轮有限接收量与清连接后再通知断连的顺序。"
+      ],
+      "status": "targeted_debt_resolved",
+      "responsibilities": [
+        "poll只协调accept→flush→receive",
+        "各步骤单次非阻塞，drop先清fd和缓冲再通知"
+      ],
+      "remaining": [],
+      "reason": "原61行协调器变9行；背压/序号/帧界限和异常位置保留。",
+      "sha256": "1be20877970a5f26ed1972e3205d3d713c6f3bb7a61c4134bbf4bd21f656016a",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
+      "original_debt": [
+        "jikl_velocity::Core::step：历史通用/仿真路线的准备、Arm未决、起飞、制动、降落集中。；不属于当前RC 1.5m主链；保留迟到Arm的恢复顺序，不迁移默认参数。"
+      ],
+      "status": "partial",
+      "responsibilities_before": "历史通用路线step同时包含健康/托管、所有阶段与运动滤波。",
+      "responsibilities_after": "运动目标的坐标转换/向量限幅/滤波/偏航/制动保持点捕获独立为motion_output。",
+      "remaining": [
+        "step118行仍包含健康和准备/Offboard/Arm/Takeoff分派。"
+      ],
+      "reason": "它不属于当前RC1.5m生产主链；本轮保留迟到Arm恢复与原降落顺序，不扩大修改面。",
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 158,
+            "start": 275,
+            "end": 432,
+            "max_control_nesting": 8,
+            "control_statement_count": 35
+          },
+          "after": {
+            "physical_lines": 118,
+            "start": 275,
+            "end": 392,
+            "max_control_nesting": 8,
+            "control_statement_count": 29
+          }
+        }
+      },
+      "new_helpers": [
+        "motion_output"
+      ],
+      "source_sha256": "10aaac1ae27ab4c694cc9a3ede8927ad428475378e917a08ba82aaf88396d7b7",
+      "comments": "每个新增helper说明输入/返回值、状态所有权、单位/时间域（适用时）及必须保持的调用先后；协议英文值未翻译。",
+      "sha256": "10aaac1ae27ab4c694cc9a3ede8927ad428475378e917a08ba82aaf88396d7b7",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+      "original_debt": [
+        "VerticalController::step：高度P/速度PI、起飞ceiling、抗积分饱和与slew的公式关联紧密。；trial→reachable→接受/退积分→重算raw→slew的浮点与状态顺序保留。"
+      ],
+      "status": "targeted_debt_resolved",
+      "responsibilities_before": "输入有效性、参考计数、P/PI计算、抗饱和积分提交和slew共置。",
+      "responsibilities_after": "输入首错误检查与积分接受决策各独立；step保留高度→速度→trial→raw→reachable→积分接受→raw重算→slew的数学管线。",
+      "remaining": [],
+      "reason": "保留原乘加、短路和状态写入次序；71行数值步骤具有同一闭环职责，不为缩短长度拆散公式。",
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 83,
+            "start": 101,
+            "end": 183,
+            "max_control_nesting": 2,
+            "control_statement_count": 9
+          },
+          "after": {
+            "physical_lines": 71,
+            "start": 101,
+            "end": 171,
+            "max_control_nesting": 1,
+            "control_statement_count": 5
+          }
+        }
+      },
+      "new_helpers": [
+        "accept_integral",
+        "input_error"
+      ],
+      "source_sha256": "69b86aabeb6715775e89aefe1bba4eeea3b4f00a17accf4bc27553edcb3b5b9a",
+      "comments": "每个新增helper说明输入/返回值、状态所有权、单位/时间域（适用时）及必须保持的调用先后；协议英文值未翻译。",
+      "sha256": "69b86aabeb6715775e89aefe1bba4eeea3b4f00a17accf4bc27553edcb3b5b9a",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+      "original_debt": [
+        "VerticalFeedbackGuard::observe：源戳进展、硬数据故障、速度差诊断和位置积分窗口共处。；健康与疑似分开；rate_warning不能恢复成独立停机，重复戳不累计积分时间。"
+      ],
+      "status": "targeted_debt_resolved",
+      "responsibilities_before": "原observe同时处理硬输入/源戳、速度差诊断、位置导数积分和最终水位提交。",
+      "responsibilities_after": "observe40行负责前置拒绝与水位提交；速度差诊断、位置积分窗口分别独立。",
+      "remaining": [],
+      "reason": "重复戳不积分，位置残差硬锁存保持，速度差仍只诊断。",
+      "targets": {
+        "observe": {
+          "before": {
+            "physical_lines": 81,
+            "start": 59,
+            "end": 139,
+            "max_control_nesting": 3,
+            "control_statement_count": 11
+          },
+          "after": {
+            "physical_lines": 40,
+            "start": 59,
+            "end": 98,
+            "max_control_nesting": 1,
+            "control_statement_count": 7
+          }
+        }
+      },
+      "new_helpers": [
+        "observe_position_window",
+        "observe_rate_disagreement"
+      ],
+      "source_sha256": "caf94bf879a3115e5214c841fa2fb2749d0ae206f067a4981c3f1e656bbde15e",
+      "comments": "每个新增helper说明输入/返回值、状态所有权、单位/时间域（适用时）及必须保持的调用先后；协议英文值未翻译。",
+      "sha256": "caf94bf879a3115e5214c841fa2fb2749d0ae206f067a4981c3f1e656bbde15e",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "original_debt": [
+        "vision::Controller::step：实际状态/命令双租约、身份/参考、模式目标、外环与中间非有限拒绝集中。；保持状态与目标分离、撤权代数优先、活动错误锁存下降且不被健康尾帧清除。"
+      ],
+      "status": "partial",
+      "responsibilities_before": "state/command资格、历史连续性、模式目标和外环输出集中。",
+      "responsibilities_after": "已接受输入连续性作为只读首拒绝函数独立；撤权/时钟/目标/状态优先级保留。",
+      "remaining": [
+        "step136行仍持有模式目标捕获、运动计划和中间有限性/姿态限制。"
+      ],
+      "reason": "跟随高度/yaw/原点在拒绝前可能已更新；未将该状态顺序改为隐含原子计划，未来应先增加更细故障点的状态可观测性。",
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 162,
+            "start": 219,
+            "end": 380,
+            "max_control_nesting": 2,
+            "control_statement_count": 32
+          },
+          "after": {
+            "physical_lines": 136,
+            "start": 219,
+            "end": 354,
+            "max_control_nesting": 2,
+            "control_statement_count": 26
+          }
+        }
+      },
+      "new_helpers": [
+        "accepted_input_error"
+      ],
+      "source_sha256": "43cac74fbbb9b9c69d4b24f88b112cd8fe5799751b8b0889f98404e5a6b731cb",
+      "comments": "每个新增helper说明输入/返回值、状态所有权、单位/时间域（适用时）及必须保持的调用先后；协议英文值未翻译。",
+      "sha256": "43cac74fbbb9b9c69d4b24f88b112cd8fe5799751b8b0889f98404e5a6b731cb",
+      "modified": true
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "original_debt": [
+        "SystemNode::SystemNode：配置、各订阅和消息接收/事件锁存回调集中于构造函数。；保持按profile创建订阅/发布者的条件和QoS，不扩展视觉权限。",
+        "SystemNode::tick：快照、地面计时、危险队列、IPC、计划、双sink、命令、日志、重准备、停机集中。；首sink前拒绝与目标已发后异常必须分开，动作不能越过配套目标边界。",
+        "SystemNode::snapshot：图唯一性、接收寿命、源时钟/raw进展、arming枚举和profile字段映射集中。；区分validated/valid、状态布尔/原始枚举、源微秒/主机秒及默认值/真实状态。",
+        "SystemNode::state：大量诊断字段的JSON序列化仍在长函数内。；未来按字段分组时比较结构、null与既有键；本轮保留序列化顺序。"
+      ],
+      "status": "partial",
+      "responsibilities": [
+        "静止地面证据独立",
+        "通用反馈/姿态反馈各自映射",
+        "事务JSON序列化分组"
+      ],
+      "remaining": [
+        "构造197行未拆，profile/QoS/回调注册顺序保留。",
+        "tick360行，危险事件→计划→重采样→目标→心跳→动作→报告→恢复仍原地可见。",
+        "snapshot71行负责采样时点/独占/路线组合，state148行仍有其余诊断分组。"
+      ],
+      "reason": "未移动实际sink，避免新helper重采样位置或异常范围变化。",
+      "sha256": "535aa142fb718c28371b3b35b9b637c8ce1bf078891575e542940f9f6d2cf47f",
+      "modified": true
+    },
+    {
+      "path": "native/tools/fcctl.py",
+      "original_debt": [
+        "run：301物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。"
+      ],
+      "status": "partial",
+      "responsibilities": [
+        "一次性命令权限门",
+        "ARM_ONLY新鲜证据预检",
+        "状态显示签名",
+        "帮助文本",
+        "ACK/速度/人工确认事件循环"
+      ],
+      "metrics": {
+        "run": {
+          "before": {
+            "physical_lines": 301,
+            "max_control_nesting": 9,
+            "body_statement_count": 22,
+            "line": 133
+          },
+          "after": {
+            "physical_lines": 199,
+            "max_control_nesting": 9,
+            "body_statement_count": 18,
+            "line": 263
+          }
+        }
+      },
+      "remaining": [
+        "run仍199行；ACK匹配、速度期限及一次性Arm确认水位继续由单一循环拥有，不为缩短函数分散状态。"
+      ],
+      "new_functions": {
+        "_initial_console_command": {
+          "physical_lines": 26,
+          "max_control_nesting": 1,
+          "body_statement_count": 6,
+          "line": 132
+        },
+        "_arm_only_preflight": {
+          "physical_lines": 69,
+          "max_control_nesting": 2,
+          "body_statement_count": 11,
+          "line": 160
+        },
+        "_console_state_signature": {
+          "physical_lines": 17,
+          "max_control_nesting": 0,
+          "body_statement_count": 2,
+          "line": 231
+        },
+        "_print_console_help": {
+          "physical_lines": 10,
+          "max_control_nesting": 0,
+          "body_statement_count": 3,
+          "line": 250
+        }
+      },
+      "sha256": "67e8162a325d6f37f1474195ab3075082b441e6772dfd7a83d34320eb96bf080",
+      "modified": true
+    },
+    {
+      "path": "native/tools/vision_odometry_adapter.py",
+      "original_debt": [
+        "main：189物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。"
+      ],
+      "status": "targeted_debt_resolved",
+      "responsibilities": [
+        "时钟/标定/话题/QoS/订阅创建分开",
+        "emit仅负责publish→原因日志",
+        "main拥有信号stopflag及executor/node/context顺序"
+      ],
+      "remaining": [],
+      "reason": "原main189行，独立退出修复后222行，结构拆分后59行；类工厂240行仅包裹类定义，未声称文件所有函数都短。",
+      "metrics": {
+        "baseline": [
+          {
+            "qualified_name": "main",
+            "physical_lines": 189,
+            "own_max_control_nesting": 2
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::__init__",
+            "physical_lines": 110,
+            "own_max_control_nesting": 1
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::__init__::parameter",
+            "physical_lines": 10,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::__init__::qos",
+            "physical_lines": 9,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::source_context",
+            "physical_lines": 8,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::emit",
+            "physical_lines": 43,
+            "own_max_control_nesting": 2
+          }
+        ],
+        "independent_fix": [
+          {
+            "qualified_name": "main",
+            "physical_lines": 222,
+            "own_max_control_nesting": 4
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::__init__",
+            "physical_lines": 110,
+            "own_max_control_nesting": 1
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::__init__::parameter",
+            "physical_lines": 10,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::__init__::qos",
+            "physical_lines": 9,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::source_context",
+            "physical_lines": 8,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "main::OdometryAdapterNode::emit",
+            "physical_lines": 43,
+            "own_max_control_nesting": 2
+          }
+        ],
+        "refactored": [
+          {
+            "qualified_name": "_adapter_node_type",
+            "physical_lines": 240,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::__init__",
+            "physical_lines": 38,
+            "own_max_control_nesting": 1
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::startup_parameter",
+            "physical_lines": 13,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::configure_measurement_clock",
+            "physical_lines": 17,
+            "own_max_control_nesting": 1
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::load_conversion_config",
+            "physical_lines": 29,
+            "own_max_control_nesting": 1
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::input_topics",
+            "physical_lines": 14,
+            "own_max_control_nesting": 1
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::qos",
+            "physical_lines": 12,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::connect_inputs",
+            "physical_lines": 24,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::source_context",
+            "physical_lines": 8,
+            "own_max_control_nesting": 0
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::state_message",
+            "physical_lines": 35,
+            "own_max_control_nesting": 1
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::report_reason_change",
+            "physical_lines": 16,
+            "own_max_control_nesting": 1
+          },
+          {
+            "qualified_name": "_adapter_node_type::OdometryAdapterNode::emit",
+            "physical_lines": 9,
+            "own_max_control_nesting": 1
+          },
+          {
+            "qualified_name": "main",
+            "physical_lines": 59,
+            "own_max_control_nesting": 4
+          }
+        ]
+      },
+      "sha256": "0520c85fff735af35a6894ebce06e253ed13eb2febb9f7bb0e3407460a9f1096",
+      "modified": true
+    },
+    {
+      "path": "navigation.py",
+      "original_debt": [
+        "render_status：192物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。"
+      ],
+      "status": "targeted_debt_resolved",
+      "responsibilities": [
+        "服务/快照身份判定",
+        "显示年龄增长",
+        "实际/历史反馈行",
+        "恢复诊断行",
+        "控制诊断行",
+        "最终操作提示"
+      ],
+      "metrics": {
+        "render_status": {
+          "before": {
+            "physical_lines": 192,
+            "max_control_nesting": 4,
+            "body_statement_count": 34,
+            "line": 54
+          },
+          "after": {
+            "physical_lines": 62,
+            "max_control_nesting": 2,
+            "body_statement_count": 22,
+            "line": 215
+          }
+        }
+      },
+      "remaining": [],
+      "new_functions": {
+        "_snapshot_display_status": {
+          "physical_lines": 22,
+          "max_control_nesting": 3,
+          "body_statement_count": 4,
+          "line": 53
+        },
+        "_display_feedback_age": {
+          "physical_lines": 9,
+          "max_control_nesting": 1,
+          "body_statement_count": 6,
+          "line": 77
+        },
+        "_feedback_display_lines": {
+          "physical_lines": 33,
+          "max_control_nesting": 2,
+          "body_statement_count": 11,
+          "line": 88
+        },
+        "_append_recovery_lines": {
+          "physical_lines": 51,
+          "max_control_nesting": 3,
+          "body_statement_count": 2,
+          "line": 123
+        },
+        "_append_control_lines": {
+          "physical_lines": 36,
+          "max_control_nesting": 3,
+          "body_statement_count": 2,
+          "line": 176
+        }
+      },
+      "sha256": "a4f782ce295584c90f0227370d76f4ece8e385fe2c924bd777041e027a1c42d6",
+      "modified": true
+    },
+    {
+      "path": "navigation_probe.py",
+      "original_debt": [
+        "probe：180物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。"
+      ],
+      "status": "partial",
+      "responsibilities": [
+        "地面订阅与字段合同",
+        "可选RC订阅/闭包kind冻结",
+        "Agent所有权",
+        "有界证据等待",
+        "最终证据/ROS清理"
+      ],
+      "metrics": {
+        "probe": {
+          "before": {
+            "physical_lines": 180,
+            "max_control_nesting": 3,
+            "body_statement_count": 13,
+            "line": 140
+          },
+          "after": {
+            "physical_lines": 102,
+            "max_control_nesting": 3,
+            "body_statement_count": 13,
+            "line": 230
+          }
+        }
+      },
+      "remaining": [
+        "Agent取得、ok/verified_at写水位与finally仍处于同一probe；将等待封装成返回值会改变异常期间已观察ok的记录，故保留。",
+        "原final写盘失败导致ROS清理跳过，已复现并另留未应用候选。"
+      ],
+      "new_functions": {
+        "_create_ground_subscriptions": {
+          "physical_lines": 88,
+          "max_control_nesting": 2,
+          "body_statement_count": 6,
+          "line": 139
+        }
+      },
+      "sha256": "645ab0e4c582bfc00a9905fec13bc16fe4c5d6580460170faadbbf84dcb78ff5",
+      "modified": true
+    },
+    {
+      "path": "navigation_report.py",
+      "original_debt": [
+        "collect_report：186物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。"
+      ],
+      "status": "targeted_debt_resolved",
+      "responsibilities": [
+        "单报告文件预算/去重/NOFOLLOW读取",
+        "入口来源识别",
+        "只读命令捕获",
+        "报告采集编排"
+      ],
+      "metrics": {
+        "collect_report": {
+          "before": {
+            "physical_lines": 186,
+            "max_control_nesting": 4,
+            "body_statement_count": 12,
+            "line": 53
+          },
+          "after": {
+            "physical_lines": 115,
+            "max_control_nesting": 3,
+            "body_statement_count": 11,
+            "line": 153
+          }
+        }
+      },
+      "remaining": [],
+      "new_functions": {
+        "_ReportFileCapture.__init__": {
+          "physical_lines": 6,
+          "max_control_nesting": 0,
+          "body_statement_count": 5,
+          "line": 55
+        },
+        "_ReportFileCapture.include": {
+          "physical_lines": 52,
+          "max_control_nesting": 3,
+          "body_statement_count": 7,
+          "line": 63
+        },
+        "_report_entries": {
+          "physical_lines": 21,
+          "max_control_nesting": 3,
+          "body_statement_count": 5,
+          "line": 117
+        },
+        "_include_command_report": {
+          "physical_lines": 10,
+          "max_control_nesting": 1,
+          "body_statement_count": 3,
+          "line": 140
+        }
+      },
+      "sha256": "db9a6200ffb275da81e7c178fac1621838d33e1b11a95a1cdccdda9ac82e7a78",
+      "modified": true
+    },
+    {
+      "path": "navigation_restore.py",
+      "original_debt": [
+        "activate：168物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。"
+      ],
+      "status": "partial",
+      "responsibilities": [
+        "重复启用回滚记录核验",
+        "单调期限启动验收",
+        "失败恢复",
+        "changed/started事务推进"
+      ],
+      "metrics": {
+        "activate": {
+          "before": {
+            "physical_lines": 168,
+            "max_control_nesting": 5,
+            "body_statement_count": 13,
+            "line": 401
+          },
+          "after": {
+            "physical_lines": 129,
+            "max_control_nesting": 4,
+            "body_statement_count": 13,
+            "line": 478
+          }
+        }
+      },
+      "remaining": [
+        "activate中的changed/started仍在实际动作前更新，停旧/切换/启动的补偿水位不抽成返回bool，防止异常导致水位丢失。"
+      ],
+      "new_functions": {
+        "_verified_active_backup": {
+          "physical_lines": 21,
+          "max_control_nesting": 2,
+          "body_statement_count": 4,
+          "line": 400
+        },
+        "_wait_activation_verified": {
+          "physical_lines": 12,
+          "max_control_nesting": 3,
+          "body_statement_count": 4,
+          "line": 423
+        },
+        "_recover_failed_activation": {
+          "physical_lines": 38,
+          "max_control_nesting": 3,
+          "body_statement_count": 3,
+          "line": 437
+        }
+      },
+      "sha256": "b182c66bd49b35bdf85034d007bfe558af207d7244f62493246f7027325b108e",
+      "modified": true
+    },
+    {
+      "path": "navigation_service.py",
+      "original_debt": [
+        "main：182物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。"
+      ],
+      "status": "targeted_debt_resolved",
+      "responsibilities": [
+        "参数/确认解析",
+        "配置核验",
+        "run监督参数装配",
+        "显式分派"
+      ],
+      "metrics": {
+        "main": {
+          "before": {
+            "physical_lines": 182,
+            "max_control_nesting": 6,
+            "body_statement_count": 18,
+            "line": 210
+          },
+          "after": {
+            "physical_lines": 50,
+            "max_control_nesting": 6,
+            "body_statement_count": 6,
+            "line": 364
+          }
+        }
+      },
+      "remaining": [],
+      "new_functions": {
+        "_parse_service_args": {
+          "physical_lines": 39,
+          "max_control_nesting": 1,
+          "body_statement_count": 15,
+          "line": 209
+        },
+        "_check_runtime_config": {
+          "physical_lines": 49,
+          "max_control_nesting": 2,
+          "body_statement_count": 10,
+          "line": 250
+        },
+        "_run_navigation_service": {
+          "physical_lines": 60,
+          "max_control_nesting": 1,
+          "body_statement_count": 8,
+          "line": 301
+        }
+      },
+      "sha256": "320c8b2fecf46080eb3bb365cfc434f9ac0a95603b0cf39d1c3cf30df662bcb2",
+      "modified": true
+    },
+    {
+      "path": "standby.py",
+      "original_debt": [
+        "supervise：225物理行；输入/资源/错误处理或状态渲染仍集中在同一函数，已分段说明但未抽取。"
+      ],
+      "status": "partial",
+      "responsibilities": [
+        "历史反馈/消息去重状态所有者",
+        "单次原生生命周期退出清理",
+        "可中断重试退避",
+        "自建Agent创建",
+        "原生创建",
+        "监督编排"
+      ],
+      "metrics": {
+        "supervise": {
+          "before": {
+            "physical_lines": 225,
+            "max_control_nesting": 6,
+            "body_statement_count": 14,
+            "line": 654
+          },
+          "after": {
+            "physical_lines": 120,
+            "max_control_nesting": 4,
+            "body_statement_count": 9,
+            "line": 831
+          }
+        }
+      },
+      "remaining": [
+        "supervise保留启动锁、preflight、配置写入、传输先行、原生创建、日志泵、监控的协调顺序；不把一次资源取得封装成丢失部分失败所有权的返回对象。"
+      ],
+      "new_functions": {
+        "_StatusPublisher.__init__": {
+          "physical_lines": 13,
+          "max_control_nesting": 1,
+          "body_statement_count": 9,
+          "line": 656
+        },
+        "_StatusPublisher.__call__": {
+          "physical_lines": 27,
+          "max_control_nesting": 1,
+          "body_statement_count": 9,
+          "line": 670
+        },
+        "_close_supervised_attempt": {
+          "physical_lines": 66,
+          "max_control_nesting": 3,
+          "body_statement_count": 9,
+          "line": 699
+        },
+        "_wait_supervisor_retry": {
+          "physical_lines": 14,
+          "max_control_nesting": 3,
+          "body_statement_count": 2,
+          "line": 767
+        },
+        "_start_supervised_agent": {
+          "physical_lines": 22,
+          "max_control_nesting": 0,
+          "body_statement_count": 2,
+          "line": 783
+        },
+        "_start_supervised_controller": {
+          "physical_lines": 21,
+          "max_control_nesting": 0,
+          "body_statement_count": 2,
+          "line": 807
+        }
+      },
+      "sha256": "ba8a2e4677da76ee6f2ea582390a9ceaedab6a7237c5e195d62fa3109c7c1cce",
+      "modified": true
+    }
+  ]
+}

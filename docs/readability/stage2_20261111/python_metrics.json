@@ -1,0 +1,495 @@
+{
+  "baseline_commit": "5198d33f25aaaf2abc7e4b078169ae84d5c4b2c4",
+  "scope": "8 Python service/tool files only; ordered deterministic side-effect traces compared strictly",
+  "metric_definition": "physical_lines includes comments; nesting counts If/For/While/Try/With/Match and excludes nested callable bodies; responsibility lists are manual role descriptions, not line-count quality claims",
+  "files": [
+    {
+      "path": "launcher.py",
+      "baseline_sha256": "903eaefcf348300bc73f436abe6d65ced84311dd19246b5b635692b0c7f0b8e8",
+      "current_sha256": "cf9dc10bc8b609c3599dbba614a90de3b5a0f1c2dbaba660b48531e41c05c095",
+      "target_functions": {
+        "run_console": {
+          "before": {
+            "physical_lines": 204,
+            "max_control_nesting": 9,
+            "body_statement_count": 16,
+            "line": 492
+          },
+          "after": {
+            "physical_lines": 167,
+            "max_control_nesting": 7,
+            "body_statement_count": 16,
+            "line": 548
+          }
+        },
+        "main": {
+          "before": {
+            "physical_lines": 176,
+            "max_control_nesting": 3,
+            "body_statement_count": 24,
+            "line": 756
+          },
+          "after": {
+            "physical_lines": 133,
+            "max_control_nesting": 3,
+            "body_statement_count": 16,
+            "line": 838
+          }
+        }
+      },
+      "new_functions": {
+        "_handle_console_input": {
+          "physical_lines": 38,
+          "max_control_nesting": 5,
+          "body_statement_count": 3,
+          "line": 491
+        },
+        "_show_console_state": {
+          "physical_lines": 14,
+          "max_control_nesting": 3,
+          "body_statement_count": 4,
+          "line": 531
+        },
+        "_parse_launcher_args": {
+          "physical_lines": 21,
+          "max_control_nesting": 1,
+          "body_statement_count": 11,
+          "line": 774
+        },
+        "_write_console_config": {
+          "physical_lines": 24,
+          "max_control_nesting": 1,
+          "body_statement_count": 8,
+          "line": 797
+        },
+        "_announce_console_configuration": {
+          "physical_lines": 12,
+          "max_control_nesting": 1,
+          "body_statement_count": 4,
+          "line": 823
+        }
+      },
+      "separated_responsibilities": [
+        "输入解析/命令分派",
+        "状态行节流",
+        "参数解析",
+        "会话配置派生/写入",
+        "参数说明",
+        "资源所有权与会话循环"
+      ],
+      "remaining_structural_debt": [
+        "交互循环与异常恢复的早返回顺序仍集中；未分离持有channel的异常恢复循环，避免关闭/续租所有权变化。"
+      ],
+      "completion": "refactored_with_documented_remaining_debt",
+      "floating_or_flight_parameter_change": false,
+      "numerical_tolerance_used": false
+    },
+    {
+      "path": "native/tools/fcctl.py",
+      "baseline_sha256": "526286b7fedb27ee5e775dc32dd3919ab4a7f26998dcf1c6eb8d561116963dba",
+      "current_sha256": "67e8162a325d6f37f1474195ab3075082b441e6772dfd7a83d34320eb96bf080",
+      "target_functions": {
+        "run": {
+          "before": {
+            "physical_lines": 301,
+            "max_control_nesting": 9,
+            "body_statement_count": 22,
+            "line": 133
+          },
+          "after": {
+            "physical_lines": 199,
+            "max_control_nesting": 9,
+            "body_statement_count": 18,
+            "line": 263
+          }
+        }
+      },
+      "new_functions": {
+        "_initial_console_command": {
+          "physical_lines": 26,
+          "max_control_nesting": 1,
+          "body_statement_count": 6,
+          "line": 132
+        },
+        "_arm_only_preflight": {
+          "physical_lines": 69,
+          "max_control_nesting": 2,
+          "body_statement_count": 11,
+          "line": 160
+        },
+        "_console_state_signature": {
+          "physical_lines": 17,
+          "max_control_nesting": 0,
+          "body_statement_count": 2,
+          "line": 231
+        },
+        "_print_console_help": {
+          "physical_lines": 10,
+          "max_control_nesting": 0,
+          "body_statement_count": 3,
+          "line": 250
+        }
+      },
+      "separated_responsibilities": [
+        "一次性命令权限门",
+        "ARM_ONLY新鲜证据预检",
+        "状态显示签名",
+        "帮助文本",
+        "ACK/速度/人工确认事件循环"
+      ],
+      "remaining_structural_debt": [
+        "run仍199行；ACK匹配、速度期限及一次性Arm确认水位继续由单一循环拥有，不为缩短函数分散状态。"
+      ],
+      "completion": "refactored_with_documented_remaining_debt",
+      "floating_or_flight_parameter_change": false,
+      "numerical_tolerance_used": false
+    },
+    {
+      "path": "navigation.py",
+      "baseline_sha256": "da393ad6a5bf3c48158a6f240bd07c0363171971cd8db5a227fe3a6f4455af66",
+      "current_sha256": "a4f782ce295584c90f0227370d76f4ece8e385fe2c924bd777041e027a1c42d6",
+      "target_functions": {
+        "render_status": {
+          "before": {
+            "physical_lines": 192,
+            "max_control_nesting": 4,
+            "body_statement_count": 34,
+            "line": 54
+          },
+          "after": {
+            "physical_lines": 62,
+            "max_control_nesting": 2,
+            "body_statement_count": 22,
+            "line": 215
+          }
+        }
+      },
+      "new_functions": {
+        "_snapshot_display_status": {
+          "physical_lines": 22,
+          "max_control_nesting": 3,
+          "body_statement_count": 4,
+          "line": 53
+        },
+        "_display_feedback_age": {
+          "physical_lines": 9,
+          "max_control_nesting": 1,
+          "body_statement_count": 6,
+          "line": 77
+        },
+        "_feedback_display_lines": {
+          "physical_lines": 33,
+          "max_control_nesting": 2,
+          "body_statement_count": 11,
+          "line": 88
+        },
+        "_append_recovery_lines": {
+          "physical_lines": 51,
+          "max_control_nesting": 3,
+          "body_statement_count": 2,
+          "line": 123
+        },
+        "_append_control_lines": {
+          "physical_lines": 36,
+          "max_control_nesting": 3,
+          "body_statement_count": 2,
+          "line": 176
+        }
+      },
+      "separated_responsibilities": [
+        "服务/快照身份判定",
+        "显示年龄增长",
+        "实际/历史反馈行",
+        "恢复诊断行",
+        "控制诊断行",
+        "最终操作提示"
+      ],
+      "remaining_structural_debt": [],
+      "completion": "listed_function_responsibilities_separated",
+      "floating_or_flight_parameter_change": false,
+      "numerical_tolerance_used": false
+    },
+    {
+      "path": "navigation_probe.py",
+      "baseline_sha256": "5d395466bff15b1bb103e2a084f16a79f933906bfedfb8d60ac9660ab6720f5f",
+      "current_sha256": "645ab0e4c582bfc00a9905fec13bc16fe4c5d6580460170faadbbf84dcb78ff5",
+      "target_functions": {
+        "probe": {
+          "before": {
+            "physical_lines": 180,
+            "max_control_nesting": 3,
+            "body_statement_count": 13,
+            "line": 140
+          },
+          "after": {
+            "physical_lines": 102,
+            "max_control_nesting": 3,
+            "body_statement_count": 13,
+            "line": 230
+          }
+        }
+      },
+      "new_functions": {
+        "_create_ground_subscriptions": {
+          "physical_lines": 88,
+          "max_control_nesting": 2,
+          "body_statement_count": 6,
+          "line": 139
+        }
+      },
+      "separated_responsibilities": [
+        "地面订阅与字段合同",
+        "可选RC订阅/闭包kind冻结",
+        "Agent所有权",
+        "有界证据等待",
+        "最终证据/ROS清理"
+      ],
+      "remaining_structural_debt": [
+        "Agent取得、ok/verified_at写水位与finally仍处于同一probe；将等待封装成返回值会改变异常期间已观察ok的记录，故保留。",
+        "原final写盘失败导致ROS清理跳过，已复现并另留未应用候选。"
+      ],
+      "completion": "refactored_with_documented_remaining_debt",
+      "floating_or_flight_parameter_change": false,
+      "numerical_tolerance_used": false
+    },
+    {
+      "path": "navigation_report.py",
+      "baseline_sha256": "8fb9b026ccd71e17eabae0bda5c0f685b3ce60d1cd1566795ee300f05d6a7fc3",
+      "current_sha256": "db9a6200ffb275da81e7c178fac1621838d33e1b11a95a1cdccdda9ac82e7a78",
+      "target_functions": {
+        "collect_report": {
+          "before": {
+            "physical_lines": 186,
+            "max_control_nesting": 4,
+            "body_statement_count": 12,
+            "line": 53
+          },
+          "after": {
+            "physical_lines": 115,
+            "max_control_nesting": 3,
+            "body_statement_count": 11,
+            "line": 153
+          }
+        }
+      },
+      "new_functions": {
+        "_ReportFileCapture.__init__": {
+          "physical_lines": 6,
+          "max_control_nesting": 0,
+          "body_statement_count": 5,
+          "line": 55
+        },
+        "_ReportFileCapture.include": {
+          "physical_lines": 52,
+          "max_control_nesting": 3,
+          "body_statement_count": 7,
+          "line": 63
+        },
+        "_report_entries": {
+          "physical_lines": 21,
+          "max_control_nesting": 3,
+          "body_statement_count": 5,
+          "line": 117
+        },
+        "_include_command_report": {
+          "physical_lines": 10,
+          "max_control_nesting": 1,
+          "body_statement_count": 3,
+          "line": 140
+        }
+      },
+      "separated_responsibilities": [
+        "单报告文件预算/去重/NOFOLLOW读取",
+        "入口来源识别",
+        "只读命令捕获",
+        "报告采集编排"
+      ],
+      "remaining_structural_debt": [],
+      "completion": "listed_function_responsibilities_separated",
+      "floating_or_flight_parameter_change": false,
+      "numerical_tolerance_used": false
+    },
+    {
+      "path": "navigation_restore.py",
+      "baseline_sha256": "5c9d73bfd7db973cff6343d6ed3182a899d48319f10f1e9d9b813d5bb63a6b6a",
+      "current_sha256": "b182c66bd49b35bdf85034d007bfe558af207d7244f62493246f7027325b108e",
+      "target_functions": {
+        "activate": {
+          "before": {
+            "physical_lines": 168,
+            "max_control_nesting": 5,
+            "body_statement_count": 13,
+            "line": 401
+          },
+          "after": {
+            "physical_lines": 129,
+            "max_control_nesting": 4,
+            "body_statement_count": 13,
+            "line": 478
+          }
+        }
+      },
+      "new_functions": {
+        "_verified_active_backup": {
+          "physical_lines": 21,
+          "max_control_nesting": 2,
+          "body_statement_count": 4,
+          "line": 400
+        },
+        "_wait_activation_verified": {
+          "physical_lines": 12,
+          "max_control_nesting": 3,
+          "body_statement_count": 4,
+          "line": 423
+        },
+        "_recover_failed_activation": {
+          "physical_lines": 38,
+          "max_control_nesting": 3,
+          "body_statement_count": 3,
+          "line": 437
+        }
+      },
+      "separated_responsibilities": [
+        "重复启用回滚记录核验",
+        "单调期限启动验收",
+        "失败恢复",
+        "changed/started事务推进"
+      ],
+      "remaining_structural_debt": [
+        "activate中的changed/started仍在实际动作前更新，停旧/切换/启动的补偿水位不抽成返回bool，防止异常导致水位丢失。"
+      ],
+      "completion": "refactored_with_documented_remaining_debt",
+      "floating_or_flight_parameter_change": false,
+      "numerical_tolerance_used": false
+    },
+    {
+      "path": "navigation_service.py",
+      "baseline_sha256": "c1ac79b23787ac4982ca69c248d03812efd49c4fca31369b9c6dfe70e800ec72",
+      "current_sha256": "320c8b2fecf46080eb3bb365cfc434f9ac0a95603b0cf39d1c3cf30df662bcb2",
+      "target_functions": {
+        "main": {
+          "before": {
+            "physical_lines": 182,
+            "max_control_nesting": 6,
+            "body_statement_count": 18,
+            "line": 210
+          },
+          "after": {
+            "physical_lines": 50,
+            "max_control_nesting": 6,
+            "body_statement_count": 6,
+            "line": 364
+          }
+        }
+      },
+      "new_functions": {
+        "_parse_service_args": {
+          "physical_lines": 39,
+          "max_control_nesting": 1,
+          "body_statement_count": 15,
+          "line": 209
+        },
+        "_check_runtime_config": {
+          "physical_lines": 49,
+          "max_control_nesting": 2,
+          "body_statement_count": 10,
+          "line": 250
+        },
+        "_run_navigation_service": {
+          "physical_lines": 60,
+          "max_control_nesting": 1,
+          "body_statement_count": 8,
+          "line": 301
+        }
+      },
+      "separated_responsibilities": [
+        "参数/确认解析",
+        "配置核验",
+        "run监督参数装配",
+        "显式分派"
+      ],
+      "remaining_structural_debt": [],
+      "completion": "listed_function_responsibilities_separated",
+      "floating_or_flight_parameter_change": false,
+      "numerical_tolerance_used": false
+    },
+    {
+      "path": "standby.py",
+      "baseline_sha256": "9e340100224c9965df6c06a9152684e522c5f7cb7c4cf3c749c31b0cf13fa22e",
+      "current_sha256": "ba8a2e4677da76ee6f2ea582390a9ceaedab6a7237c5e195d62fa3109c7c1cce",
+      "target_functions": {
+        "supervise": {
+          "before": {
+            "physical_lines": 225,
+            "max_control_nesting": 6,
+            "body_statement_count": 14,
+            "line": 654
+          },
+          "after": {
+            "physical_lines": 120,
+            "max_control_nesting": 4,
+            "body_statement_count": 9,
+            "line": 831
+          }
+        }
+      },
+      "new_functions": {
+        "_StatusPublisher.__init__": {
+          "physical_lines": 13,
+          "max_control_nesting": 1,
+          "body_statement_count": 9,
+          "line": 656
+        },
+        "_StatusPublisher.__call__": {
+          "physical_lines": 27,
+          "max_control_nesting": 1,
+          "body_statement_count": 9,
+          "line": 670
+        },
+        "_close_supervised_attempt": {
+          "physical_lines": 66,
+          "max_control_nesting": 3,
+          "body_statement_count": 9,
+          "line": 699
+        },
+        "_wait_supervisor_retry": {
+          "physical_lines": 14,
+          "max_control_nesting": 3,
+          "body_statement_count": 2,
+          "line": 767
+        },
+        "_start_supervised_agent": {
+          "physical_lines": 22,
+          "max_control_nesting": 0,
+          "body_statement_count": 2,
+          "line": 783
+        },
+        "_start_supervised_controller": {
+          "physical_lines": 21,
+          "max_control_nesting": 0,
+          "body_statement_count": 2,
+          "line": 807
+        }
+      },
+      "separated_responsibilities": [
+        "历史反馈/消息去重状态所有者",
+        "单次原生生命周期退出清理",
+        "可中断重试退避",
+        "自建Agent创建",
+        "原生创建",
+        "监督编排"
+      ],
+      "remaining_structural_debt": [
+        "supervise保留启动锁、preflight、配置写入、传输先行、原生创建、日志泵、监控的协调顺序；不把一次资源取得封装成丢失部分失败所有权的返回对象。"
+      ],
+      "completion": "refactored_with_documented_remaining_debt",
+      "floating_or_flight_parameter_change": false,
+      "numerical_tolerance_used": false
+    }
+  ],
+  "scope_limitations": [
+    "Mocked systemd/ROS/process call order does not replace ARM64 execution or real DDS signal timing.",
+    "The known probe write-failure cleanup bug remains in production; equal traces prove preservation, not absence of pre-existing defects.",
+    "No hardware, real systemd mutation, ROS flight publisher or automatic remote push used."
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "baseline": [
+    {
+      "qualified_name": "main",
+      "physical_lines": 189,
+      "own_max_control_nesting": 2
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::__init__",
+      "physical_lines": 110,
+      "own_max_control_nesting": 1
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::__init__::parameter",
+      "physical_lines": 10,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::__init__::qos",
+      "physical_lines": 9,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::source_context",
+      "physical_lines": 8,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::emit",
+      "physical_lines": 43,
+      "own_max_control_nesting": 2
+    }
+  ],
+  "independent_fix": [
+    {
+      "qualified_name": "main",
+      "physical_lines": 222,
+      "own_max_control_nesting": 4
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::__init__",
+      "physical_lines": 110,
+      "own_max_control_nesting": 1
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::__init__::parameter",
+      "physical_lines": 10,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::__init__::qos",
+      "physical_lines": 9,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::source_context",
+      "physical_lines": 8,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "main::OdometryAdapterNode::emit",
+      "physical_lines": 43,
+      "own_max_control_nesting": 2
+    }
+  ],
+  "refactored": [
+    {
+      "qualified_name": "_adapter_node_type",
+      "physical_lines": 240,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::__init__",
+      "physical_lines": 38,
+      "own_max_control_nesting": 1
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::startup_parameter",
+      "physical_lines": 13,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::configure_measurement_clock",
+      "physical_lines": 17,
+      "own_max_control_nesting": 1
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::load_conversion_config",
+      "physical_lines": 29,
+      "own_max_control_nesting": 1
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::input_topics",
+      "physical_lines": 14,
+      "own_max_control_nesting": 1
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::qos",
+      "physical_lines": 12,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::connect_inputs",
+      "physical_lines": 24,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::source_context",
+      "physical_lines": 8,
+      "own_max_control_nesting": 0
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::state_message",
+      "physical_lines": 35,
+      "own_max_control_nesting": 1
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::report_reason_change",
+      "physical_lines": 16,
+      "own_max_control_nesting": 1
+    },
+    {
+      "qualified_name": "_adapter_node_type::OdometryAdapterNode::emit",
+      "physical_lines": 9,
+      "own_max_control_nesting": 1
+    },
+    {
+      "qualified_name": "main",
+      "physical_lines": 59,
+      "own_max_control_nesting": 4
+    }
+  ]
+}
