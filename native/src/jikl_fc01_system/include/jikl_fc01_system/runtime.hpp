@@ -678,75 +678,7 @@ public:
     if (op == "INTERACTIVE" && config_.profile != "attitude_altitude")
       return {true, "LIVE_CONSOLE_SESSION"};
     if (config_.profile == "attitude_altitude" && op != "MODE" && op != "UPDATE_CHECK") {
-      if (maintenance_ && op != "PING" && op != "LAND" && op != "STOP")
-        return refuse("MAINTENANCE_RESTART_REQUIRED");
-      if (ground_ && !ground_->finished() && op != "PING")
-        return refuse("GROUND_MODE_TEST_ACTIVE");
-      auto feedback = attitude_snapshot(s);
-      std::string why;
-      if (op == "PING") {
-        attitude_core_.ping(now);
-        return {true, "ALIVE"};
-      }
-      if (op == "INTERACTIVE") {
-        attitude_core_.live_console(now);
-        return {true, "LIVE_CONSOLE_SESSION"};
-      }
-      const bool outputs_active =
-          last_attitude_output_active_ || s.attitude_output_active || s.offboard_heartbeat_active;
-      // 独立状态终止不消除ACK歧义；当前安全地面/无输出仍由Core重新证明。
-      const auto outstanding = [](const Pending& p) {
-        // A state-only safe Disarm terminal ends physical recovery, not ACK
-        // ambiguity. Core's reset admission independently rechecks CURRENT
-        // disarmed ground, stopped outputs and mode. Retain history below.
-        if (p.state_verified && (p.command400_kind == Command400Kind::Disarm ||
-                                 p.command400_kind == Command400Kind::None))
-          return false;
-        return p.sent && (p.ack_ambiguous || (!p.accepted && !p.rejected && !p.timed_out));
-      };
-      const bool transaction = outstanding(pending_[0]) || outstanding(pending_[1]);
-      if (op == "AUTHORITY_RC" || op == "AUTHORITY_AUTONOMOUS")
-        why = attitude_core_.select_authority(
-            op == "AUTHORITY_RC" ? authority::Mode::RcTakeover : authority::Mode::AutonomousNoRc,
-            feedback, now, outputs_active, transaction, s.publication_fault_latched);
-      else if (op == "AUTHORITY_RESET")
-        why = attitude_core_.reset_authority(feedback, now, outputs_active, transaction,
-                                             s.publication_fault_latched);
-      else if (op == "AUTHORITY_TAKEOVER") {
-        if (!attitude_core_.operator_lease_live(now))
-          return refuse("LIVE_INTERACTIVE_CONSOLE_REQUIRED");
-        if (!attitude_core_.active())
-          return refuse("NO_ACTIVE_COMPANION_ATTEMPT");
-        why = attitude_core_.request_operator_takeover(feedback, now);
-      } else if (op == "ATTITUDE_READY")
-        why = attitude_core_.prepare(feedback, now);
-      else if (op == "ARM_ONLY") {
-        if (command400_commits_ > 0)
-          return refuse("COMMAND_400_REUSE_REQUIRES_SAFE_GROUND_RESTART");
-        why = attitude_core_.arm_only(feedback, now);
-      }
-      // 程序起飞禁止复用本进程400，避免永远不可归属的新Arm ACK；人工RC不调用此分支。
-      else if (op == "TAKEOFF") {
-        // A new mission must not commit an Arm whose ACK can never be
-        // attributed. Ordinary ground reset cannot erase protocol history.
-        if (command400_commits_ > 0)
-          return refuse("COMMAND_400_REUSE_REQUIRES_SAFE_GROUND_RESTART");
-        why = attitude_core_.takeoff(feedback, a[0], now);
-      } else if (op == "LAND")
-        why = attitude_core_.descend(feedback, now);
-      else if (op == "STOP") {
-        if (!s.status_fresh || !s.land_fresh || s.feedback.armed || !s.feedback.landed ||
-            !s.at_rest)
-          return refuse("STOP_REQUIRES_CONFIRMED_DISARMED_GROUND_STATE");
-        attitude_core_.stop_disarmed(feedback, now);
-        return {true, "STOP_ALLOWED"};
-      } else
-        return refuse("COMMAND_NOT_AVAILABLE_IN_ATTITUDE_PROFILE");
-      if (!why.empty())
-        return refuse(why);
-      message_ = op == "ATTITUDE_READY" ? "ATTITUDE_PREPARATION_PENDING_ACK_AND_NEW_STATUS"
-                                        : op + "_ACCEPTED";
-      return {true, message_};
+      return request_attitude(op, a, s, now);
     }
     if (op == "PING") {
       last_ping_ = now;
@@ -973,45 +905,7 @@ public:
     p.ack_candidate = false;
     disposition("ACK_OBSERVED");
     // ACCEPTED与IN_PROGRESS分别处理，1/2/3/4/6是明确拒绝类；未知400结果保留不确定，不猜测拒绝。
-    switch (a.result) {
-    case 0:
-      if (skew_candidate) {
-        p.ack_candidate = true;
-        p.stage = CommandStage::AckCandidateAwaitState;
-        disposition("SKEWED_ACK_CANDIDATE_AWAIT_STATE");
-      } else {
-        p.accepted = true;
-        p.stage = CommandStage::AckAcceptedAwaitState;
-        disposition("ACK_ACCEPTED_AWAIT_STATE");
-      }
-      break;
-    case 5:
-      p.stage = CommandStage::AckInProgress;
-      break;
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 6:
-      p.rejected = true;
-      p.stage = CommandStage::Rejected;
-      // Legacy velocity profile retains its existing rejected Arm handling;
-      // the attitude profile processes Arm AND Disarm refusal separately.
-      if (a.command == 400 && config_.profile != "attitude_altitude")
-        core_.rejected_arm();
-      break;
-    default:
-      // Preserve legacy 176/21/velocity handling. Unknown 400 results in
-      // attitude mode remain uncertain rather than claiming a refusal.
-      if (a.command != 400 || config_.profile != "attitude_altitude") {
-        p.rejected = true;
-        p.stage = CommandStage::Rejected;
-        if (a.command == 400)
-          core_.rejected_arm();
-      } else
-        p.stage = CommandStage::UnknownAckResult;
-      break;
-    }
+    classify_ack_result(a, p, skew_candidate);
   }
   // 断开控制台即撤销旧目标与租约，已有任务沿原降落路线；不能因UI退出就遗弃恢复。
   void disconnect(const Snapshot& s, double now) {
@@ -1062,23 +956,7 @@ public:
       }
     }
     if (ground_ && !ground_->finished()) {
-      if (s.time_regressed || !s.status_fresh || !s.land_fresh) {
-        ground_->abort(s.time_regressed  ? "TIME_REGRESSION_RESTART_ON_GROUND"
-                       : !s.status_fresh ? "STATUS_STALE"
-                                         : "LAND_STALE");
-        message_ = ground_->reason();
-        return out;
-      }
-      ground_->status({s.status_stamp, !s.feedback.armed, s.feedback.failsafe, s.calibration, s.hil,
-                       s.stabilized_selectable, s.system, s.component, s.nav_state},
-                      now - ground_origin_);
-      ground_->land({s.land_stamp, s.feedback.landed, s.at_rest}, now - ground_origin_);
-      auto traffic = s.traffic;
-      if (!s.feedback.exclusive)
-        traffic.command_publishers = 2;
-      out.send_ground = ground_->tick(now - ground_origin_, traffic);
-      message_ = ground_->reason();
-      return out;
+      return step_ground(s, now);
     }
     // 姿态主链先形成候选状态证据供Core判断，再等Core同轮健康/reset/权限都过才锁定事务完成。
     if (config_.profile == "attitude_altitude") {
@@ -1106,101 +984,9 @@ public:
         land21.timed_out = true;
       out.attitude = attitude_core_.step(attitude_snapshot(s), now, terminal(176), terminal(400),
                                          terminal(21));
-      auto& mode176 = pending_[index(176)];
-      // Candidate authority is checked above; do not latch acceptance until
-      // Core also checks THIS sample's health, reference, lease, takeover and
-      // loop timing.
-      // STOP during preparation may immediately request safe mode release.
-      if (mode_candidate_state && (attitude_core_.phase() == attitude::Phase::OffboardReady ||
-                                   attitude_core_.phase() == attitude::Phase::ReleaseOffboard)) {
-        mode176.accepted = true;
-        mode176.ack_candidate = false;
-        mode176.ack_confirmed_by_state = true;
-        mode176.state_verified = true;
-        mode176.verified_status_stamp = s.status_stamp;
-        mode176.verified_at = now;
-        mode176.stage = CommandStage::VerifiedTerminal;
-        mode176.ack_disposition = "SKEWED_ACK_CONFIRMED_BY_NEW_OFFBOARD_STATE";
-      } else if (mode176.ack_candidate &&
-                 attitude_core_.phase() != attitude::Phase::RequestOffboard) {
-        mode176.ack_candidate = false;
-        mode176.timed_out =
-            std::isfinite(now) && now - mode176.sent_at >= config_.attitude.command_timeout;
-        mode176.stage =
-            mode176.timed_out ? CommandStage::TimedOut : CommandStage::StateAckObservedUnresolved;
-        mode176.ack_disposition =
-            mode176.timed_out ? "CANDIDATE_STATE_TIMEOUT" : "CANDIDATE_ABORTED_BY_CORE";
-      }
-      if (mode176.published && attitude_core_.ground_mode_state_only_allowed() && s.status_fresh &&
-          s.land_fresh && !s.feedback.armed && s.feedback.landed && s.at_rest &&
-          s.status_stamp > mode176.status_at_wire &&
-          (!mode176.source_clock_validated || s.status_stamp > mode176.causal_floor) &&
-          ((attitude_core_.phase() == attitude::Phase::OffboardReady && s.feedback.offboard &&
-            s.nav_state == 14) ||
-           (attitude_core_.phase() == attitude::Phase::Idle && !s.feedback.offboard &&
-            s.nav_state == 15))) {
-        mode176.state_verified = true;
-        mode176.verified_status_stamp = s.status_stamp;
-        mode176.verified_at = now;
-        mode176.stage =
-            mode176.accepted ? CommandStage::VerifiedTerminal : CommandStage::StateOnlyTerminal;
-      }
-      // A freshly observed PX4 armed/disarmed status is a separate channel of
-      // evidence from the Command 400 ACK. Retain it even if the ACK is lost;
-      // otherwise the next Disarm would collide with an old unresolved Arm
-      // and the previous Runtime would cut the healthy Offboard stream.
-      if (command400.sent && s.arming_state_known && s.status_fresh &&
-          (!command400.source_clock_validated || s.status_stamp > command400.causal_floor) &&
-          s.status_stamp > command400.status_at_wire && s.status_stamp > command400.baseline &&
-          ((command400.command400_kind == Command400Kind::Arm && s.feedback.armed &&
-            attitude_core_.active() && attitude_core_.arm_confirmed()) ||
-           (command400.command400_kind == Command400Kind::Disarm && disarm_state &&
-            attitude_core_.phase() == attitude::Phase::SafeDisarmed))) {
-        // Candidate evidence must also survive Core's reference-reset, stall,
-        // estimator-jump and envelope checks on THIS step. A Safety label is
-        // never a successful state-only Disarm terminal.
-        command400.state_verified = true;
-        command400.verified_at = now;
-        command400.verified_status_stamp = s.status_stamp;
-        command400.stage =
-            command400.ack_ambiguous ||
-                    ((command400.command400_kind == Command400Kind::Disarm ||
-                      (command400.command400_kind == Command400Kind::Arm && normal_arm_state)) &&
-                     !command400.accepted)
-                ? CommandStage::StateOnlyTerminal
-            : command400.accepted         ? CommandStage::VerifiedTerminal
-            : command400.rejected         ? CommandStage::StateAckContradictory
-            : command400.ack_observations ? CommandStage::StateAckObservedUnresolved
-                                          : CommandStage::StateVerifiedAwaitAck;
-      }
+      complete_attitude_transactions(s, now, disarm_state, normal_arm_state, mode_candidate_state);
       // Core的新动作若与未决同编号事务冲突则拒绝输出；不能靠覆盖pending消失旧事务。
-      if (out.attitude.command != attitude::Command::None) {
-        const unsigned cmd = (out.attitude.command == attitude::Command::Offboard ||
-                              out.attitude.command == attitude::Command::ReleaseOffboard)
-                                 ? 176
-                             : out.attitude.command == attitude::Command::Px4Land ? 21
-                                                                                  : 400;
-        auto& p = pending_[index(cmd)];
-        if (p.sent && !p.accepted && !p.rejected && !p.timed_out && !p.state_verified) {
-          // Runtime prevents a second same-ID 400 command when neither the
-          // original ACK NOR its independent PX4 terminal state is known.
-          // Core recovery should normally defer this attempt, but if the
-          // precondition fails we cannot justify publishing either command.
-          attitude_core_.block("INDISTINGUISHABLE_OUTSTANDING_COMMAND");
-          out.attitude = {};
-        } else {
-          // 新事务继承旧ACK/status最大水位，旧400只进有界审计历史；新的请求不会清零旧wire因果关系。
-          const auto watermark = std::max({p.baseline, p.last_ack, p.status_at_wire});
-          const bool unresolved =
-              cmd == 400 && p.sent && (p.ack_ambiguous || !p.accepted || !p.state_verified);
-          if (cmd == 400 && p.requested)
-            archive_command400(p); // 仅归档旧事务；待处理事务和因果水位仍按原流程更新。
-          p = {};
-          p.baseline = watermark;
-          p.previous400_unresolved = unresolved;
-          track(cmd, s, now, out.attitude.command);
-        }
-      }
+      track_attitude_request(out, s, now);
       last_attitude_output_active_ = out.attitude.publish;
       message_ = attitude_core_.reason();
       return out;
@@ -1289,6 +1075,257 @@ public:
   }
 
 private:
+  // 处理姿态高度控制台请求；参数已由 request 按原次序校验，s 是当前只读反馈，now 为 steady 秒。
+  // 返回原接受/拒绝文本；只修改原 Core、租约和 message_，不发布、不清事务历史。
+  // 必须在 RC 只读门、停机门及 profile 分派之后调用；分支和首个错误的优先级不可交换。
+  Reply request_attitude(const std::string& op, const std::vector<double>& a, const Snapshot& s,
+                         double now) {
+    if (maintenance_ && op != "PING" && op != "LAND" && op != "STOP")
+      return refuse("MAINTENANCE_RESTART_REQUIRED");
+    if (ground_ && !ground_->finished() && op != "PING")
+      return refuse("GROUND_MODE_TEST_ACTIVE");
+    auto feedback = attitude_snapshot(s);
+    std::string why;
+    if (op == "PING") {
+      attitude_core_.ping(now);
+      return {true, "ALIVE"};
+    }
+    if (op == "INTERACTIVE") {
+      attitude_core_.live_console(now);
+      return {true, "LIVE_CONSOLE_SESSION"};
+    }
+    const bool outputs_active =
+        last_attitude_output_active_ || s.attitude_output_active || s.offboard_heartbeat_active;
+    // 独立状态终止不消除ACK歧义；当前安全地面/无输出仍由Core重新证明。
+    const auto outstanding = [](const Pending& p) {
+      // A state-only safe Disarm terminal ends physical recovery, not ACK
+      // ambiguity. Core's reset admission independently rechecks CURRENT
+      // disarmed ground, stopped outputs and mode. Retain history below.
+      if (p.state_verified && (p.command400_kind == Command400Kind::Disarm ||
+                               p.command400_kind == Command400Kind::None))
+        return false;
+      return p.sent && (p.ack_ambiguous || (!p.accepted && !p.rejected && !p.timed_out));
+    };
+    const bool transaction = outstanding(pending_[0]) || outstanding(pending_[1]);
+    if (op == "AUTHORITY_RC" || op == "AUTHORITY_AUTONOMOUS")
+      why = attitude_core_.select_authority(
+          op == "AUTHORITY_RC" ? authority::Mode::RcTakeover : authority::Mode::AutonomousNoRc,
+          feedback, now, outputs_active, transaction, s.publication_fault_latched);
+    else if (op == "AUTHORITY_RESET")
+      why = attitude_core_.reset_authority(feedback, now, outputs_active, transaction,
+                                           s.publication_fault_latched);
+    else if (op == "AUTHORITY_TAKEOVER") {
+      if (!attitude_core_.operator_lease_live(now))
+        return refuse("LIVE_INTERACTIVE_CONSOLE_REQUIRED");
+      if (!attitude_core_.active())
+        return refuse("NO_ACTIVE_COMPANION_ATTEMPT");
+      why = attitude_core_.request_operator_takeover(feedback, now);
+    } else if (op == "ATTITUDE_READY")
+      why = attitude_core_.prepare(feedback, now);
+    else if (op == "ARM_ONLY") {
+      if (command400_commits_ > 0)
+        return refuse("COMMAND_400_REUSE_REQUIRES_SAFE_GROUND_RESTART");
+      why = attitude_core_.arm_only(feedback, now);
+    }
+    // 程序起飞禁止复用本进程400，避免永远不可归属的新Arm ACK；人工RC不调用此分支。
+    else if (op == "TAKEOFF") {
+      // A new mission must not commit an Arm whose ACK can never be
+      // attributed. Ordinary ground reset cannot erase protocol history.
+      if (command400_commits_ > 0)
+        return refuse("COMMAND_400_REUSE_REQUIRES_SAFE_GROUND_RESTART");
+      why = attitude_core_.takeoff(feedback, a[0], now);
+    } else if (op == "LAND")
+      why = attitude_core_.descend(feedback, now);
+    else if (op == "STOP") {
+      if (!s.status_fresh || !s.land_fresh || s.feedback.armed || !s.feedback.landed || !s.at_rest)
+        return refuse("STOP_REQUIRES_CONFIRMED_DISARMED_GROUND_STATE");
+      attitude_core_.stop_disarmed(feedback, now);
+      return {true, "STOP_ALLOWED"};
+    } else
+      return refuse("COMMAND_NOT_AVAILABLE_IN_ATTITUDE_PROFILE");
+    if (!why.empty())
+      return refuse(why);
+    message_ = op == "ATTITUDE_READY" ? "ATTITUDE_PREPARATION_PENDING_ACK_AND_NEW_STATUS"
+                                      : op + "_ACCEPTED";
+    return {true, message_};
+  }
+  // 分类已通过目标、提交、时钟和水位过滤的 ACK；p 必须是该编号的当前事务。
+  // skew_candidate 只表示首个正常 176 的偏斜候选；无返回值，只更新事务并沿原通用路线通知拒绝 Arm。
+  // 不能提前到过滤前调用：候选、接受、独立物理状态是不同证据，未知 400 不能被猜成拒绝。
+  void classify_ack_result(const g::Ack& a, Pending& p, bool skew_candidate) {
+    const auto disposition = [&](const char* why) {
+      if (a.command == 176)
+        p.ack_disposition = why;
+    };
+    switch (a.result) {
+    case 0:
+      if (skew_candidate) {
+        p.ack_candidate = true;
+        p.stage = CommandStage::AckCandidateAwaitState;
+        disposition("SKEWED_ACK_CANDIDATE_AWAIT_STATE");
+      } else {
+        p.accepted = true;
+        p.stage = CommandStage::AckAcceptedAwaitState;
+        disposition("ACK_ACCEPTED_AWAIT_STATE");
+      }
+      break;
+    case 5:
+      p.stage = CommandStage::AckInProgress;
+      break;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 6:
+      p.rejected = true;
+      p.stage = CommandStage::Rejected;
+      // Legacy velocity profile retains its existing rejected Arm handling;
+      // the attitude profile processes Arm AND Disarm refusal separately.
+      if (a.command == 400 && config_.profile != "attitude_altitude")
+        core_.rejected_arm();
+      break;
+    default:
+      // Preserve legacy 176/21/velocity handling. Unknown 400 results in
+      // attitude mode remain uncertain rather than claiming a refusal.
+      if (a.command != 400 || config_.profile != "attitude_altitude") {
+        p.rejected = true;
+        p.stage = CommandStage::Rejected;
+        if (a.command == 400)
+          core_.rejected_arm();
+      } else
+        p.stage = CommandStage::UnknownAckResult;
+      break;
+    }
+  }
+  // 推进一步已存在的地面模式测试；s 为当前反馈，now/ground_origin_ 同属 steady 秒。
+  // 返回本轮仅 send_ground 的计划，更新原 ground_ 和 message_；不触碰飞行 Core 或实际 sink。
+  // 只能在排队危险事件处理后且测试未终结时调用；过期先 abort，之后才送 status、land 和 tick。
+  Output step_ground(const Snapshot& s, double now) {
+    Output out;
+    if (s.time_regressed || !s.status_fresh || !s.land_fresh) {
+      ground_->abort(s.time_regressed  ? "TIME_REGRESSION_RESTART_ON_GROUND"
+                     : !s.status_fresh ? "STATUS_STALE"
+                                       : "LAND_STALE");
+      message_ = ground_->reason();
+      return out;
+    }
+    ground_->status({s.status_stamp, !s.feedback.armed, s.feedback.failsafe, s.calibration, s.hil,
+                     s.stabilized_selectable, s.system, s.component, s.nav_state},
+                    now - ground_origin_);
+    ground_->land({s.land_stamp, s.feedback.landed, s.at_rest}, now - ground_origin_);
+    auto traffic = s.traffic;
+    if (!s.feedback.exclusive)
+      traffic.command_publishers = 2;
+    out.send_ground = ground_->tick(now - ground_origin_, traffic);
+    message_ = ground_->reason();
+    return out;
+  }
+  // 将候选 PX4 新状态写成事务终态；参数来自本轮 Core 调用前的独立取证，now 为 steady 秒。
+  // 无返回值，只更新 pending_ 的 176/400 审计；不授权飞行、不清 ACK 歧义、不提交命令。
+  // 必须紧接 Core::step 后调用：同一帧需先通过 Core 健康、参考、权限和时限检查，才可锁定完成。
+  void complete_attitude_transactions(const Snapshot& s, double now, bool disarm_state,
+                                      bool normal_arm_state, bool mode_candidate_state) {
+    auto& command400 = pending_[index(400)];
+    auto& mode176 = pending_[index(176)];
+    // Candidate authority is checked above; do not latch acceptance until
+    // Core also checks THIS sample's health, reference, lease, takeover and
+    // loop timing.
+    // STOP during preparation may immediately request safe mode release.
+    if (mode_candidate_state && (attitude_core_.phase() == attitude::Phase::OffboardReady ||
+                                 attitude_core_.phase() == attitude::Phase::ReleaseOffboard)) {
+      mode176.accepted = true;
+      mode176.ack_candidate = false;
+      mode176.ack_confirmed_by_state = true;
+      mode176.state_verified = true;
+      mode176.verified_status_stamp = s.status_stamp;
+      mode176.verified_at = now;
+      mode176.stage = CommandStage::VerifiedTerminal;
+      mode176.ack_disposition = "SKEWED_ACK_CONFIRMED_BY_NEW_OFFBOARD_STATE";
+    } else if (mode176.ack_candidate &&
+               attitude_core_.phase() != attitude::Phase::RequestOffboard) {
+      mode176.ack_candidate = false;
+      mode176.timed_out =
+          std::isfinite(now) && now - mode176.sent_at >= config_.attitude.command_timeout;
+      mode176.stage =
+          mode176.timed_out ? CommandStage::TimedOut : CommandStage::StateAckObservedUnresolved;
+      mode176.ack_disposition =
+          mode176.timed_out ? "CANDIDATE_STATE_TIMEOUT" : "CANDIDATE_ABORTED_BY_CORE";
+    }
+    if (mode176.published && attitude_core_.ground_mode_state_only_allowed() && s.status_fresh &&
+        s.land_fresh && !s.feedback.armed && s.feedback.landed && s.at_rest &&
+        s.status_stamp > mode176.status_at_wire &&
+        (!mode176.source_clock_validated || s.status_stamp > mode176.causal_floor) &&
+        ((attitude_core_.phase() == attitude::Phase::OffboardReady && s.feedback.offboard &&
+          s.nav_state == 14) ||
+         (attitude_core_.phase() == attitude::Phase::Idle && !s.feedback.offboard &&
+          s.nav_state == 15))) {
+      mode176.state_verified = true;
+      mode176.verified_status_stamp = s.status_stamp;
+      mode176.verified_at = now;
+      mode176.stage =
+          mode176.accepted ? CommandStage::VerifiedTerminal : CommandStage::StateOnlyTerminal;
+    }
+    // A freshly observed PX4 armed/disarmed status is a separate channel of
+    // evidence from the Command 400 ACK. Retain it even if the ACK is lost;
+    // otherwise the next Disarm would collide with an old unresolved Arm
+    // and the previous Runtime would cut the healthy Offboard stream.
+    if (command400.sent && s.arming_state_known && s.status_fresh &&
+        (!command400.source_clock_validated || s.status_stamp > command400.causal_floor) &&
+        s.status_stamp > command400.status_at_wire && s.status_stamp > command400.baseline &&
+        ((command400.command400_kind == Command400Kind::Arm && s.feedback.armed &&
+          attitude_core_.active() && attitude_core_.arm_confirmed()) ||
+         (command400.command400_kind == Command400Kind::Disarm && disarm_state &&
+          attitude_core_.phase() == attitude::Phase::SafeDisarmed))) {
+      // Candidate evidence must also survive Core's reference-reset, stall,
+      // estimator-jump and envelope checks on THIS step. A Safety label is
+      // never a successful state-only Disarm terminal.
+      command400.state_verified = true;
+      command400.verified_at = now;
+      command400.verified_status_stamp = s.status_stamp;
+      command400.stage =
+          command400.ack_ambiguous ||
+                  ((command400.command400_kind == Command400Kind::Disarm ||
+                    (command400.command400_kind == Command400Kind::Arm && normal_arm_state)) &&
+                   !command400.accepted)
+              ? CommandStage::StateOnlyTerminal
+          : command400.accepted         ? CommandStage::VerifiedTerminal
+          : command400.rejected         ? CommandStage::StateAckContradictory
+          : command400.ack_observations ? CommandStage::StateAckObservedUnresolved
+                                        : CommandStage::StateVerifiedAwaitAck;
+    }
+  }
+  // 为 Core 的新动作建立有界事务；out 是本轮可修改计划，s 是因果基线，now 为 steady 秒。
+  // 无返回值；冲突时将 Core block 并清计划，否则继承旧水位、归档旧 400 后才 track 新事务。
+  // 必须在本轮状态终态取证之后、记录输出活跃位之前执行；禁止覆盖未决同编号命令以制造可重试假象。
+  void track_attitude_request(Output& out, const Snapshot& s, double now) {
+    if (out.attitude.command != attitude::Command::None) {
+      const unsigned cmd = (out.attitude.command == attitude::Command::Offboard ||
+                            out.attitude.command == attitude::Command::ReleaseOffboard)
+                               ? 176
+                           : out.attitude.command == attitude::Command::Px4Land ? 21
+                                                                                : 400;
+      auto& p = pending_[index(cmd)];
+      if (p.sent && !p.accepted && !p.rejected && !p.timed_out && !p.state_verified) {
+        // Runtime prevents a second same-ID 400 command when neither the
+        // original ACK NOR its independent PX4 terminal state is known.
+        // Core recovery should normally defer this attempt, but if the
+        // precondition fails we cannot justify publishing either command.
+        attitude_core_.block("INDISTINGUISHABLE_OUTSTANDING_COMMAND");
+        out.attitude = {};
+      } else {
+        // 新事务继承旧ACK/status最大水位，旧400只进有界审计历史；新的请求不会清零旧wire因果关系。
+        const auto watermark = std::max({p.baseline, p.last_ack, p.status_at_wire});
+        const bool unresolved =
+            cmd == 400 && p.sent && (p.ack_ambiguous || !p.accepted || !p.state_verified);
+        if (cmd == 400 && p.requested)
+          archive_command400(p); // 仅归档旧事务；待处理事务和因果水位仍按原流程更新。
+        p = {};
+        p.baseline = watermark;
+        p.previous400_unresolved = unresolved;
+        track(cmd, s, now, out.attitude.command);
+      }
+    }
+  }
   // 只保留最近128笔展示审计；当前pending、全局提交次数、generation及ACK下界不参与淘汰。
   void archive_command400(const Pending& transaction) {
     // 这里只保留最近128笔审计记录，避免常驻服务每次任务结束后无限增加内存。

@@ -455,6 +455,86 @@ inline Decision release_publication_policy(const BoundaryContext& c) {
     return deny(BoundaryReason::ReleasePhase);
   return allow();
 }
+// 检查已通过健康/参考门的目标是否匹配锁定 yaw 或同一视觉计划；c/output 只读，无状态副作用。
+// 返回子检查的首个拒绝原因；NED/FRD 姿态沿用 Hamilton wxyz，角度计算及浮点顺序保持原样。
+// 仅供总策略在既有位置调用，不能独立作为发布许可；不采新上下文、不改变目标、不重新分配权限。
+inline Decision attitude_target_policy(const BoundaryContext& c, const Output& output) {
+  const auto commanded = normalized(output.q);
+  if (!commanded || !std::isfinite(c.yaw_reference))
+    return deny(BoundaryReason::CommandedAttitude);
+  Quaternion level{std::cos(c.yaw_reference / 2), 0, 0, std::sin(c.yaw_reference / 2)};
+  // 视觉运动只在明确开启且已离地 HeightHold 时允许，并与当前视觉计划四元数及倾角相符。
+  if (output.visual_motion) {
+    if (!c.config.visual.enabled || c.phase != Phase::HeightHold || !c.flight_started ||
+        !c.visual_motion_allowed || c.feedback.landed)
+      return deny(BoundaryReason::VisualInput);
+    const auto expected = normalized(c.visual_target_q);
+    if (!expected)
+      return deny(BoundaryReason::VisualAttitude);
+    level = *expected;
+    const double cosine = std::clamp(
+        1 - 2 * ((*commanded)[1] * (*commanded)[1] + (*commanded)[2] * (*commanded)[2]), -1., 1.);
+    if (std::acos(cosine) * 180 / 3.14159265358979323846 >
+        std::min(c.config.visual.max_tilt_deg, c.config.max_tilt_deg) + 1e-8)
+      return deny(BoundaryReason::VisualAttitude);
+  }
+  // 四元数点积绝对值给出最短转角；普通定高目标要接近锁定 yaw 的水平姿态，视觉目标采用更严同计划容差。
+  double dot = 0;
+  for (unsigned k = 0; k < 4; ++k)
+    dot += (*commanded)[k] * level[k];
+  const double angle = 2 * std::acos(std::clamp(std::abs(dot), 0., 1.));
+  if (!std::isfinite(angle) ||
+      angle > (output.visual_motion ? 1e-5 : 2. * 3.14159265358979323846 / 180.))
+    return deny(output.visual_motion ? BoundaryReason::VisualAttitude
+                                     : BoundaryReason::CommandedAttitude);
+  return allow();
+}
+// 检查 RC 准备阶段的零流、人工 Arm 证据与开关合同；参数均来自本次上下文，无状态副作用。
+// thrust_nonzero 必须由原始 double 推力计算；返回原首个拒绝原因，保留 pending_zero 的窄例外。
+// 仅在总策略完成目标姿态检查且确认 rc_stage 后调用；不授予解锁或导航权、不跨时钟比较 armed_time。
+inline Decision rc_preparation_output_policy(const BoundaryContext& c, bool thrust_nonzero) {
+  const auto& s = c.feedback;
+  if (!c.config.rc_navigation_enabled || thrust_nonzero)
+    return deny(BoundaryReason::StageOneNonzero);
+  const auto gates = flight_gates(c.config);
+  if (!gates.allowed)
+    return gates;
+  if (!c.session_connected)
+    return deny(BoundaryReason::SessionDisconnected);
+  if (!s.source_clock_validated || !RcNavigationStart::rc_live(s) || !s.rc_axes_safe ||
+      s.rc_sticks_moving || !s.rc_aux_switches_safe)
+    return deny(BoundaryReason::RcTelemetry);
+  if (!s.battery_ready || !s.preflight)
+    return deny(BoundaryReason::BatteryPreflight);
+  if (!s.landed || std::abs(c.reference_z - s.z) > c.config.height_tolerance ||
+      std::abs(s.vz) > c.config.ground_vz_tolerance)
+    return deny(BoundaryReason::ArmGround);
+  if (!s.stabilized_selected && !s.offboard)
+    return deny(BoundaryReason::ArmedOffboard);
+  // 等待新的人工解锁证据期间可维持原零心跳；必须仍在非 Offboard、非导航档，不能借此直接起飞。
+  const bool pending_zero = c.rc_arm_evidence_pending && !c.rc_manual_arm_proven &&
+                            !c.flight_started &&
+                            (c.phase == Phase::RcWaitArm || c.phase == Phase::RcWaitNavigation) &&
+                            !s.offboard && s.rc_mode_slot != c.config.rc_navigation_mode_slot;
+  const bool navigation_zero = c.rc_navigation_zero_allowed && c.rc_manual_arm_proven &&
+                               !c.flight_started && c.phase == Phase::RcWaitNavigation;
+  if (c.phase == Phase::RcWaitNavigation && c.rc_manual_arm_proven && !navigation_zero)
+    return deny(BoundaryReason::RcTelemetry);
+  if (!c.rc_manual_arm_proven && (s.armed || s.rc_arm_switch == 1) && !pending_zero)
+    return deny(BoundaryReason::ArmDisarmed);
+  if (s.armed && !pending_zero &&
+      (!c.rc_manual_arm_proven || s.rc_arm_switch != 1 || s.armed_time != c.rc_manual_armed_time ||
+       s.latest_arming_reason != 2))
+    return deny(BoundaryReason::ArmDisarmed);
+  if (s.offboard &&
+      (!s.armed || (s.rc_mode_slot != c.config.rc_navigation_mode_slot && !navigation_zero) ||
+       s.offboard_signal_lost))
+    return deny(BoundaryReason::ArmedOffboard);
+  if (c.phase != Phase::RcWaitNavigation && !pending_zero &&
+      (s.rc_arm_switch != 3 || s.rc_mode_slot == c.config.rc_navigation_mode_slot || s.offboard))
+    return deny(BoundaryReason::OperatorTakeover);
+  return boundary_authority(c);
+}
 // 姿态目标必须先通过原始 double 推力检查，避免转 float 下溢把微小非零错误伪装成零推力。
 inline Decision attitude_publication_policy(const BoundaryContext& c, const Output& output) {
   if (!output.publish)
@@ -502,78 +582,12 @@ inline Decision attitude_publication_policy(const BoundaryContext& c, const Outp
     return deny(BoundaryReason::FlightReference);
   // Common final sink gate: no ZERO thrust, stage-one, or release bypass of
   // target attitude/yaw reference. Exact-double nonzero test remains above.
-  const auto commanded = normalized(output.q);
-  if (!commanded || !std::isfinite(c.yaw_reference))
-    return deny(BoundaryReason::CommandedAttitude);
-  Quaternion level{std::cos(c.yaw_reference / 2), 0, 0, std::sin(c.yaw_reference / 2)};
-  // 视觉运动只在明确开启且已离地 HeightHold 时允许，并与当前视觉计划四元数及倾角相符。
-  if (output.visual_motion) {
-    if (!c.config.visual.enabled || c.phase != Phase::HeightHold || !c.flight_started ||
-        !c.visual_motion_allowed || c.feedback.landed)
-      return deny(BoundaryReason::VisualInput);
-    const auto expected = normalized(c.visual_target_q);
-    if (!expected)
-      return deny(BoundaryReason::VisualAttitude);
-    level = *expected;
-    const double cosine = std::clamp(
-        1 - 2 * ((*commanded)[1] * (*commanded)[1] + (*commanded)[2] * (*commanded)[2]), -1., 1.);
-    if (std::acos(cosine) * 180 / 3.14159265358979323846 >
-        std::min(c.config.visual.max_tilt_deg, c.config.max_tilt_deg) + 1e-8)
-      return deny(BoundaryReason::VisualAttitude);
-  }
-  // 四元数点积绝对值给出最短转角；普通定高目标要接近锁定 yaw 的水平姿态，视觉目标采用更严同计划容差。
-  double dot = 0;
-  for (unsigned k = 0; k < 4; ++k)
-    dot += (*commanded)[k] * level[k];
-  const double angle = 2 * std::acos(std::clamp(std::abs(dot), 0., 1.));
-  if (!std::isfinite(angle) ||
-      angle > (output.visual_motion ? 1e-5 : 2. * 3.14159265358979323846 / 180.))
-    return deny(output.visual_motion ? BoundaryReason::VisualAttitude
-                                     : BoundaryReason::CommandedAttitude);
+  const auto target = attitude_target_policy(c, output);
+  if (!target.allowed)
+    return target;
   // RC 准备仍要来源同步、中杆低油门、辅助开关安全、飞行前检查；允许的待证零推力不等于解锁确认。
-  if (rc_stage(c.phase)) {
-    const auto& s = c.feedback;
-    if (!c.config.rc_navigation_enabled || thrust_nonzero)
-      return deny(BoundaryReason::StageOneNonzero);
-    const auto gates = flight_gates(c.config);
-    if (!gates.allowed)
-      return gates;
-    if (!c.session_connected)
-      return deny(BoundaryReason::SessionDisconnected);
-    if (!s.source_clock_validated || !RcNavigationStart::rc_live(s) || !s.rc_axes_safe ||
-        s.rc_sticks_moving || !s.rc_aux_switches_safe)
-      return deny(BoundaryReason::RcTelemetry);
-    if (!s.battery_ready || !s.preflight)
-      return deny(BoundaryReason::BatteryPreflight);
-    if (!s.landed || std::abs(c.reference_z - s.z) > c.config.height_tolerance ||
-        std::abs(s.vz) > c.config.ground_vz_tolerance)
-      return deny(BoundaryReason::ArmGround);
-    if (!s.stabilized_selected && !s.offboard)
-      return deny(BoundaryReason::ArmedOffboard);
-    // 等待新的人工解锁证据期间可维持原零心跳；必须仍在非 Offboard、非导航档，不能借此直接起飞。
-    const bool pending_zero = c.rc_arm_evidence_pending && !c.rc_manual_arm_proven &&
-                              !c.flight_started &&
-                              (c.phase == Phase::RcWaitArm || c.phase == Phase::RcWaitNavigation) &&
-                              !s.offboard && s.rc_mode_slot != c.config.rc_navigation_mode_slot;
-    const bool navigation_zero = c.rc_navigation_zero_allowed && c.rc_manual_arm_proven &&
-                                 !c.flight_started && c.phase == Phase::RcWaitNavigation;
-    if (c.phase == Phase::RcWaitNavigation && c.rc_manual_arm_proven && !navigation_zero)
-      return deny(BoundaryReason::RcTelemetry);
-    if (!c.rc_manual_arm_proven && (s.armed || s.rc_arm_switch == 1) && !pending_zero)
-      return deny(BoundaryReason::ArmDisarmed);
-    if (s.armed && !pending_zero &&
-        (!c.rc_manual_arm_proven || s.rc_arm_switch != 1 ||
-         s.armed_time != c.rc_manual_armed_time || s.latest_arming_reason != 2))
-      return deny(BoundaryReason::ArmDisarmed);
-    if (s.offboard &&
-        (!s.armed || (s.rc_mode_slot != c.config.rc_navigation_mode_slot && !navigation_zero) ||
-         s.offboard_signal_lost))
-      return deny(BoundaryReason::ArmedOffboard);
-    if (c.phase != Phase::RcWaitNavigation && !pending_zero &&
-        (s.rc_arm_switch != 3 || s.rc_mode_slot == c.config.rc_navigation_mode_slot || s.offboard))
-      return deny(BoundaryReason::OperatorTakeover);
-    return boundary_authority(c);
-  }
+  if (rc_stage(c.phase))
+    return rc_preparation_output_policy(c, thrust_nonzero);
   // 释放只允许零推力并委托专门地面策略；不是绕开飞行动作门的动力入口。
   if (c.phase == Phase::ReleaseOffboard) {
     if (thrust_nonzero)

@@ -371,26 +371,7 @@ public:
     publication_audit_.begin(now);
     const std::string phase_before = runtime_->phase_name();
     auto s = snapshot(now);
-    // 地面停留必须有当前新鲜 status/land、未解锁和静止；姿态路线还要求有效 Z/Vz 与不变估计器参考。
-    bool resting =
-        s.status_fresh && s.land_fresh && !s.feedback.armed && s.feedback.landed && s.at_rest;
-    if (config_.profile == "attitude_altitude") {
-      resting = resting && s.local_fresh && local_.z_valid && local_.v_z_valid &&
-                std::isfinite(local_.z) && std::isfinite(local_.vz) &&
-                std::abs(local_.vz) <= config_.attitude.ground_vz_tolerance;
-      if (local_.z_reset_counter != ground_z_reset_ || local_.vz_reset_counter != ground_vz_reset_)
-        rest_since_ = -1;
-      ground_z_reset_ = local_.z_reset_counter;
-      ground_vz_reset_ = local_.vz_reset_counter;
-    }
-    if (resting) {
-      if (rest_since_ < 0)
-        rest_since_ = now;
-      s.stationary_seconds = now - rest_since_;
-    } else {
-      rest_since_ = -1;
-      s.stationary_seconds = 0;
-    }
+    const bool resting = update_stationary_evidence(s, now);
     // Queued events must use the same current ground dwell as step(). A
     // default-zero snapshot here would reset recovery even on healthy events.
     // Their individual unsafe payloads still veto recovery during the scan.
@@ -1304,6 +1285,195 @@ private:
     return true;
   }
   // 单线程tick内无回调，但时间与DDS discovery仍可变化；每次snapshot都重新核对源/接收年龄和权限。
+  // 用本轮快照累计未解锁静止地面窗口；s 为可更新快照，now 是 steady 秒，z/vz 为 NED m、m/s。
+  // 返回本轮 resting，并只更新 rest_since_/ground reset 水位及 s.stationary_seconds。
+  // 必须在危险队列观察之前执行：所有事件与 Core 要看到同一地面停留证据，reset 先清旧窗口。
+  bool update_stationary_evidence(f::Snapshot& s, double now) {
+    // 地面停留必须有当前新鲜 status/land、未解锁和静止；姿态路线还要求有效 Z/Vz 与不变估计器参考。
+    bool resting =
+        s.status_fresh && s.land_fresh && !s.feedback.armed && s.feedback.landed && s.at_rest;
+    if (config_.profile == "attitude_altitude") {
+      resting = resting && s.local_fresh && local_.z_valid && local_.v_z_valid &&
+                std::isfinite(local_.z) && std::isfinite(local_.vz) &&
+                std::abs(local_.vz) <= config_.attitude.ground_vz_tolerance;
+      if (local_.z_reset_counter != ground_z_reset_ || local_.vz_reset_counter != ground_vz_reset_)
+        rest_since_ = -1;
+      ground_z_reset_ = local_.z_reset_counter;
+      ground_vz_reset_ = local_.vz_reset_counter;
+    }
+    if (resting) {
+      if (rest_since_ < 0)
+        rest_since_ = now;
+      s.stationary_seconds = now - rest_since_;
+    } else {
+      rest_since_ = -1;
+      s.stationary_seconds = 0;
+    }
+    return resting;
+  }
+  // 按原字段顺序序列化 400/176 事务审计；无参数，返回逗号开头的 JSON 字段，不取新反馈或时钟。
+  // 只读取 Runtime 的 pending/有界历史；不接受 ACK、不改终态、不授予权限。
+  // state() 必须在原位置拼入，保留键名、null/数值约定与字节顺序，不能把 observed 写成已采用。
+  std::string transaction_fields() const {
+    std::ostringstream out;
+    out << ",\"m1_400_intent\":"
+        << f::quote(f::command400_name(runtime_->pending(400).command400_kind))
+        << ",\"m1_400_transaction_stage\":"
+        << f::quote(f::command_stage_name(runtime_->pending(400).stage))
+        << ",\"m1_400_wire_stamp\":" << runtime_->pending(400).wire_stamp
+        << ",\"m1_400_causal_floor\":" << runtime_->pending(400).causal_floor
+        << ",\"m1_400_clock_unattributed_acks\":" << runtime_->pending(400).unattributed_clock_acks
+        << ",\"m1_400_status_at_wire\":" << runtime_->pending(400).status_at_wire
+        << ",\"m1_400_ack_stamp\":" << runtime_->pending(400).ack_stamp
+        << ",\"m1_400_ack_accepted\":" << boolean(runtime_->pending(400).accepted)
+        << ",\"m1_400_ack_rejected\":" << boolean(runtime_->pending(400).rejected)
+        << ",\"m1_400_ack_ambiguous\":" << boolean(runtime_->pending(400).ack_ambiguous)
+        << ",\"m1_400_previous_unresolved\":"
+        << boolean(runtime_->pending(400).previous400_unresolved)
+        << ",\"m1_400_local_generation\":" << runtime_->pending(400).generation
+        << ",\"m1_400_ack_observations\":" << runtime_->pending(400).ack_observations
+        << ",\"m1_400_observed_result\":" << runtime_->pending(400).result
+        << ",\"m1_400_observed_result_name\":"
+        << f::quote(f::ack_result_name(runtime_->pending(400).result))
+        << ",\"m1_400_retained_history_count\":" << runtime_->command400_history().size()
+        << ",\"m1_400_external_review_required\":"
+        << boolean(runtime_->pending(400).sent && runtime_->pending(400).ack_ambiguous &&
+                   !runtime_->pending(400).state_verified)
+        << ",\"m1_400_state_verified\":" << boolean(runtime_->pending(400).state_verified)
+        << ",\"m1_400_verified_status_stamp\":" << runtime_->pending(400).verified_status_stamp
+        << ",\"m1_400_published\":" << boolean(runtime_->pending(400).published)
+        << ",\"m1_400_sink_denied\":" << boolean(runtime_->pending(400).sink_denied)
+        << ",\"m1_176_requested\":" << boolean(runtime_->pending(176).requested)
+        << ",\"m1_176_published\":" << boolean(runtime_->pending(176).published)
+        << ",\"m1_176_ack_policy\":\"R632_ACK176_STATE_CANDIDATE_V1\""
+        << ",\"m1_176_ack_candidate\":" << boolean(runtime_->pending(176).ack_candidate)
+        << ",\"m1_176_ack_accepted\":" << boolean(runtime_->pending(176).accepted)
+        << ",\"m1_176_ack_confirmed_by_state\":"
+        << boolean(runtime_->pending(176).ack_confirmed_by_state)
+        << ",\"m1_176_ack_disposition\":" << f::quote(runtime_->pending(176).ack_disposition)
+        << ",\"m1_176_transaction_stage\":"
+        << f::quote(f::command_stage_name(runtime_->pending(176).stage))
+        << ",\"m1_176_local_generation\":" << runtime_->pending(176).generation
+        << ",\"m1_176_wire_stamp\":" << runtime_->pending(176).wire_stamp
+        << ",\"m1_176_causal_floor\":" << runtime_->pending(176).causal_floor
+        << ",\"m1_176_ack_stamp\":" << runtime_->pending(176).ack_stamp
+        << ",\"m1_176_clock_unattributed_acks\":" << runtime_->pending(176).unattributed_clock_acks
+        << ",\"m1_176_verified_status_stamp\":" << runtime_->pending(176).verified_status_stamp;
+    return out.str();
+  }
+  // 将缓存 PX4 测量映射为通用反馈；s 的接收寿命和原始状态已由 snapshot 填好。
+  // 无返回值，更新 s.feedback/s.time_regressed 及原 heading reset 水位；NED m、m/s、heading rad。
+  // 必须在来源独占仲裁前执行；未知/失效位不补默认真，航向 reset 的活动任务否决保持原顺序。
+  void populate_velocity_feedback(f::Snapshot& s) {
+    // 通用反馈位置/速度均为NED，m与m/s；yaw来自PX4 heading，单位rad，valid还需有限值和估计器有效位。
+    auto& fb = s.feedback;
+    fb.position = {local_.x, local_.y, local_.z};
+    fb.velocity = {local_.vx, local_.vy, local_.vz};
+    fb.yaw = local_.heading;
+    fb.fresh = s.status_fresh && s.land_fresh && s.local_fresh;
+    fb.valid = local_.xy_valid && local_.z_valid && local_.v_xy_valid && local_.v_z_valid &&
+               v::finite(fb.position) && v::finite(fb.velocity) && std::isfinite(fb.yaw);
+    fb.heading_ok = local_.heading_good_for_control;
+    fb.preflight = status_.pre_flight_checks_pass;
+    fb.armed = status_.arming_state == Status::ARMING_STATE_ARMED;
+    fb.landed = land_.landed;
+    fb.offboard = s.nav_state == Status::NAVIGATION_STATE_OFFBOARD;
+    fb.landing = s.nav_state == Status::NAVIGATION_STATE_AUTO_LAND;
+    fb.failsafe = status_.failsafe;
+    // Each packed counter occupies its own byte. All position/velocity/heading resets terminate the mission.
+    // 四个重置计数各占一个byte；该通用路线把坐标重置视为旧任务参考失效。
+    fb.reset_id = std::uint32_t(local_.xy_reset_counter) |
+                  (std::uint32_t(local_.z_reset_counter) << 8) |
+                  (std::uint32_t(local_.vxy_reset_counter) << 16) |
+                  (std::uint32_t(local_.vz_reset_counter) << 24);
+    if (config_.profile != "attitude_altitude" && local_.heading_reset_counter != heading_reset_) {
+      heading_reset_ = local_.heading_reset_counter;
+      if (runtime_->active())
+        heading_changed_ = true;
+    }
+    s.time_regressed = s.time_regressed || heading_changed_;
+  }
+  // 映射姿态/垂向/RC反馈；graph 是本轮图计数，now 为 steady 秒，host_stamp 为同步域 µs。
+  // 无返回值，只更新 s 的健康/权限事实；四元数 wxyz、NED z/vz 保持原单位和符号。
+  // 仅在姿态 profile、通用映射与来源独占初查后调用；先消耗 raw 样本寿命再逐源验时，不能把 validated 当 valid。
+  void populate_attitude_feedback(f::Snapshot& s, const GraphCounts& graph, double now,
+                                  std::uint64_t host_stamp) {
+    auto& fb = s.feedback;
+    // 姿态路线允许无XY定高，但Z/Vz、姿态、来源/权限都按各自时限验证，不能因不用水平位置省略安全链。
+    auto& a = s.attitude;
+    a.attitude_fresh = attitude_stamp_.fresh(now, config_.attitude.attitude_timeout);
+    a.failsafe_fresh = flags_stamp_.fresh(now, config_.attitude.flags_timeout);
+    a.source_host_stamp = host_stamp;
+    a.local_sample_fresh = local_sample_.fresh(host_stamp, now, config_.attitude.local_timeout);
+    a.attitude_sample_fresh =
+        attitude_sample_.fresh(host_stamp, now, config_.attitude.attitude_timeout);
+    s.local_fresh = s.local_fresh && a.local_sample_fresh;
+    a.attitude_fresh = a.attitude_fresh && a.attitude_sample_fresh;
+    s.battery_fresh =
+        s.battery_fresh && f::source_stamp_in_clock(battery_stamp_.value, host_stamp, 1.);
+    fb.fresh = s.status_fresh && s.land_fresh && s.local_fresh;
+    // 逐源同步微秒域校验；validated表示执行了校验，不等于valid，真实sink时仍可能已过期。
+    a.source_clock_valid =
+        f::source_stamp_in_clock(status_stamp_.value, host_stamp,
+                                 config_.attitude.status_timeout) &&
+        f::source_stamp_in_clock(land_stamp_.value, host_stamp, config_.attitude.land_timeout) &&
+        f::source_sample_in_clock(local_stamp_.value, local_.timestamp_sample, host_stamp,
+                                  config_.attitude.local_timeout) &&
+        f::source_sample_in_clock(attitude_stamp_.value, attitude_.timestamp_sample, host_stamp,
+                                  config_.attitude.attitude_timeout) &&
+        f::source_stamp_in_clock(flags_stamp_.value, host_stamp, config_.attitude.flags_timeout) &&
+        f::source_stamp_in_clock(battery_stamp_.value, host_stamp, 1.);
+    a.source_clock_validated =
+        true; // validation performed; validity may expire after a sink commit
+    // PX4四元数顺序w,x,y,z；z/vz保持NED向下符号，垂向Core之后转换为向上高度/速度。
+    for (std::size_t i = 0; i < 4; ++i)
+      a.q[i] = attitude_.q[i];
+    a.quat_reset = attitude_.quat_reset_counter;
+    a.z = local_.z;
+    a.vz = local_.vz;
+    a.z_deriv = local_.z_deriv;
+    a.vertical_sample_stamp = local_.timestamp_sample;
+    a.z_reset = local_.z_reset_counter;
+    a.vz_reset = local_.vz_reset_counter;
+    a.z_valid = local_.z_valid;
+    a.vz_valid = local_.v_z_valid;
+    a.local_stamp = local_stamp_.value;
+    a.xy_valid = local_.xy_valid && !local_.dead_reckoning && std::isfinite(local_.x) &&
+                 std::isfinite(local_.y);
+    a.vxy_valid = local_.v_xy_valid && std::isfinite(local_.vx) && std::isfinite(local_.vy);
+    a.land_selectable =
+        (status_.can_set_nav_states_mask & (1U << Status::NAVIGATION_STATE_AUTO_LAND)) != 0;
+    // 把手动源与开关来源/时钟/新鲜度一起仲裁；RC可用不等于当前取得自动控制权限。
+    const auto authority = authority_telemetry_.facts(
+        now, config_.attitude.flags_timeout, a.failsafe_fresh, flags_.manual_control_signal_lost,
+        graph.manual, graph.switches, host_stamp);
+    a.rc_link_ready = authority.rc_link_ready;
+    a.rc_switches_ready = authority.rc_switches_ready;
+    a.rc_source_clock_valid = authority.rc_source_clock_valid;
+    a.rc_switch_clock_valid = authority.rc_switch_clock_valid;
+    a.rc_source_seen = authority.manual_seen;
+    a.rc_source_valid = authority.manual_valid;
+    a.rc_source_selected = authority.rc_source_selected;
+    a.rc_data_source = authority.data_source;
+    a.rc_sticks_moving = authority.sticks_moving;
+    a.rc_switches_seen = authority.switches_seen;
+    a.rc_switches_fresh = authority.switches_fresh;
+    a.rc_mode_slot = authority.mode_slot;
+    a.rc_arm_switch = authority.arm_switch;
+    a.rc_kill_switch = authority.kill_switch;
+    a.rc_axes_safe = authority.rc_axes_safe;
+    a.rc_throttle = authority.rc_throttle;
+    a.rc_aux_switches_safe = authority.rc_aux_switches_safe;
+    a.rc_switch_sample_stamp = authority.switch_sample_stamp;
+    a.operator_switch_generation = authority.switch_generation;
+    // Kill还包括当前TERMINATION及有效failsafe中的critical failure；人工接管与Offboard丢失单独保留。
+    a.kill = authority.kill ||
+             (s.status_fresh && status_.nav_state == Status::NAVIGATION_STATE_TERMINATION) ||
+             (a.failsafe_fresh && flags_.fd_critical_failure);
+    a.operator_takeover = s.status_fresh && status_.failsafe_and_user_took_over;
+    a.offboard_signal_lost = a.failsafe_fresh && flags_.offboard_control_signal_lost;
+    fb.exclusive = fb.exclusive && graph.attitude == 1;
+  }
   f::Snapshot snapshot(double now) {
     const double begin = steady();
     // SingleThreadedExecutor performs no callbacks during tick. Reuse only
@@ -1353,116 +1523,16 @@ private:
     s.manual_lost = flags_.manual_control_signal_lost;
     s.dead_reckoning = local_.dead_reckoning;
     s.nav_state = status_.nav_state;
-    // 通用反馈位置/速度均为NED，m与m/s；yaw来自PX4 heading，单位rad，valid还需有限值和估计器有效位。
+    populate_velocity_feedback(s);
     auto& fb = s.feedback;
-    fb.position = {local_.x, local_.y, local_.z};
-    fb.velocity = {local_.vx, local_.vy, local_.vz};
-    fb.yaw = local_.heading;
-    fb.fresh = s.status_fresh && s.land_fresh && s.local_fresh;
-    fb.valid = local_.xy_valid && local_.z_valid && local_.v_xy_valid && local_.v_z_valid &&
-               v::finite(fb.position) && v::finite(fb.velocity) && std::isfinite(fb.yaw);
-    fb.heading_ok = local_.heading_good_for_control;
-    fb.preflight = status_.pre_flight_checks_pass;
-    fb.armed = status_.arming_state == Status::ARMING_STATE_ARMED;
-    fb.landed = land_.landed;
-    fb.offboard = s.nav_state == Status::NAVIGATION_STATE_OFFBOARD;
-    fb.landing = s.nav_state == Status::NAVIGATION_STATE_AUTO_LAND;
-    fb.failsafe = status_.failsafe;
-    // Each packed counter occupies its own byte. All position/velocity/heading resets terminate the mission.
-    // 四个重置计数各占一个byte；该通用路线把坐标重置视为旧任务参考失效。
-    fb.reset_id = std::uint32_t(local_.xy_reset_counter) |
-                  (std::uint32_t(local_.z_reset_counter) << 8) |
-                  (std::uint32_t(local_.vxy_reset_counter) << 16) |
-                  (std::uint32_t(local_.vz_reset_counter) << 24);
-    if (config_.profile != "attitude_altitude" && local_.heading_reset_counter != heading_reset_) {
-      heading_reset_ = local_.heading_reset_counter;
-      if (runtime_->active())
-        heading_changed_ = true;
-    }
-    s.time_regressed = s.time_regressed || heading_changed_;
     s.traffic = graph.traffic;
     fb.exclusive = s.system == 1 && s.component == 1 && s.traffic.status_publishers == 1 &&
                    s.traffic.land_publishers == 1 && s.traffic.ack_publishers == 1 &&
                    s.traffic.command_subscribers == 1 && s.traffic.command_publishers == 1 &&
                    graph.local == 1;
     fb.exclusive = fb.exclusive && f::attitude::owns_setpoints(config_.profile, graph.ownership);
-    if (config_.profile == "attitude_altitude") {
-      // 姿态路线允许无XY定高，但Z/Vz、姿态、来源/权限都按各自时限验证，不能因不用水平位置省略安全链。
-      auto& a = s.attitude;
-      a.attitude_fresh = attitude_stamp_.fresh(now, config_.attitude.attitude_timeout);
-      a.failsafe_fresh = flags_stamp_.fresh(now, config_.attitude.flags_timeout);
-      a.source_host_stamp = host_stamp;
-      a.local_sample_fresh = local_sample_.fresh(host_stamp, now, config_.attitude.local_timeout);
-      a.attitude_sample_fresh =
-          attitude_sample_.fresh(host_stamp, now, config_.attitude.attitude_timeout);
-      s.local_fresh = s.local_fresh && a.local_sample_fresh;
-      a.attitude_fresh = a.attitude_fresh && a.attitude_sample_fresh;
-      s.battery_fresh =
-          s.battery_fresh && f::source_stamp_in_clock(battery_stamp_.value, host_stamp, 1.);
-      fb.fresh = s.status_fresh && s.land_fresh && s.local_fresh;
-      // 逐源同步微秒域校验；validated表示执行了校验，不等于valid，真实sink时仍可能已过期。
-      a.source_clock_valid =
-          f::source_stamp_in_clock(status_stamp_.value, host_stamp,
-                                   config_.attitude.status_timeout) &&
-          f::source_stamp_in_clock(land_stamp_.value, host_stamp, config_.attitude.land_timeout) &&
-          f::source_sample_in_clock(local_stamp_.value, local_.timestamp_sample, host_stamp,
-                                    config_.attitude.local_timeout) &&
-          f::source_sample_in_clock(attitude_stamp_.value, attitude_.timestamp_sample, host_stamp,
-                                    config_.attitude.attitude_timeout) &&
-          f::source_stamp_in_clock(flags_stamp_.value, host_stamp,
-                                   config_.attitude.flags_timeout) &&
-          f::source_stamp_in_clock(battery_stamp_.value, host_stamp, 1.);
-      a.source_clock_validated =
-          true; // validation performed; validity may expire after a sink commit
-      // PX4四元数顺序w,x,y,z；z/vz保持NED向下符号，垂向Core之后转换为向上高度/速度。
-      for (std::size_t i = 0; i < 4; ++i)
-        a.q[i] = attitude_.q[i];
-      a.quat_reset = attitude_.quat_reset_counter;
-      a.z = local_.z;
-      a.vz = local_.vz;
-      a.z_deriv = local_.z_deriv;
-      a.vertical_sample_stamp = local_.timestamp_sample;
-      a.z_reset = local_.z_reset_counter;
-      a.vz_reset = local_.vz_reset_counter;
-      a.z_valid = local_.z_valid;
-      a.vz_valid = local_.v_z_valid;
-      a.local_stamp = local_stamp_.value;
-      a.xy_valid = local_.xy_valid && !local_.dead_reckoning && std::isfinite(local_.x) &&
-                   std::isfinite(local_.y);
-      a.vxy_valid = local_.v_xy_valid && std::isfinite(local_.vx) && std::isfinite(local_.vy);
-      a.land_selectable =
-          (status_.can_set_nav_states_mask & (1U << Status::NAVIGATION_STATE_AUTO_LAND)) != 0;
-      // 把手动源与开关来源/时钟/新鲜度一起仲裁；RC可用不等于当前取得自动控制权限。
-      const auto authority = authority_telemetry_.facts(
-          now, config_.attitude.flags_timeout, a.failsafe_fresh, flags_.manual_control_signal_lost,
-          graph.manual, graph.switches, host_stamp);
-      a.rc_link_ready = authority.rc_link_ready;
-      a.rc_switches_ready = authority.rc_switches_ready;
-      a.rc_source_clock_valid = authority.rc_source_clock_valid;
-      a.rc_switch_clock_valid = authority.rc_switch_clock_valid;
-      a.rc_source_seen = authority.manual_seen;
-      a.rc_source_valid = authority.manual_valid;
-      a.rc_source_selected = authority.rc_source_selected;
-      a.rc_data_source = authority.data_source;
-      a.rc_sticks_moving = authority.sticks_moving;
-      a.rc_switches_seen = authority.switches_seen;
-      a.rc_switches_fresh = authority.switches_fresh;
-      a.rc_mode_slot = authority.mode_slot;
-      a.rc_arm_switch = authority.arm_switch;
-      a.rc_kill_switch = authority.kill_switch;
-      a.rc_axes_safe = authority.rc_axes_safe;
-      a.rc_throttle = authority.rc_throttle;
-      a.rc_aux_switches_safe = authority.rc_aux_switches_safe;
-      a.rc_switch_sample_stamp = authority.switch_sample_stamp;
-      a.operator_switch_generation = authority.switch_generation;
-      // Kill还包括当前TERMINATION及有效failsafe中的critical failure；人工接管与Offboard丢失单独保留。
-      a.kill = authority.kill ||
-               (s.status_fresh && status_.nav_state == Status::NAVIGATION_STATE_TERMINATION) ||
-               (a.failsafe_fresh && flags_.fd_critical_failure);
-      a.operator_takeover = s.status_fresh && status_.failsafe_and_user_took_over;
-      a.offboard_signal_lost = a.failsafe_fresh && flags_.offboard_control_signal_lost;
-      fb.exclusive = fb.exclusive && graph.attitude == 1;
-    }
+    if (config_.profile == "attitude_altitude")
+      populate_attitude_feedback(s, graph, now, host_stamp);
     if (config_.profile != "sim" && (graph.battery != 1 || graph.flags != 1))
       fb.exclusive = false;
     // 视觉开关false时不取Inbox、不构成新准入条件；保留原无视觉1.5m路线。
@@ -1907,52 +1977,9 @@ private:
         << ",\"m1_operator_release_requested\":"
         << boolean(runtime_->attitude_core().operator_release_requested())
         << ",\"m1_400_requested\":" << boolean(runtime_->pending(400).requested)
-        << ",\"m1_400_intent\":"
-        << f::quote(f::command400_name(runtime_->pending(400).command400_kind))
-        << ",\"m1_400_transaction_stage\":"
-        << f::quote(f::command_stage_name(runtime_->pending(400).stage))
-        << ",\"m1_400_wire_stamp\":" << runtime_->pending(400).wire_stamp
-        << ",\"m1_400_causal_floor\":" << runtime_->pending(400).causal_floor
-        << ",\"m1_400_clock_unattributed_acks\":" << runtime_->pending(400).unattributed_clock_acks
-        << ",\"m1_400_status_at_wire\":" << runtime_->pending(400).status_at_wire
-        << ",\"m1_400_ack_stamp\":" << runtime_->pending(400).ack_stamp
-        << ",\"m1_400_ack_accepted\":" << boolean(runtime_->pending(400).accepted)
-        << ",\"m1_400_ack_rejected\":" << boolean(runtime_->pending(400).rejected)
-        << ",\"m1_400_ack_ambiguous\":" << boolean(runtime_->pending(400).ack_ambiguous)
-        << ",\"m1_400_previous_unresolved\":"
-        << boolean(runtime_->pending(400).previous400_unresolved)
-        << ",\"m1_400_local_generation\":" << runtime_->pending(400).generation
-        << ",\"m1_400_ack_observations\":" << runtime_->pending(400).ack_observations
-        << ",\"m1_400_observed_result\":" << runtime_->pending(400).result
-        << ",\"m1_400_observed_result_name\":"
-        << f::quote(f::ack_result_name(runtime_->pending(400).result))
-        << ",\"m1_400_retained_history_count\":" << runtime_->command400_history().size()
-        << ",\"m1_400_external_review_required\":"
-        << boolean(runtime_->pending(400).sent && runtime_->pending(400).ack_ambiguous &&
-                   !runtime_->pending(400).state_verified)
-        << ",\"m1_400_state_verified\":" << boolean(runtime_->pending(400).state_verified)
-        << ",\"m1_400_verified_status_stamp\":" << runtime_->pending(400).verified_status_stamp
-        << ",\"m1_400_published\":" << boolean(runtime_->pending(400).published)
-        << ",\"m1_400_sink_denied\":" << boolean(runtime_->pending(400).sink_denied)
-        << ",\"m1_176_requested\":" << boolean(runtime_->pending(176).requested)
-        << ",\"m1_176_published\":" << boolean(runtime_->pending(176).published)
-        << ",\"m1_176_ack_policy\":\"R632_ACK176_STATE_CANDIDATE_V1\""
-        << ",\"m1_176_ack_candidate\":" << boolean(runtime_->pending(176).ack_candidate)
-        << ",\"m1_176_ack_accepted\":" << boolean(runtime_->pending(176).accepted)
-        << ",\"m1_176_ack_confirmed_by_state\":"
-        << boolean(runtime_->pending(176).ack_confirmed_by_state)
-        << ",\"m1_176_ack_disposition\":" << f::quote(runtime_->pending(176).ack_disposition)
-        << ",\"m1_176_transaction_stage\":"
-        << f::quote(f::command_stage_name(runtime_->pending(176).stage))
-        << ",\"m1_176_local_generation\":" << runtime_->pending(176).generation
-        << ",\"m1_176_wire_stamp\":" << runtime_->pending(176).wire_stamp
-        << ",\"m1_176_causal_floor\":" << runtime_->pending(176).causal_floor
-        << ",\"m1_176_ack_stamp\":" << runtime_->pending(176).ack_stamp
-        << ",\"m1_176_clock_unattributed_acks\":" << runtime_->pending(176).unattributed_clock_acks
-        << ",\"m1_176_verified_status_stamp\":" << runtime_->pending(176).verified_status_stamp
-        << ",\"attitude_setpoint_q\":[" << number(last_attitude_output_.q[0]) << ','
-        << number(last_attitude_output_.q[1]) << ',' << number(last_attitude_output_.q[2]) << ','
-        << number(last_attitude_output_.q[3]) << "]"
+        << transaction_fields() << ",\"attitude_setpoint_q\":["
+        << number(last_attitude_output_.q[0]) << ',' << number(last_attitude_output_.q[1]) << ','
+        << number(last_attitude_output_.q[2]) << ',' << number(last_attitude_output_.q[3]) << "]"
         << ",\"thrust_body\":[" << number(last_attitude_output_.thrust[0]) << ','
         << number(last_attitude_output_.thrust[1]) << ',' << number(last_attitude_output_.thrust[2])
         << "]"

@@ -71,6 +71,18 @@ public:
   // 同一轮先尝试接入，再发送残留、接收并分行处理；第二客户端只收到 CONSOLE_BUSY 后关闭。
   void poll(const std::function<std::string(const Request&)>& handle,
             const std::function<void()>& disconnected) {
+    accept_client();
+    if (client_ < 0)
+      return;
+    if (!flush_output(disconnected))
+      return;
+    receive_requests(handle, disconnected);
+  }
+
+private:
+  // 每轮只尝试接入一个客户端；无参数/返回值，只更新自身连接与缓冲，第二客户端仍立即拒绝。
+  // 无时钟或坐标语义；必须在发送/接收前执行，不能把新客户端与旧会话序号、待发数据混合。
+  void accept_client() {
     int accepted = ::accept4(listener_, nullptr, nullptr, SOCK_NONBLOCK | SOCK_CLOEXEC);
     if (accepted >= 0) {
       if (client_ >= 0) {
@@ -84,12 +96,15 @@ public:
         last_seq_ = 0;
       }
     }
-    if (client_ < 0)
-      return;
+  }
+  // 排空已有发送缓冲的一次非阻塞尝试；回调仅在 drop 清连接之后执行。
+  // 返回 true 表示本轮可继续接收（含 EAGAIN）；false 表示背压或硬错误已断开，调用者必须立即返回。
+  // 先判 64 KiB 上限再 send，保持原内存界限、errno 分支与副作用顺序，不循环等待 socket。
+  bool flush_output(const std::function<void()>& disconnected) {
     // 控制台背压不能拖住控制租约或无界占内存；显式掉线交给上层原有恢复策略。
     if (output_.size() > 65536) {
       drop(disconnected);
-      return;
+      return false;
     }
     if (!output_.empty()) {
       auto n = ::send(client_, output_.data(), output_.size(), MSG_NOSIGNAL);
@@ -97,9 +112,16 @@ public:
         output_.erase(0, std::size_t(n));
       else if (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
         drop(disconnected);
-        return;
+        return false;
       }
     }
+    return true;
+  }
+  // 每轮最多 recv 4096 字节，再按原顺序处理所有完整行；handle 返回的响应仍先追加缓冲。
+  // 无返回值；更新 input_/last_seq_/output_，解析、序号或业务异常先 drop 后通知上层。
+  // 只在接入和发送阶段成功后调用；不改分帧、1024 字节残行上限，也不引入新的租约/时钟。
+  void receive_requests(const std::function<std::string(const Request&)>& handle,
+                        const std::function<void()>& disconnected) {
     char buffer[4096];
     auto n = ::recv(client_, buffer, sizeof(buffer), 0);
     if (n == 0) {
@@ -130,8 +152,6 @@ public:
     if (input_.size() > 1024)
       drop(disconnected);
   }
-
-private:
   // 同时证明锁路径身份与 socket inode，不能仅按路径字符串 unlink 别人替换的新 socket。
   void remove_owned_socket() {
     struct stat st {};
