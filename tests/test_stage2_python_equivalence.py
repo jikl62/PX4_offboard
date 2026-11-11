@@ -1,4 +1,4 @@
-"""第二阶段Python服务动态对照：同一确定性fixture分别运行5198d33和当前源码，严格比较轨迹。"""
+"""历史服务动态对照；第三阶段仅明确允许 disk-full 的已修复清理差异，其余字节严格比较。"""
 
 from __future__ import annotations
 import json
@@ -76,18 +76,21 @@ class PythonServiceEquivalenceTests(unittest.TestCase):
         cls.temp.cleanup()
 
     def compare(self, scenario):
-        """隔离进程使用同一路径/输入，JSON轨迹完全一致才通过，异常输出也属于轨迹。"""
+        """隔离进程使用同一路径/输入；只允许明确列出的 probe 清理修复，其余 JSON 字节一致。"""
         values = []
         streams = []
         for root in [self.baseline, ROOT]:
+            command = [
+                sys.executable,
+                str(ROOT / 'tests/stage2_python_trace.py'),
+                str(root),
+                str(self.base / 'fixture'),
+                scenario,
+            ]
+            if scenario == 'probe' and root == ROOT:
+                command.append('--probe-cleanup-fixed')
             result = subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / 'tests/stage2_python_trace.py'),
-                    str(root),
-                    str(self.base / 'fixture'),
-                    scenario,
-                ],
+                command,
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -105,7 +108,24 @@ class PythonServiceEquivalenceTests(unittest.TestCase):
                     json.dumps(value, ensure_ascii=False, indent=2) + '\n'
                 )
         # 比较规范JSON原字节，不能用Python的True==1或1==1.0弱相等掩盖类型差异。
-        self.assertEqual(streams[0], streams[1], scenario + ' baseline/current trace differs')
+        if scenario == 'probe':
+            expected = json.loads(streams[0])
+            disk = [row for row in expected if row['scenario'] == 'disk-full']
+            self.assertEqual(len(disk), 1)
+            self.assertTrue(disk[0]['known_cleanup_defect'])
+            self.assertTrue(disk[0]['ros_context_alive'])
+            self.assertNotIn(['destroy-node'], disk[0]['events'])
+            self.assertNotIn(['shutdown'], disk[0]['events'])
+            # 只允许已确认的释放缺口修复；原 OSError、订阅、证据、输出和其余四场景不能变化。
+            disk[0]['events'].extend([['destroy-node'], ['shutdown']])
+            disk[0]['ros_context_alive'] = False
+            disk[0]['known_cleanup_defect'] = False
+            expected_stream = (
+                json.dumps(expected, ensure_ascii=False, sort_keys=True, allow_nan=False) + '\n'
+            )
+            self.assertEqual(expected_stream, streams[1], 'unexplained probe trace difference')
+        else:
+            self.assertEqual(streams[0], streams[1], scenario + ' baseline/current trace differs')
 
     def test_status_output_bytes(self):
         self.compare('render')

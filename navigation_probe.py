@@ -8,6 +8,7 @@ import math
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 
 from launcher import ControlError, choose_agent, process_list, uart_owners
@@ -226,6 +227,103 @@ def _create_ground_subscriptions(node, evidence, rc, status_type, land_type, qos
     return subs, rc_topics
 
 
+def _write_probe_evidence(path, evidence, rc, agent_pid, created, ok, verified_at):
+    """保存当前观察结果；参数沿用 probe 本轮状态，wall/monotonic 秒及字段含义不变。
+
+    本函数只写证据，不关闭 ROS 或 Agent。读取 boot_id、序列化及写盘的错误均向调用者传播，
+    由外层统一保证资源释放，不能把写盘失败解释成部署许可。
+    """
+    path.write_text(
+        json.dumps(
+            dict(
+                ok=ok,
+                reason=evidence.reason,
+                armed_seen=evidence.armed_seen,
+                samples=evidence.counts,
+                rc_samples=rc.counts if rc else None,
+                rc_safe=ok if rc else None,
+                agent_pid=agent_pid,
+                agent_created=created,
+                agent_retained=not created,
+                updated_unix=time.time(),
+                updated_monotonic=verified_at,
+                boot_id=Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
+            ),
+            ensure_ascii=False,
+            indent=2,
+        )
+        + '\n'
+    )
+
+
+def _append_probe_cleanup_errors(primary, errors):
+    """把后续清理错误接到首异常链尾，不替换原异常对象、traceback 或已有显式 cause。
+
+    Python 3.10 没有内置 ExceptionGroup。各清理步骤在同一个 finally 中捕获异常时，
+    Python 会自动把正在传播的业务错误设为它们的 context；连接前须剪掉这条回边，
+    否则形成循环，traceback 可能漏掉真正的首错。只调整本轮已捕获的异常链。
+    """
+    seen = set()
+
+    def chain_tail(error):
+        """沿实际会显示的 cause/context 找到链尾；记录对象身份，遇回边时仅剪断该边。"""
+        while True:
+            seen.add(id(error))
+            following = error.__cause__
+            if following is None and not error.__suppress_context__:
+                following = error.__context__
+            if following is None:
+                return error
+            if id(following) in seen:
+                if error.__cause__ is following:
+                    error.__cause__ = None
+                if error.__context__ is following:
+                    error.__context__ = None
+                error.__suppress_context__ = False
+                return error
+            error = following
+
+    tail = chain_tail(primary)
+    for error in errors:
+        if id(error) not in seen:
+            next_tail = chain_tail(error)
+            tail.__context__ = error
+            tail.__suppress_context__ = False
+            tail = next_tail
+
+
+def _finish_probe(save_evidence, node, rclpy, owns_context, primary_error):
+    """按证据写入→Node 销毁→自有 Context 关闭顺序收尾，每一步失败仍尝试后续步骤。
+
+    save_evidence 无参数；node 可为 None。owns_context 只表示本轮 init 尝试前默认
+    Context 尚未活跃，不授权关闭调用前已活跃的 Context。probe 仍是单次、非并发生命周期，
+    本轮不把全局默认 Context 改成多调用者隔离模型。
+
+    原业务异常优先；没有业务异常时，首次写入/清理异常优先。后续错误保留在异常链，
+    包括 KeyboardInterrupt/SystemExit，不能因第二次异常跳过尚未尝试的释放步骤。
+    """
+    errors = []
+    try:
+        save_evidence()
+    except BaseException as error:
+        errors.append(error)
+    try:
+        if node is not None:
+            node.destroy_node()
+    except BaseException as error:
+        errors.append(error)
+    try:
+        if owns_context and rclpy.ok():
+            rclpy.shutdown()
+    except BaseException as error:
+        errors.append(error)
+    if primary_error is not None:
+        _append_probe_cleanup_errors(primary_error, errors)
+    elif errors:
+        _append_probe_cleanup_errors(errors[0], errors[1:])
+        raise errors[0]
+
+
 # 18秒内只观察；优先复用同用户同UART既有Agent，在线激活可要求已有Agent，禁止临时启动第二个。
 def probe(
     root,
@@ -247,6 +345,7 @@ def probe(
     agent_pid = None
     created = False
     node = None
+    owns_context = False
     ok = False
     verified_at = 0.0
     try:
@@ -266,6 +365,9 @@ def probe(
             )
             agent_pid = child.pid
             created = True
+        # 查询失败时不声称拥有 Context；init 中途新激活后抛错也须由本轮尝试关闭。
+        # 调用前已活跃的默认 Context 属于外层，init 拒绝时不能顺手关闭它。
+        owns_context = not rclpy.ok()
         rclpy.init()
         node = rclpy.create_node('fc01_install_ground_observer')
 
@@ -304,28 +406,12 @@ def probe(
         return 0
     # 无论成功失败都保存本次探针身份/原因；销毁本节点，不结束既有Agent或改变服务。
     finally:
-        evidence_path.write_text(
-            json.dumps(
-                dict(
-                    ok=ok,
-                    reason=evidence.reason,
-                    armed_seen=evidence.armed_seen,
-                    samples=evidence.counts,
-                    rc_samples=rc.counts if rc else None,
-                    rc_safe=ok if rc else None,
-                    agent_pid=agent_pid,
-                    agent_created=created,
-                    agent_retained=not created,
-                    updated_unix=time.time(),
-                    updated_monotonic=verified_at,
-                    boot_id=Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
-                ),
-                ensure_ascii=False,
-                indent=2,
-            )
-            + '\n'
+        _finish_probe(
+            lambda: _write_probe_evidence(
+                evidence_path, evidence, rc, agent_pid, created, ok, verified_at
+            ),
+            node,
+            rclpy,
+            owns_context,
+            sys.exc_info()[1],
         )
-        if node is not None:
-            node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()

@@ -1180,6 +1180,7 @@ def main():
     parser.add_argument('root', type=Path)
     parser.add_argument('folder', type=Path)
     parser.add_argument('scenario')
+    parser.add_argument('--probe-cleanup-fixed', action='store_true')
     args = parser.parse_args()
     root = args.root.resolve()
     sys.path.insert(0, str(root))
@@ -1196,7 +1197,10 @@ def main():
     if args.folder.exists():
         shutil.rmtree(args.folder)
     args.folder.mkdir(parents=True)
-    trace = globals()[args.scenario + '_trace'](root, args.folder)
+    kwargs = (
+        {'expect_cleanup_gap': not args.probe_cleanup_fixed} if args.scenario == 'probe' else {}
+    )
+    trace = globals()[args.scenario + '_trace'](root, args.folder, **kwargs)
 
     def canonical(value):
         if isinstance(value, float) and not math.isfinite(value):
