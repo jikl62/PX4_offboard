@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <mutex>
+#include <new>
 #include <poll.h>
 #include <stdexcept>
 #include <streambuf>
@@ -24,18 +25,28 @@ inline std::atomic<unsigned long long> native_log_dropped{0};
 class AsyncLog final : private std::streambuf {
 public:
   // 忽略 SIGPIPE 并将 stdout 置为非阻塞；终端消失不能通过信号直接杀死控制进程。
+  // 系统设置与工作线程全部取得后才接管标准流；中途失败恢复已改设置并传播原异常。
   AsyncLog() {
     struct sigaction ignore {};
     ignore.sa_handler = SIG_IGN;
     sigemptyset(&ignore.sa_mask);
     if (sigaction(SIGPIPE, &ignore, &pipe_signal_) < 0)
       throw std::runtime_error("cannot protect native log pipe");
-    flags_ = fcntl(STDOUT_FILENO, F_GETFL);
-    if (flags_ < 0 || fcntl(STDOUT_FILENO, F_SETFL, flags_ | O_NONBLOCK) < 0)
-      throw std::runtime_error("cannot configure nonblocking native log sink");
-    worker_ = std::thread([this] {
-      consume();
-    });
+    try {
+      flags_ = fcntl(STDOUT_FILENO, F_GETFL);
+      if (flags_ < 0 || fcntl(STDOUT_FILENO, F_SETFL, flags_ | O_NONBLOCK) < 0)
+        throw std::runtime_error("cannot configure nonblocking native log sink");
+      worker_ = std::thread([this] {
+        consume();
+      });
+    } catch (...) {
+      // 构造未完成时不会调用析构函数，必须在此恢复进程级设置。回滚不覆盖首个错误；
+      // 若操作系统连恢复系统调用也拒绝，无法承诺恢复成功，不能把此路径当飞行许可。
+      if (flags_ >= 0)
+        fcntl(STDOUT_FILENO, F_SETFL, flags_);
+      sigaction(SIGPIPE, &pipe_signal_, nullptr);
+      throw;
+    }
     cout_ = std::cout.rdbuf(this);
     cerr_ = std::cerr.rdbuf(this);
   }
@@ -71,8 +82,15 @@ private:
     if (std::size_t(n) > 65536 || pending_.size() + std::size_t(n) > 65536) {
       pending_.clear();
       ++native_log_dropped;
-    } else
-      pending_.append(data, std::size_t(n));
+    } else {
+      try {
+        pending_.append(data, std::size_t(n));
+      } catch (const std::bad_alloc&) {
+        // 日志分配失败按整段丢弃处理；不能让 ostream 永久置 badbit 后静默停记。
+        pending_.clear();
+        ++native_log_dropped;
+      }
+    }
     return n;
   }
   int_type overflow(int_type ch) override {
@@ -90,10 +108,17 @@ private:
         ++native_log_dropped;
         pending_.clear();
       } else {
-        bytes_ += pending_.size();
-        queue_.push_back(std::move(pending_));
+        const auto size = pending_.size();
+        try {
+          queue_.push_back(std::move(pending_));
+          // push_back 成功才提交队列字节数；失败不能留下没有对应记录的预算水位。
+          bytes_ += size;
+          ready_.notify_one();
+        } catch (const std::bad_alloc&) {
+          // 析构也会调用 sync；内存不足丢弃本段并计数，不从 noexcept 析构传播异常。
+          ++native_log_dropped;
+        }
         pending_.clear();
-        ready_.notify_one();
       }
     }
     return 0;
@@ -136,7 +161,7 @@ private:
       }
     }
   }
-  int flags_{};
+  int flags_{-1};
   std::streambuf *cout_{}, *cerr_{};
   struct sigaction pipe_signal_ {};
   // mutex_ 同时保护生产缓存、队列和字节计数；deadline_ 跨线程观察，worker_ 只消费输出。

@@ -19,5 +19,10 @@ foreach(source IN LISTS FC01_TESTS)
   # 直接包含生产纯核心头文件，验证同一份控制实现，不复制替身算法。
   target_include_directories("${name}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src/jikl_fc01_system/include")
   # CTest 运行测试入口中的 assert 合同；Release 构建需留意 NDEBUG，验证任务使用 Debug。
+  # 资源故障注入只链接到该测试；生产日志代码没有测试钩子或运行时故障开关。
+  if(name STREQUAL "test_stage3_async_log_resources")
+    target_link_options("${name}" PRIVATE -Wl,--wrap=fcntl -Wl,--wrap=write)
+    target_link_libraries("${name}" PRIVATE ${CMAKE_DL_LIBS})
+  endif()
   add_test(NAME "${name}" COMMAND "${name}")
 endforeach()
