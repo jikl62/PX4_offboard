@@ -1,3 +1,5 @@
+# 生成的 Python 会话参数须交由真实 C++ Config::validate 校验，避免两套 Python 规则相互自证。
+# 从真实 ROS 参数映射头提取字段，临时编译无 ROS 的 probe；只做配置解析，不启动控制节点。
 """Exercise generated session parameters against the unchanged native validator."""
 import json
 import os
@@ -14,7 +16,9 @@ from fc01_control import runtime_profile
 ROOT = Path(__file__).resolve().parents[1]
 
 
+# 检查 Python 与原生参数合同一致：诊断/飞行会话可解析，旧 flight 总开关仍被拒绝。
 class NativeProfileContract(unittest.TestCase):
+    # 优先用当前工作树头文件；编译器/头缺失才显式跳过，映射数量变化则要求人工复核。
     @classmethod
     def setUpClass(cls):
         reference = ROOT.parent/'control_sources/FC01_R632_P0_Attitude_Audit_Candidate_20261019/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE'
@@ -60,6 +64,7 @@ int main(){
         if built.returncode:
             raise AssertionError('native config probe failed to compile:\n'+built.stderr)
 
+    # 将参数序列化给临时 probe 的 stdin，检查的是实际原生验证返回码。
     def run_native(self, params):
         values = []
         for name, value in params.items():
@@ -67,18 +72,22 @@ int main(){
             values.append(json.dumps(name)+' '+json.dumps(text))
         return subprocess.run([str(self.binary)], input='\n'.join(values), capture_output=True, text=True, timeout=3)
 
+    # 读取只供本测试的 baseline YAML 并生成会话副本，原配置不被覆写。
     def parameters(self, flight):
         base = yaml.safe_load((ROOT/'tests/fixtures/base.yaml').read_text())
         return runtime_profile(base, flight)['fc01_system']['ros__parameters']
 
+    # 显式 flight 会话的参数应满足原生候选合同，但此测试并不表示取得实机飞行许可。
     def test_flight_session_is_accepted_by_actual_native_config(self):
         result = self.run_native(self.parameters(True))
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    # 所有动作门关闭的检查配置也必须是原生可接受配置。
     def test_check_session_is_accepted_by_actual_native_config(self):
         result = self.run_native(self.parameters(False))
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    # 姿态高度模式禁止复用旧 flight_enabled 通用入口，避免绕过专用权限门。
     def test_native_validator_rejects_legacy_flight_flag_in_attitude_mode(self):
         params = self.parameters(False)
         params['flight_enabled'] = True

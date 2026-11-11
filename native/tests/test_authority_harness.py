@@ -1,10 +1,14 @@
+# 真实权限核心的离线场景汇总：比较两次输出，检查24个场景的命令与双sink证据。
+# 合成RC/自主授权只在测试夹具内生效；hardware_authorized必须仍为false。
 import json
 from pathlib import Path
 import subprocess
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
+# 按场景名称检查成功与拒绝路径，避免仅依据总通过数判断。
 class AuthorityHarnessTests(unittest.TestCase):
+    # 同一输入两次执行必须逐字节一致；拒绝场景不得产生Arm或非零推力，目标与心跳提交次数须一致。
     def test_deterministic_real_core_and_sink_evidence(self):
         command=['bash',str(ROOT/'scripts/test_authority_harness.sh')]
         first=subprocess.check_output(command)

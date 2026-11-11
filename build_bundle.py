@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 历史交互控制源包构建器：固定ZIP元数据与SHA校验头，保留操作者原stdin用于后续显式控制台。
+# HEADER是已测解包载荷，保持字符串字节不变；下方中文解释其路径/权限/完整性和发布合同。
 """Build an offline, integrity-checked installer with the operator's stdin intact."""
 import argparse
 import base64
@@ -8,6 +10,9 @@ from pathlib import Path
 import zipfile
 
 
+# 内嵌脚本先校验base64/归档SHA/CRC、路径穿越/链接/文件数和4MiB总量，再检查整个既有树。
+# 目标祖先不能为symlink；不同现有文件不覆盖，新文件经fsync+link发布；--install-only禁止混运行参数。
+# 默认解包成功后恢复fd3保存的原stdin，再exec原start.sh；构建函数本身绝不执行此载荷。
 HEADER = r'''#!/usr/bin/env bash
 # FC01 Orange Pi control entry. Offline; original FC01 installation is preserved.
 set -e
@@ -110,11 +115,13 @@ __FC01_PAYLOAD_BASE64__
 '''
 
 
+# 用归档字节SHA替换唯一占位再拼base64；源文本只做序列化，不运行shell。
 def render_archive(payload):
     header = HEADER.replace('__ARCHIVE_SHA256__', hashlib.sha256(payload).hexdigest())
     return header.encode('utf8')+base64.encodebytes(payload)
 
 
+# 从显式旧入口与测试/文档文件清单打包，固定时间/权限以便重复生成；返回生成路径。
 def build(output, source=None):
     root = Path(source) if source is not None else Path(__file__).resolve().parent
     names = ['fc01_control.py', 'launcher.py', 'start.sh', 'repair_existing.sh', 'build_bundle.py', 'README_zh.md', 'VERIFICATION.md']

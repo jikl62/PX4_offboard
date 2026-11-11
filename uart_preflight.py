@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# UART 被动证据采集器：只读文件元数据和白名单查询命令，生成供人工复核的报告。
+# 不打开串口、不改 overlay/参数/服务；用户历史陈述、固件源码映射与本机当下观测分别记录。
 """Passive UART evidence collection. Never opens a serial port or changes a service.
 
 Run with ordinary Python 3: python3 uart_preflight.py --output NEW_DIRECTORY.
@@ -15,9 +17,11 @@ import stat
 import subprocess
 
 
+# 单次文件和命令回读限制 64 KiB；命令最长等待 4 秒，目录与符号链接遍历另有容量/深度限制。
 READ_LIMIT = 65536
 COMMAND_TIMEOUT = 4
 COMMANDS = ("systemctl show", "fuser --")
+# 这是用户报告的物理接线假设，不是采集器确认的现场事实；工作主链路策略保持 DO_NOT_CHANGE。
 DECLARED_USER_MAPPING = {
     "evidence_class": "USER_REPORTED_PHYSICAL_CONNECTION",
     "reported_date": "2026-11-06",
@@ -41,6 +45,7 @@ DECLARED_USER_MAPPING = {
 
 # Dated source reference, never an observation of the attached flight controller.
 # The script remains standalone: this table is explanatory, not runtime config.
+# 这是指定提交的固件源码参考。STM32 UART 名、PX4 逻辑端口和 Linux tty 编号不能互相直接推导。
 FC01_SOURCE_REFERENCE = {
     "evidence_class": "LOCAL_FIRMWARE_SOURCE_REFERENCE",
     "reviewed_date": "2026-11-06",
@@ -60,6 +65,7 @@ FC01_SOURCE_REFERENCE = {
               "This tool neither reads nor validates live PX4 parameters.",
 }
 
+# 历史终端结果仅作为用户陈述保留，不参与替代当前 Linux 检查，也不授权启用候选串口。
 USER_REPORTED_PROGRESS = {
     "evidence_class": "USER_REPORTED_PROGRESS",
     "reported_date": "2026-11-06",
@@ -80,6 +86,7 @@ USER_REPORTED_PROGRESS = {
               "ACTUAL_LOCAL_OBSERVATION or affect its checks and summary.",
 }
 
+# 历史 NSH 参数与启动日志说明的是当时运行端点；不能证明此刻的接线、占用或候选链路。
 USER_PROVIDED_FC01_RUNTIME = {
     "evidence_class": "USER_PROVIDED_NSH_OUTPUT",
     "provided_date": "2026-11-06",
@@ -102,6 +109,7 @@ USER_PROVIDED_FC01_RUNTIME = {
 }
 
 
+# 只比对三类有日期的证据是否矛盾；即便一致，也只得到历史一致，不形成硬件就绪结论。
 def reconcile_fc01_evidence(declaration, runtime, source):
     """Compare dated evidence only; never discover a live port or grant readiness."""
     primary = declaration.get("primary", {}).get("peer_hardware_uart_claim")
@@ -138,6 +146,7 @@ def reconcile_fc01_evidence(declaration, runtime, source):
     return result
 
 
+# 将 tty 简名规范化为 /dev 路径；拒绝路径上跳和 shell 字符，后续命令始终以参数数组调用。
 def device_name(value):
     """Accept a tty basename or a confined /dev path, never shell syntax."""
     value = str(value)
@@ -150,6 +159,7 @@ def device_name(value):
     return value
 
 
+# 可注入文件系统根供离线夹具测试；绝对内核符号链接也按该虚拟根解释，避免读到宿主机路径。
 class SystemPaths:
     """Resolve kernel symlinks inside a virtual root, with bounded traversal.
 
@@ -165,12 +175,14 @@ class SystemPaths:
         self.is_host = (self.rootfs == Path("/") and
                         all(path == Path(prefix) for prefix, path in self.mounts.items()))
 
+    # 把逻辑 /proc、/sys、/dev 映射到对应注入根；其他元数据路径相对 rootfs 解析。
     def physical(self, logical):
         for prefix, root in self.mounts.items():
             if logical == prefix or logical.startswith(prefix + "/"):
                 return root / logical[len(prefix):].lstrip("/")
         return self.rootfs / logical.lstrip("/")
 
+    # 逐组件解析符号链接，最多 32 次重启；最终路径须留在允许范围，既保留链路证据又限制跳转。
     def resolve(self, logical, *, scopes=None):
         if not logical.startswith("/") or ".." in PurePosixPath(logical).parts:
             raise ValueError("absolute normalized metadata path required")
@@ -198,6 +210,7 @@ class SystemPaths:
             return self.physical(current), current, links
         raise ValueError("symlink traversal limit exceeded")
 
+    # 只允许元数据目录里的普通文件；NOFOLLOW 与打开后 fstat 再次核对类型，绝不读取 /dev 串口内容。
     def read(self, logical, limit=READ_LIMIT):
         # A malformed sysfs/boot symlink must not redirect metadata collection
         # into unrelated directories (especially /dev or sensitive /etc files).
@@ -230,6 +243,7 @@ class SystemPaths:
         except (OSError, ValueError) as error:
             return {"status": "unknown", "path": logical, "reason": type(error).__name__ + ": " + str(error)}
 
+    # 目录枚举有数量上限，失败返回未知；不把权限不足、过多条目等失败解释为空目录。
     def names(self, logical, limit=256):
         try:
             path, _, _ = self.resolve(logical, scopes=("/sys", "/proc", "/boot"))
@@ -244,6 +258,7 @@ class SystemPaths:
             return None
 
 
+# 将已读取的字节解码成文本，保留状态和来源路径；解码替换不等于验证内容的硬件含义。
 def text_evidence(row):
     row = dict(row)
     if "data" in row:
@@ -251,6 +266,7 @@ def text_evidence(row):
     return row
 
 
+# 设备树字符串列表由 NUL 分隔，不能当作普通换行文本；未知观测继续保持未知。
 def strings_evidence(row):
     row = dict(row)
     if "data" in row:
@@ -258,6 +274,7 @@ def strings_evidence(row):
     return row
 
 
+# 这里只 stat 字符设备类型及主/次设备号、inode，记录别名；从未 open 串口。
 def inspect_device(paths, name):
     try:
         path, resolved, links = paths.resolve(name, scopes=("/dev",))
@@ -275,6 +292,7 @@ def inspect_device(paths, name):
                 "reason": type(error).__name__ + ": " + str(error)}
 
 
+# 同 inode 或相同字符设备主/次号都表示同一设备；候选与主链路相同即拒绝独立性判断。
 def same_device(candidate, primary):
     if "identity" not in candidate or "identity" not in primary:
         return {"status": "unknown", "same_device": None}
@@ -284,6 +302,7 @@ def same_device(candidate, primary):
     return {"status": "not_ready" if equal else "observed", "same_device": equal}
 
 
+# 沿 tty 设备父链最多向上十层，查实际驱动与设备树绑定；不能用系统“已注册驱动”代替实际绑定。
 def inspect_binding(paths, name):
     tty = PurePosixPath(name).name
     base = "/sys/class/tty/" + tty
@@ -319,6 +338,7 @@ def inspect_binding(paths, name):
     return result
 
 
+# 优先选择内核实时设备树根；两个候选路径均不可读时保持未知，不猜测板卡。
 def find_dt_root(paths):
     for root in ("/sys/firmware/devicetree/base", "/proc/device-tree"):
         try:
@@ -330,6 +350,7 @@ def find_dt_root(paths):
     return None
 
 
+# pinctrl-0 是大端 32 位 phandle 数组；有界扫描设备树寻找对应组并读取功能和引脚属性。
 def pinctrl_evidence(paths, root, node):
     handles_row = paths.read(node + "/pinctrl-0", 256)
     result = {"status": "unknown", "names": strings_evidence(paths.read(node + "/pinctrl-names", 1024)),
@@ -344,6 +365,7 @@ def pinctrl_evidence(paths, root, node):
     handles = [int.from_bytes(raw[i:i + 4], "big") for i in range(0, len(raw), 4)]
     result["phandles"] = handles
     found, queue, scanned = {}, [(root, 0)], 0
+    # 扫描最多 2048 个节点、深度 32；scan_complete 明示是否扫完，找不到的句柄仍记未知。
     while queue and scanned < 2048:
         current, depth = queue.pop()
         scanned += 1
@@ -383,6 +405,7 @@ def pinctrl_evidence(paths, root, node):
     return result
 
 
+# 同时保留 serial 别名和候选 tty 的真实 of_node 绑定；别名数字本身不能证明物理排针。
 def inspect_dt(paths, root, binding):
     result = {"status": "unknown", "root": root, "aliases": [],
               "notice": "A serial alias number alone does not prove a physical UART or header pin mapping."}
@@ -416,6 +439,7 @@ def inspect_dt(paths, root, binding):
         row = text_evidence(paths.read(current + "/status", 1024))
         result["status_chain"].append(row)
         current = str(PurePosixPath(current).parent)
+    # 节点或祖先显式 disabled 即不就绪；祖先缺 status 按设备树约定处理，但本节点缺失仍保守记未知。
     disabled = any(row.get("value", "").lower() not in ("", "okay", "ok")
                    for row in result["status_chain"] if row["status"] == "observed")
     # Missing ancestor status means enabled by DT convention. The bound UART's
@@ -433,6 +457,7 @@ def inspect_dt(paths, root, binding):
     return result
 
 
+# 仅放行完全匹配的 systemctl show 与 fuser -- 参数形状，无 shell、sudo 或标准输入；未知命令拒绝。
 def run_readonly(argv):
     """No shell, sudo, stdin, service mutation, or unbounded subprocess output."""
     allowed = ((len(argv) == 8 and argv[0:2] == ["systemctl", "show"] and
@@ -465,6 +490,7 @@ def run_readonly(argv):
         return {"status": "unknown", "reason": type(error).__name__ + ": " + str(error), "argv": argv}
 
 
+# 运行中或开机启用的串口登录服务都可能抢占串口；只有明确 inactive/dead 且未启用才通过本项。
 def inspect_getty(runner, name):
     unit = "serial-getty@" + PurePosixPath(name).name + ".service"
     row = runner(["systemctl", "show", unit, "--property=LoadState", "--property=ActiveState",
@@ -486,6 +512,7 @@ def inspect_getty(runner, name):
     return row
 
 
+# fuser 只看当前用户可见进程；观察到 PID 即占用，空结果须满足明确退出码且无错误输出才可信。
 def inspect_users(runner, name):
     row = dict(runner(["fuser", "--", name]))
     row["scope"] = "Only processes visible to the invoking user; not proof of global exclusivity."
@@ -501,6 +528,7 @@ def inspect_users(runner, name):
     return row
 
 
+# 将控制台名称、设备树路径或已知 serial 别名与候选设备对照；无法解释的别名必须返回 unknown。
 def console_target(paths, device, dt, target, *, dt_path=False):
     """Return conflict/clear/unknown without assuming an unexplained alias."""
     target = target.split(":" if dt_path else ",", 1)[0]
@@ -537,6 +565,7 @@ def console_target(paths, device, dt, target, *, dt_path=False):
     return "unknown"
 
 
+# 分别核对启动参数、活跃控制台与设备树 stdout；任一冲突即不就绪，earlycon 仍需人工解释。
 def inspect_console(paths, device, dt):
     sources = {
         "cmdline": text_evidence(paths.read("/proc/cmdline")),
@@ -579,6 +608,7 @@ def inspect_console(paths, device, dt):
             "notice": "cmdline, active kernel consoles and device-tree stdout are checked independently; earlycon needs manual interpretation."}
 
 
+# 只对默认 ttyS6 核对 serial6、uart6 与 PE0/PE1 的设备树一致性；不泛化为排针/电气验证。
 def inspect_default_candidate_mapping(device, dt):
     result = {"status": "unknown", "applicable": device == "/dev/ttyS6",
               "expected": {"device": "/dev/ttyS6", "serial_alias": "serial6",
@@ -616,6 +646,7 @@ def inspect_default_candidate_mapping(device, dt):
     return result
 
 
+# 只记录启动配置中 UART/overlay/console 相关文本；存在配置文字不等于该 overlay 已实际生效。
 def boot_evidence(paths):
     rows = []
     for path in ("/boot/orangepiEnv.txt", "/boot/armbianEnv.txt", "/boot/config.txt",
@@ -629,9 +660,11 @@ def boot_evidence(paths):
     return rows
 
 
+# 汇总每项本机观测：有明确冲突优先 not_ready，否则缺证据为 unknown；最好的结果也只允许人工复核。
 def collect_report(*, paths=None, device="/dev/ttyS6", primary="/dev/ttyS2", runner=None):
     paths = paths or SystemPaths()
     device, primary = device_name(device), device_name(primary)
+    # 注入离线文件系统时默认禁用宿主命令，防止夹具中的设备名触发真实 systemctl/fuser 查询。
     if runner is None:
         runner = run_readonly if paths.is_host else lambda argv: {
             "status": "unknown", "argv": argv, "reason": "host commands disabled for an injected filesystem"}
@@ -663,6 +696,7 @@ def collect_report(*, paths=None, device="/dev/ttyS6", primary="/dev/ttyS2", run
         if row["status"] != "observed":
             next_steps.append({"check": key, "status": row["status"],
                                "action": "Resolve this missing or conflicting evidence by manual review before enabling the candidate UART."})
+    # 物理接线矛盾和端到端电气/数据链路始终单列未决项，不能由 Linux 元数据检查代替。
     next_steps.extend([
         {"check": "physical_header_and_peer", "status": "unknown",
          "action": "Resolve the conflict between reported primary FC01 RX6/TX6 wiring and supplied "
@@ -709,6 +743,7 @@ def collect_report(*, paths=None, device="/dev/ttyS6", primary="/dev/ttyS2", run
     }
 
 
+# 输出必须是全新私有目录；JSON 保存结构化证据，文本给出结论边界与下一步复核项。
 def write_report(report, output):
     output = Path(output)
     # mkdir without exist_ok makes an existing path (including symlinks) an error.
@@ -727,6 +762,7 @@ def write_report(report, output):
     return output
 
 
+# 命令行只选择候选、主设备与新输出目录；调用采集并显示报告位置，不启动 Agent 或导航服务。
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, help="new report directory; must not already exist")

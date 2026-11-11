@@ -1,11 +1,15 @@
+# 导航状态窗口的纯显示规则：区分进程/IPC活性、原生状态新鲜度和各飞控话题新鲜度。
+# 任何中文提示都不授予准备、恢复或起飞权限，真正决定仍在 C++ 控制器。
 """Pure display rules for native preparation and its actual action gates."""
 
 import math
 
+# 只对这些原生准备阶段解释地面等待；故障阶段由独立恢复解释器处理。
 PREPARATION_PHASES = frozenset(('IDLE', 'SELF_CHECK', 'PRESTREAM', 'REQUEST_OFFBOARD',
                                'RC_PRESTREAM', 'RC_READY_WAIT_ARM', 'RC_ARMED_WAIT_NAVIGATION'))
 
 
+# 同一boot/控制PID与足够新的IPC快照才可作为当前控制器证据；不表示飞机传感器仍新鲜。
 def controller_state_current(row, *, age=None):
     """IPC progress stays distinct from the freshness of the aircraft topics."""
     state = row.get('state')
@@ -24,6 +28,7 @@ def controller_state_current(row, *, age=None):
     return type(age) in (int, float) and math.isfinite(age) and 0 <= age <= 3
 
 
+# 把读取快照后经过的时间加到各话题自身年龄；不能用新显示刷新旧测量的TTL。
 def aircraft_feedback_current(state, elapsed):
     """Advance native sample ages without extending their reported lifetimes."""
     finite = lambda value: type(value) in (int, float) and math.isfinite(value)
@@ -36,6 +41,7 @@ def aircraft_feedback_current(state, elapsed):
     timings = state.get('source_timing')
     if not isinstance(timings, dict):
         return False
+    # 每个关键反馈分别检查 envelope/receipt，局部位置和姿态还检查原样本及样本推进年龄。
     for topic in ('status', 'land', 'local', 'attitude', 'flags', 'battery'):
         item = timings.get(topic)
         if not isinstance(item, dict):
@@ -58,6 +64,7 @@ def aircraft_feedback_current(state, elapsed):
     return True
 
 
+# 根据明确观测列出等待原因；类型未知时不猜测档位、解锁或地面状态。
 def preparation_wait_details(state):
     """Explain observed blockers; native code alone decides admission."""
     if state.get('phase') not in PREPARATION_PHASES:
@@ -84,6 +91,7 @@ def preparation_wait_details(state):
     ground_wait = reason in ('RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND',
                             'RC_WAIT_CONTINUOUS_SAFE_GROUND', 'RC_WAIT_SAFE_GROUND',
                             'RC_PRESTREAM_GROUND_CHANGED', 'RC_READY_GROUND_CHANGED')
+    # 仅对已知地面等待原因解释Stabilized、CH5上锁、CH6有效非导航档和连续静止窗口。
     if ground_wait:
         for name, expected, text in (('armed', False, '飞控仍解锁'),
                                      ('landed', True, '未确认接地'),
@@ -113,6 +121,7 @@ def preparation_wait_details(state):
     return details
 
 
+# 对故障快照按话题列举过期及独立新鲜落地/状态证据；某路过期不能掩盖另一新鲜不安全观测。
 def recovery_wait_details(state):
     """Explain observations in the native snapshot, without granting recovery."""
     if state.get('phase') != 'SAFETY':
@@ -152,6 +161,7 @@ def recovery_wait_details(state):
     return details
 
 
+# 原生准备阶段不等于飞行授权；明确关闭的动作门应显示为诊断禁止起飞。
 def preparation_diagnostic_reason(state):
     """A native phase describes feedback progress, not permission to take off."""
     if state.get('phase') not in PREPARATION_PHASES:
@@ -161,6 +171,7 @@ def preparation_diagnostic_reason(state):
     return '诊断模式：'+'、'.join(closed)+'；本次禁止起飞和导航。' if closed else ''
 
 
+# 只根据RC路线三门提示人工步骤；arm_enabled=false是人工解锁合同，不应被误认为故障。
 def manual_rc_guidance_allowed(state):
     # arm_enabled=false disables programmatic arming, and is required by the
     # independent manual-RC route. flight_enabled belongs to another profile.

@@ -1,3 +1,5 @@
+# 落地事件托管回归：真实SystemNode/Runtime/发布边界，ROS API、时钟和消息输入为替身。
+# 稳定落地检测按1Hz到达；更快的真假翻转只作压力输入，不宣称等同真实PX4迟滞或飞行仿真。
 """Exercise land-event custody through the real node and publication boundary.
 
 Only the ROS API, clocks and input transport are synthetic. Stable detector
@@ -13,16 +15,19 @@ import unittest
 import test_safety_receive_adapter as fixture
 
 
+# 复用真实恢复夹具的节点初始化，截去其main与未使用方法，保留同一控制路径。
 HARNESS = fixture.recovery.HARNESS.split('\nint main(){', 1)[0]
 HARNESS = HARNESS.split('\n  void remain_faulted(', 1)[0] + '\n};\n'
 
 
+# 共享夹具替换项必须恰好出现一次；源码漂移时明确失败，防止静默测错路径。
 def replace_once(source, old, new):
     if source.count(old) != 1:
         raise AssertionError('Update the land-event fixture for its shared node fixture')
     return source.replace(old, new, 1)
 
 
+# 替换点仅构造测试输入：控制landed/at_rest、是否送达落地样本以及RC开关历史。
 for old, new in (
     ('bool armed{},offboard{},landed{true};',
      'bool armed{},offboard{},landed{true};'
@@ -48,6 +53,9 @@ for old, new in (
     HARNESS = replace_once(HARNESS, old, new)
 
 
+# 以下C++字符串是既有可执行测试输入，逐字保留；中文说明放在Python边界外。
+# 六组案例分别要求：等待上锁仍保留零推力双流；反跳不放弃已解锁托管；密集变化不饿死下降控制；
+# 同轮坏落地样本否决完成/释放；致命姿态故障维持静默；确认新地面后才可准备下一次尝试。
 HARNESS += r'''
 using Phase=fc01::attitude::Phase;
 struct LandNode:RecoveryNode {
@@ -207,7 +215,9 @@ int main(){
 '''
 
 
+# 编译临时C++夹具并逐项检查六组落地事件标记。
 class LandEventAdapterTest(unittest.TestCase):
+    # 等待Disarm、落地反跳、密集变化、终止否决、致命故障静默和新地面重准备必须全部完成。
     def test_land_events_preserve_custody_and_ground_completion_vetoes(self):
         with tempfile.TemporaryDirectory(prefix='fc01_land_event_') as directory:
             root = Path(directory)

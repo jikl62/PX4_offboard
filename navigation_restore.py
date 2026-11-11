@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 托管导航服务的安全配置/激活/回滚事务：认证后重新取得地面/RC证据，先等旧控制器退出再切配置。
+# 保留既有Agent；不强杀节点、不重启失败任务，备份绑定服务/YAML/二进制与开机策略。
 """Configure, safely activate, or restore the managed native navigation service."""
 from __future__ import annotations
 
@@ -26,14 +28,17 @@ ENTRY = Path(__file__).resolve().parent
 UNIT_DIR = Path('/etc/systemd/system')
 
 
+# 只按实际文件字节计算SHA，供切换前后身份复验。
 def _digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# 从真实进程表找原生控制器；后续须核对用户和服务父链，不能只凭名字认领。
 def _controllers():
     return [p for p in process_list() if any(Path(a).name=='fc01_system_node' for a in p.argv[:2])]
 
 
+# 沿/proc父链判断归属，遇回环/不可读即False，不把未知进程算进托管服务。
 def _descendant(pid, parent, proc=Path('/proc')):
     seen=set()
     while pid>1 and pid not in seen:
@@ -45,6 +50,7 @@ def _descendant(pid, parent, proc=Path('/proc')):
     return False
 
 
+# 必须恰好复用当前用户同UART的Agent；期望身份变化即拒绝，不创建第二个Agent。
 def retained_agent(expected=None):
     agent=choose_agent(process_list(),uart_owners('/dev/ttyS2'),'/dev/ttyS2',os.getuid())
     if agent is None or (expected is not None and agent!=expected):
@@ -52,6 +58,7 @@ def retained_agent(expected=None):
     return agent
 
 
+# 探针前后复验Agent并要求新鲜安全RC/地面证据；探针不得启动新Agent。
 def _ground(entry, home, project, agent):
     retained_agent(agent)
     try:
@@ -71,6 +78,7 @@ def _ground(entry, home, project, agent):
         raise ControlError('在线探针未确认保留原 Agent 及真实 RC 安全状态')
 
 
+# 原子发布本次事务阶段与备份路径，失败恢复可追踪；updated_unix只作诊断身份。
 def _activation_state(entry, backup, phase, **extra):
     path=entry/'ACTIVATION_STATE.json'
     row=dict(service=SERVICE,entry=str(entry.resolve()),version=ENTRY_VERSION,
@@ -80,6 +88,7 @@ def _activation_state(entry, backup, phase, **extra):
     os.replace(staged,path)
 
 
+# 验证托管marker、稳定服务状态和普通开机策略，再核对所有控制器的真实归属。
 def _discover(units, run):
     info={name:unit_info(name,run) for name in (SERVICE,OLD)}
     managed_unit(units/SERVICE,MARKER,info[SERVICE])
@@ -100,6 +109,7 @@ def _discover(units, run):
     return info
 
 
+# 写服务/YAML及原开机策略的私有备份，附SHA；打印精确回滚命令，不覆盖外来运行参数。
 def _snapshot(entry,home,project,unit,info,binary,agent,boot_policy,units):
     folder=home/'FC01_navigation';private_dir(folder)
     backups=folder/'service-backups';private_dir(backups)
@@ -130,6 +140,7 @@ def _snapshot(entry,home,project,unit,info,binary,agent,boot_policy,units):
     return backup,manifest
 
 
+# 请求systemd自身优雅停止并持续检查Agent；超时只拒绝切换，不强杀仍在交权的控制器。
 def _stop(entry,home,project,agent,run,*,timeout=25.,services=(SERVICE,)):
     """Request the unit's own graceful stop, never kill controller or Agent."""
     _ground(entry,home,project,agent)
@@ -144,10 +155,12 @@ def _stop(entry,home,project,agent,run,*,timeout=25.,services=(SERVICE,)):
         time.sleep(.2)
 
 
+# 启动验收同时核对真实exe/cwd/SHA、唯一进程、boot/PID/版本/源配置和新鲜未解锁静止反馈。
 def verify_running(entry,home,binary,agent,run=subprocess.run,*,proc=Path('/proc')):
     info=unit_info(SERVICE,run);main=int(info.get('MainPID') or 0)
     if info.get('ActiveState')!='active' or not main:raise ControlError('新版服务尚未处于 active')
     controllers=_controllers()
+    # 必须只有一个原生控制发布者进程；不是“至少一个”就算启动成功。
     if len(controllers)!=1:raise ControlError('必须恰好存在一个 fc01_system_node，当前='+str(len(controllers)))
     controller=controllers[0];pid=controller.pid
     if controller.uid!=os.getuid() or not _descendant(pid,main,proc):raise ControlError('控制器进程不属于新版服务')
@@ -165,6 +178,7 @@ def verify_running(entry,home,binary,agent,run=subprocess.run,*,proc=Path('/proc
             row.get('entry_version')!=ENTRY_VERSION or row.get('supervisor_pid')!=main or
             row.get('controller_pid')!=pid or row.get('state_controller_pid')!=pid or row.get('feedback_current') is not True):
             raise ControlError('新版状态反馈未匹配当前版本、进程或新鲜度')
+        # 运行模式与源/实际YAML路径都须对应本entry，避免新服务加载旧参数。
         if (row.get('runtime_mode')!='flight-test' or
             row.get('config_source_path')!=str((entry/'native/config/flight_test.yaml').resolve()) or
             row.get('config_path')!=str((home/'FC01_navigation/runtime.yaml').resolve())):
@@ -182,6 +196,7 @@ def verify_running(entry,home,binary,agent,run=subprocess.run,*,proc=Path('/proc
     return row
 
 
+# 仅在全部控制器退出后恢复；备份SHA/marker/权限及当前外来修改都需核验，恢复后不自动启动。
 def _restore_snapshot(home,backup,manifest,units,run):
     """Caller must establish that all controllers have exited."""
     if _controllers():raise ControlError('控制器仍存活，保留配置及回滚记录，拒绝恢复运行参数')
@@ -234,6 +249,7 @@ def _restore_snapshot(home,backup,manifest,units,run):
         else:live.unlink(missing_ok=True)
 
 
+# 完整在线事务：验证构建→发现身份→认证/备份→新地面证据→停旧→复验→切换→启动→真实验收。
 def activate(entry,home,project,*,boot_policy='preserve',units=UNIT_DIR,run=subprocess.run,verify_timeout=25.):
     """One transaction: authenticate, passively authorize, stop, switch and verify."""
     if boot_policy not in ('enable','preserve'):raise ControlError('boot policy must be enable or preserve')
@@ -246,6 +262,7 @@ def activate(entry,home,project,*,boot_policy='preserve',units=UNIT_DIR,run=subp
     unit=render_unit(user,home,entry,project,'flight-test',True)
     path=units/SERVICE
     # A repeat activation validates the actual running process and current IPC.
+    # 重复activate也必须检查真实当前进程/反馈；不能仅unit文本相同就假定成功。
     if (path.is_file() and path.read_text()==unit and info[SERVICE].get('ActiveState')=='active' and boot_policy=='preserve' and
         info[OLD].get('MainPID','0')=='0' and info[OLD].get('UnitFileState') not in ('enabled','enabled-runtime')):
         verify_running(entry,home,binary,agent,run)
@@ -265,6 +282,7 @@ def activate(entry,home,project,*,boot_policy='preserve',units=UNIT_DIR,run=subp
         run(['/usr/bin/systemd-analyze','verify',str(staged)],check=True)
         run(['sudo','-v'],check=True)
         backup,manifest=_snapshot(entry,home,project,unit,info,binary,agent,boot_policy,units)
+        # changed标识是否需回写备份，started标识是否需安全停新进程；两者独立避免错误清理。
         changed=False;started=False
         try:
             _ground(entry,home,project,agent)
@@ -280,6 +298,7 @@ def activate(entry,home,project,*,boot_policy='preserve',units=UNIT_DIR,run=subp
                 command=['sudo','-n','/usr/bin/systemctl','disable']
                 if info[OLD].get('UnitFileState')=='enabled-runtime':command.append('--runtime')
                 run([*command,OLD],check=True)
+            # 任何安装/运行参数变更前都确认旧控制器已经退出，不能靠stop命令返回就假定完成。
             stopped_services(units,run)
             checked_binary,checked_agent=existing_agent(entry,home,project)
             if checked_binary!=binary or checked_agent!=agent:raise ControlError('切换前控制器或 Agent 已变化')
@@ -310,6 +329,7 @@ def activate(entry,home,project,*,boot_policy='preserve',units=UNIT_DIR,run=subp
             print('FC01_NEW_SERVICE_ACTIVE version='+ENTRY_VERSION+' vertical_feedback_velocity_policy=diagnostic_only',flush=True)
             print('FC01_EXISTING_AGENT_RETAINED pid='+str(agent.pid)+' rollback='+str(backup),flush=True)
             return backup
+        # 失败先安全停新控制器，再在无外来变更前提下还原；恢复自身失败则保留人工恢复证据。
         except (OSError,ValueError,RuntimeError,subprocess.SubprocessError) as exc:
             try:
                 if started:_stop(entry,home,project,agent,run)
@@ -325,6 +345,7 @@ def activate(entry,home,project,*,boot_policy='preserve',units=UNIT_DIR,run=subp
             raise ControlError(str(exc)+'；原配置已保留/恢复，控制器不会自动重启；回滚记录='+str(backup)) from exc
 
 
+# 只检查，不隐式stop/kill；旧开机入口仍有效或有覆盖配置时拒绝第二个入口。
 def stopped_services(units, run):
     """No stop/kill is implicit: stop any old starter before configuring."""
     info = {name: unit_info(name, run) for name in (SERVICE, OLD)}
@@ -340,6 +361,7 @@ def stopped_services(units, run):
     return info
 
 
+# 预检当前entry内二进制和已存在Agent；SDK只提供消息依赖，不能成为旧控制器来源。
 def existing_agent(entry, home, project):
     binary = check_controller(entry=entry)
     if not binary.resolve().is_relative_to(entry.resolve()):
@@ -351,6 +373,7 @@ def existing_agent(entry, home, project):
     return binary, agent
 
 
+# 只安装/按策略enable服务定义，不立即start；密码后获取新地面证据且保存可回滚原unit。
 def configure(entry, home, project, *, boot_policy='enable', units=UNIT_DIR, run=subprocess.run):
     if boot_policy not in ('enable', 'preserve'):
         raise ControlError('boot policy must be enable or preserve')
@@ -432,6 +455,7 @@ def configure(entry, home, project, *, boot_policy='enable', units=UNIT_DIR, run
     return backup
 
 
+# 备份必须属于当前用户service-backups；当前unit未被他人修改且地面许可新鲜才恢复，保持停止。
 def rollback(entry, home, project, backup, *, units=UNIT_DIR, run=subprocess.run, stop_current=False):
     backup = backup.expanduser().resolve()
     allowed = (home/'FC01_navigation/service-backups').resolve()
@@ -477,9 +501,11 @@ def rollback(entry, home, project, backup, *, units=UNIT_DIR, run=subprocess.run
     print('FC01_SERVICE_ROLLED_BACK_NOT_STARTED; 原服务保持停止，需现场人工选择是否启动', flush=True)
 
 
+# 第一次中断转为可恢复异常，随后忽略重复信号，避免父进程再转SIGTERM打断安全恢复。
 def _install_interrupt_handlers():
     interrupted_once=False
     signals=(signal.SIGTERM,signal.SIGHUP,signal.SIGINT)
+    # 信号处理只触发一次受控异常；不直接杀节点或清理共享文件。
     def interrupted(signum,frame):
         nonlocal interrupted_once
         if interrupted_once:return
@@ -492,6 +518,7 @@ def _install_interrupt_handlers():
     return interrupted
 
 
+# 普通用户入口、显式确认、完整安装锁；控制器未安全退出时只返回保留/停止状态。
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('configure', 'activate', 'rollback'))

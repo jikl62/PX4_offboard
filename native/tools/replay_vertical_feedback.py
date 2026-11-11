@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 把同程 ULog 与控制器 JSONL 对齐后，驱动当前 C++ 垂直反馈监测器。
+# z/vz/z_deriv 使用 PX4 NED，单位 m、m/s，向下为正；回放只证明历史输入下的检测，不能预测改控制后的真实轨迹。
 """Replay recorded vertical feedback through the production C++ guard.
 
 This tests detection on historical inputs, not the aircraft's counterfactual
@@ -18,6 +20,7 @@ import numpy as np
 from pyulog import ULog
 
 ROOT = Path(__file__).resolve().parents[1]
+# 明确列出同程日志对；文件名仅用于选样，真正时钟对应还要用 timesync 与记录数值交叉验证。
 PAIRS = [
     ("log_0_2026-10-18-15-38-22.ulg", "ramp_guard_20261018_153730.log"),
     ("log_1_2026-10-18-15-40-08.ulg", "ramp_guard_20261018_153942.log"),
@@ -27,6 +30,7 @@ PAIRS = [
 ]
 
 
+# 提取带 local_stamp 的 phase_event，跳过普通文本；没有原始样本时间的行不构成回放输入。
 def events(path):
     result = []
     for line in path.read_text().splitlines():
@@ -39,6 +43,7 @@ def events(path):
     return result
 
 
+# 读取定位和时钟数据，选择斜坡到原终止的样本，验证对齐误差后送入独立 C++ 程序。
 def replay(binary, ulg_path, controller_path, output):
     ulog = ULog(str(ulg_path))
     local = ulog.get_dataset("vehicle_local_position").data
@@ -48,11 +53,13 @@ def replay(binary, ulg_path, controller_path, output):
     terminal = next(e for e in history if e["phase_after"] == "SAFETY")
     # PX4 timesync offset maps the companion's translated message time back
     # into the boot clock. This mapping is for offline alignment only.
+    # 利用 PX4 estimated_offset 将伴随侧时间映射到飞控 boot 微秒；只用于离线对齐。
     def boot_time(host):
         return host + np.interp(host, sync["remote_timestamp"].astype(float),
                                 sync["estimated_offset"].astype(float))
     start, end = boot_time(ramp["local_stamp"]), boot_time(terminal["local_stamp"])
     selected = np.flatnonzero((local["timestamp"] >= start) & (local["timestamp"] <= end))
+    # 不足三个样本无法建立有意义动态观测，直接拒绝而不靠插值补出不存在的真实测量。
     if len(selected) < 3:
         raise RuntimeError(f"insufficient aligned samples: {ulg_path.name}")
     # Verify the clock mapping against controller-recorded z/vz; do not infer
@@ -69,6 +76,7 @@ def replay(binary, ulg_path, controller_path, output):
         # neighbouring recorded velocity change, not a fixed low-speed
         # threshold that treats acceleration between log samples as a bad clock.
         nearby = local["vz"][max(0, j-2):min(len(times), j+3)].astype(float)
+        # ULog 与 DDS 采样频率不同，允许量结合邻近真实速度变化，避免把加速度误当时钟错位。
         velocity_allowance = .025 + max(.025, float(np.max(np.abs(np.diff(nearby)))))
         if abs(float(local["vz"][j])-e["vz"]) > velocity_allowance:
             raise RuntimeError(f"velocity alignment exceeds local sample variation: {ulg_path.name}")
@@ -78,6 +86,7 @@ def replay(binary, ulg_path, controller_path, output):
     max_errors = np.max(errors, axis=0)
     if np.any(max_errors[:2] > np.array([.060, .080])):
         raise RuntimeError(f"clock/value alignment failed: {ulg_path.name}: {max_errors}")
+    # 向 C++ 输入源采样时间与 NED 三项原始反馈，保持原顺序；不是发送 PX4 控制指令。
     stream = "".join(f"{int(local['timestamp_sample'][i])} {float(local['z'][i]):.12g} "
                      f"{float(local['vz'][i]):.12g} {float(local['z_deriv'][i]):.12g}\n"
                      for i in selected)
@@ -92,6 +101,7 @@ def replay(binary, ulg_path, controller_path, output):
     trigger = int(last[0])
     before = [e for e in flight_history if boot_time(e["local_stamp"]) <= trigger]
     historical = before[-1] if before else ramp
+    # 摘要同时给原日志 SHA、对齐误差和原终止原因，保留证据来源及反事实限制。
     return {
         "ulog": ulg_path.name,
         "ulog_sha256": hashlib.sha256(ulg_path.read_bytes()).hexdigest(),
@@ -110,6 +120,7 @@ def replay(binary, ulg_path, controller_path, output):
     }
 
 
+# 临时构建监测回放程序，输出逐样本 CSV 和机器可读摘要；需要 numpy/pyulog，但不运行 ROS。
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ulog-dir", type=Path, required=True)

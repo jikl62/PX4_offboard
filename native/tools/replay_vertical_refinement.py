@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 对固定控制日志输入比较旧/新垂直控制输出：高度向上正，原 vz/z_deriv 为 NED 向下正。
+# 姿态、控制权和新鲜度是合成的，因此不能归因真实倾斜、接管或预测新飞行高度。
 """Compare production control outputs on fixed controller-log inputs.
 
 Uses recorded height/vz/z_deriv, raw source and detector times at 20 Hz.
@@ -16,10 +18,12 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
+# CSV 列包含推力构成、限幅和状态，便于比较完整结果而不是只看最终 phase。
 FIELDS = ('elapsed_s,phase,publish,thrust,target_height,velocity_target,'
           'closed_loop,takeoff_limited,p_thrust,i_thrust,raw_thrust,thrust_ceiling,reason').split(',')
 
 
+# 只从 ARMED_GROUND→THRUST_RAMP 后读取连续原始反馈，时间回退/长间隔/缺字段即拒绝。
 def read_frames(path):
     history = []
     for line in path.read_text().splitlines():
@@ -39,6 +43,7 @@ def read_frames(path):
         previous = event['monotonic_s']
         if dt <= 0 or dt > .3:
             raise ValueError(f'non-contiguous control frames in {path.name}')
+        # dt 单位 s，其余源时间戳保持原整数；保留 detector 与局部位置各自时间，不用新包络刷新旧样本。
         values = [dt, event['height'], event['vz'], event['z_deriv_ned'],
                   event['status_stamp'], event['land_stamp'], event['local_stamp'],
                   event['vertical_feedback_sample_stamp'], int(event['landed']), int(event['at_rest'])]
@@ -52,6 +57,7 @@ def read_frames(path):
     return start, frames
 
 
+# 给指定控制头文件树编译同一个回放驱动；diagnostics 只控制诊断列，不改变真实输入。
 def build(root, path, diagnostics):
     cmd = ['g++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-pedantic',
            '-I', str(root/'src/jikl_fc01_system/include'), '-I', str(ROOT/'tests')]
@@ -60,6 +66,7 @@ def build(root, path, diagnostics):
     subprocess.run(cmd+[str(ROOT/'tests/vertical_control_replay.cpp'), '-o', str(path)], check=True)
 
 
+# 按既定数值序列驱动离线二进制，并保留原 stdout 与字段名 CSV，不联系飞控。
 def run(binary, frames, path):
     stream = ''.join(' '.join(format(v, '.12g') if isinstance(v, float) else str(v)
                              for v in values)+'\n' for _, values in frames)
@@ -69,6 +76,7 @@ def run(binary, frames, path):
     return rows
 
 
+# 始终运行当前候选；显式提供 baseline_root 时才比较旧树和原日志推力。
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--controller-log', type=Path, nargs='+', required=True)
@@ -91,10 +99,12 @@ def main():
             # vertical-only comparison intentionally cannot reproduce it.
             comparable = [(e, r) for (e, _), r in zip(frames, old)
                           if e['thrust_planned_z'] is not None and r['publish'] == '1']
+            # 只比较原日志有推力且旧程序确实发布的帧；不把缺失输出填零制造假等价。
             error = max((abs(abs(e['thrust_planned_z'])-float(r['thrust']))
                          for e, r in comparable), default=None)
             if error is not None and error > .002:
                 raise RuntimeError(f'baseline cannot reproduce recorded vertical output: {log.name}: {error}')
+            # 按原 .50 悬停、2 s 斜坡与 .04 储备时序计算超额，检查候选未扩大离地前推力计划。
             def exceed(rows):
                 result = []
                 for r in rows:
@@ -115,6 +125,7 @@ def main():
                 'original_terminal_reason': frames[-1][0]['reason'],
                 'interpretation': 'Fixed historical vertical inputs; synthetic level attitude/authority/freshness. '
                                   'No new flight trajectory, actual height or handover attribution.'}
+            # 候选越过原推力时序立即失败；摘要的合成限制仍保留，不能将离线通过写成现场验收。
             if entry['candidate_max_ramp_schedule_excess'] > 1e-6:
                 raise RuntimeError('candidate exceeded original ramp schedule')
             summaries.append(entry)

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 历史关闭动作门待机服务的安装与管理CLI：源自autostart独立包，与正式导航服务分开识别。
+# 安装会显式sudo写systemd并enable；状态/报告只读，服务启动本身不自动解锁或起飞。
 """Install/manage FC01 closed-gate standby at boot."""
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ UNIT = Path('/etc/systemd/system')/SERVICE
 MARKER = '# FC01_AUTOSTART_CLOSED_GATES_20261027_V1'
 
 
+# 按systemd的值/ExecStart转义规则处理路径；拒绝控制字符，不能用shell转义代替unit转义。
 def quote(value, executable=False):
     text = str(value)
     if any(x in text for x in ('\0', '\r', '\n')):
@@ -31,6 +34,7 @@ def quote(value, executable=False):
     return '"'+text+'"'
 
 
+# 验证普通用户名和绝对entry，生成受MARKER标记的服务；信号交给监督器且禁止强杀恢复中的节点。
 def render_unit(user, home, entry, project):
     if not re.fullmatch(r'[a-zA-Z_][a-zA-Z0-9_-]*\$?', user):
         raise ValueError('不支持此系统用户名')
@@ -70,6 +74,7 @@ WantedBy=multi-user.target
 '''
 
 
+# 只接受本包相同unit，保留外来/符号链接/不同目录服务；先systemd-analyze验证再安装。
 def install_service(unit, destination=UNIT, run=subprocess.run):
     if destination.is_symlink():
         raise RuntimeError('同名服务是符号链接，已保留：'+str(destination))
@@ -89,6 +94,7 @@ def install_service(unit, destination=UNIT, run=subprocess.run):
     run(['sudo', '/usr/bin/systemctl', 'enable', '--now', SERVICE], check=True)
 
 
+# 读取服务与待机快照；墙钟年龄超限显示STALE，不能把旧ready当本次飞机状态。
 def status(home):
     for op in ('is-enabled', 'is-active'):
         result = subprocess.run(['/usr/bin/systemctl', op, SERVICE], capture_output=True, text=True)
@@ -108,6 +114,7 @@ def status(home):
     print('后台动作门关闭；CH6 导航触发将在下一阶段接入。')
 
 
+# 收集已存在待机文件与只读服务查询到新ZIP；不触发探针或控制动作。
 def report(home):
     folder = home/'FC01_autostart'
     if not folder.is_dir():
@@ -128,6 +135,7 @@ def report(home):
     return target
 
 
+# 默认安装仍需普通用户并先--validate环境；管理子命令显式调用systemctl，失败报告非零。
 def main(argv=None):
     parser = argparse.ArgumentParser(description='FC01 开机后台待命；不自动解锁或起飞')
     parser.add_argument('action', nargs='?', default='install',

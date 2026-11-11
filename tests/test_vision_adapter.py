@@ -1,3 +1,5 @@
+# 原始 Odometry+VisionHealth 转换器的纯算术、配对和来源图合同回归。
+# 向量单位为米、米每秒、弧度每秒；输入 convention 显式指定，输出世界 NED/机体 FRD、四元数 wxyz。
 """Real odometry conversion and ROS wire-to-core mapping contracts; no ROS graph."""
 import importlib.util
 import math
@@ -11,10 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 ADAPTER = ROOT / 'native/tools/vision_odometry_adapter.py'
 
 
+# 构造 ROS 秒/纳秒时间，默认采样时刻与配套 Health 完全相同。
 def stamp(sec=10, nanosec=25):
     return NS(sec=sec, nanosec=nanosec)
 
 
+# 生成标准 nav_msgs 形状的假对象；twist 按 child 机体/传感器帧，协方差不是转换有效性的替代。
 def odometry(position=(5., 6., 7.), velocity=(0., 0., 0.),
              q=(1., 0., 0., 0.), omega=(0., 0., 0.)):
     def vector(v):
@@ -26,6 +30,7 @@ def odometry(position=(5., 6., 7.), velocity=(0., 0., 0.),
               twist=NS(twist=NS(linear=vector(velocity), angular=vector(omega)), covariance=[0.] * 36))
 
 
+# 生成独立质量/尺度/时钟/标定声明；只有 stamp 与来源等合同匹配才可支持测量。
 def health(**changes):
     fields = dict(schema_version=1, stamp=stamp(), sequence=7, source_id='fixture-session-1',
                   frame_id='vendor_odom', body_frame_id='vendor_sensor', reset_counter=4,
@@ -39,7 +44,9 @@ def health(**changes):
     return NS(**fields)
 
 
+# 调用真实 convert_odometry，检查坐标、杆臂、有效位与配对缓存，不用目标命令冒充实际状态。
 class OdometryAdapterTests(unittest.TestCase):
+    # 从当前工具文件加载模块，使测试不依赖 ROS 安装或重复消息包。
     @classmethod
     def setUpClass(cls):
         cls.adapter = None
@@ -51,6 +58,7 @@ class OdometryAdapterTests(unittest.TestCase):
             sys.modules[spec.name] = cls.adapter
             spec.loader.exec_module(cls.adapter)
 
+    # 每项使用明确世界/机体 convention 和外参配置，防止缺省猜测方向。
     def setUp(self):
         self.assertTrue(ADAPTER.is_file(), 'vision odometry adapter implementation is missing')
         self.a = self.adapter
@@ -61,15 +69,18 @@ class OdometryAdapterTests(unittest.TestCase):
             world_alignment_wxyz=(1., 0., 0., 0.), world_translation_ned=(0., 0., 0.),
             extrinsics_id='mount-v1', alignment_id='align-v1')
 
+    # 显式传递配置及 Health；测试可用 None 验证缺失元数据，不偷偷补有效位。
     def convert(self, msg=None, meta=None, **config_changes):
         from dataclasses import replace
         config = replace(self.config, **config_changes)
         return self.a.convert_odometry(msg or odometry(), meta or health(), config)
 
+    # 按分量近似检查数学结果，保持坐标轴错误可定位。
     def assertVector(self, actual, expected):
         for x, y in zip(actual, expected):
             self.assertAlmostEqual(x, y, places=10)
 
+    # NED/FRD 恒等配置保留物理分量与 wxyz 顺序，未实现协方差仍清有效位。
     def test_ned_frd_preserves_explicit_valid_fields_and_wxyz(self):
         state = self.convert()
         self.assertEqual(state.reason, 'OK')
@@ -83,6 +94,7 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertEqual(state.valid_fields, 1 | 2 | 4 | 8 | 64)
         self.assertTrue(all(math.isnan(x) for x in state.pose_covariance + state.twist_covariance))
 
+    # ENU 的东/北/上转 NED，FLU 的左/上转 FRD；pose、twist 与角速度都需一致变换。
     def test_enu_flu_rotates_pose_child_twist_and_angular_velocity(self):
         h = math.sqrt(.5)
         state = self.convert(odometry((1., 2., 3.), (1., 2., 3.), (h, 0., 0., h), (0., 0., 2.)),
@@ -93,12 +105,14 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertVector(state.attitude, (1., 0., 0., 0.))
         self.assertVector(state.angular_velocity, (0., 0., -2.))
 
+    # 传感器距机体原点有杆臂时，位置和 ω×r 线速度必须共同修正。
     def test_lever_arm_changes_position_and_removes_rotational_sensor_velocity(self):
         state = self.convert(odometry(velocity=(0., 2., 0.), omega=(0., 0., 2.)),
                              sensor_position_body_frd=(1., 0., 0.))
         self.assertVector(state.position, (4., 6., 7.))
         self.assertVector(state.velocity, (0., 0., 0.))
 
+    # 缺实测角速度无法去除旋转线速度，不能把机体速度标有效。
     def test_nonzero_lever_arm_without_angular_measurement_invalidates_velocity(self):
         state = self.convert(meta=health(angular_velocity_valid=False),
                              sensor_position_body_frd=(1., 0., 0.))
@@ -108,6 +122,7 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertTrue(all(math.isnan(x) for x in state.angular_velocity))
         self.assertNotEqual(state.reason, 'OK')
 
+    # 同时加入机体安装旋转和世界对齐，核对完整变换组合。
     def test_rotated_mount_and_world_alignment_are_applied(self):
         h = math.sqrt(.5)
         state = self.convert(body_from_sensor_wxyz=(h, 0., 0., h),
@@ -117,6 +132,7 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertVector(state.position, (-6., 7., 10.))
         self.assertVector(state.attitude, (1., 0., 0., 0.))
 
+    # 零数值不是健康证据，Health 缺失或 stamp/来源不匹配须撤销。
     def test_missing_or_mismatched_health_never_makes_zero_values_valid(self):
         for meta in (None, health(stamp=stamp(10, 26)), health(frame_id='other'),
                      health(body_frame_id='other'), health(source_id='other')):
@@ -126,6 +142,7 @@ class OdometryAdapterTests(unittest.TestCase):
                 self.assertFalse(state.calibration_valid)
                 self.assertTrue(all(math.isnan(x) for x in state.position))
 
+    # 逐个破坏质量、时钟、reset、尺度和标定声明，证明任一合同不可被默认值补齐。
     def test_each_quality_time_reset_and_calibration_contract_is_required(self):
         for field in ('reset_valid', 'initialized', 'tracking', 'calibration_valid',
                       'frame_alignment_valid', 'time_sync_valid', 'extrinsics_valid',
@@ -139,11 +156,13 @@ class OdometryAdapterTests(unittest.TestCase):
         for values in ({'extrinsics_id': 'new'}, {'alignment_id': 'new'}, {'schema_version': 2}):
             self.assertEqual(self.convert(meta=health(**values)).valid_fields, 0)
 
+    # 实际质量=0 仍是有效“质量测量”，是否足够由后续显式阈值决定。
     def test_zero_quality_remains_explicit_measured_quality_for_core_threshold(self):
         state = self.convert(meta=health(quality=0.))
         self.assertEqual(state.quality, 0.)
         self.assertTrue(state.valid_fields & 64)
 
+    # 上游未声明有效的状态不能由恰为零的字段或无来源角速度伪造。
     def test_absent_position_velocity_attitude_and_angular_source_are_not_invented(self):
         for field, bit, array in (('position_valid', 1, 'position'), ('velocity_valid', 2, 'velocity'),
                                   ('attitude_valid', 4, 'attitude')):
@@ -153,6 +172,7 @@ class OdometryAdapterTests(unittest.TestCase):
         state = self.convert(meta=health(angular_velocity_source=''))
         self.assertFalse(state.valid_fields & 8)
 
+    # 原始 NaN/Inf 或零范数四元数不能进入可信状态。
     def test_nonfinite_or_zero_norm_raw_measurements_are_rejected(self):
         self.assertFalse(self.convert(odometry(position=(math.nan, 0., 0.))).valid_fields & 1)
         self.assertFalse(self.convert(odometry(velocity=(math.inf, 0., 0.))).valid_fields & 2)
@@ -160,6 +180,7 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertFalse(self.convert(odometry(q=(2., 0., 0., 0.))).valid_fields & 4)
         self.assertEqual(self.convert(odometry(q=(1.01, 0., 0., 0.))).reason, 'OK')
 
+    # 输入各轴有限仍可能在外参算术中溢出；派生非有限值必须清对应有效位。
     def test_transform_overflow_never_marks_nonfinite_derived_measurements_valid(self):
         state = self.convert(odometry(position=(1.e308, 0., 0.)),
                              world_translation_ned=(1.e308, 0., 0.))
@@ -175,6 +196,7 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertFalse(state.valid_fields & 8)
         self.assertTrue(all(math.isnan(x) for x in state.angular_velocity))
 
+    # 逐轴 180° 姿态需走稳定四元数分支，不能在 trace 接近 -1 时除零。
     def test_half_turn_orientation_conversion_is_stable_on_each_axis(self):
         for quaternion in ((0., 1., 0., 0.), (0., 0., 1., 0.), (0., 0., 0., 1.)):
             with self.subTest(quaternion=quaternion):
@@ -182,6 +204,7 @@ class OdometryAdapterTests(unittest.TestCase):
                 self.assertVector(state.attitude, quaternion)
                 self.assertEqual(state.reason, 'OK')
 
+    # 负秒、零时戳、越界纳秒及未明确 convention/来源/外参的配置均须拒绝。
     def test_bad_stamp_is_invalid_and_config_needs_explicit_conventions(self):
         for raw in (stamp(-1), stamp(0, 0), stamp(10, 1_000_000_000)):
             msg = odometry()
@@ -193,6 +216,7 @@ class OdometryAdapterTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 replace(self.config, **changes).validate()
 
+    # 仅完全相同 stamp 两半配对；已发布/过期 stamp 的重复不能再次授权输出。
     def test_stamp_pair_buffer_matches_exact_sample_and_never_republishes_duplicates(self):
         pairs = self.a.StampPairBuffer(timeout=.05, max_pending=4)
         self.assertEqual(pairs.odometry(odometry(), 1.), [])
@@ -209,11 +233,13 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertIsNone(expired[0][1])
         self.assertEqual(pairs.health(health(stamp=stamp(10, 30)), 2.07), [])
 
+    # 构造同时检查两个原始 Topic 发布者数量的适配器，来源图权威不能只看输出节点数。
     def guarded(self):
         self.assertTrue(hasattr(self.a, 'GuardedOdometryAdapter'),
                         'raw source graph authority must guard the exact-stamp adapter')
         return self.a.GuardedOdometryAdapter(self.config, pair_timeout=.05, max_pending=4)
 
+    # Health 在恰好 TTL 或更晚回调，先撤销旧 Odometry，不能绕过尚未执行的 timer。
     def test_late_health_cannot_rescue_odometry_at_or_after_pair_timeout(self):
         for delay in (.05, .20):
             with self.subTest(delay=delay):
@@ -226,6 +252,7 @@ class OdometryAdapterTests(unittest.TestCase):
                 self.assertEqual(pairs.health(health(), delay + .01), [])
                 self.assertEqual(pairs.odometry(odometry(), delay + .02), [])
 
+    # 反向回调次序也一样：过期 Health 不能为晚到测量背书。
     def test_late_odometry_cannot_borrow_health_at_or_after_pair_timeout(self):
         for delay in (.05, .20):
             with self.subTest(delay=delay):
@@ -237,6 +264,7 @@ class OdometryAdapterTests(unittest.TestCase):
                 self.assertEqual(len(expired), 1)
                 self.assertIsNone(expired[0][1])
 
+    # 窗口内两种回调次序均正常配对，修复不得误禁及时输入。
     def test_timely_pair_remains_accepted_in_either_callback_order(self):
         for health_first in (True, False):
             with self.subTest(health_first=health_first):
@@ -248,6 +276,7 @@ class OdometryAdapterTests(unittest.TestCase):
                 self.assertEqual(len(ready), 1)
                 self.assertIsNotNone(ready[0][1])
 
+    # 同一回调同时产生旧撤销和新正常帧，必须按撤销在前返回且序号继续前进。
     def test_callback_expiry_precedes_fresh_pair_without_hiding_revocation(self):
         adapter = self.guarded()
         self.assertEqual(adapter.odometry(odometry(), 1., 10_000_000_050, 1, 1), [])
@@ -265,6 +294,7 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertGreater(states[1].sequence, states[0].sequence)
         self.assertEqual(states[1].raw_health_sequence, 8)
 
+    # 原始 Odom 与 Health 各自恰一发布源，否则输出无有效位/NaN 撤销状态。
     def test_raw_topics_each_require_exactly_one_publisher_before_conversion(self):
         for counts in ((0, 1), (1, 0), (2, 1), (1, 2), (2, 2)):
             with self.subTest(counts=counts):
@@ -279,6 +309,7 @@ class OdometryAdapterTests(unittest.TestCase):
                 self.assertGreater(invalid.sequence, 0)
                 self.assertTrue(all(math.isnan(x) for x in invalid.position + invalid.velocity + invalid.attitude))
 
+    # 冲突前缓存的 A 来源 Health 不能在冲突消失后给 B 测量背书。
     def test_raw_conflict_discards_cached_health_before_another_odometry_can_pair(self):
         adapter = self.guarded()
         self.assertEqual(adapter.health(health(), 1., 10_000_000_050, 1, 1), [])
@@ -291,6 +322,7 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertEqual(missing[0].valid_fields, 0)
         self.assertGreater(missing[0].sequence, invalid.sequence)
 
+    # 图冲突即 timer 撤销；恢复单源后仍需一对新 stamp 才可恢复，不复用旧缓存。
     def test_timer_revokes_healthy_state_on_raw_graph_conflict_and_waits_for_new_pair(self):
         adapter = self.guarded()
         adapter.health(health(), 1., 10_000_000_050, 1, 1)
@@ -311,6 +343,7 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertGreater(restored.sequence, invalid.sequence)
         self.assertEqual(restored.raw_health_sequence, 8)
 
+    # 旧状态健康但新样本缺 metadata，超时必须发新序号明确撤销。
     def test_missing_metadata_emits_explicit_revocation_without_borrowing_health(self):
         adapter = self.guarded()
         adapter.health(health(), 1., 10_000_000_050, 1, 1)
@@ -325,7 +358,9 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertGreaterEqual(invalid.stamp_ns, valid.stamp_ns)
 
 
+# 临时 C++ 编译探针检查真实 ROS 字段到内部结构的映射，不运行节点。
 class RosMappingTests(unittest.TestCase):
+    # 验证时间单位、wxyz、mask 和 mode；非法版本/时间/枚举必须清有效性。
     def test_cpp_mapping_preserves_wxyz_masks_mode_and_rejects_invalid_stamp_version(self):
         header = ROOT / 'native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp'
         self.assertTrue(header.is_file(), 'C++ vision wire adapter implementation is missing')

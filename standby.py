@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 后台待命监督器：管理唯一原生控制器、串口 Agent、状态快照与有界日志。
+# 默认配置关闭动作门；导航服务可提供配置工厂，但本监督器本身不发送起飞、解锁或任务命令。
 """Closed-gate background supervision; no mission or flight authorization."""
 from __future__ import annotations
 
@@ -30,6 +32,7 @@ from launcher import (Channel, ChannelError, ControlError, NodeStop, PROJECT, co
 RETRY_SECONDS = 30
 
 
+# 传输恢复只处理 Agent，绝不替换仍在运行的原生控制器；后者保留原有安全状态并自行判断恢复。
 class AgentTransport:
     """Recover UART transport only; never command or replace the live controller.
 
@@ -42,6 +45,7 @@ class AgentTransport:
         self.binary, self.owned, self.existing = binary, owned, existing
         self.cache, self.message = cache, message
         self.closing = threading.Event()
+        # guard 保护对外信息快照；launch_guard 串行化“允许新启动”与 close，防止关停后又生成 Agent。
         self.guard = threading.Lock()
         self.launch_guard = threading.Lock()
         self.worker = None
@@ -50,6 +54,7 @@ class AgentTransport:
         self.info = {}
         self._report('CONNECTED' if owned is not None or existing is not None else 'RECOVERING', None)
 
+    # 只在状态/原因变化时写转换日志；界面取得信息副本，不直接读写传输线程的内部状态。
     def _report(self, status, reason):
         pid = self.owned.pid if self.owned is not None else self.existing.pid if self.existing else None
         info = dict(agent_pid=pid, agent_owned=self.owned is not None,
@@ -65,6 +70,7 @@ class AgentTransport:
         with self.guard:
             return dict(self.info)
 
+    # 自建进程查 poll；复用进程重新核对 /proc 完整参数，防止仅凭旧 PID 误认已被复用的进程。
     def alive(self):
         if self.owned is not None:
             return self.owned.poll() is None
@@ -77,6 +83,7 @@ class AgentTransport:
         except OSError:
             return False
 
+    # 每轮先确认存活；失联后锁住 UART 启动路径并重新检查实际占用者。失败按 1 至 30 秒指数退避。
     def step(self, now=None):
         now = time.monotonic() if now is None else now
         if now < self.next_check or self.closing.is_set():
@@ -94,6 +101,7 @@ class AgentTransport:
             with os.fdopen(fd, 'w') as lock:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 existing = choose_agent(process_list(), uart_owners('/dev/ttyS2'), '/dev/ttyS2', os.getuid())
+                # 占用检查完成后仍须在启动锁内再查 closing，关闭请求与 Popen 之间不能留下竞态窗口。
                 with self.launch_guard:
                     if self.closing.is_set():
                         return
@@ -116,6 +124,7 @@ class AgentTransport:
             self.next_check = now+self.backoff
             self.backoff = min(30., self.backoff*2)
 
+    # 守护线程只定期恢复传输；异常转为诊断与 30 秒后重试，不向控制器发送任何飞行动作。
     def start(self):
         def run():
             while not self.closing.is_set():
@@ -128,6 +137,7 @@ class AgentTransport:
         self.worker = threading.Thread(target=run, daemon=True)
         self.worker.start()
 
+    # 先设关闭事件，再等待已获准启动结束；关闭后返回自建 Agent 交给上层核对地面证据，不能直接杀掉。
     def close(self):
         self.closing.set()
         with self.launch_guard:
@@ -138,6 +148,7 @@ class AgentTransport:
         return self.owned
 
 
+# 若发现上次遗留的原生进程，保留它并只维护 Agent，等待其自身安全退出后再考虑新控制器。
 def wait_for_previous_controller(agent_binary, cache, stopped, publish, message):
     """Keep transport available while an orphan completes native safe shutdown."""
     def controllers():
@@ -162,6 +173,7 @@ def wait_for_previous_controller(agent_binary, cache, stopped, publish, message)
     return not stopped.is_set()
 
 
+# 基于原配置生成关闭动作门的独立配置，空 csv_path 禁用同步 CSV；不会覆写传入的原始配置。
 def standby_config(base):
     config = runtime_profile(base, False)
     # A YAML quoted empty string is valid. A CLI zero-length RHS is not.
@@ -169,6 +181,7 @@ def standby_config(base):
     return config
 
 
+# 每个日志拥有独立滚动处理器，限制磁盘增长；原生每次启动使用自己的处理器实例。
 def rotating_logger(path, max_bytes=4*1024*1024):
     log = logging.Logger(str(path), level=logging.INFO)
     handler = BackgroundFileHandler(path, maxBytes=max_bytes, backupCount=2, encoding='utf8')
@@ -177,6 +190,7 @@ def rotating_logger(path, max_bytes=4*1024*1024):
     return log
 
 
+# 处理器由后台线程关闭；从 logging 全局退出清单移除，避免主线程等待卡住的后台 flush 锁。
 def background_log_owner(log):
     # These handlers are closed by their daemon owner. logging.shutdown's
     # implicit main-thread lock/flush would otherwise defeat bounded shutdown.
@@ -185,6 +199,7 @@ def background_log_owner(log):
             logging._removeHandlerRef(reference)
 
 
+# 控制台只做尽力输出，不获得 Python 共享 stdout 锁；完整转换记录由滚动日志保存。
 class ConsoleOutput:
     """Best-effort worker output without Python's shared stdout buffer lock."""
     def __init__(self, output):
@@ -203,6 +218,7 @@ class ConsoleOutput:
         except (AttributeError, OSError, ValueError):
             pass  # The rotating log remains the full transition record.
 
+    # 单条控制台输出限制 1000 字符；满管道/断开只丢显示副本，不能阻塞状态工作线程。
     def write(self, message):
         data = (message[:1000] + ('…' if len(message) > 1000 else '') + '\n').encode('utf8', errors='replace')
         try:
@@ -222,6 +238,7 @@ class ConsoleOutput:
             self.fd = None
 
 
+# 记录磁盘写错误的次数与最后原因；错误输出也使用非阻塞通道，避免报错路径再次卡住。
 class BackgroundFileHandler(RotatingFileHandler):
     """Report storage errors without acquiring Python's shared stderr lock."""
     def __init__(self, *args, **kwargs):
@@ -238,6 +255,7 @@ class BackgroundFileHandler(RotatingFileHandler):
         if self.error_output is not None:
             self.error_output.write(f'Log storage failure ({self.write_errors}): {self.last_write_error}')
 
+    # 覆写 logging 默认 traceback 路径：该路径可能锁住缓冲 stderr，从而拖住解释器退出。
     def handleError(self, record):
         # The default handler prints a traceback to buffered sys.stderr. A
         # full pipe there can hold both this daemon and interpreter shutdown.
@@ -256,6 +274,7 @@ class BackgroundFileHandler(RotatingFileHandler):
                 self.error_output = None
 
 
+# 状态只保留最新一份，转换消息最多排队 16 条；生产者只入队，不承担磁盘或终端 I/O。
 class StatusWriter(threading.Thread):
     """One pending snapshot and a bounded transition log; no I/O in producers."""
     def __init__(self, folder, log):
@@ -267,6 +286,7 @@ class StatusWriter(threading.Thread):
         background_log_owner(log)
         self.start()
 
+    # 队列满时丢旧取新；与消费者并发取走时允许丢一次副本，绝不等待队列空位。
     @staticmethod
     def replace(pending, value):
         try:pending.put_nowait(value)
@@ -276,6 +296,7 @@ class StatusWriter(threading.Thread):
             try:pending.put_nowait(value)
             except queue.Full:pass
 
+    # updated_unix 是此快照提交时间；飞控自身的新鲜度仍由 payload 中的状态和样本年龄说明。
     def submit(self, row):
         self.replace(self.latest,{**row,'updated_unix':time.time()})
 
@@ -286,6 +307,7 @@ class StatusWriter(threading.Thread):
         self.closing.set()
         self.join(timeout=timeout)
 
+    # 状态写失败保留磁盘旧文件及旧时间戳；成功新快照中附带已观测到的日志存储错误。
     def run(self):
         try:
             while not self.closing.is_set() or not self.latest.empty() or not self.messages.empty():
@@ -309,6 +331,7 @@ class StatusWriter(threading.Thread):
             for handler in self.log.handlers:handler.close()
 
 
+# 管道 read 与日志行无关，先拼行再加时间戳；超长或无换行输出分片并持续排空，避免堵住原生 stdout。
 class LogPump(threading.Thread):
     """Preserve native records across pipe reads, with bounded buffering.
 
@@ -326,6 +349,7 @@ class LogPump(threading.Thread):
         pending = b''
         limits = [handler.maxBytes//2 for handler in self.log.handlers
                   if getattr(handler, 'maxBytes', 0) > 0]
+        # 单条重组上限不超过 64 KiB，并参考滚动文件的一半容量；异常输出不能无限占内存。
         record_limit = max(1024, min([65536, *limits]))
         try:
             while True:
@@ -350,6 +374,7 @@ class LogPump(threading.Thread):
             for handler in self.log.handlers:handler.close()
 
 
+# 先写同目录临时文件再原子替换，读端得到完整 JSON；默认动作门值可被明确提供的 payload 覆盖。
 def write_status(folder, payload):
     content = {'flight_actions_enabled': False, 'rc_navigation_enabled': False,
                'updated_unix': time.time(), **payload}
@@ -360,6 +385,7 @@ def write_status(folder, payload):
     os.replace(temp, folder/'status.json')
 
 
+# 区分正常退出码与信号退出；只报告已发生的进程结果，不据此推断飞机是否接地或上锁。
 def controller_result(node):
     code = node.poll()
     number = -code if code is not None and code < 0 else None
@@ -377,6 +403,7 @@ def controller_result(node):
                 controller_exit_reason=reason)
 
 
+# 将连接终止原因保存成结构化诊断，保留 ChannelError 细分类型和系统 errno。
 def ipc_error(exc):
     if isinstance(exc, ChannelError):
         return exc.as_dict()
@@ -386,12 +413,14 @@ def ipc_error(exc):
     return result
 
 
+# 只发送一次 STATUS 并持续读状态，不进入 INTERACTIVE/PING 租约模式；请求停止后等原生自行结束。
 def monitor(channel, node, stopped, observe, health=lambda: None, *, diagnostics=None):
     """Only STATUS; retain the process until its own graceful exit completes."""
     state, state_at, failure = {}, -math.inf, None
     diagnostics = {} if diagnostics is None else diagnostics
     stop = NodeStop(node)
     last_emit, previous = -math.inf, None
+    # 每条带 phase 的回复/状态更新接收时间；已收的有效末尾状态先保留，再暴露锁存的 IPC 错误。
     def receive():
         nonlocal state, state_at
         for obj in channel.read():
@@ -434,6 +463,7 @@ def monitor(channel, node, stopped, observe, health=lambda: None, *, diagnostics
         closing = stopped.is_set() or failure is not None
         if closing:
             stop.request()
+        # 反馈当前有效要求连接仍在、接收未超过 3 秒且飞控 status/local 均新鲜；历史缓存不能满足此条件。
         fresh = (channel is not None and 0 <= now-state_at <= 3 and state.get('status_fresh') is True
                  and state.get('local_fresh') is True)
         status = 'STOPPING' if closing else 'CONNECTED' if fresh else 'WAITING'
@@ -459,6 +489,7 @@ def monitor(channel, node, stopped, observe, health=lambda: None, *, diagnostics
     return state, state_at, failure
 
 
+# 安装/启动前检查 SDK、Agent 与类型支持；可接受安装包自带配置路径，避免旧 SDK 配置覆盖新导航策略。
 def validate(root, agent, *, controller=None, config_path=None):
     """Validate SDK/configuration; pre-build preparation has no controller yet."""
     if platform.machine().lower() not in ('aarch64', 'arm64'):
@@ -484,6 +515,7 @@ def validate(root, agent, *, controller=None, config_path=None):
     return config
 
 
+# 整个后台生命周期的资源所有者：同一时刻一把入口锁、一个原生控制器、一个传输恢复线程。
 def supervise(root, agent_binary, folder, stopped, *, controller=None, config_factory=None,
               status_metadata=None, row_formatter=None, config_path=None):
     import yaml
@@ -502,6 +534,7 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
     except OSError:
         metadata['boot_id'] = ''
 
+    # 没有新状态时可保留历史内容供诊断，但强制 feedback_current=false，且保留原 PID 与真实增长的年龄。
     def publish(row):
         nonlocal last_message, last_state, last_state_at, last_state_pid
         row = {**diagnostics, **row}
@@ -528,6 +561,7 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
             state, state_at, existing = {}, -math.inf, None
             failure = None
             try:
+                # 与交互入口共用启动锁；锁被占用时等待现有会话，不能启动第二个控制器。
                 lockfd = os.open(cache/'launcher.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
                 lock = os.fdopen(lockfd, 'w')
                 try:
@@ -549,10 +583,12 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                                               '-b', '115200', '-v', '0'],
                                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                              stderr=subprocess.DEVNULL, start_new_session=True)
+                # Agent 的恢复周期与原生监控分开，传输中断不触发原生进程替换或重新执行任务。
                 transport = AgentTransport(agent_binary, agent, existing, cache, writer.message)
                 transport.start()
                 # Open storage before the controller starts; the pump owns
                 # this attempt's handlers after it starts reading stdout.
+                # 先准备存储再启动原生；每次 LogPump 独占此次处理器，旧日志线程不能关闭下一次启动的新处理器。
                 native_log = rotating_logger(folder/'controller.log')
                 node = subprocess.Popen([str(binary), '--ros-args', '--disable-external-lib-logs',
                                          '--params-file', str(folder/'runtime.yaml'),
@@ -581,6 +617,7 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
             except Exception as exc:
                 failure = str(exc)[:2000]
             finally:
+                # 清理也要先请求并等待原生优雅退出；等待期间传输线程仍在，允许原生获得新的恢复证据。
                 if node is not None and node.poll() is None:
                     NodeStop(node).request()
                     publish(dict(status='STOPPING', reason='等待原生控制器优雅退出', controller_pid=node.pid))
@@ -602,6 +639,7 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                         ipc.parent.rmdir()
                     except OSError as exc:
                         writer.message('保留本次 IPC 目录：%s', exc)
+                # 仅自建 Agent 可进入停止判断；仍缺新鲜未解锁接地证据时保留，禁止用强杀完成退出。
                 if agent is not None:
                     if finish_agent(agent, True, node is not None and node.poll() == 0,
                                     state, state_at, time.monotonic()):
@@ -613,6 +651,7 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
                         writer.message('保留自建 Agent PID=%s；缺少新鲜未解锁接地退出证据', agent.pid)
                 if lock is not None:
                     lock.close()
+            # 一次原生生命周期真正结束后才进入 30 秒重试；重试不恢复上次起飞任务或飞行授权。
             if not stopped.is_set():
                 remaining = RETRY_SECONDS
                 while remaining > 0 and not stopped.is_set():
@@ -630,6 +669,7 @@ def supervise(root, agent_binary, folder, stopped, *, controller=None, config_fa
         writer.close()
 
 
+# 旧版后台入口默认使用关闭动作门配置；信号只置停止事件，由监督循环按原生退出流程收尾。
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--validate', action='store_true')

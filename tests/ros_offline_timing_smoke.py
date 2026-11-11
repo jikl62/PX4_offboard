@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 真实ROS本机零推力/反馈丢失冒烟：固定Domain 187，全部动作门关闭，不启动Agent或串口。
+# ATTITUDE_READY只用于零推力预发送，反馈丢失后须及时静默；假sink仅证明本地提交。
 """Real ROS 2, localhost-only zero-thrust timing/feedback-loss smoke.
 
 Run with /opt/ros/humble and the pinned px4_msgs workspace sourced.  This
@@ -20,6 +22,7 @@ import tempfile
 import time
 
 
+# 验证已构建的真实ROS节点，生成临时关闭门配置，汇总反馈排队与丢失后的输出证据。
 def main():
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
@@ -34,6 +37,7 @@ def main():
         parser.error('build the real ROS 2 node before this opt-in smoke')
 
     # Fixed isolation and fixed closed gates cannot be relaxed by CLI options.
+    # 固定本机域并清除外部发现覆盖；这些隔离条件与关闭门不能通过CLI放开。
     os.environ.update(ROS_DOMAIN_ID='187', ROS_LOCALHOST_ONLY='1',
                       RMW_IMPLEMENTATION='rmw_fastrtps_cpp')
     for variable in ('ROS_DISCOVERY_SERVER', 'CYCLONEDDS_URI',
@@ -79,11 +83,13 @@ def main():
                        (VehicleCommandAck, 'vehicle_command_ack')):
         sources[topic] = node.create_publisher(cls, '/fmu/out/' + topic, sensor)
 
+    # 实际收到的每个姿态目标必须是有限且精确零推力，否则立刻失败。
     def target(message):
         if any(not math.isfinite(x) or x != 0. for x in message.thrust_body):
             raise RuntimeError('smoke observed nonzero/invalid thrust')
         received_targets.append(message)
 
+    # 任何VehicleCommand均违反本测试边界，收到即失败。
     def command(message):
         received_commands.append(message)
         raise RuntimeError('smoke must not emit any VehicleCommand')
@@ -94,6 +100,7 @@ def main():
         node.create_subscription(VehicleCommand, '/fmu/in/vehicle_command', command, reliable),
     ]
 
+    # 以真实ROS时钟生成已上锁Stabilized、落地静止、有效Z/VZ与RC合成反馈。
     def publish():
         stamp = node.get_clock().now().nanoseconds // 1000
         status = VehicleStatus(timestamp=stamp, system_id=1, component_id=1,
@@ -125,12 +132,14 @@ def main():
                              ('manual_control_setpoint', manual), ('manual_control_switches', switches)):
             sources[topic].publish(value)
 
+    # 通过临时IPC发送带递增序号的诊断操作，保留命令应答关联。
     def send(operation):
         nonlocal sequence
         sequence += 1
         ipc.sendall(f'{sequence} {operation}\n'.encode())
         return sequence
 
+    # 按指定频率发布反馈、spin并维护PING/STATUS，将逐行IPC记录累积成状态证据。
     def step():
         nonlocal last_publish, ipc, recv_buffer, next_ping, next_status
         now = time.monotonic()
@@ -166,6 +175,7 @@ def main():
                     if item.get('kind') in ('reply', 'state'):
                         records.append(item)
 
+    # 循环执行step直到谓词成立；超时携最后状态报错，避免无期限等待。
     def until(predicate, timeout, label):
         deadline = time.monotonic()+timeout
         while time.monotonic() < deadline:
@@ -174,6 +184,7 @@ def main():
                 return
         raise RuntimeError(label + ' timed out; last state=' + json.dumps(records[-1] if records else {}))
 
+    # 健康需源时钟、姿态/本地新鲜度及唯一源计数同时成立。
     def healthy(record):
         return (record.get('source_clock_valid') and record.get('attitude_fresh')
                 and record.get('local_fresh') and record.get('source_counts') == [1, 1, 1])
@@ -194,6 +205,7 @@ def main():
             deadline = time.monotonic()+.25
             while time.monotonic() < deadline:
                 rclpy.spin_once(node, timeout_sec=.01)
+            # 发现已有其他节点即拒绝实验，避免合成/fmu/out与已有本地系统混用。
             others = [name for name in node.get_node_names() if name != node.get_name()]
             if others:
                 raise RuntimeError('isolated smoke domain already has nodes: ' + repr(others))
@@ -202,6 +214,7 @@ def main():
                                        env=os.environ.copy())
             until(lambda: bool(records) and healthy(records[-1]), 8., 'fresh real ROS callbacks')
             feedback_observation = None
+            # 可选持续窗口检查RMW到回调年龄增长、停顿计数和快源多次消费，不能只检查最新一行。
             if args.observe_seconds:
                 began = time.monotonic()
                 begin_index = len(records)
@@ -238,6 +251,7 @@ def main():
             if not ready['accepted']:
                 raise RuntimeError('closed-gate preparation rejected: ' + ready['message'])
             until(lambda: len(received_targets) >= 3 and len(received_modes) >= 3, 4., 'zero-thrust prestream')
+            # 主动切断全部合成反馈，在Offboard请求计时到期之前验证陈旧反馈触发安全出口。
             publish_feedback = False
             stopped_at = time.monotonic()
             until(lambda: any(x.get('phase') == 'SAFETY' and not x.get('source_clock_valid')
@@ -245,11 +259,13 @@ def main():
                   1.5, 'feedback-loss safety exit')
             stale = records[-1]
             stale_observed_at = time.monotonic()
+            # 记录静默出口后的双流数量，再观察0.2秒，确保没有继续发布的新目标或心跳。
             counts_after_exit = (len(received_targets), len(received_modes))
             until(lambda: time.monotonic()-stale_observed_at >= .2, .8, 'outputs remain stopped')
             if counts_after_exit != (len(received_targets), len(received_modes)):
                 raise RuntimeError('new outputs continued after confirmed stale SAFETY')
             prestream = next(x for x in reversed(records) if x.get('phase') == 'PRESTREAM' and x.get('pair_context_calls') == 3)
+            # 每条日志都必须保持动作门关闭、无176/400提交，且PX4推力采用保持UNOBSERVED。
             for record in records:
                 if any(record.get(key) for key in params if key.endswith('_enabled')):
                     raise RuntimeError('closed gate unexpectedly enabled')
@@ -290,6 +306,7 @@ def main():
             logs.seek(0)
             print(logs.read()[-14000:], file=sys.stderr)
             raise
+        # 这里只清理固定未解锁、零推力的本机夹具；结束子进程并关闭IPC/ROS资源。
         finally:
             if process is not None and process.poll() is None:
                 process.send_signal(signal.SIGINT)

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 真实ROS视觉适配冒烟：只在明确隔离的本机域生成/fc01_demo数据，不启动控制器。
+# 验证转换、来源冲突撤销、启动参数只读和SIGINT清理；不是飞行验收。
 """Opt-in real ROS adapter check. Creates only /fc01_demo/** data endpoints."""
 from pathlib import Path
 import argparse
@@ -12,6 +14,7 @@ import tempfile
 import time
 
 
+# 启动独立适配器，发布合成ENU/FLU状态并从真实话题接收VisionState。
 def main():
     parser = argparse.ArgumentParser(description='只在隔离 ROS 域验证视觉适配器，不启动控制器。')
     parser.add_argument('--adapter', type=Path)
@@ -53,6 +56,7 @@ def main():
             subscription=node.create_subscription(VisionState,params['output_topic'],received.append,sensor)
             sequence=0
 
+            # 经真实参数服务调用并有限等待，finally销毁client，不仅检查源码声明。
             def parameter_call(service_type, suffix, request):
                 # 参数必须经真实 ROS 服务验证，不能只检查源码中的只读声明。
                 client = node.create_client(service_type, '/fc01_vision_odometry_adapter/' + suffix)
@@ -93,6 +97,7 @@ def main():
                     or visible[2].bool_value):
                 raise RuntimeError('rejected adapter parameter update changed visible configuration')
 
+            # Odometry与Health使用同一时间戳；给出固定位置、速度、角速度和显式合成健康标记。
             def publish():
                 nonlocal sequence
                 sequence+=1;stamp=node.get_clock().now().to_msg()
@@ -111,6 +116,7 @@ def main():
                 health.extrinsics_id=health.alignment_id='synthetic-identity'
                 health_pub.publish(health);odom_pub.publish(odom)
 
+            # 持续送一对新样本并spin，等断言成立；适配器提前退出或超时立即失败。
             def wait_for(predicate):
                 deadline=time.monotonic()+8
                 while time.monotonic()<deadline:
@@ -128,10 +134,12 @@ def main():
             if abs(sum(x*x for x in valid.attitude)-1)>1e-8:raise RuntimeError('invalid output quaternion')
             if valid.valid_fields&48 or not all(math.isnan(x) for x in valid.pose_covariance):
                 raise RuntimeError('untransformed covariance was marked valid')
+            # 新增第二个原始Odometry发布者，要求后续VisionState的valid_fields撤销到0。
             last_sequence=valid.sequence
             duplicate=node.create_publisher(Odometry,params['input_topic'],sensor)
             wait_for(lambda:any(x.sequence>last_sequence and x.valid_fields==0 for x in received))
             node.destroy_publisher(duplicate)
+            # 从真实图查询适配器发布端点，不得出现/fmu/in硬件控制发布者。
             endpoints=node.get_publisher_names_and_types_by_node('fc01_vision_odometry_adapter','/')
             if any(name.startswith('/fmu/in/') for name,_ in endpoints):raise RuntimeError('unexpected hardware endpoint')
             if subscription is None:raise RuntimeError('subscription was not retained')
@@ -152,6 +160,7 @@ def main():
             print('REAL_ROS_VISION_ADAPTER_PASS valid_conversion=1 raw_conflict_revoked=1 fmu_publishers=0 read_only_parameters=1 sigint_clean_exit=1')
         except Exception:
             logs.seek(0);print(logs.read()[-5000:],file=sys.stderr);raise
+        # 失败也销毁ROS节点并结束适配器，避免测试残留影响下轮发现数量。
         finally:
             if node is not None:node.destroy_node()
             if rclpy.ok():rclpy.shutdown()

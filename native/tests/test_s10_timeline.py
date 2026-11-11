@@ -1,3 +1,5 @@
+# 离线时间线回归：合成已解锁Offboard从推力爬升进入下降，再进入心跳关闭状态。
+# 摘要必须报告静默与下降超时；不能把状态文字当作已证实的PX4交接。
 import importlib.util
 import io
 import json
@@ -11,7 +13,9 @@ spec = importlib.util.spec_from_file_location('s10_timeline', ROOT/'tools'/'s10_
 timeline = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(timeline)
 
+# 只在临时JSONL上运行真实摘要器，不启动控制节点。
 class S10TimelineTest(unittest.TestCase):
+    # 三条状态中仅最后一条心跳关闭，应统计一次异常并保留DESCENT_TIMEOUT原因。
     def test_source_log_detection_and_no_fabricated_handoff(self):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d)/'fixture.jsonl'

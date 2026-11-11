@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 导航管理与只读状态窗口：Python只负责安装/服务请求/诊断显示，飞行控制留给原生后台服务。
+# 关闭窗口不发送停止；明确stop/land/disable才走systemd的原生安全退出。
 """Management and read-only status view. Flight remains in the native service."""
 from __future__ import annotations
 import argparse
@@ -17,6 +19,7 @@ from navigation_status import (aircraft_feedback_current, controller_state_curre
 SERVICE='fc01-navigation.service'
 ENTRY=Path(__file__).resolve().parent
 
+# 读取真实systemd主PID/状态和boot_id，拒绝把旧status.json直接当本次进程。
 def service_info():
     result=subprocess.run(['/usr/bin/systemctl','show',SERVICE,'--property=ActiveState,MainPID,UnitFileState'],
                           capture_output=True,text=True,timeout=4)
@@ -25,12 +28,14 @@ def service_info():
     except OSError:info['boot_id']=''
     return info
 
+# 读取最新JSON对象；文件缺失/半写/损坏时返回未知空状态，不填造飞机反馈。
 def snapshot(home):
     try:
         row=json.loads((home/'FC01_navigation/status.json').read_text())
         return row if isinstance(row,dict) else {}
     except (OSError,ValueError):return {}
 
+# 先确认服务与快照身份，再计算IPC/原生/飞机反馈各自新鲜度；历史与当前显示严格区分。
 def render_status(row,info,now=None):
     now=time.time() if now is None else now
     state=row.get('state') if isinstance(row.get('state'),dict) else {}
@@ -43,6 +48,7 @@ def render_status(row,info,now=None):
         status='STALE';reason='状态快照过期，当前控制状态未知'
     else:
         status=row.get('status','WAITING');reason=row.get('reason','等待状态')
+    # 快照中的age必须加上生成到显示所过时间，不能让反复读同一文件延长飞控消息寿命。
     age=row.get('state_age_seconds')
     if type(age) not in (int,float) or not math.isfinite(age) or age<0:
         age=None
@@ -55,6 +61,7 @@ def render_status(row,info,now=None):
     current=(native_current and row.get('feedback_current') is True
              and age is not None and age<=3 and state.get('status_fresh') is True
              and state.get('local_fresh') is True and aircraft_feedback_current(state,age))
+    # 当前控制器故障锁存即使飞机反馈过期也保留FAULT；但不能由此推断当前已上锁或已接地。
     if locked_fault:
         status='FAULT';reason=state.get('reason') or reason
     elif not current and status not in ('STARTING','STALE','STOPPED','STOPPING','WAITING'):
@@ -78,6 +85,7 @@ def render_status(row,info,now=None):
         lines.append(f"{label}：{state.get('reason','未知')}")
         if locked_fault and not current:
             lines.append('飞控反馈：已过期或无效；当前飞机状态未知，不据此解锁或进入导航。')
+    # 只有全部反馈当前有效才显示“实际模式”；其它一律标注历史/未知并禁止据提示解锁。
     if current:
         lines.append(f'实际模式：{mode}  armed={armed_text}  相对高度：{height_text}  反馈年龄：{age:.1f} 秒')
     elif state:
@@ -97,6 +105,7 @@ def render_status(row,info,now=None):
             preparation=preparation_wait_details(state)
             if preparation:
                 lines.append('准备等待：'+'；'.join(preparation))
+        # 恢复显示分别保留首故障、最新故障、Runtime/Core阻塞及独立新样本计数，便于定位卡住来源。
         if (state.get('rc_first_fault_reason') or state.get('rc_latest_fault_reason') or
             state.get('phase')=='SAFETY' or status=='FAULT' or state.get('rc_recovery_window_active') is True):
             label=('恢复观察' if current else '恢复观察（飞控反馈过期）') if native_current else '最近恢复观察（历史）'
@@ -141,6 +150,7 @@ def render_status(row,info,now=None):
               'DIAGNOSTIC':'仅进行软件诊断；保持未解锁，不执行起飞或导航。',
               'FAULT':'任务已停止推进；按遥控器实际模式接管，接地上锁后复位 CH5/CH6。',
               'HEIGHT_HOLD':'正在定高；任务总时限 30 秒后进入原生降落流程。'}
+    # 人工操作提示还要检查RC路线真实动作门，避免诊断模式仅因内部phase就显示解锁指令。
     if status in ('READY_WAIT_ARM','WAIT_NAVIGATION') and not manual_rc_guidance_allowed(state):
         guidance[status]='尚未确认飞行动作许可；不据此解锁、起飞或进入导航。'
     lines.append(guidance.get(status,'起飞前：Stabilized、最低油门、CH5 未解锁、CH6 非导航、CH7 正常。')
@@ -148,6 +158,7 @@ def render_status(row,info,now=None):
     lines.append('窗口只显示状态。关闭窗口/Ctrl+C 不会停止控制服务。')
     return '\n'.join(lines)
 
+# 周期读取状态并刷新终端；Ctrl+C/输出断开只退出查看器，不影响后台控制托管。
 def monitor(home):
     info={};next_info=0
     try:
@@ -163,10 +174,12 @@ def monitor(home):
     except (OSError,ValueError):
         return  # Vanished view output never becomes a service stop request.
 
+# 延迟导入有界报告收集器；报告只读服务/磁盘证据，不重新启动控制。
 def report(home):
     from navigation_report import collect_report
     return collect_report(home,entry=ENTRY,runner=subprocess.run)
 
+# 分派显式管理动作；flight-test必须双参数确认，失败自动报告，绝不把失败当作重新起飞请求。
 def main(argv=None):
     parser=argparse.ArgumentParser(description='FC01 手动解锁、遥控触发导航定高')
     parser.add_argument('action',nargs='?',default='install',choices=('install','status','monitor','logs','report','start','stop','land','disable','rollback'))

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 现有部署/通信身份的只读采集器：默认仅标准库；可选ROS子进程只订阅/fmu/out且有时间上限。
+# CDR大小不是UART吞吐，source age未验证同步时只作观察；磁盘源码不证明运行二进制实际用了它。
 """Collect existing navigation deployment evidence; never start services or publish.
 
 The default path needs only Python's standard library. ROS sampling is opt-in,
@@ -19,12 +21,14 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
+# 只保留与HOME/SDK/ROS相关环境白名单，避免复制服务的其它凭据。
 ENV_KEYS = ('HOME', 'FC01_PROJECT_ROOT', 'ROS_DOMAIN_ID', 'ROS_LOCALHOST_ONLY',
             'RMW_IMPLEMENTATION', 'AMENT_PREFIX_PATH', 'CMAKE_PREFIX_PATH',
             'COLCON_PREFIX_PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH', 'ROS_DISTRO')
 SERVICE_KEYS = ('WorkingDirectory', 'ExecStart', 'Environment', 'EnvironmentFiles',
                 'LoadState', 'ActiveState', 'SubState', 'MainPID', 'User', 'FragmentPath',
                 'DropInPaths', 'UnitFileState', 'ControlGroup')
+# 采样话题均为PX4输出，不包含/fmu/in控制入口；每个观察订阅也会增加DDS负载。
 TOPICS = {
     '/fmu/out/vehicle_attitude': 'VehicleAttitude',
     '/fmu/out/vehicle_local_position': 'VehicleLocalPosition',
@@ -38,6 +42,7 @@ TOPICS = {
 }
 
 
+# 有界执行只读查询并裁剪输出；超时/权限/非零都报告unknown，不假设不存在。
 def run_command(argv, timeout=4):
     try:
         result = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True,
@@ -51,6 +56,7 @@ def run_command(argv, timeout=4):
         return dict(status='unknown', reason=str(error))
 
 
+# 限制单文件256MiB，读前后大小/mtime不变才给摘要；并发改写返回unknown。
 def fingerprint(path):
     path = Path(path)
     try:
@@ -70,6 +76,7 @@ def fingerprint(path):
         return dict(path=str(path), status='unknown', reason=str(error))
 
 
+# 分别解析systemd shell词或/proc空字符环境，只返回白名单键。
 def environment(text, separator=None):
     try:
         words = text.split(separator) if separator else shlex.split(text)
@@ -79,6 +86,7 @@ def environment(text, separator=None):
         return {}
 
 
+# 只观察主PID/Agent/控制器与监督器，保留exe/cwd/串口fd身份；不可读进程计入partial。
 def processes(proc_root, main_pid):
     items = []; unreadable = 0
     try:
@@ -124,6 +132,7 @@ def processes(proc_root, main_pid):
                 items=sorted(items, key=lambda row: row['pid']))
 
 
+# 以服务WorkingDirectory为首选入口，收源码/参数/SDK与进程身份；不source或执行部署脚本。
 def collect(service, device, project_root=None, command=run_command, proc_root=Path('/proc')):
     shown = command(['systemctl', 'show', '--no-pager', service,
                      '--property='+','.join(SERVICE_KEYS)])
@@ -155,6 +164,7 @@ def collect(service, device, project_root=None, command=run_command, proc_root=P
             paths.update(Path(x) for x in shlex.split(properties.get(key, '')) if x.startswith('/'))
         except ValueError:
             pass
+    # 源码摘要最多1000项并明确记录上限是否到达，不能将有界采集说成全树取证。
     source_count = 0
     try:
         for source in (entry/'native/src').rglob('*'):
@@ -211,10 +221,12 @@ def collect(service, device, project_root=None, command=run_command, proc_root=P
                              'No service/Agent startup, serial open/configuration, or flight publisher.'])
 
 
+# 固定空间累计有限值的计数/和/范围；无数据用None，不伪造零延迟。
 class Aggregate:
     def __init__(self):
         self.count = 0; self.total = 0.; self.minimum = None; self.maximum = None
 
+    # 仅有限观测进入统计；NaN/Inf不污染均值与边界。
     def add(self, value):
         if not math.isfinite(value):
             return
@@ -222,11 +234,13 @@ class Aggregate:
         self.minimum = value if self.minimum is None else min(self.minimum, value)
         self.maximum = value if self.maximum is None else max(self.maximum, value)
 
+    # 返回当前统计的快照字典，不清除累计水位。
     def report(self):
         return dict(count=self.count, min=self.minimum, max=self.maximum,
                     mean=self.total/self.count if self.count else None)
 
 
+# 每话题分别跟踪接收间隔、源/样本年龄、CDR大小和重复/回退，不能以新包络掩盖旧样本。
 class TopicStats:
     def __init__(self):
         self.count = 0; self.cdr_bytes = 0; self.last = None; self.stamps = {}
@@ -234,6 +248,7 @@ class TopicStats:
         self.gaps = Aggregate(); self.message_age = Aggregate(); self.sample_age = Aggregate()
         self.sizes = Aggregate()
 
+    # monotonic用于本机间隔，wall减源微秒用于声明年龄；两类时钟不能互换。
     def observe(self, mono, wall, stamp, sample, size):
         self.count += 1; self.cdr_bytes += size; self.sizes.add(size)
         if self.last is not None:
@@ -248,6 +263,7 @@ class TopicStats:
                     self.regressions[name] += value < old
                 self.stamps[name] = value
 
+    # 频率与CDR速率按实际采样时长计算，不把序列化字节当作串口实际字节。
     def report(self, duration):
         return dict(messages=self.count, receive_hz=self.count/duration,
                     receive_gap_s=self.gaps.report(), message_age_s=self.message_age.report(),
@@ -258,6 +274,7 @@ class TopicStats:
                     sample_stamp_regressions=self.regressions['sample'])
 
 
+# 读取图端点类型/QoS/数量；发现失败保留unknown，不靠图信息授予控制权。
 def endpoint_info(node, topic):
     def convert(endpoint):
         qos = endpoint.qos_profile
@@ -274,6 +291,7 @@ def endpoint_info(node, topic):
         return dict(status='unknown', reason=str(error))
 
 
+# 延迟导入ROS，创建唯一只读观察节点；finally销毁并关闭该上下文，短窗不证明长期稳定。
 def sample_ros(seconds):
     # Deliberately lazy: --help and deployment collection work without ROS installed.
     import rclpy
@@ -293,6 +311,7 @@ def sample_ros(seconds):
         for topic, type_name in TOPICS.items():
             stats[topic] = TopicStats()
             try:
+                # 默认参数冻结话题名，避免循环回调串线；记录每条消息真实序列化大小及两个时间戳。
                 def receive(msg, name=topic):
                     stats[name].observe(time.monotonic(), time.time(), getattr(msg, 'timestamp', None),
                                         getattr(msg, 'timestamp_sample', None), len(serialize_message(msg)))
@@ -319,6 +338,7 @@ def sample_ros(seconds):
         rclpy.shutdown()
 
 
+# 优先用运行控制器/proc环境与采样环境比较；缺SDK/RMW不能凭默认值认定加载身份一致。
 def compare_ros_environment(report):
     sampled = report['ros'].get('environment', {})
     deployed = report['service']['properties'].get('Environment', {})
@@ -342,6 +362,7 @@ def compare_ros_environment(report):
     return result
 
 
+# 输出必须新目录，0..30秒窗口显式选择；ROS工作者继承调用方环境且外层再加超时。
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, help='New report directory; default ~/FC01_communications_<UTC>')

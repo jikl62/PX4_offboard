@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 真实Humble下的只读年龄探针冒烟：发布合成反馈，核对包络时间与原始采样时间。
+# 仅使用localhost的Domain 189；不启动控制器/Agent，不能证明实际飞控数据健康。
 """Isolated real-Humble probe check: synthetic feedback only, no controller/Agent."""
 import argparse
 import json
@@ -10,12 +12,14 @@ import tempfile
 import time
 
 
+# 创建隔离ROS节点与临时状态文件，运行探针子进程，核对回调统计和只读边界。
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report', type=Path)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[3]
     os.environ.update(ROS_DOMAIN_ID='189', ROS_LOCALHOST_ONLY='1', RMW_IMPLEMENTATION='rmw_fastrtps_cpp')
+    # 清除外部发现/XML配置，避免本机环境将合成话题接入其他DDS域。
     for key in ('ROS_DISCOVERY_SERVER', 'CYCLONEDDS_URI', 'FASTRTPS_DEFAULT_PROFILES_FILE',
                 'FASTDDS_DEFAULT_PROFILES_FILE', 'RMW_FASTRTPS_USE_QOS_FROM_XML', 'ROS_STATIC_PEERS'):
         os.environ.pop(key, None)
@@ -49,6 +53,7 @@ def main():
             while process.poll() is None and time.monotonic() < stop:
                 now = time.monotonic()
                 if now >= next_publish:
+                    # 包络采用当前时钟，timestamp_sample故意落后600ms，用来防止将新包络误当成新测量。
                     stamp = time.time_ns()//1000
                     publications['attitude'].publish(VehicleAttitude(timestamp=stamp, timestamp_sample=stamp-600_000,
                                                                     q=[1., 0., 0., 0.]))
@@ -70,10 +75,12 @@ def main():
             assert start['rmw_implementation'] == 'rmw_fastrtps_cpp', start
             assert final['kind'] == 'feedback_age_probe_final', final
             assert final['controller_status']['available'], final
+            # 探针必须保持输入状态文件逐字节不变，且不得发布任何/fmu/in控制话题。
             assert original_status == status.read_bytes()
             assert observed_probe_publishers <= {'/parameter_events'}, observed_probe_publishers
             assert not any(topic.startswith('/fmu/in/') for topic, _ in node.get_topic_names_and_types())
             for row in final['topics'].values():
+                # 同时要求足够回调、新包络、旧样本与可用RMW接收时间，避免只看收包数量。
                 assert row['callbacks_total'] >= 140, row
                 assert row['last']['callback_envelope_age_s'] < .15, row
                 assert row['last']['callback_sample_age_s'] > .5, row
@@ -88,6 +95,7 @@ def main():
             print(json.dumps(dict(passed=True, probe_publishers_observed=sorted(observed_probe_publishers),
                                   topics={key: dict(callbacks=row['callbacks_total'], last=row['last'])
                                           for key, row in final['topics'].items()})), flush=True)
+    # 即使断言失败，也要终止探针并销毁ROS资源，防止遗留测试节点。
     finally:
         if process is not None and process.poll() is None:
             process.terminate()

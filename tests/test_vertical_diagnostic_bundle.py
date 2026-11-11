@@ -1,3 +1,5 @@
+# 源码安装器完整性/幂等回归：用临时合成工程验证manifest、双哈希、解包复用与拒绝覆盖。
+# 部署脚本只是记录参数的无害替身，不会实际激活服务；源码中的本地未提交改动也须精确保留。
 """Source installer integrity/idempotence; deploy actions use a harmless stub."""
 import base64
 import hashlib
@@ -17,7 +19,9 @@ ROOT=Path(__file__).resolve().parents[1]
 MARKER=b'\n__FC01_PAYLOAD_BASE64__\n'
 
 
+# 每例隔离HOME、源树和安装目标，检查安装器副作用发生在校验之后。
 class VerticalDiagnosticBundleTests(unittest.TestCase):
+    # 建立含当前源码、未跟踪文件、旧构建/激活证据的假工程；部署替身仅向临时actions.log写参数。
     def fixture(self,folder):
         source=folder/'source';source.mkdir()
         native=source/'native/src/jikl_fc01_system'
@@ -45,14 +49,17 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
         env.pop('FC01_NAVIGATION_INSTALL_DIR',None)
         return source,home,actions,env
 
+    # 用测试专属环境运行生成的shell安装器，捕获退出码与输出，不沿用真实安装目录。
     def execute(self,installer,env,*args):
         return subprocess.run(['bash',str(installer),*args],env=env,capture_output=True,text=True)
 
+    # 解码安装器分隔标记后的Base64 ZIP，返回归档字节，便于与manifest逐项核对。
     def archive(self,installer):
         payload=base64.b64decode(b''.join(installer.read_bytes().split(MARKER,1)[1].split()),validate=True)
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
             return {name:archive.read(name) for name in archive.namelist()}
 
+    # 当前native/src全部文件须同时列入source与payload哈希；manifest自体和旧ARM64证据排除。
     def test_current_checkout_sources_and_local_edit_are_exact(self):
         manifest=bundle.make_manifest(ROOT)
         expected={str(path.relative_to(ROOT)) for path in (ROOT/'native/src').rglob('*') if path.is_file()}
@@ -65,6 +72,7 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
         self.assertNotIn(bundle.MANIFEST,manifest['payload_sha256'])
         self.assertNotIn('ARM64_BUILD_EVIDENCE.json',manifest['payload_sha256'])
 
+    # 新默认目录不得覆盖旧垂直诊断版本与激活证据，版本占位符必须已替换。
     def test_new_default_directory_preserves_previous_unpacked_release(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory);source,home,_,env=self.fixture(folder)
@@ -84,6 +92,7 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
             self.assertNotIn(b'__RELEASE_VERSION__',header)
             self.assertNotIn(b'__CONTROLLER_BUILD__',header)
 
+    # 重复offline应校验后复用，不改源码mtime或install生成物；旧构建/机器专属证据不打入payload。
     def test_default_offline_repeat_skips_unpack_and_preserves_generated_outputs(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory);source,home,actions,env=self.fixture(folder)
@@ -111,6 +120,7 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
                 self.assertNotIn(excluded,release['payload_sha256'])
             self.assertTrue(list((home/'FC01_navigation/deploy-logs'/bundle.RELEASE_NAME).glob('*extract.log')))
 
+    # 三个兼容解包参数不触发部署；activate/rollback参数须原样转发，冲突参数拒绝。
     def test_extract_only_compatibility_and_action_forwarding(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory);source,home,actions,env=self.fixture(folder)
@@ -126,6 +136,7 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
             result=self.execute(installer,env,'--install-only','offline')
             self.assertNotEqual(result.returncode,0)
 
+    # manifest生成后本地源码再变化，build必须报payload哈希不符并保留用户文件。
     def test_manifest_checks_actual_disk_and_rejects_stale_content(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory);source,_,_,_=self.fixture(folder)
@@ -140,6 +151,7 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
                 bundle.build(folder/'stale.sh',source)
             self.assertEqual(local.read_text(),'another uncommitted config-check change\n')
 
+    # 目标被修改、缺文件或为空时均拒绝覆盖，且不能调用offline部署。
     def test_existing_different_or_incomplete_directory_is_never_overwritten(self):
         for condition in ('changed','missing','empty'):
             with self.subTest(condition=condition),tempfile.TemporaryDirectory() as directory:
@@ -159,6 +171,7 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
                 if condition=='changed':self.assertEqual((target/'navigation.sh').read_text(),'keep user file')
                 if condition=='missing':self.assertFalse((target/'navigation.sh').exists())
 
+    # 分别篡改头部、payload或sha256 sidecar，要求SHA256错误出现在创建目标目录之前。
     def test_whole_package_sidecar_and_archive_hash_fail_before_extract(self):
         for kind in ('header','payload','sidecar'):
             with self.subTest(kind=kind),tempfile.TemporaryDirectory() as directory:
@@ -177,6 +190,7 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
                 self.assertIn('log=',result.stderr)
                 self.assertFalse((home/bundle.RELEASE_NAME).exists())
 
+    # 同源重建应逐字节一致；移除sidecar后仍可依嵌入归档哈希正确解包。
     def test_no_sidecar_uses_embedded_hash_and_rebuild_is_reproducible(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory);source,home,_,env=self.fixture(folder)
@@ -190,6 +204,7 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
             self.assertTrue((home/bundle.RELEASE_NAME).is_dir())
 
+    # 父目录逃逸、绝对路径和符号链接归档项均须先拒绝，不能创建目标或逃逸文件。
     def test_unsafe_archive_paths_are_rejected_before_creating_target(self):
         for name,mode in (('../escape',0o100600),('/absolute',0o100600),('link',stat.S_IFLNK|0o777)):
             with self.subTest(name=name),tempfile.TemporaryDirectory() as directory:

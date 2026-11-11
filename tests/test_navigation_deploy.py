@@ -1,3 +1,5 @@
+# navigation_deploy 的动作编排测试：offline 只做构建/配置，activate 才允许进入显式在线路径。
+# 所有阶段通过 FakeLog 记录命令而不执行；临时现场配置用于证明离线准备不会覆盖正在运行的设置。
 """Offline/online orchestration boundaries without ROS, systemd or hardware."""
 import hashlib
 import json
@@ -9,6 +11,7 @@ from unittest.mock import patch
 import navigation_deploy as deploy
 
 
+# 模拟部署日志的 step 接口，保存阶段与参数供顺序和禁用命令断言。
 class FakeLog:
     def __init__(self, folder):
         self.path = folder/'offline.log'
@@ -20,6 +23,7 @@ class FakeLog:
 
 
 class DeploymentTests(unittest.TestCase):
+    # 复制候选配置和设置到临时源包，再生成实际内容摘要，模拟可追溯发布输入。
     def release(self, root):
         paths = ['native/config/flight_test.yaml', 'navigation_settings.json']
         repo = Path(__file__).resolve().parents[1]
@@ -30,6 +34,7 @@ class DeploymentTests(unittest.TestCase):
         (root/'FC01_RELEASE.json').write_text(json.dumps(dict(
             release_name='candidate', version='20261110.7', payload_sha256=files)))
 
+    # 离线只允许 ARM64_BUILD 与 OFFLINE_CONFIG_CHECK，保持现场 runtime 不变和程序解锁关闭。
     def test_offline_only_builds_and_checks_release_local_config(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)/'release';root.mkdir()
@@ -55,6 +60,7 @@ class DeploymentTests(unittest.TestCase):
             ready = json.loads((root/'OFFLINE_DEPLOYMENT.json').read_text())
             self.assertFalse(ready['online_probe_executed'] or ready['services_modified'] or ready['controller_executed'])
 
+    # 构建异常后必须删掉旧成功标记，并且不运行配置准备或写新 READY 证据。
     def test_build_failure_never_reaches_config_or_ready(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder);self.release(root)
@@ -67,6 +73,7 @@ class DeploymentTests(unittest.TestCase):
             config.assert_not_called()
             self.assertFalse((root/'OFFLINE_DEPLOYMENT.json').exists())
 
+    # 源文件摘要不符时，连构建动作都不能开始。
     def test_mutated_source_is_refused_before_any_action(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder);self.release(root)
@@ -76,6 +83,7 @@ class DeploymentTests(unittest.TestCase):
                 deploy.offline(root, root, log)
             self.assertEqual(log.commands, [])
 
+    # 在线启用同时需要确认和当前清单/构建证据，旧成功文件不能替代。
     def test_activation_needs_confirmation_and_current_offline_evidence(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder);self.release(root);log = FakeLog(root)
@@ -90,6 +98,7 @@ class DeploymentTests(unittest.TestCase):
                 deploy.online(root, root, log, action='activate', confirm=True)
             self.assertEqual(log.commands, [])
 
+    # 启用保持原开机策略；回滚使用已存备份，不因当前候选损坏而阻止恢复。
     def test_activation_keeps_boot_policy_and_rollback_uses_saved_backup(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder);self.release(root);log = FakeLog(root)

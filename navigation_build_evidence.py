@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 原生ARM64构建来源证明：源码/依赖/编译器/实际安装树与动态库必须共同对应，才允许复用。
+# 不运行控制器、Agent、探针或服务；x86测试fixture不能产生真实ARM64验收结论。
 """Native ARM64 build provenance and read-only verification; never starts ROS nodes."""
 from __future__ import annotations
 
@@ -18,8 +20,10 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
+# schema2绑定完整安装树和构建输入；升级前的证据不按兼容假设复用。
 SCHEMA = 2
 BINARY_NAMES = ('fc01_system_node', 'fc01_config_check')
+# 这些源文件必须出现在清单；另外递归拒绝native源码/配置中新出现的未列文件。
 REQUIRED_SOURCES = (
     'navigation_build_fresh.sh', 'navigation_environment.sh', 'navigation_build_evidence.py',
     'native/config/flight_test.yaml', 'native/config/diagnostic.yaml',
@@ -37,10 +41,12 @@ ENVIRONMENT_KEYS = ('ROS_DISTRO', 'AMENT_PREFIX_PATH', 'CMAKE_PREFIX_PATH', 'LD_
                     'COMPILER_PATH', 'PKG_CONFIG_PATH')
 
 
+# 构建身份不可信的显式拒绝异常，不自动绕过或降级校验。
 class BuildEvidenceError(RuntimeError):
     pass
 
 
+# 分块摘要真实文件字节，不依赖文件mtime；避免一次把大依赖库读入内存。
 def digest(path):
     value = hashlib.sha256()
     with Path(path).open('rb') as stream:
@@ -49,10 +55,12 @@ def digest(path):
     return value.hexdigest()
 
 
+# 稳定排序与紧凑JSON序列化使同一结构有相同摘要，供输入索引和证据校验。
 def object_digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
+# 无交互运行只读工具查询，非零保留stdout/stderr后拒绝，不能静默选另一工具。
 def command(argv):
     result = subprocess.run(list(map(str, argv)), stdin=subprocess.DEVNULL,
                             capture_output=True, text=True, check=False)
@@ -61,11 +69,13 @@ def command(argv):
     return result.stdout.strip()
 
 
+# 正式入口仅接受本机aarch64/arm64，禁止把host或交叉编译文件冒充目标机原生证据。
 def require_arm64():
     if platform.machine() not in ('aarch64', 'arm64'):
         raise BuildEvidenceError('native ARM64 host required; no cross-built or host binary accepted')
 
 
+# 验证提交标识、源码路径/SHA与编译标记，拒绝符号链接/路径穿越和不完整源树。
 def release_sources(entry):
     entry = Path(entry).resolve()
     manifest_path = entry/'FC01_RELEASE.json'
@@ -100,6 +110,7 @@ def release_sources(entry):
                 source_sha256=object_digest(files))
 
 
+# 递归摘要依赖实际目标字节与解析路径；跟随合法SDK链接、拒绝环与断链，排除Python缓存。
 def tree_fingerprint(root):
     """Hash actual dependency bytes, including symlinked SDK install trees."""
     root = Path(root)
@@ -107,6 +118,7 @@ def tree_fingerprint(root):
         raise BuildEvidenceError('dependency directory is missing: '+str(root))
     value = hashlib.sha256(); count = total = 0
 
+    # ancestors只记录当前递归链，防止目录链接成环；每个相对路径及真实路径都纳入摘要。
     def walk(directory, ancestors):
         nonlocal count, total
         real = directory.resolve()
@@ -129,6 +141,7 @@ def tree_fingerprint(root):
     return dict(path=str(root.resolve()), sha256=value.hexdigest(), files=count, bytes=total)
 
 
+# 从PATH找到真实工具后解析symlink、摘要可执行文件及版本输出，而非只记录名称。
 def executable_fingerprint(name, *version_args):
     located = shutil.which(name)
     if not located:
@@ -137,6 +150,7 @@ def executable_fingerprint(name, *version_args):
     return dict(path=str(path), sha256=digest(path), version=command([path, *version_args]))
 
 
+# 强制Humble且px4_msgs来自所选SDK；收集工具、包版本、头/库/生成器树与影响编译的环境。
 def dependency_snapshot(entry, sdk):
     sdk = Path(sdk).expanduser().resolve()
     if os.environ.get('ROS_DISTRO') != 'humble':
@@ -184,10 +198,12 @@ def dependency_snapshot(entry, sdk):
                 environment={key: os.environ.get(key, '') for key in ENVIRONMENT_KEYS})
 
 
+# 构建键同时包含不可变release源和当前依赖；任何一侧变化都不能复用旧产物。
 def build_inputs(entry, sdk):
     return dict(release=release_sources(entry), dependencies=dependency_snapshot(entry, sdk))
 
 
+# 验证ELF64小端e_machine=183、可执行权限与本版控制marker，不启动被检查程序。
 def aarch64_binary(path, marker=None):
     path = Path(path)
     data = path.read_bytes()
@@ -200,6 +216,7 @@ def aarch64_binary(path, marker=None):
                 safety_marker=marker)
 
 
+# 用ldd确认真实解析库路径与内容，拒绝not found；ASLR地址不纳入摘要。
 def resolved_libraries(binary):
     result = subprocess.run(['ldd', str(binary)], stdin=subprocess.DEVNULL,
                             capture_output=True, text=True, check=False)
@@ -218,6 +235,7 @@ def resolved_libraries(binary):
     return libraries
 
 
+# 核对CMake实际选中的compiler和消息/ROS包，避免配置记录与预先指纹不一致。
 def cmake_evidence(build, dependencies):
     cache = Path(build)/'CMakeCache.txt'
     parsed = {}
@@ -234,6 +252,7 @@ def cmake_evidence(build, dependencies):
     return dict(cache_sha256=digest(cache), selected=parsed)
 
 
+# 控制器及配置检查器各自记录ELF与实际动态库，控制器额外核验release marker。
 def binary_evidence(prefix, marker):
     result = {}
     for name in BINARY_NAMES:
@@ -244,6 +263,7 @@ def binary_evidence(prefix, marker):
     return result
 
 
+# 完整复用检查：输入、安装链接归属、二进制/库、全安装树与CMake选择全部匹配才返回证据。
 def _verify(entry, sdk, inputs=None):
     entry = Path(entry).resolve()
     inputs = build_inputs(entry, sdk) if inputs is None else inputs
@@ -268,6 +288,7 @@ def _verify(entry, sdk, inputs=None):
     return evidence
 
 
+# 只读公开校验入口；必须先加载SDK环境，文件/格式错误统一转换明确构建拒绝。
 def verify_build(entry: Path, sdk: Path | None = None) -> dict:
     """Read-only; caller must load navigation_environment.sh before invocation."""
     require_arm64()
@@ -281,6 +302,7 @@ def verify_build(entry: Path, sdk: Path | None = None) -> dict:
 
 
 @contextmanager
+# 锁覆盖整个离线构建/发布安装链接过程；非阻塞失败避免两次构建同时写同一证据。
 def build_lock(entry):
     path = Path(entry)/'.build'
     path.mkdir(exist_ok=True)
@@ -292,6 +314,7 @@ def build_lock(entry):
         yield
 
 
+# 独占临时文件写完flush/fsync后原子替换，finally只清自己的tmp，避免半写成功记录。
 def atomic_json(path, value):
     temporary = Path(str(path)+'.tmp-'+str(os.getpid()))
     try:
@@ -303,6 +326,7 @@ def atomic_json(path, value):
         temporary.unlink(missing_ok=True)
 
 
+# 先尝试严格复用，失败保留原prefix并新建独立stage；编译前后再比输入，最终发布链接与证据。
 def build_release(entry, sdk):
     require_arm64(); entry = Path(entry).resolve(); sdk = Path(sdk).resolve()
     with build_lock(entry):
@@ -334,6 +358,7 @@ def build_release(entry, sdk):
         for argv in commands:
             print('FC01_OFFLINE_BUILD_STEP '+str(argv[1]), flush=True)
             subprocess.run(argv, stdin=subprocess.DEVNULL, check=True)
+        # 编译期间源码/依赖变化即拒绝，即使cmake成功也不发布伪对应的成功证据。
         if build_inputs(entry, sdk) != inputs:
             raise BuildEvidenceError('source or dependencies changed while compiling; partial build retained')
         evidence = dict(schema=SCHEMA, entry=str(entry), source_commit=inputs['release']['source_commit'],
@@ -357,6 +382,7 @@ def build_release(entry, sdk):
         return evidence
 
 
+# 只分派build/verify；错误非零并输出证据路径，不调用生产控制节点。
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('build', 'verify'))

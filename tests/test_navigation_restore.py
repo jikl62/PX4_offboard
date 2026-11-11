@@ -1,3 +1,5 @@
+# 服务配置与回滚的离线资源保护回归；仅操作临时 units 及 fake runner。
+# configure 和 rollback 的责任是可审计地写服务/开机策略，不能顺带启动飞控或新 Agent。
 import importlib
 import hashlib
 import json
@@ -8,10 +10,12 @@ import unittest
 from unittest.mock import patch
 
 
+# 围绕既有进程、地面许可、管理标记、备份摘要与开机状态构造拒绝和恢复场景。
 class RestoreTests(unittest.TestCase):
     def module(self):
         return importlib.import_module('navigation_restore')
 
+    # 建立候选目录、假二进制和内存服务状态；runner 只把 install/rm 映射到临时文件。
     def fixture(self, temp):
         m = self.module()
         home = Path(temp)
@@ -35,6 +39,7 @@ class RestoreTests(unittest.TestCase):
             return types.SimpleNamespace(stdout='')
         return m, home, entry, units, binary, agent, calls, info, run
 
+    # 配置默认只启用未来开机待机；当前控制器和 Agent 都不能被启动。
     def test_configure_enables_boot_standby_without_starting_controller_or_agent(self):
         with tempfile.TemporaryDirectory() as temp:
             m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)
@@ -69,6 +74,7 @@ class RestoreTests(unittest.TestCase):
             self.assertEqual(manifest['original_unit_file_state'], 'disabled')
             self.assertEqual(manifest['controller_sha256'], hashlib.sha256(binary.read_bytes()).hexdigest())
 
+    # 未确认当前接地上锁时，不得创建或覆盖服务单元。
     def test_missing_ground_evidence_leaves_unit_unchanged(self):
         with tempfile.TemporaryDirectory() as temp:
             m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)
@@ -81,6 +87,7 @@ class RestoreTests(unittest.TestCase):
             self.assertFalse((units/m.SERVICE).exists())
             self.assertFalse(any('/usr/bin/install' in a for a in calls))
 
+    # 活动服务或未知控制器任一存在都阻止配置，避免重复控制实例。
     def test_running_service_and_unknown_controller_refuse_before_mutation(self):
         m = self.module()
         inactive = {'MainPID':'0','ActiveState':'inactive','DropInPaths':''}
@@ -90,6 +97,7 @@ class RestoreTests(unittest.TestCase):
                  self.assertRaises(m.ControlError):
                 m.stopped_services(Path('/unused'), lambda *a, **k: None)
 
+    # 旧待机即使当前未运行，只要开机启用也可能稍后竞争，需明确人工处置而非暗中关闭。
     def test_boot_enabled_old_standby_refuses_without_mutation(self):
         m=self.module()
         def info(name, run):
@@ -100,6 +108,7 @@ class RestoreTests(unittest.TestCase):
              self.assertRaisesRegex(m.ControlError,'sudo systemctl disable fc01-standby.service'):
             m.stopped_services(Path('/unused'), lambda *a, **k: None)
 
+    # 缺少既有 Agent 或二进制位于其他候选目录时拒绝，不能下载/启动/借用不明程序。
     def test_missing_agent_is_not_started_and_external_binary_is_rejected(self):
         m = self.module()
         with tempfile.TemporaryDirectory() as temp:
@@ -113,6 +122,7 @@ class RestoreTests(unittest.TestCase):
                  self.assertRaisesRegex(m.ControlError, '其他目录'):
                 m.existing_agent(entry, Path(temp), Path(temp)/'sdk')
 
+    # 摘要匹配的备份可以恢复服务文本，但不自动 start/enable/kill。
     def test_rollback_restores_unit_without_starting_old_controller(self):
         with tempfile.TemporaryDirectory() as temp:
             m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)
@@ -130,6 +140,7 @@ class RestoreTests(unittest.TestCase):
             self.assertEqual((units/m.SERVICE).read_text(),original)
             self.assertFalse(any(x in ('start','enable','kill') for a in calls for x in a))
 
+    # 原服务已持久启用时保持这一策略，不经 --now 触发即时进程变化。
     def test_configure_never_disables_previously_enabled_unit(self):
         with tempfile.TemporaryDirectory() as temp:
             m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)
@@ -144,6 +155,7 @@ class RestoreTests(unittest.TestCase):
             self.assertIn(['sudo','-n','/usr/bin/systemctl','enable',m.SERVICE], calls)
             self.assertFalse(any(x in ('disable', '--now', 'start', 'stop') for a in calls for x in a))
 
+    # preserve 对 enabled/disabled/enabled-runtime 均不写开机状态。
     def test_preserve_policy_leaves_persistent_enablement_untouched(self):
         for state in ('enabled', 'disabled', 'enabled-runtime'):
             with self.subTest(state=state), tempfile.TemporaryDirectory() as temp:
@@ -157,6 +169,7 @@ class RestoreTests(unittest.TestCase):
                     m.configure(entry, home, home/'sdk', boot_policy='preserve', units=units, run=run)
                 self.assertFalse(any(x in ('disable', 'enable', '--now', 'start', 'stop') for a in calls for x in a))
 
+    # 回滚恢复 persistent/runtime enable 语义，不能把恢复开机配置变成立即起飞入口。
     def test_rollback_restores_original_boot_policy_without_starting(self):
         for state, action in (('enabled','enable'), ('disabled','disable'), ('enabled-runtime','enable')):
             with self.subTest(state=state), tempfile.TemporaryDirectory() as temp:
@@ -177,6 +190,7 @@ class RestoreTests(unittest.TestCase):
                 self.assertFalse(any(x in ('--now', 'start', 'stop') for a in calls for x in a))
                 self.assertEqual((units/m.SERVICE).read_text(), original)
 
+    # 原来没有服务时先 disable 再删除定义，避免残留启用链接引用已删除单元。
     def test_rollback_without_original_unit_disables_before_removing_definition(self):
         with tempfile.TemporaryDirectory() as temp:
             m, home, entry, units, binary, agent, calls, info, run = self.fixture(temp)

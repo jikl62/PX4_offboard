@@ -1,3 +1,5 @@
+# 异步状态/日志输出的阻塞与退出回归：磁盘、终端、journal 都不能拥有 IPC 或恢复进程生命周期。
+# 部分 fixture 在子进程里故意填满真实管道或 /dev/full；父进程有超时和 finally 清理。
 """Slow status storage must never own the native process/IPC lifecycle."""
 import json
 import os
@@ -19,7 +21,9 @@ import standby
 ROOT=Path(__file__).resolve().parents[1]
 
 
+# 分别隔离观测时间、快照合并、stdout/stderr、日志 handler 和 supervisor 的线程边界。
 class StandbyWriterTests(unittest.TestCase):
+    # 延后落盘必须保留 submit 时观测戳，写盘时间不能刷新旧飞机反馈。
     def test_delayed_snapshot_keeps_observation_time_and_renders_stale(self):
         entered=threading.Event();release=threading.Event();real_write=standby.write_status
         with tempfile.TemporaryDirectory() as d:
@@ -36,6 +40,7 @@ class StandbyWriterTests(unittest.TestCase):
             self.assertEqual(row['updated_unix'],1000,'writing late must not refresh old aircraft feedback')
             self.assertIn('[STALE]',navigation.render_status(row,dict(ActiveState='active',MainPID='10'),now=1020))
 
+    # 输出线程被堵时 close 有界；1000 个待写快照只保留 sequence=999。
     def test_blocked_status_has_bounded_close_and_only_latest_pending_snapshot(self):
         entered=threading.Event();release=threading.Event()
         with tempfile.TemporaryDirectory() as d:
@@ -56,6 +61,7 @@ class StandbyWriterTests(unittest.TestCase):
                 self.assertEqual(row['sequence'],999,'the newest pending state must replace obsolete snapshots')
             finally:release.set();writer.join(timeout=1)
 
+    # 填满真实 stdout 且父端不读，状态仍落盘、进程仍退出，不能修改共享 FD 的阻塞标志。
     def test_full_real_stdout_pipe_cannot_block_status_or_python_exit(self):
         with tempfile.TemporaryDirectory() as d:
             code='''import fcntl,json,os,pathlib,standby,sys,threading,time
@@ -88,6 +94,7 @@ assert json.loads((folder/'status.json').read_text())['sequence']==999
                 if child.poll() is None:child.kill()
                 child.communicate(timeout=3)
 
+    # 以 socketpair 模拟 journal 满缓冲，验证非阻塞尝试不改 stdout 原 flag。
     def test_full_journal_socket_does_not_change_stdout_flags_or_block_exit(self):
         with tempfile.TemporaryDirectory() as d:
             code='''import fcntl,json,os,pathlib,socket,standby,sys
@@ -117,6 +124,7 @@ assert json.loads((folder/'status.json').read_text())['sequence']==999
                 if child.poll() is None:child.kill()
                 child.communicate(timeout=3);reader.close()
 
+    # /dev/full 拒绝日志且 stderr 也满时，不得递归阻塞异常日志；状态保留错误计数。
     def test_disk_full_and_full_stderr_pipe_preserve_status_and_bounded_exit(self):
         with tempfile.TemporaryDirectory() as d:
             code='''import fcntl,json,logging,os,pathlib,standby,sys,threading
@@ -154,6 +162,7 @@ assert row['sequence']==999 and row['status_log_write_errors']>=1
                 if child.poll() is None:child.kill()
                 child.communicate(timeout=3)
 
+    # 后台 handler 永久等待不能让解释器退出跟着无界 join。
     def test_blocked_background_handler_cannot_hold_python_exit(self):
         with tempfile.TemporaryDirectory() as d:
             code='''import pathlib,threading,standby,sys
@@ -171,11 +180,13 @@ writer.close()
             result=subprocess.run([sys.executable,'-c',code,d],cwd=ROOT,capture_output=True,text=True,timeout=3)
             self.assertEqual(result.returncode,0,result.stderr)
 
+    # 状态写线程冻结时，主监督循环仍应读完真实 peer 并优雅终止，trace 只含 STATUS。
     def test_blocked_status_write_cannot_prevent_ipc_read_or_graceful_stop(self):
         entered=threading.Event();release=threading.Event();stopped=threading.Event()
         children=[];errors=[];writers=[]
         real_popen=subprocess.Popen;real_read=Path.read_bytes
         real_writer=standby.StatusWriter
+        # 保存实际 writer 引用用于最终释放/等待，防止测试留下后台线程。
         def make_writer(*args,**kwargs):
             writer=real_writer(*args,**kwargs);writers.append(writer);return writer
         with tempfile.TemporaryDirectory() as d:

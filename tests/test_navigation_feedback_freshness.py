@@ -1,3 +1,5 @@
+# 显示层时效合同回归：封套、样本、接收进度和监督快照四种年龄都必须消耗各自 TTL。
+# 时间输入为可控数值，真实 IPC 用例只连接临时 peer，不连接 PX4 或运行 Agent。
 """Display expiry follows aircraft samples, including a live but silent IPC."""
 import copy
 import json
@@ -14,6 +16,7 @@ import navigation_service
 import standby
 
 
+# 构造当前 RC_READY_WAIT_ARM 反馈及各 Topic 的显式源/接收时间，不以缺省零值代替有效性。
 def ready_state():
     return dict(kind='state', phase='RC_READY_WAIT_ARM', reason='RC_READY_WAIT_CH5_MANUAL_ARM',
                 status_fresh=True, land_fresh=True, local_fresh=True, attitude_fresh=True,
@@ -28,24 +31,29 @@ def ready_state():
                                           ('attitude',.5),('flags',2.5),('battery',1.))})
 
 
+# 逐项破坏年龄、原生拒绝位和传输身份，证明任一坏证据都不能显示解锁许可。
 class FeedbackFreshnessTests(unittest.TestCase):
+    # 把当前状态包装成 supervisor 行，并用固定 now 消除测试机墙钟速度影响。
     def view(self, state, elapsed=0., **changes):
         row=dict(status='READY_WAIT_ARM', reason='ready', supervisor_pid=10,
                  updated_unix=1000., state=state, state_age_seconds=0., feedback_current=True)
         row.update(changes)
         return navigation.render_status(row, dict(ActiveState='active',MainPID='10'), now=1000.+elapsed)
 
+    # 正例须显示当前反馈与人工 RC 提示，且不能带过期标签。
     def assert_current(self, view):
         self.assertIn('[READY_WAIT_ARM]',view)
         self.assertIn('已准备：CH5 手动解锁',view)
         self.assertIn('实际模式：',view)
 
+    # 反例只允许历史说明，不能保留“已准备”或实际当前模式。
     def assert_history(self, view):
         self.assertNotIn('[READY_WAIT_ARM]',view)
         self.assertNotIn('已准备：CH5 手动解锁',view)
         self.assertNotIn('实际模式：',view)
         self.assertIn('历史',view)
 
+    # 每个 Topic 的封套/样本/接收/进度年龄任一达到边界就失效，不能用更长话题 TTL 代替。
     def test_each_topic_envelope_receipt_and_raw_sample_ages_expire_at_its_ttl(self):
         for topic in ready_state()['source_timing']:
             names=['envelope_age_s','receipt_age_s']
@@ -58,12 +66,14 @@ class FeedbackFreshnessTests(unittest.TestCase):
                     self.assert_history(self.view(state,.25))
                     self.assert_history(self.view(state,.3))
 
+    # 原生状态年龄和保存后墙钟流逝叠加，不能被新文件 mtime 重置。
     def test_supervisor_state_age_and_saved_snapshot_elapsed_both_consume_ttl(self):
         state=ready_state()
         self.assert_current(self.view(state,.2,state_age_seconds=.1))
         self.assert_history(self.view(state,.4,state_age_seconds=.1))
         self.assert_history(self.view(state,0.,state_age_seconds=.5))
 
+    # 缺时间、非法数字或原生已判无效时，显示层不得自行恢复有效。
     def test_missing_invalid_or_native_rejected_timing_cannot_prompt_manual_arming(self):
         for value in (None,{},[], 'unknown'):
             with self.subTest(timings=value):
@@ -89,6 +99,7 @@ class FeedbackFreshnessTests(unittest.TestCase):
                 state=ready_state();state['source_timing']['local'].update(changes)
                 self.assert_history(self.view(state))
 
+    # 即便数字年龄看似新鲜，false fresh 位或断流历史依然禁止解锁提示。
     def test_native_false_flags_and_transport_history_cannot_be_revived_by_valid_timing(self):
         for name in ('status_fresh','land_fresh','local_fresh','attitude_fresh',
                      'local_sample_fresh','attitude_sample_fresh','battery_fresh','source_clock_valid'):
@@ -100,6 +111,7 @@ class FeedbackFreshnessTests(unittest.TestCase):
             with self.subTest(changes=changes):
                 self.assert_history(self.view(ready_state(),**changes))
 
+    # 原生容许的小未来源戳不能给显示 TTL 额外加寿命。
     def test_native_valid_future_source_timestamp_does_not_extend_display_lifetime(self):
         state=ready_state()
         for topic in ('local','attitude'):
@@ -107,6 +119,7 @@ class FeedbackFreshnessTests(unittest.TestCase):
         self.assert_current(self.view(state,.4))
         self.assert_history(self.view(state,.5))
 
+    # 未来 sample 的时钟偏差不能抵消进度冻结年龄。
     def test_future_sample_clock_skew_cannot_extend_raw_progress_lifetime(self):
         for topic in ('local','attitude'):
             with self.subTest(topic=topic):
@@ -119,6 +132,7 @@ class FeedbackFreshnessTests(unittest.TestCase):
                 self.assert_current(self.view(state,.009))
                 self.assert_history(self.view(state,.06))
 
+    # 样本过期只撤销飞机状态可信度，当前控制器锁存与恢复原因仍需显示。
     def test_sample_expiry_preserves_current_fault_and_recovery_diagnostics(self):
         state=ready_state();state.update(phase='SAFETY',reason='OPERATOR_TAKEOVER_LATCHED',
                                         rc_first_fault_reason='OPERATOR_TAKEOVER_LATCHED',
@@ -155,7 +169,9 @@ if not closed:sock.close()
 '''
 
 
+# 用真实临时 socket 依次制造正常、暂停、静默、过期和断线，验证渲染实时降级。
 class LiveMonitorFreshnessTests(unittest.TestCase):
+    # 观测只依赖实际反馈到达/源年龄，进程存活和 supervisor 更新不能为旧数据续命。
     def test_normal_paused_silent_stale_and_disconnected_real_ipc_controls(self):
         for scenario,duration in (('normal',1.5),('short_pause',1.5),('long_pause',1.6),
                                   ('silent',3.4),('source_stale',1.2),('disconnect',1.2)):

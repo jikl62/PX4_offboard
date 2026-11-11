@@ -1,3 +1,5 @@
+# RC故障地面恢复回归：用可控时钟驱动真实SystemNode.tick、快照、安全扫描与发布路径。
+# ROS消息/API为替身；只接临时只读IPC观察者，不连接DDS或任何飞行设备。
 """Exercise safe RC recovery through the actual SystemNode.tick implementation.
 
 The clocks and ROS API/message types are synthetic. The node's receive methods,
@@ -14,6 +16,8 @@ import unittest
 import adapter_compile_check as fixture
 
 
+# 夹具先制造真实OPERATOR_TAKEOVER_LATCHED，再以40Hz本地反馈、20Hz控制周期累计新地面证据。
+# 每轮要求不自动发Arm/Offboard/Disarm，恢复后flight_started清零；坏事件后不能复用旧窗口。
 HARNESS = r'''
 #include <cstdint>
 double recovery_test_steady=0.;
@@ -179,6 +183,7 @@ int main(){
 '''
 
 
+# 生成最小API/消息替身，并仅在临时源码副本中公开私有成员、替换时钟与入口名。
 def write_fixture(root):
     (root/'rclcpp').mkdir()
     ros=fixture.RCLCPP.replace('return 1000000000;', 'return ::recovery_test_wall_ns;')
@@ -202,6 +207,7 @@ def write_fixture(root):
             'struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;'
             'std::uint16_t schema_version{1};'+fields+'};}\n')
     source=(fixture.ROOT/'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
+    # 必须精确找到原steady实现再替换；匹配失败提示夹具更新，不悄悄改用真实时间。
     clock='double steady(){return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();}'
     if source.count(clock)!=1:
         raise AssertionError('Update the deterministic clock fixture for the node clock implementation')
@@ -211,7 +217,9 @@ def write_fixture(root):
     (root/'test.cpp').write_text(HARNESS)
 
 
+# 同时核对控制路径的成功标记和真实状态/事件JSON字段。
 class RcRecoveryAdapterTest(unittest.TestCase):
+    # 诊断速度差不能阻断恢复；不安全事件、armed/Offboard、后续完整性故障仍要否决，并核对停流边沿实测快照。
     def test_actual_tick_recovery_uses_current_stationary_evidence(self):
         with tempfile.TemporaryDirectory(prefix='fc01_recovery_tick_') as directory:
             root=Path(directory);write_fixture(root)
@@ -238,12 +246,14 @@ class RcRecoveryAdapterTest(unittest.TestCase):
                     self.assertIsInstance(row[field],str)
                 self.assertIsInstance(row['rc_recovery_ready'],bool)
                 self.assertIsInstance(row['rc_fault_recoverable'],bool)
+            # 后续完整性故障必须作为最新故障公开，首次接管原因仍保留；不可恢复原因不能被旧诊断遮住。
             hidden=[row for row in reports if row['rc_latest_fault_reason']=='PUBLISHER_BOUNDARY_TEST_INTEGRITY']
             self.assertTrue(hidden)
             self.assertEqual(hidden[-1]['rc_first_fault_reason'],'OPERATOR_TAKEOVER_LATCHED')
             self.assertEqual(hidden[-1]['rc_recovery_block_reason'],'RC_RECOVERY_FAULT_REQUIRES_RESTART')
             self.assertEqual(hidden[-1]['rc_reprepare_block_reason'],'RC_CORE_RESTART_CONDITIONS_NOT_MET')
             self.assertFalse(hidden[-1]['rc_fault_recoverable'])
+            # 停流边沿须使用本轮armed/Offboard/landed与姿态，上一提交推力和时间则来自真实发布审计。
             expected=[row for row in rows if row.get('kind')=='stream_edge_expected']
             edges=[row for row in rows if row.get('kind')=='offboard_stream_edge' and
                    row.get('reason')=='STREAM_EDGE_OBSERVED_STATUS_TEST']

@@ -1,3 +1,5 @@
+# 独立 native 安装路径的真实 CMake 回归；不运行 ROS 包依赖发现、飞控或服务。
+# 测试直接提取当前安装器复制段和 CMake install 声明，因此路径调整不能被手写 fixture 掩盖。
 """离线检查独立 native 安装器复制后的真实 CMake 工具安装路径。"""
 from pathlib import Path
 import re
@@ -10,7 +12,9 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 
 
+# 验证 workspace/src/jikl_fc01_system 的 ../../tools 相对布局确实可安装三个真实工具。
 class NativeInstallLayoutTests(unittest.TestCase):
+    # 只把复制/安装部分放进临时工作区，CMake 真执行后逐字节比较 Python 工具载荷。
     @unittest.skipUnless(shutil.which('cmake'),'requires installed CMake')
     def test_copied_workspace_installs_all_declared_python_tools(self):
         installer=(ROOT/'native/scripts/install.sh').read_text()

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 正式部署事务入口：离线构建/校验和在线激活分离，默认offline；源码摘要不符就保留既有运行服务。
+# 真正服务切换与回滚由navigation_restore持完整事务锁、地面探针和恢复逻辑执行。
 """Separate offline ARM64 preparation from explicitly selected online activation."""
 from __future__ import annotations
 
@@ -18,14 +20,17 @@ import tempfile
 ENTRY = Path(__file__).resolve().parent
 
 
+# 部署前提不满足的可报告异常；不会被解释为自动继续或回退到未知参数。
 class DeploymentError(RuntimeError):
     pass
 
 
+# 用实际文件字节计算摘要，不能只比较mtime或旧文件名。
 def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+# 在目标同目录私有临时文件写完后原子替换；finally仅清本操作残留临时路径。
 def write_json(path, value):
     path = Path(path)
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -40,6 +45,7 @@ def write_json(path, value):
             os.unlink(temp)
 
 
+# 逐项拒绝绝对/穿越/符号链接/越界/缺失/摘要不同的载荷；返回通过的当前清单。
 def verify_payload(entry):
     manifest = json.loads((entry/'FC01_RELEASE.json').read_text())
     files = manifest.get('payload_sha256')
@@ -56,7 +62,9 @@ def verify_payload(entry):
     return manifest
 
 
+# 每次部署独立日志，另写滚动入口摘要；阶段标签用于失败定位而非飞行状态。
 class DeploymentLog:
+    # 日志名含UTC、PID、动作，独占创建防止覆盖另一部署证据。
     def __init__(self, entry, home, action):
         self.entry = entry
         self.home = home
@@ -70,9 +78,11 @@ class DeploymentLog:
         self.summary = home/'FC01_navigation/install.log'
         self.record('BEGIN '+action+' entry='+str(entry))
 
+    # 持久追加单行阶段消息，UTC用于人类跨记录对齐，不作为控制单调时间。
     def record(self, message):
         self.output.write(datetime.now(timezone.utc).isoformat()+' '+message+'\n')
 
+    # 有界保留末18行供错误显示，完整输出写本次日志；Ctrl+C先让子事务安全收尾。
     def step(self, stage, command):
         self.stage = stage
         print('FC01_STEP '+stage+' log='+str(self.path), flush=True)
@@ -100,6 +110,7 @@ class DeploymentLog:
                 print(line, file=sys.stderr)
             raise DeploymentError(stage+' 失败，exit_status='+str(code))
 
+    # 记录最终结果并关闭本次日志；失败也打印日志路径，便于现场发送原始证据。
     def finish(self, result, error=None):
         message = result+' stage='+self.stage+' log='+str(self.path)
         if error is not None:
@@ -111,6 +122,7 @@ class DeploymentLog:
         print(message, flush=True)
 
 
+# 只生成release局部的C++检查输入，不写当前运行配置、不做在线探针或service动作。
 def prepare_offline_config(entry):
     """Generate only a release-local checker input; no live config or SDK probe."""
     import yaml
@@ -128,6 +140,7 @@ def prepare_offline_config(entry):
     return target
 
 
+# 删除旧成功令牌后重新构建/检查，前后各验源码，最后写与当前清单/二进制/YAML绑定的离线证据。
 def offline(entry, home, log):
     release = verify_payload(entry)
     # A failed repeat preparation must not leave a previous success token.
@@ -155,6 +168,7 @@ def offline(entry, home, log):
     print('离线部署完成；尚未正式启用。原服务配置和 Agent 未变更。', flush=True)
 
 
+# activate必须显式确认且离线证据仍与当前清单/配置一致；rollback使用备份事务。
 def online(entry, home, log, *, action, confirm=False, boot_policy='preserve', backup=None):
     if action == 'activate':
         verify_payload(entry)
@@ -184,6 +198,7 @@ def online(entry, home, log, *, action, confirm=False, boot_policy='preserve', b
             print('FC01_ROLLBACK_PATH='+str(state['backup']), flush=True)
 
 
+# 普通用户入口、私有umask、同用户安装锁；在线路径锁由恢复器持有，避免外层提前释放。
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('offline', 'activate', 'rollback'), nargs='?', default='offline')

@@ -1,3 +1,5 @@
+# 交互台架Arm回归：用伪TTY和模拟协议响应验证真实控制台的人工确认与拒绝信息。
+# GOOD是仅供台架解锁的合成快照，takeoff_enabled保持false；不会连接真实控制器。
 import contextlib
 import importlib.util
 import io
@@ -27,15 +29,19 @@ GOOD={
     'authority_reason':'AUTHORITY_READY','takeover_reason':'',
 }
 
+# 加载工作区内的控制台，确保输入解析和等待逻辑来自当前源码。
 def console_module():
     spec=importlib.util.spec_from_file_location('review_console',ROOT/'tools/fcctl.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
+# 围绕实际控制台交互检查“证据齐全后确认”这一边界。
 class ReviewConsoleTests(unittest.TestCase):
+    # 模拟STATUS/PING响应和操作者输入，记录发送操作；finally回收线程及伪TTY描述符。
     def exercise(self,state):
         module=console_module();ops=[];ready=threading.Event();input_master,input_slave=os.openpty()
         tty.setraw(input_slave)
         stdin=os.fdopen(input_slave,'r',buffering=1)
+        # 以伪TTY替代Unix socket，保留真实select、逐行解析与状态更新过程。
         class PipeTransport:
             def __init__(self,*args):self.read,self.write=os.openpty();tty.setraw(self.write)
             def fileno(self):return self.read
@@ -53,6 +59,7 @@ class ReviewConsoleTests(unittest.TestCase):
             def __enter__(self):return self
             def __exit__(self,*args):os.close(self.read);os.close(self.write)
         errors=[]
+        # 等到控制台连接后输入arm-only、明确确认词和quit，避免启动时序使输入丢失。
         def operator():
             try:
                 if not ready.wait(2):raise AssertionError('console did not connect')
@@ -70,15 +77,18 @@ class ReviewConsoleTests(unittest.TestCase):
         finally:
             thread.join(2);stdin.close();os.close(input_master)
 
+    # 完整台架证据和人工确认后只能发送一次ARM_ONLY。
     def test_valid_interaction_sends_one_arm_after_confirmation(self):
         ops,_=self.exercise(dict(GOOD));self.assertEqual(ops.count('ARM_ONLY'),1)
 
+    # 逐项撤销台架许可、配置、落地新鲜度或源时钟确认；armed=0也不能冒充严格布尔false。
     def test_unverified_bench_or_stale_source_never_reaches_arm(self):
         for field,value in (('bench_arm_only_enabled',False),('profile','ground'),
                             ('land_fresh',False),('source_clock_validated',False),('armed',0)):
             with self.subTest(field=field):
                 ops,_=self.exercise(dict(GOOD,**{field:value}));self.assertNotIn('ARM_ONLY',ops)
 
+    # 拒绝信息必须展示同一次失败证据的0.75秒静止时长与0.12m/s速度。
     def test_report_rejected_ground_sample_with_actual_limits(self):
         module=console_module();output=io.StringIO()
         reply=dict(GOOD,kind='reply',accepted=False,message='AUTHORITY_SAFE_GROUND_REQUIRED',

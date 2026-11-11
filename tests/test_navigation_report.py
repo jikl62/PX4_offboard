@@ -1,3 +1,5 @@
+# 只读 report 的现场证据回归：区分调用入口与实际运行入口，记录真实字节和抓取期间变化。
+# 所有现场树均在临时 HOME；报告命令只经 injected reader，不能操作服务。
 """Read-only report capture keeps session identity and actual file bytes."""
 import hashlib
 import json
@@ -12,7 +14,9 @@ import zipfile
 import navigation_report as report
 
 
+# 验证白名单、有界日志、来源身份、符号链接拒绝和非原子快照标记。
 class NavigationReportTests(unittest.TestCase):
+    # 刻意设置“新入口调用、旧入口运行”，并加入多个部署日志，防止报告只收当前源码目录。
     def setup_tree(self, directory):
         home=Path(directory);folder=home/'FC01_navigation';folder.mkdir()
         entry=home/'new';entry.mkdir()
@@ -32,10 +36,12 @@ class NavigationReportTests(unittest.TestCase):
                 path=logs/(str(number)+'.log');path.write_text(str(number));os.utime(path,ns=(number,number))
         return home,folder,entry,running,row
 
+    # 返回无害的只读命令输出，供 collect_report 捕获而不调用真实服务。
     @staticmethod
     def reader(argv, **kwargs):
         return types.SimpleNamespace(stdout='read-only output',stderr='',returncode=0)
 
+    # 报告需同时携带运行/调用两版证据、唯一归档项和逐文件 SHA，原目录字节不变。
     def test_capture_identifies_running_and_invoked_releases_without_mutation(self):
         with tempfile.TemporaryDirectory() as directory:
             home,folder,entry,running,row=self.setup_tree(directory)
@@ -62,6 +68,7 @@ class NavigationReportTests(unittest.TestCase):
             self.assertIn('status',calls[0]);self.assertIn('journalctl',Path(calls[1][0]).name)
             for name,data in before.items():self.assertEqual(Path(name).read_bytes(),data)
 
+    # 超长日志只取末尾且标记截断偏移，不能把尾部当成完整日志。
     def test_oversized_logs_are_bounded_and_tail_is_marked(self):
         with tempfile.TemporaryDirectory() as directory:
             home,folder,entry,_,_=self.setup_tree(directory)
@@ -73,6 +80,7 @@ class NavigationReportTests(unittest.TestCase):
                 item=json.loads(archive.read('REPORT_CAPTURE.json'))['files']['controller.log']
                 self.assertEqual(item['tail_offset'],404);self.assertTrue(item['truncated'])
 
+    # 速度诊断快照及当前/轮转日志进入既有报告白名单，但不改变诊断控制权限。
     def test_velocity_command_diagnostics_are_captured_without_mutation(self):
         with tempfile.TemporaryDirectory() as directory:
             home,folder,entry,_,_=self.setup_tree(directory)
@@ -94,6 +102,7 @@ class NavigationReportTests(unittest.TestCase):
                     self.assertEqual(item['result'],'CAPTURED')
                     self.assertEqual(item['sha256'],hashlib.sha256(data).hexdigest())
 
+    # 新增诊断日志同样服从原有日志大小上限，不能绕过报告预算。
     def test_velocity_diagnostic_log_tail_retains_existing_size_limit(self):
         with tempfile.TemporaryDirectory() as directory:
             home,folder,entry,_,_=self.setup_tree(directory)
@@ -111,6 +120,7 @@ class NavigationReportTests(unittest.TestCase):
                     self.assertEqual(capture['files'][name]['tail_offset'],404)
                     self.assertTrue(capture['files'][name]['truncated'])
 
+    # 白名单名称若变成链接也不能读取链接目标，避免泄露无关数据。
     def test_velocity_diagnostic_symlinks_are_not_collected(self):
         with tempfile.TemporaryDirectory() as directory:
             home,folder,entry,_,_=self.setup_tree(directory)
@@ -125,6 +135,7 @@ class NavigationReportTests(unittest.TestCase):
                     self.assertNotIn(name,archive.namelist())
                     self.assertEqual(capture['files'][name]['result'],'UNAVAILABLE')
 
+    # 部分文件/命令缺失应记 UNAVAILABLE 并继续收其他证据，绝不沿日志链接取外部文件。
     def test_missing_metadata_and_symlink_logs_do_not_stop_capture(self):
         with tempfile.TemporaryDirectory() as directory:
             home,folder,entry,_,_=self.setup_tree(directory)
@@ -139,6 +150,7 @@ class NavigationReportTests(unittest.TestCase):
                 self.assertIn('error',capture['commands']['service.txt'])
                 self.assertIn('no systemd',archive.read('service.txt').decode())
 
+    # 抓取中修改状态，报告必须显式标记非原子与前后差异，不能声称同一时刻快照。
     def test_reports_capture_live_change_instead_of_claiming_atomic_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
             home,folder,entry,_,row=self.setup_tree(directory)
@@ -155,6 +167,7 @@ class NavigationReportTests(unittest.TestCase):
                 self.assertTrue(capture['status_changed_during_capture'])
                 self.assertNotEqual(archive.read('status.json'),archive.read('status_after_capture.json'))
 
+    # 总预算不足时优先保留版本/构建身份和最终状态，不能让大日志挤掉判断依据。
     def test_full_log_budget_preserves_release_evidence_and_final_status(self):
         with tempfile.TemporaryDirectory() as directory:
             home,folder,entry,_,_=self.setup_tree(directory)
@@ -170,6 +183,7 @@ class NavigationReportTests(unittest.TestCase):
                 self.assertFalse(capture['status_changed_during_capture'])
                 self.assertLessEqual(capture['captured_file_bytes'],8192)
 
+    # 没有抓到终态时 changed 必须未知，不能捏造“已变化”或“未变化”。
     def test_unavailable_final_status_is_unknown_instead_of_reported_changed(self):
         with tempfile.TemporaryDirectory() as directory:
             home,_,entry,_,_=self.setup_tree(directory)

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 正式导航源码包构建器：把当前磁盘载荷与发布清单绑定；生成的默认动作是离线构建，非在线激活。
+# 内嵌HEADER字节保持原合同，本轮不重新生成dist、不执行安装器。
 """Build the current source tree into an integrity-checked offline installer."""
 import argparse
 import base64
@@ -9,6 +11,7 @@ from pathlib import Path
 import subprocess
 import zipfile
 
+# 沿用既有包/控制器版本标记；不能只靠版本字符串认定源/二进制相同，仍校验逐文件SHA。
 RELEASE_NAME='FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v5'
 DEFAULT_DIRECTORY=RELEASE_NAME
 RELEASE_VERSION='20261110.7'
@@ -16,11 +19,16 @@ CONTROLLER_BUILD='FC01_RECOVERY_DIAGNOSTIC_V5_20261110'
 MANIFEST='FC01_RELEASE.json'
 MAX_FILES=512
 MAX_BYTES=8*1024*1024
+# 运行机生成的构建/激活证据和部署配置不得被当作源码载荷移植到另一设备。
 RUNTIME_FILES={MANIFEST,'ARM64_BUILD_EVIDENCE.json','build-complete.json',
                'OFFLINE_DEPLOYMENT.json','ACTIVATION_STATE.json','deployment-config.json'}
 CACHE_PARTS={'__pycache__','.build','build','install','.pytest_cache'}
 
 # Keep this navigation entry independent of the control/autostart installers.
+# 解包载荷先验相邻整包SHA、归档SHA、CRC与512文件/8MiB/每项1MiB限制，再核对全部manifest。
+# 拒绝绝对/穿越/重复/链接路径；既有目标必须逐字节一致，新目录通过RENAME_NOREPLACE原子发布。
+# 原stdin经fd3保留；extract-only不运行部署，默认offline，显式activate仍需部署器合同确认。
+# 此大字符串保留原字节，避免中文化修改生成的shell/Python行为和现有SHA语义。
 HEADER=r'''#!/usr/bin/env bash
 # Source-only release. Default action builds offline and never activates a service.
 set -euo pipefail
@@ -174,6 +182,7 @@ exit $?
 __FC01_PAYLOAD_BASE64__
 '''
 
+# 按明确后缀与native/tests/docs递归收当前文件，排除缓存/运行态和独立receive A/B；大小/链接不符即拒绝。
 def names(root):
     """Curated source paths from disk, including uncommitted and new files."""
     root=Path(root)
@@ -190,10 +199,12 @@ def names(root):
             raise ValueError('Source payload cannot contain a symlink: '+name)
     return result
 
+# 摘要实际磁盘字节，记录验证时Git基线与dirty；清单自身排除以避免自引用。
 def make_manifest(root):
     """Describe actual payload bytes; callers may add verification metadata."""
     root=Path(root)
     hashes={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in names(root)}
+    # Git不可用时保留None，不伪造提交身份；不会执行push/checkout或修改仓库。
     def git(*args):
         result=subprocess.run(['git','-C',str(root),*args],capture_output=True,text=True)
         return result.stdout.strip() if result.returncode==0 else None
@@ -201,6 +212,7 @@ def make_manifest(root):
             'source_commit':git('rev-parse','HEAD'),'working_tree_dirty':bool(git('status','--porcelain')),
             'source_sha256':dict(hashes),'payload_sha256':hashes}
 
+# 已存在清单必须与当前完整载荷/原生源SHA一致；不在打包时静默覆盖过期验收记录。
 def _release_bytes(root,files):
     path=root/MANIFEST
     if path.is_symlink():
@@ -221,6 +233,7 @@ def _release_bytes(root,files):
         return data
     return (json.dumps(make_manifest(root),indent=2,sort_keys=True)+'\n').encode()
 
+# 目录名只能是单层安全标识；固定ZIP时间与权限、嵌入摘要，再输出整包sidecar，不激活任何服务。
 def build(output,source=None,*,directory_name=DEFAULT_DIRECTORY):
     if not directory_name or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-' for c in directory_name):
         raise ValueError('directory_name must be a plain directory name')

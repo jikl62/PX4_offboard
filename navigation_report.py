@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 有界只读导航报告：同时保存运行快照、配置、发布/构建身份、部署日志和服务只读查询。
+# 活体抓取不是原子快照，报告标记读取期间变化与截断；采集不停止服务、不连接控制socket。
 """Bounded, read-only capture of navigation state and deployment provenance."""
 from __future__ import annotations
 
@@ -13,6 +15,7 @@ import time
 import zipfile
 
 SERVICE = 'fc01-navigation.service'
+# 优先保留小型身份/配置，再收有大小预算的日志；视觉诊断材料与飞控采用证据分开。
 BASE_FILES = ('status.json', 'runtime.yaml', 'standby.log', 'standby.log.1', 'standby.log.2',
               'controller.log', 'controller.log.1', 'controller.log.2', 'install.log',
               'install.log.1', 'install.log.2', 'probe.json', 'install-runtime.yaml',
@@ -21,11 +24,13 @@ BASE_FILES = ('status.json', 'runtime.yaml', 'standby.log', 'standby.log.1', 'st
 ENTRY_FILES = ('FC01_RELEASE.json', 'HOST_VERIFICATION.json', 'ARM64_BUILD_EVIDENCE.json',
                'OFFLINE_DEPLOYMENT.json', 'ACTIVATION_STATE.json', 'build-complete.json',
                'deployment-config.json')
+# 总文件预算32MiB，单日志约4MiB，元数据1MiB；裁尾仍记录原大小和偏移。
 MAX_TOTAL = 32 * 1024 * 1024
 MAX_LOG = 4 * 1024 * 1024 + 65536
 MAX_METADATA = 1024 * 1024
 
 
+# 从home/entry读取证据到新建0600 ZIP，返回路径；runner可注入离线fixture且只执行只读查询。
 def collect_report(home, *, entry, runner=subprocess.run):
     home, entry = Path(home), Path(entry)
     folder = home/'FC01_navigation'
@@ -40,6 +45,7 @@ def collect_report(home, *, entry, runner=subprocess.run):
     # compression. Reading logs or evidence never invokes a service action.
     fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, 'wb') as output, zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
+        # 统一文件入口：名字去重、预算预留、NOFOLLOW、普通文件检查和SHA，失败也记录原因。
         def include(path, name, *, limit=MAX_METADATA, reserve=0):
             nonlocal total
             if name in captured_names:return None
@@ -57,6 +63,7 @@ def collect_report(home, *, entry, runner=subprocess.run):
                         item['result'] = 'NOT_REGULAR_FILE'
                         return None
                     cap = min(limit, MAX_TOTAL-total-reserve)
+                    # 日志太大读取尾部，保留最近故障；不能把截取的摘要当作完整原文件SHA。
                     offset = max(0, before.st_size-cap)
                     source.seek(offset)
                     data = source.read(cap)
@@ -66,6 +73,7 @@ def collect_report(home, *, entry, runner=subprocess.run):
                     renamed = (current.st_dev, current.st_ino) != (before.st_dev, before.st_ino)
                 except OSError:
                     renamed = True
+                # 通过读前/后大小mtime与当前路径inode标记轮转或并发写，避免把混合时段假装原子证据。
                 changed = ((before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns)
                            or renamed)
                 archive.writestr(name, data)
@@ -99,6 +107,7 @@ def collect_report(home, *, entry, runner=subprocess.run):
         for name in BASE_FILES[1:]:
             if '.log' not in name:include(folder/name, name)
 
+        # 调用入口可能与正在运行的旧版本不同；两者身份分别保留，不用新包名冒充部署成功。
         entries = [('invoked_entry', entry)]
         # A report invoked from a new unpacked release may observe an older
         # running controller. Capture the explicitly named runtime source too.
@@ -130,6 +139,7 @@ def collect_report(home, *, entry, runner=subprocess.run):
 
         final = include(folder/'status.json', 'status_after_capture.json')
         capture['status_changed_during_capture'] = initial != final if initial is not None and final is not None else None
+        # systemctl status/journalctl只是读取，各自超时10s并裁尾；不会重启或更改systemd。
         for name, argv in (
                 ('service.txt', ['/usr/bin/systemctl', 'status', SERVICE, '--no-pager']),
                 ('journal.txt', ['/usr/bin/journalctl', '-u', SERVICE, '-n', '100', '--no-pager'])):
@@ -143,6 +153,7 @@ def collect_report(home, *, entry, runner=subprocess.run):
             archive.writestr(name, data)
         capture.update(finished_utc=datetime.now(timezone.utc).isoformat(),
                        elapsed_s=max(0, time.monotonic()-started), captured_file_bytes=total)
+        # 最后写采集索引，含原来源、结果、字节数、截断/变化和捕获时间；不能替代同程PX4 ULog。
         archive.writestr('REPORT_CAPTURE.json', json.dumps(capture, ensure_ascii=False, indent=2)+'\n')
     print('自动报告：'+str(target))
     return target

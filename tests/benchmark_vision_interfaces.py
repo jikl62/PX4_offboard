@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 视觉接口主机基准：计量ROS CDR序列化、独立速度诊断、Odometry转换及状态验证开销。
+# 不创建ROS端点；结果不包含DDS调度/串口开销，也不能当作香橙派实时性能或剩余带宽证据。
 """Measure host serialization/adapter costs without creating any ROS endpoints.
 
 Source Humble, pinned px4_msgs and the current jikl_fc01_system install first.
@@ -18,6 +20,7 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 
+# 按绝对源码路径载入native/tools纯逻辑，防止测到其他安装版本。
 def load_tool(name):
     path = ROOT / 'native/tools' / (name + '.py')
     spec = importlib.util.spec_from_file_location('fc01_benchmark_' + name, path)
@@ -27,6 +30,7 @@ def load_tool(name):
     return module
 
 
+# 先预热20次，再分别记录进程CPU时间和墙钟分位数；分位数含主机计时开销。
 def measure(operation, samples):
     for index in range(20):
         operation(index)
@@ -48,6 +52,7 @@ def measure(operation, samples):
                 p99_us=durations[int((samples-1)*.99)], max_us=durations[-1])
 
 
+# 构造显式合成阈值和消息，输出CDR大小、耗时与计算情景，配置不会安装到飞控。
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--samples', type=int, default=5000)
@@ -115,6 +120,7 @@ def main():
         for axis in range(6):
             matrix[axis*6+axis] = .01
 
+    # 递增序号与纳秒时间后测一次接收诊断，立刻清事件避免队列增长混入测量。
     def receive(index):
         command.sequence = index + 1
         command.stamp.nanosec = index * 100
@@ -123,6 +129,7 @@ def main():
             raise RuntimeError('benchmark command fixture rejected: ' + str(event['reasons']))
         receiver.drain_events()
 
+    # 递增同一对测量的时戳与序号，测真实转换及原始协方差验证，拒绝则停止基准。
     def validate_state(index):
         health.sequence = index + 1
         odometry.header.stamp.nanosec = health.stamp.nanosec = index * 100
@@ -138,8 +145,10 @@ def main():
         odometry_conversion=measure(lambda _: adapter.convert_odometry(odometry, health, config),
                                      args.samples),
         state_validation_with_raw_covariance=measure(validate_state, args.samples))
+    # 50Hz本地视觉与20Hz现有姿态双流只作流量算术；CDR不含RTPS/XRCE/串口帧及其他遥测。
     local_bytes = sum(sizes[name] for name in ('VelocityCommand', 'Odometry',
                                                'VisionHealth', 'VisionState')) * 50
+    # 115200波特的8N1理论字节容量，不是可用XRCE载荷保证。
     uart_capacity = 115200 / 10  # 8 data bits + start/stop; not an XRCE payload guarantee.
     attitude_bytes = (sizes['OffboardControlMode'] + sizes['VehicleAttitudeSetpoint']) * 20
     result = dict(

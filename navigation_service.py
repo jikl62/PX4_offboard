@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 正式RC导航服务入口：生成诊断或人工解锁起飞配置，校验当前二进制标识，再交给standby监督。
+# 目标高度相对地面向上为正，默认1.5m；视觉始终关闭，Python不产生姿态/推力设定值。
 """Native manual-RC navigation service; Python never emits flight setpoints."""
 from __future__ import annotations
 import argparse
@@ -17,6 +19,7 @@ from navigation_status import controller_state_current, preparation_diagnostic_r
 import standby
 
 ENTRY = Path(__file__).resolve().parent
+# 二进制内标记是版本能力检查，仍需构建摘要与依赖证据确认实际来源。
 MARKER = b'RC_NAVIGATION_MANUAL_ARM_V1'
 TAKEOFF_MARKER = b'NAV_TAKEOFF_EVIDENCE_V2_20261103'
 SAFETY_MARKER = b'R2_DISCRETE_EVENT_PREFLIGHT_V2_20261108'
@@ -26,11 +29,13 @@ DIAGNOSTIC = 'diagnostic'
 FLIGHT_TEST = 'flight-test'
 MODES = (DIAGNOSTIC, FLIGHT_TEST)
 
+# 模式白名单决定源YAML；默认诊断不共享旧运行YAML以免继承飞行门。
 def candidate_config_path(mode, entry=ENTRY):
     if mode not in MODES:
         raise ControlError('运行模式必须为 diagnostic 或 flight-test')
     return Path(entry)/'native'/'config'/('diagnostic.yaml' if mode == DIAGNOSTIC else 'flight_test.yaml')
 
+# 只写身份路径/版本，供报告对齐真正运行源，不构成动作许可。
 def _metadata(config, mode, *, config_path=None, source_path=None):
     p=config['fc01_system']['ros__parameters']
     p['fc01_runtime_mode']=mode
@@ -39,6 +44,7 @@ def _metadata(config, mode, *, config_path=None, source_path=None):
     if source_path is not None:p['fc01_config_source_path']=str(Path(source_path).expanduser().resolve())
     return config
 
+# 深拷贝原候选后明确关闭全部动作/视觉门、禁用CSV，目标仅用于诊断显示。
 def diagnostic_profile(base, target=DEFAULT_TAKEOFF_HEIGHT_M):
     config=runtime_profile(base,False);p=config['fc01_system']['ros__parameters']
     if type(target) not in (int,float) or not math.isfinite(target) or not 0 < target < p['aa_max_height']:
@@ -49,6 +55,7 @@ def diagnostic_profile(base, target=DEFAULT_TAKEOFF_HEIGHT_M):
              bench_arm_only_enabled=False,visual_navigation_enabled=False,csv_path='')
     return config
 
+# 保留原10度/30秒包络；RC人工解锁路线只开动作总门与起飞门，程序arm与视觉均关闭。
 def navigation_profile(base, target=DEFAULT_TAKEOFF_HEIGHT_M, mode_slot=6, mode=FLIGHT_TEST):
     if mode==DIAGNOSTIC:return diagnostic_profile(base,target)
     if mode!=FLIGHT_TEST:raise ControlError('运行模式必须为 diagnostic 或 flight-test')
@@ -67,13 +74,16 @@ def navigation_profile(base, target=DEFAULT_TAKEOFF_HEIGHT_M, mode_slot=6, mode=
              bench_arm_only_enabled=False, visual_navigation_enabled=False, csv_path='')
     return config
 
+# 读取导航高度/档位选择；缺少设置只用原默认高度，最终数值仍由profile验证。
 def settings(entry=ENTRY):
     path=entry/'navigation_settings.json'
     return json.loads(path.read_text()) if path.exists() else {'target_height_m':DEFAULT_TAKEOFF_HEIGHT_M}
 
+# 根据显式prefix或当前entry/install定位唯一原生节点，不从PATH猜控制器。
 def controller_path(entry=ENTRY,prefix=None):
     return (prefix or entry/'install')/'lib/jikl_fc01_system/fc01_system_node'
 
+# 先验真实可执行架构，再检查人工解锁、起飞证据、离散事件和生命周期四个能力标识。
 def check_controller(entry=ENTRY,prefix=None):
     binary=controller_path(entry,prefix)
     verify_binary(binary)
@@ -87,6 +97,7 @@ def check_controller(entry=ENTRY,prefix=None):
         raise ControlError('可执行程序缺少本版安全生命周期标识，请全新构建；保留原服务')
     return binary
 
+# 验证源YAML/环境并合成当前模式；返回含真实配置来源路径的新配置对象。
 def load_profile(root,agent,entry=ENTRY,mode=FLIGHT_TEST,*,config_path=None):
     source=candidate_config_path(mode,entry)
     base=standby.validate(root,agent,config_path=source)
@@ -96,6 +107,7 @@ def load_profile(root,agent,entry=ENTRY,mode=FLIGHT_TEST,*,config_path=None):
     # Visual navigation is deliberately disabled in both operator modes.
     return _metadata(config,mode,config_path=config_path,source_path=source)
 
+# 展示层把当前原生phase映射友好状态；历史控制器数据不能用作本次故障锁存或准备提示。
 def describe_row(row):
     state=row.get('state') or {}
     phase=state.get('phase')
@@ -125,6 +137,7 @@ def describe_row(row):
         result.update(status='WAITING',reason=reason)
     return result
 
+# 显式子命令分离环境/构建/配置/探针与run；默认诊断，flight-test没有确认直接拒绝。
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action',choices=('run','prepare-config','validate-env','check-config','probe','build'),nargs='?',default='run')
@@ -164,6 +177,7 @@ def main(argv=None):
         if not isinstance(config,dict) or not isinstance(config.get('fc01_system'),dict) or not isinstance(config['fc01_system'].get('ros__parameters'),dict):
             raise ControlError('配置缺少 fc01_system/ros__parameters')
         p=config['fc01_system']['ros__parameters']
+        # 诊断check-config只接受所有门确切False；飞行候选则调用已构建C++同一Config校验。
         if args.mode==DIAGNOSTIC:
             required=('flight_enabled','flight_actions_enabled','arm_enabled','takeoff_enabled',
                        'rc_navigation_enabled','bench_arm_only_enabled','visual_navigation_enabled',
@@ -189,6 +203,7 @@ def main(argv=None):
             return probe(root,agent,args.file,require_existing_agent=True)
         return probe(root,agent,args.file)
     else:
+        # 信号只置停止事件；standby负责在Agent还活着时等待原生恢复/释放，不能直接杀电机控制进程。
         stopped=threading.Event()
         for sig in (signal.SIGINT,signal.SIGTERM,signal.SIGHUP):
             signal.signal(sig,lambda *_:stopped.set())

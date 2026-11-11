@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 只读速度诊断模块：目标速度是制导意图，不是飞机自身速度或 PX4 动力输出。
+# 接收、时效、来源顺序、事件证据和写盘各司其职；全路径 control_authority 固定 false。
 """只读接收视觉目标速度：检查消息、保存诊断，不向飞控发送控制量。
 
 阅读顺序：Receiver.receive() 处理新消息，snapshot() 判断缓存是否仍可用，
@@ -16,6 +18,7 @@ import tempfile
 import time
 
 
+# 与视觉端约定的正式类型和默认话题；速度采用机体 FRD：前/右/下，单位 m/s。
 MESSAGE_TYPE = 'jikl_fc01_system/msg/VelocityCommand'
 DEFAULT_TOPIC = '/fc01/vision/velocity_command'
 MAX_TEXT = 256
@@ -33,10 +36,12 @@ def _finite(value):
         return False
 
 
+# 整数合同排除 bool，防止 true 被当成序号、发布者数量或时间。
 def _integer(value, maximum):
     return isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= maximum
 
 
+# 递归复制容器并将非有限浮点改为 null，只服务诊断序列化，不修补消息有效性。
 def _json_safe(value):
     if isinstance(value, float) and not math.isfinite(value):
         return None
@@ -47,6 +52,7 @@ def _json_safe(value):
     return value
 
 
+# 文本截断仅限制日志体积；receive 仍对未经截断的原字段进行身份与长度验证。
 def _text(value):
     return value[:MAX_TEXT] if isinstance(value, str) else None
 
@@ -100,6 +106,7 @@ class Receiver:
         self._events = deque(maxlen=128)
         self._event_id = 0
 
+    # 单调接收时钟负责本地间隔，ROS 纳秒负责测量年龄；两种水位都只前进，回退立即撤销候选。
     def _observe_clocks(self, now, ros_now_ns):
         errors = []
         if self._last_observation_steady is not None and now < self._last_observation_steady:
@@ -142,6 +149,7 @@ class Receiver:
             return errors
         candidate = self._candidate
         age = now - candidate['received_at']
+        # 源年龄 = ROS 当前时间 − 测量时间；本机接收得晚仍可能收到一条已经过期的指令。
         source_age = ((ros_now_ns - candidate['stamp_ns']) / 1e9
                       if ros_now_ns and candidate['stamp_ns'] else None)
         if age < 0:
@@ -162,6 +170,7 @@ class Receiver:
                         last_candidate_source_age_sec=source_age)
         return errors
 
+    # 事件 ID 与有界队列记录顺序；异常单独留存，队列溢出计数，正常新包不能洗掉先前异常。
     def _event(self, kind, reasons, now, ros_now_ns, **fields):
         self._event_id += 1
         event = _json_safe(dict(event_id=self._event_id, kind=kind, reasons=list(reasons),
@@ -187,6 +196,7 @@ class Receiver:
     def last_observed_ros_ns(self):
         return self._last_observation_ros or 0
 
+    # 发布者数量必须恰好为一；图冲突撤销当前候选，并单独记录数量转换。
     def observe_publishers(self, count, now, ros_now_ns):
         if not _integer(count, 2**32 - 1):
             raise ValueError('publisher_count must be a nonnegative integer')
@@ -475,6 +485,7 @@ class DiagnosticWriter:
             self._pending_anomaly = None
         return written
 
+    # 单条日志超上限时写明确截断事件，再按大小滚动；成功写入后才推进节流基准并清零抑制计数。
     def _write(self, event, now):
         value = dict(event, log_events_suppressed=self.suppressed)
         data = (json.dumps(_json_safe(value), ensure_ascii=False, allow_nan=False) + '\n').encode()
@@ -549,6 +560,7 @@ def finalize_diagnostic(receiver, writer, topic, now, system_now_ns):
     return value
 
 
+# 只有执行入口才加载 ROS；创建订阅与诊断定时器，不创建飞控 publisher。核心接收器可独立离线测试。
 def main(args=None):
     import rclpy
     from rclpy.node import Node
@@ -589,6 +601,7 @@ def main(args=None):
                                    ' topic=' + self.topic + ' zero limits are UNCONFIGURED')
             self.snapshot()
 
+        # 每次回调重新采集单调秒、ROS 纳秒及图中的发布者数量，不能将两种时钟混为一谈。
         def receive_context(self):
             return time.monotonic(), max(0, self.get_clock().now().nanoseconds), self.count_publishers(self.topic)
 
@@ -601,6 +614,7 @@ def main(args=None):
             self.receiver.receive(message, now, ros_now, publishers)
             self.flush_events(now)
 
+        # 没有新消息时也重新检查过期，落盘前排空事件并尝试写出待节流异常，缓存不会靠显示自动续期。
         def snapshot(self):
             now, ros_now, publishers = self.receive_context()
             value = self.receiver.snapshot(now, ros_now, publishers)

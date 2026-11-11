@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Humble被动反馈年龄观测：只订阅姿态/位置并读取status文件，保留调用方DDS域，不创建飞行发布者。
+# 源时间微秒、RMW接收时间纳秒；RMW epoch未确认时host减RMW只是诊断，不能叫纯排队延迟。
 """Bounded passive Humble feedback-age observer; keeps the caller's DDS domain.
 
 Source the same ROS 2 / px4_msgs environment as the controller, then run this
@@ -19,6 +21,7 @@ import stat
 import sys
 import time
 
+# 只观察/fmu/out；窗口30秒、报告5秒、样本上限限制长期诊断内存，不影响原控制回调。
 TOPICS = {'attitude': '/fmu/out/vehicle_attitude',
           'local': '/fmu/out/vehicle_local_position'}
 WINDOW_SECONDS = 30.
@@ -27,14 +30,17 @@ SPIN_WAIT_SECONDS = .01
 WINDOW_SAMPLE_CAP = 32768
 
 
+# host/source同单位微秒才相减转秒；缺失源时间返回None，保留负年龄作为时钟偏差证据。
 def age_seconds(host_us, source_us):
     return (host_us-source_us)*1e-6 if isinstance(source_us, int) and source_us > 0 else None
 
 
+# 拒绝bool与非有限值后用于JSON诊断，不用零填补未知状态。
 def number(value):
     return value if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) else None
 
 
+# 以单调秒中心化做OLS，输出年龄漂移斜率s/s与R²；统计趋势不能自行修正源时钟。
 def slope(points):
     """OLS on centered monotonic seconds; preserves signed age and jump evidence."""
     if len(points) < 2:
@@ -51,12 +57,14 @@ def slope(points):
             'r_squared': min(1., max(0., xy*xy/(xx*yy))) if xx > 0 and yy > 0 else None}
 
 
+# 只统计相邻时间戳推进/重复/回退/缺失，不替控制器决定reset或恢复。
 class StampProgress:
     """Adjacent-observation counters only; this observer makes no reset decision."""
     def __init__(self):
         self.previous = None
         self.counts = dict(first=0, advanced=0, duplicate=0, regressed=0, missing=0)
 
+    # 缺失时间不覆盖上一有效水位；下一帧仍与最后有效源时间比较。
     def observe(self, stamp):
         if not isinstance(stamp, int) or stamp <= 0:
             relation = 'missing'
@@ -70,6 +78,7 @@ class StampProgress:
         return relation
 
 
+# 每话题独立计数、最后观测及有界时间窗；包络与样本分别跟踪，防止新包掩盖旧样本。
 class TopicObservation:
     def __init__(self):
         self.callbacks = self.reported_callbacks = 0
@@ -78,6 +87,7 @@ class TopicObservation:
         self.window = deque()
         self.window_drops = 0
 
+    # 保留原RMW元数据，记录实际回调wall/mono；按时间窗和数量上限淘汰诊断样本。
     def observe(self, envelope, sample, info, host_us, mono):
         self.callbacks += 1
         received_ns = info.get('received_timestamp') if isinstance(info, dict) else None
@@ -99,6 +109,7 @@ class TopicObservation:
             self.window.popleft()
             self.window_drops += 1
 
+    # 报告时重新计算最后源年龄与receipt age，不用最近一条回调中的旧年龄冒充当前。
     def report(self, host_us, mono, interval_s):
         while self.window and self.window[0][0] < mono-WINDOW_SECONDS:
             self.window.popleft()
@@ -117,6 +128,7 @@ class TopicObservation:
         return result
 
 
+# 读取最多1MiB普通快照，与探针的不同采样时刻对照；不连接控制socket或刷新任务租约。
 def read_controller_status(path, host_us, probe_topics):
     """Read one bounded local snapshot; never contacts the supervisor/controller."""
     result = {'path': str(path), 'available': False,
@@ -163,6 +175,7 @@ def read_controller_status(path, host_us, probe_topics):
     return result
 
 
+# 延迟导入Humble执行器；定制take保留真实RMW metadata，只适配已检查Humble API。
 def ros_classes():
     from rclpy.executors import SingleThreadedExecutor
 
@@ -171,10 +184,12 @@ def ros_classes():
         # its original RMW info; no fabricated receive timestamp. These two small
         # hooks are specific to the Humble executor API and tested with 3.3.21.
         # https://github.com/ros2/rclpy/blob/humble/rclpy/src/rclpy/subscription.cpp#L124
+        # 持subscription handle期间执行真实take，不能伪造receive时间。
         def _take_subscription(self, subscription):
             with subscription.handle:
                 return subscription.handle.take_message(subscription.msg_type, subscription.raw)
 
+        # 只在实际取到消息时把payload及同条info交给回调，保持两者配对。
         async def _execute_subscription(self, subscription, taken):
             if taken is not None:
                 subscription.callback(taken[0], taken[1])
@@ -182,6 +197,7 @@ def ros_classes():
     return MetadataExecutor
 
 
+# 显式限制观测5～180秒且必须有限，不允许NaN/Inf造成无界运行。
 def duration_arg(value):
     seconds = float(value)
     if not math.isfinite(seconds) or not 5 <= seconds <= 180:
@@ -189,6 +205,7 @@ def duration_arg(value):
     return seconds
 
 
+# 校验环境/新输出路径，创建仅订阅节点；单调期限结束后输出final，再依次回收执行器/节点/文件。
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--duration', type=duration_arg, default=180., help='seconds, 5..180; default 180')
@@ -210,6 +227,7 @@ def main(argv=None):
         except OSError as exc:
             parser.error('cannot create output: '+str(exc))
 
+    # JSON禁止NaN并同步写可选新文件；诊断输出不产生飞行动作。
     def emit(row):
         line = json.dumps(row, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
         print(line, flush=True)
@@ -230,6 +248,7 @@ def main(argv=None):
         executor = ros_classes()()
         qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
         for key, cls in (('attitude', VehicleAttitude), ('local', VehicleLocalPosition)):
+            # 用默认参数冻结话题key；同一回调采集wall与mono，不能混用不同消息的时间。
             def receive(message, info, key=key):
                 host, mono = time.time_ns()//1000, time.monotonic()
                 observations[key].observe(getattr(message, 'timestamp', None),
@@ -244,6 +263,7 @@ def main(argv=None):
                   control_publishers=False, standard_parameter_events_metadata=True,
                   rmw_timestamp_interpretation='UNVERIFIED_EPOCH_DIAGNOSTIC_HOST_WALL_MINUS_RMW; not pure queue time'))
 
+        # 保留host相对steady锚误差以暴露墙钟跳变；状态对照只表示不同快照之间的差。
         def report(final=False):
             nonlocal last_report
             host, mono = time.time_ns()//1000, time.monotonic()
@@ -270,6 +290,7 @@ def main(argv=None):
         except KeyboardInterrupt:
             interrupted = True
         report(final=True)
+    # 无论结束/中断都关闭自己的ROS资源和文件；不触及真实控制器或Agent。
     finally:
         if executor is not None:
             executor.shutdown(timeout_sec=1.)

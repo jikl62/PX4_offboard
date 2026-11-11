@@ -1,3 +1,5 @@
+# 队列追赶与恢复否决回归：用真实订阅回调、接收调度和tick模拟Safety停止输出后的积压。
+# ROS API/时钟/DDS队列为替身；不会运行真实DDS、连接设备或验证实际飞行。
 """Run the real node callback, receive scheduler and tick with queued samples.
 
 The ROS API, clocks and DDS queue are synthetic. This exercises the production
@@ -14,6 +16,8 @@ import unittest
 import test_rc_recovery_adapter as recovery
 
 
+# 既有C++测试字符串逐字保留：用深度10队列和100ms传输滞后再现单次spin_some追不上。
+# 独立覆盖坏时钟的第一原因、恢复新地面窗口、冻结/回退采样、无XY估计准备、水平消费者和短暂高度越界。
 HARNESS = recovery.HARNESS.split('\nint main(){', 1)[0] + r'''
 #include <deque>
 #include <limits>
@@ -422,10 +426,12 @@ int main(){
 '''
 
 
+# 扩展共享API替身以保存真实注册的回调；匹配点必须唯一，防止升级后测到错误替身。
 def write_fixture(root):
     recovery.write_fixture(root)
     path=root/'rclcpp/rclcpp.hpp'
     ros=path.read_text().replace('#include <functional>', '#include <functional>\n#include <type_traits>')
+    # 将最小Subscription替身扩为可调用回调容器；后续测试通过构造函数真正注册的回调送样本。
     old='template<class T>struct Subscription {using SharedPtr=std::shared_ptr<Subscription<T>>;};'
     new=('template<class T>struct Subscription {using SharedPtr=std::shared_ptr<Subscription<T>>;'
          'std::function<void(typename T::ConstSharedPtr,const MessageInfo&)> callback;};')
@@ -446,7 +452,9 @@ def write_fixture(root):
     (root/'test.cpp').write_text(HARNESS)
 
 
+# 检查队列追赶的九类场景标记，并验证公开状态的类型与新鲜度含义。
 class SafetyReceiveAdapterTest(unittest.TestCase):
+    # 停止输出可排空积压，但坏载荷/坏时钟仍否决恢复，冻结样本不续鲜，活跃控制与溢出门不改变。
     def test_output_silent_safety_catches_up_without_losing_recovery_vetoes(self):
         with tempfile.TemporaryDirectory(prefix='fc01_safety_receive_') as directory:
             root=Path(directory);write_fixture(root)
@@ -474,6 +482,7 @@ class SafetyReceiveAdapterTest(unittest.TestCase):
                     self.assertIsInstance(row[field],bool)
                 for field in ('receive_timing_block_source','receive_timing_block_reason'):
                     self.assertIsInstance(row[field],str)
+            # 保留原始载荷z/vz有效位，同时要求过期样本的综合z_valid/vz_valid为false，防止界面混淆。
             expired=[row for row in states if not row['local_fresh'] and row['local_payload_z_valid']]
             self.assertTrue(expired)
             self.assertTrue(all(not row['z_valid'] and not row['vz_valid'] and row['local_payload_vz_valid']

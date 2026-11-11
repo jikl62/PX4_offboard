@@ -1,3 +1,5 @@
+# 本地工具回归：覆盖源码安装/回滚、控制台确认等待、便携导出与厂商哈希。
+# 平台、ROS构建和systemctl均用夹具替代；真实协议等待只在临时socket或伪TTY内完成。
 import importlib.util
 import json
 import contextlib
@@ -20,11 +22,14 @@ from types import SimpleNamespace
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
+# 从当前native/tools文件加载工具，避免使用系统安装的同名模块。
 def module(name):
     spec=importlib.util.spec_from_file_location(name,ROOT/'tools'/f'{name}.py')
     result=importlib.util.module_from_spec(spec);spec.loader.exec_module(result);return result
 
+# 验证管理工具的副作用顺序与输出契约，全部路径落在临时目录。
 class ToolsTests(unittest.TestCase):
+    # 模拟安装仅生成built-release，不能自动切换current；显式update才可切到新版本或旧版本。
     def test_install_never_switches_current_and_explicit_rollback(self):
         # External platform/ROS tools are fixtures; this is not a ROS build test.
         for existing in (False,True):
@@ -56,18 +61,22 @@ class ToolsTests(unittest.TestCase):
                     self.assertEqual(update.returncode,0,update.stdout+update.stderr)
                     self.assertEqual((base/'current').resolve(),target)
 
+    # attitude-ready必须映射到ATTITUDE_READY操作码和空参数。
     def test_ready_command(self):
         self.assertEqual(module('fcctl').parse_command('attitude-ready'),('ATTITUDE_READY',[],0.))
 
+    # takeoff/vel/hold/land的一次性入口须要求实时交互台，不能连接任意目标。
     def test_single_flight_commands_never_connect(self):
         for op in ('takeoff 1','vel 0 0 0 0 1','hold','land'):
             result=subprocess.run([sys.executable,str(ROOT/'tools/fcctl.py'),'--socket','/no/such/controller','--command',op],capture_output=True,text=True)
             self.assertEqual(result.returncode,2)
             self.assertIn('live interactive console',result.stderr)
 
+    # 服务器先回pending，延迟再发OFFBOARD_READY；客户端必须等状态确认后返回。
     def test_ready_client_waits_for_confirmed_state(self):
         with tempfile.TemporaryDirectory() as directory:
             path=str(Path(directory)/'control.sock');received=[];errors=[]
+            # 只监听临时本地socket，按协议顺序发送reply和state并记录收到的命令。
             def server():
                 try:
                     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as listener:
@@ -94,10 +103,12 @@ class ToolsTests(unittest.TestCase):
             self.assertIn('OFFBOARD_READY',result.stdout)
             self.assertEqual(received,['1 ATTITUDE_READY\n'])
 
+    # 以伪TTY复现相同select/解析/等待流程，即使系统策略不允许AF_UNIX也能验证协议。
     def test_ready_protocol_over_pipe_fixture(self):
         # AF_UNIX is an external OS dependency. Exercise the real select/parse/wait
         # console with pipes when sandbox policy denies socket creation.
         ctl=module('fcctl');responses=[]
+        # 最小传输替身保留文件描述符与延迟回包；退出时先join写线程再关闭描述符。
         class PipeTransport:
             def __init__(self,*args):
                 self.read,self.write=os.openpty();tty.setraw(self.write);self.worker=None
@@ -124,11 +135,13 @@ class ToolsTests(unittest.TestCase):
         self.assertGreaterEqual(time.monotonic()-start,.1)
         self.assertIn('OFFBOARD_READY',output.getvalue());self.assertEqual(responses,['1 ATTITUDE_READY\n'])
 
+    # 管道输入不满足实时TTY条件，须在连接前拒绝起飞请求。
     def test_piped_input_is_not_a_live_console(self):
         result=subprocess.run([sys.executable,str(ROOT/'tools/fcctl.py'),'--socket','/no/such/controller'],input='takeoff 1\n',capture_output=True,text=True)
         self.assertEqual(result.returncode,2)
         self.assertIn('TTY',result.stderr)
 
+    # 导出ZIP必须统一版本前缀并排除Git/缓存，同时保留默认配置。
     def test_portable_export_name_and_clean_source(self):
         deploy=module('deploy')
         with tempfile.TemporaryDirectory() as directory:
@@ -143,6 +156,7 @@ class ToolsTests(unittest.TestCase):
                 self.assertIn(prefix+'config/attitude_altitude.yaml',names)
             deploy.validate_platform({'ID':'ubuntu','VERSION_ID':'22.04'},'aarch64')
 
+    # 生成厂商manifest后篡改文件，校验必须因哈希变化失败。
     def test_pinned_messages_refuse_wrong_vendor_hash(self):
         deploy=module('deploy')
         with tempfile.TemporaryDirectory() as directory:

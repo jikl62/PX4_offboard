@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 原生 Unix socket 现场控制台：连接本身不解锁，动作请求由原生端再次验证。
+# 命令行单次请求限制为检查入口；飞行/移动操作要求现场交互，台架 ARM_ONLY 还有独立确认流程。
 """R6.2c FC01 operator console. No ROS dependency; never arms on connection."""
 import argparse
 import json
@@ -11,6 +13,7 @@ import socket
 import sys
 import time
 
+# 只接受白名单和精确参数数量；速度单位 m/s、偏航角速度 rad/s，单次定时移动时长最多 2 秒。
 def parse_command(text):
     parts=shlex.split(text)
     if not parts:
@@ -40,9 +43,11 @@ def parse_command(text):
             raise ValueError('单次移动持续时间必须在 (0, 2] 秒内')
     return names[op],values,duration
 
+# 优先读取 FC01_SOCKET，否则连接当前用户缓存目录；不会扫描或删除其他会话的 socket。
 def socket_path():
     return os.environ.get('FC01_SOCKET',str(Path.home()/'.cache/fc01/control.sock'))
 
+# 只格式化已经收到的结果；原始 JSON 模式保留全部字段，地面失败位掩码展开为便于操作者理解的原因。
 def show(obj,raw):
     if raw:
         print(json.dumps(obj,ensure_ascii=False),flush=True)
@@ -64,8 +69,10 @@ def show(obj,raw):
                 obj.get('required_ground_seconds'),obj.get('last_authority_ground_vz_ned'),
                 obj.get('ground_vz_tolerance')),flush=True)
 
+# 一次连接拥有独立递增序号、待回复表和最近状态；INTERACTIVE 后每 0.2 秒维持心跳，不能靠缓存续租。
 def run(args):
     initial=parse_command(args.command) if args.command else None
+    # 单次 --command 不能提交飞行、运动或权限切换；避免管道脚本在没有现场交互的情况下发动作。
     if initial and initial[0] in {'TAKEOFF','ARM_ONLY','VEL','HOLD','LAND','AUTHORITY_RC','AUTHORITY_AUTONOMOUS','AUTHORITY_RESET','AUTHORITY_TAKEOVER'}:
         raise ValueError('Flight/motion commands require the live interactive console')
     if initial and initial[0] in {'HELP','QUIT'}:
@@ -78,6 +85,7 @@ def run(args):
     sock.setblocking(False)
     seq=0; pending={};buf=b'';velocity=None;velocity_until=0.;last_ping=last_vel=0.;target_seq=None
     latest_state=None; latest_state_at=-1.; arm_confirmation_deadline=0.; arm_attempt_consumed=False
+    # 此处只是界面第二道检查，不替代原生/PX4；需 1 秒内状态、完整地面证据、专用门和严格字段类型。
     def arm_only_preflight(now):
         # Secondary UI guard, not a substitute for the C++ runtime and PX4 checks.
         if not args.bench_arm_only:
@@ -87,6 +95,7 @@ def run(args):
         if latest_state is None or now-latest_state_at>1.0:
             return '没有最近1秒内的实时控制器状态'
         s=latest_state
+        # 逐项核对专用台架状态；通用起飞门必须关闭，ARM_ONLY 允许也不表示 TAKEOFF 允许。
         expected={
             'profile':'attitude_altitude','bench_arm_only_enabled':True,
             'phase':'OFFBOARD_READY', 'nav_state':14, 'armed':False,
@@ -115,6 +124,7 @@ def run(args):
         if s['ground_vz_tolerance']<=0 or abs(s['ground_vz_ned'])>s['ground_vz_tolerance']:
             return 'Vz尚未满足控制器地面阈值'
         return None
+    # 写前消耗序号，0.3 秒总期限内处理部分写；非 PING 请求进入待回复表，按回复序号关联。
     def send(op,values=()):
         nonlocal seq
         seq+=1
@@ -142,6 +152,7 @@ def run(args):
             send('STATUS')
         deadline=time.monotonic()+args.timeout if initial else math.inf
         mode_wait=False;ready_wait=False;last_shown_signature=None;last_shown_at=-1.
+        # 主循环同时读 socket 与现场输入；定时速度到期发 HOLD，等待期间持续收状态、维持心跳。
         while time.monotonic()<deadline:
             now=time.monotonic()
             if arm_confirmation_deadline and now>arm_confirmation_deadline:
@@ -158,6 +169,7 @@ def run(args):
             if not initial:
                 readers.append(sys.stdin)
             readable,_,_=select.select(readers,[],[],.05)
+            # 接收字节先拼缓存再按换行拆 JSON；状态更新接收时刻，回复只能结束对应请求的等待。
             if sock in readable:
                 chunk=sock.recv(8192)
                 if not chunk:
@@ -200,6 +212,7 @@ def run(args):
                 if not text:
                     return 0
                 text=text.strip()
+                # 二次确认前重新检查全部实时状态与 10 秒窗口；提交后即消耗本会话唯一 ARM_ONLY 机会。
                 if text=='BENCH ARM CONFIRM' and arm_confirmation_deadline:
                     why=arm_only_preflight(time.monotonic())
                     if why or time.monotonic()>arm_confirmation_deadline:
@@ -221,6 +234,7 @@ def run(args):
                     if args.bench_arm_only and op=='TAKEOFF':
                         print('台架控制台禁止 TAKEOFF',flush=True)
                         continue
+                    # 第一次 arm-only 只打开确认窗口，不发解锁；其他输入或超时取消，专用台架会话始终禁止 TAKEOFF。
                     if op=='ARM_ONLY':
                         why=arm_only_preflight(time.monotonic())
                         if why:
@@ -233,6 +247,7 @@ def run(args):
                         print('速度单位 m/s；左旋 rad/s；时长 <=2 s。mode / attitude-ready 需要 ACK+新模式状态；attitude-ready 不解锁。quit/断线清除旧速度并请求降落。',flush=True)
                         print('authority rc/autonomous 只选择策略，不确认失效保护、不改 PX4 参数；准备后锁定。takeover 释放本次控制；reset 仅在安全地面、输出停止且事务结束后回到 UNSET。',flush=True)
                         continue
+                    # 任何新的操作先取消旧定时速度，防止旧运动在新指令后继续周期重发。
                     # Any new operator command cancels the previous timed movement.
                     if velocity is not None:
                         send('HOLD');velocity=None
@@ -243,6 +258,7 @@ def run(args):
                     print(str(error),file=sys.stderr,flush=True)
         raise TimeoutError('等待执行结果超时')
 
+# 入口只解析 socket、超时和显示/台架选项；异常返回失败码，Ctrl+C 返回 130，不擅自终止原生进程。
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--socket',default=socket_path())

@@ -1,3 +1,5 @@
+# 排队事件安全扫描回归：真实节点回调谓词、保留事件扫描、Runtime/Core与最终发布sink。
+# API、输入和时钟是替身，主机进程不运行ROS/DDS，不连接电机或串口。
 """Run the actual SystemNode safety scan against the narrow ROS API fixture.
 
 This exercises production adapter code without DDS, motors or ROS execution.
@@ -9,6 +11,8 @@ import tempfile
 import unittest
 import adapter_compile_check as fixture
 
+# C++夹具逐字保留：40Hz源样本每两个送入20Hz扫描，核对诊断分段、持续告警及积分仍更新。
+# 其他组覆盖图查询缓存/冲突、事件溢出、各反馈坏样本、RC接管请求、落地反跳与下一轮重准备。
 HARNESS = r'''
 #include "adapter_under_test.cpp"
 #include "authority_test_support.hpp"
@@ -254,7 +258,9 @@ int main(){
 '''
 
 
+# 为真实适配器创建临时编译环境，用C++断言验证事件保留与诊断不干预控制。
 class ReceiveEventAdapterTest(unittest.TestCase):
+    # 好坏好队列中的致命样本不能被覆盖；速度差只诊断，时间/复位/非有限值和位置残差保护仍有效。
     def test_pending_unsafe_payload_cannot_be_hidden_by_benign_head(self):
         with tempfile.TemporaryDirectory(prefix='fc01_safety_adapter_') as directory:
             root = Path(directory)
@@ -269,6 +275,7 @@ class ReceiveEventAdapterTest(unittest.TestCase):
             for filename,(name,fields) in fixture.VISION_MESSAGES.items():
                 (vision/(filename+'.hpp')).write_text('#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\n#include <string>\n#include "jikl_fc01_system/msg/stamp.hpp"\nnamespace jikl_fc01_system::msg {struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;std::uint16_t schema_version{1};'+fields+'};}\n')
             source=(fixture.ROOT/'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
+            # 只修改临时副本的可见性和main名称，使夹具能直接调用真实节点内部路径。
             source=source.replace(' private:', ' public:', 1).replace('int main(', 'int adapter_program_main(', 1)
             (root/'adapter_under_test.cpp').write_text(source)
             (root/'test.cpp').write_text(HARNESS)
@@ -276,6 +283,7 @@ class ReceiveEventAdapterTest(unittest.TestCase):
             subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-pthread',
                 '-I',str(root),'-I',str(fixture.ROOT/'src/jikl_fc01_system/include'),
                 '-I',str(fixture.ROOT/'tests'),str(root/'test.cpp'),'-o',str(executable)],check=True)
+            # IPC socket置于同一临时目录；测试进程退出后不留下控制通道或二进制。
             env=os.environ.copy();env['FC01_SOCKET']=str(root/'control.sock')
             result=subprocess.run([str(executable)],env=env,capture_output=True,text=True)
             self.assertEqual(result.returncode,0,result.stderr+'\n'+result.stdout)

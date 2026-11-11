@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 视觉实际状态的独立离线验收层：在适配转换外检查时间、可信周期、质量、协方差与连续性。
+# 本文件不生成目标指令，也不把诊断 accepted 当飞行授权；拒绝撤销当前缓存但保留可信历史。
 """视觉实际状态的离线校验：先检查来源和时间，再检查测量，最后提交可信缓存。
 
 输入是严格配对的 Odometry 和 VisionHealth，表示飞机“实际在哪里、如何运动”。
@@ -32,6 +34,7 @@ AdapterConfig = adapter.AdapterConfig
 ConvertedState = adapter.ConvertedState
 
 
+# 只接受有限数且排除 bool；超大整数转换溢出同样按无效数处理。
 def _number(value):
     try:
         return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
@@ -39,10 +42,12 @@ def _number(value):
         return False
 
 
+# 协议整数限制范围，排除 bool 冒充计数或时间字段。
 def _integer(value, maximum):
     return isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= maximum
 
 
+# ROS 时间须在 sec/nanosec 约定范围，零时刻表示未提供；精确整数纳秒用于测量配对。
 def _stamp(value):
     if value is None:
         return None
@@ -293,6 +298,7 @@ class Validator:
         self._last_reasons = ('NO_SAMPLE',)
         self._previously_rejected = False
 
+    # 事件与原因计数独立累计，队列有界；last_anomaly 保存副本，后续正常样本和调用方改动都不覆盖它。
     def _event(self, kind, reasons, **fields):
         self._event_id += 1
         value = dict(event_id=self._event_id, kind=kind, reasons=list(reasons),
@@ -306,6 +312,7 @@ class Validator:
             self.last_anomaly = deepcopy(value)
         return value
 
+    # 向调用者交付深拷贝再清事件队列；可信缓存、基线和最后异常继续保留。
     def drain_events(self):
         values = deepcopy(list(self._events))
         self._events.clear()
@@ -322,6 +329,7 @@ class Validator:
         self._last_ros = ros_now_ns if self._last_ros is None else max(ros_now_ns, self._last_ros)
         return reasons
 
+    # 缓存寿命同时受单调接收年龄和映射后源测量年龄约束；刚接收不代表源数据仍然新鲜。
     def _cache_age_errors(self, now, ros_now_ns):
         if self._cache is None:
             return [], None
@@ -336,6 +344,7 @@ class Validator:
             reasons.append('SOURCE_SAMPLE_OUTSIDE_TIME_WINDOW')
         return reasons, source_age
 
+    # 将未明确配置的验收条件列为 unknown；不会用经验值补齐或把未检查内容写成已确认。
     def _unknowns(self):
         names = ('receive_timeout_sec', 'max_source_age_sec', 'future_tolerance_sec',
                  'min_quality', 'nominal_quality_min', 'max_position_step_m',
@@ -346,6 +355,7 @@ class Validator:
             unknown.append('clock_offset')
         return unknown
 
+    # 结果深拷贝状态、协方差及异常证据；诊断包含未知项与可信周期容量，control_authority 始终 false。
     def _result(self, state, accepted, reasons, tracking='UNKNOWN', covariance=None, **fields):
         diagnostics = dict(control_authority=False, qualification='DIAGNOSTIC_ONLY',
                            reasons=list(reasons), unknown=self._unknowns(),
@@ -356,11 +366,13 @@ class Validator:
                            last_anomaly=deepcopy(self.last_anomaly), event_id=self._event_id, **fields)
         return ValidationResult(deepcopy(state), accepted, diagnostics)
 
+    # 拒绝结果使用无有效位的新状态与首个原因；不把上一次可信测量伪装成本轮测量。
     def _invalid(self, reasons, **fields):
         return self._result(ConvertedState(source_id=self.config.adapter.source_id,
                                           reason=reasons[0] if reasons else 'INVALID'),
                             False, reasons, **fields)
 
+    # 最近观测周期与最近接受周期分别保存；身份变化先记录，只有 receive 最终通过才能推进可信历史。
     def _observe_epoch(self, raw, health, metadata):
         if health is None:
             return None

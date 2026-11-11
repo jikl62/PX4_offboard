@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 独立速度诊断的真实ROS传输回归：只启动合成VelocityCommand源与只读诊断节点。
+# 强制本机发现并拒绝已有/fmu/FC01/Agent；所有样本值和超时均为测试夹具，不给飞行权限。
 """Opt-in, real ROS 2 transport test for the read-only velocity diagnostic.
 
 Source ROS 2 Humble and the newly built jikl_fc01_system install, then run with
@@ -28,11 +30,13 @@ DIAGNOSTIC_NODE = 'fc01_velocity_command_diagnostic'
 TEST_TIMEOUT_SEC = 1.0
 
 
+# 统一断言入口，失败时抛出含具体边界原因的RuntimeError。
 def require(condition, reason):
     if not condition:
         raise RuntimeError(reason)
 
 
+# 核对真实生成的类型身份、字段类型、默认值和CDR往返，不能用.msg注释代替默认值验证。
 def check_generated_interface(message_type, serialize, deserialize):
     """Check the generated type, including defaults which comments do not set."""
     expected = {
@@ -63,6 +67,7 @@ def check_generated_interface(message_type, serialize, deserialize):
             'default_frame_id': default.frame_id, 'serialization_round_trip': True}
 
 
+# 在显式非零隔离域内测试best-effort/reliable、异常历史、超时和最终退出落盘。
 def main():
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
@@ -110,6 +115,7 @@ def main():
     logs = None
     snapshot_path = None
 
+    # 每次等待都扫描图，若出现飞控端点、FC01或Agent即拒绝继续合成流量。
     def isolated_graph():
         topics = node.get_topic_names_and_types()
         require(not any(name.startswith('/fmu/') for name, _ in topics),
@@ -118,12 +124,14 @@ def main():
                         for name in node.get_node_names()),
                 'isolated test domain contains FC01 or an Agent node')
 
+    # 读取独立诊断JSON；文件尚未出现或原子替换中的短暂解析失败只表示尚无快照。
     def snapshot():
         try:
             return json.loads(snapshot_path.read_text(encoding='utf-8'))
         except (FileNotFoundError, json.JSONDecodeError):
             return None
 
+    # spin并不断核对隔离图和诊断进程；只有满足谓词且control_authority严格false才返回。
     def wait_for(predicate, reason, timeout=12.):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
@@ -138,9 +146,11 @@ def main():
                 return current
         raise RuntimeError('timed out waiting for ' + reason)
 
+    # 读取缺省为0的统计计数，便于检测某次异常是否实际新增。
     def count(current, key):
         return current.get('counters', {}).get(key, 0)
 
+    # 真正调用ROS参数服务，等待期间仍核对域隔离；finally销毁服务client。
     def parameter_call(service_type, suffix, request):
         client = node.create_client(service_type, '/' + DIAGNOSTIC_NODE + '/' + suffix)
         try:
@@ -156,6 +166,7 @@ def main():
         finally:
             node.destroy_client(client)
 
+    # 核对描述符只读、运行期修改被拒绝，且可见参数仍为启动值。
     def check_startup_parameters_are_read_only():
         names = ['topic', 'qos_depth', 'reliable', 'snapshot_period_sec',
                  'timeout_sec', 'max_source_age_sec', 'future_tolerance_sec',
@@ -181,6 +192,7 @@ def main():
                 current.values[1].string_value == '',
                 'rejected runtime parameter update changed the startup configuration')
 
+    # 构造显式body_frd目标速度及当前源时戳，序号/复位/来源/有效性按场景变化。
     def make_message(sequence, reset=0, source='synthetic-smoke-A', valid=True):
         message = VelocityCommand(sequence=sequence, reset_counter=reset,
                                   source_id=source, frame_id='body_frd', valid=valid,
@@ -188,20 +200,24 @@ def main():
         message.stamp = node.get_clock().now().to_msg()
         return message
 
+    # 固定volatile与深度5，只改变可靠性，用真实图匹配验证传输契约。
     def qos(reliable):
         return QoSProfile(depth=5, reliability=(ReliabilityPolicy.RELIABLE if reliable
                           else ReliabilityPolicy.BEST_EFFORT),
                           durability=DurabilityPolicy.VOLATILE)
 
+    # 登记新发布者，便于冲突计数验证和finally统一回收。
     def new_publisher(reliable):
         publisher = node.create_publisher(VelocityCommand, TOPIC, qos(reliable))
         publishers.append(publisher)
         return publisher
 
+    # 销毁ROS发布者并移除登记，保证随后源计数观察对应真实图。
     def destroy_publisher(publisher):
         node.destroy_publisher(publisher)
         publishers.remove(publisher)
 
+    # 等唯一兼容订阅发现后只发送一次；重复发送会伪造重复序号并掩盖测试失效。
     def publish_and_wait(publisher, message, predicate, reason):
         # Publish once after endpoint discovery. Repeating a fixture here would
         # manufacture sequence duplicates and hide a failed duplicate check.
@@ -210,6 +226,7 @@ def main():
         publisher.publish(message)
         return wait_for(predicate, reason)
 
+    # 优先SIGINT并有限等待；返回真实退出码，清空句柄避免重复停止。
     def stop_process():
         nonlocal process
         if process is None:
@@ -234,6 +251,7 @@ def main():
             directory = Path(temporary)
             logs = tempfile.TemporaryFile(mode='w+')
 
+            # 每次使用独立临时输出目录与显式测试参数，等待首份快照再进入场景。
             def start_diagnostic(reliable, *, name=None, overrides=None):
                 nonlocal process, snapshot_path
                 output = directory / (name or ('reliable' if reliable else 'best_effort'))
@@ -273,6 +291,7 @@ def main():
                     subscriptions[0].topic_type == TYPE_NAME and
                     subscriptions[0].qos_profile.reliability == ReliabilityPolicy.BEST_EFFORT,
                     'diagnostic default subscription has wrong type or reliability')
+            # 首个best-effort包需保持全部载荷和测量时戳；只配接收超时不应形成可用控制候选。
             first = make_message(10)
             current = publish_and_wait(best_effort, first,
                 lambda current: (current.get('last_message') or {}).get('sequence') == 10,
@@ -289,6 +308,7 @@ def main():
             result['checks'].append('best_effort_type_and_payload')
             result['checks'].append('unconfigured_policy_does_not_qualify_cache')
 
+            # 依次重发同序号、发倒序包，计数须各自增加；拒绝数据不得伪造新鲜有效样本。
             before = count(current, 'duplicate')
             current = publish_and_wait(best_effort, first,
                 lambda current: count(current, 'duplicate') > before, 'duplicate observation')
@@ -303,6 +323,7 @@ def main():
                 lambda current: count(current, 'invalid') > before and
                     current.get('last_message', {}).get('valid') is False,
                 'explicit invalid observation')
+            # 后续有效包可以恢复最新观察，但先前invalid异常历史须保留。
             remembered_anomaly = current.get('last_anomaly')
             require(remembered_anomaly is not None, 'invalid message did not retain an anomaly')
             current = publish_and_wait(best_effort, make_message(12),
@@ -312,6 +333,7 @@ def main():
                     'valid tail erased all anomaly history')
             result['checks'].append('invalid_and_retained_anomaly')
 
+            # 复位与来源变化是两个独立流事件；它们不会自动产生飞行权限。
             before = count(current, 'reset_change')
             current = publish_and_wait(best_effort, make_message(1, reset=1),
                 lambda current: count(current, 'reset_change') > before and
@@ -325,6 +347,7 @@ def main():
                 'source identity change')
             result['checks'].append('reset_and_source_changes')
 
+            # 两发布者冲突必须被记录；恢复唯一发布者后才测试reliable到best-effort传输。
             before = count(current, 'source_count')
             reliable = new_publisher(True)
             wait_for(lambda current: current.get('publisher_count') == 2 and
@@ -341,6 +364,7 @@ def main():
                     'source count transitions were not recorded')
             result['checks'].append('source_count_and_reliable_to_best_effort')
 
+            # 静默直到显式测试超时：原last_message仍应保持序号2，不制造新的线缆样本。
             before = count(current, 'timeout')
             current = wait_for(lambda current: count(current, 'timeout') > before and
                                current.get('freshness') == 'EXPIRED',
@@ -385,6 +409,7 @@ def main():
             require(DIAGNOSTIC_NODE not in node.get_node_names(),
                     'reliable diagnostic still appears before shutdown test')
 
+            # 延长快照/日志节流期，让invalid事件在SIGINT前尚未刷盘，验证退出强制保存不遗漏。
             # Deliberately long fixture periods keep the invalid event pending
             # until SIGINT; this checks finalization after rclpy shuts its context.
             start_diagnostic(True, name='shutdown', overrides={
@@ -422,6 +447,7 @@ def main():
             logs.seek(0)
             print(logs.read()[-8000:], file=sys.stderr)
         raise
+    # 正常或异常退出都停止诊断、销毁全部发布者和节点，并关闭日志文件。
     finally:
         stop_process()
         for publisher in list(publishers):

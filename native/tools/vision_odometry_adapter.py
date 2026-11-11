@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 实际状态适配层：输入 Odometry+VisionHealth，输出 VisionState；从不将目标速度解释成自身测量。
+# 本文件已有坐标链、杆臂、严格配对与撤销说明；本轮完整复核后仅补模块与输出结构职责。
 """将严格配对的 Odometry / VisionHealth 转换成 FC01 的实际状态。
 
 阅读顺序：convert_odometry() 做坐标转换；StampPairBuffer 按测量时间配对；
@@ -132,6 +134,7 @@ def _vector(message):
 
 
 @dataclass(frozen=True)
+# 显式接口合同：传感器外参将传感器 FRD 映射到机体 FRD，世界对齐将约定 NED 映射到 FC01 NED。
 class AdapterConfig:
     # 来源和原始坐标名称由接口双方显式约定，用来拒绝接错话题或旧标定。
     source_id: str
@@ -176,6 +179,7 @@ class AdapterConfig:
 
 
 @dataclass
+# 转换结果同时携带数据与有效位：NaN/零有效位明确表示未知，失败也保留原因供下游撤销旧缓存。
 class ConvertedState:
     schema_version: int = 1
     sequence: int = 0
@@ -340,6 +344,7 @@ def convert_odometry(odometry, health, config):
     return out
 
 
+# 配对缓存只认同一测量纳秒；接收时间只控制等待寿命，不做最近时间插值或跨测量健康借用。
 class StampPairBuffer:
     """有容量上限的精确时间配对；重复包不能刷新等待时间或重复发布。"""
     def __init__(self, timeout=.05, max_pending=32):

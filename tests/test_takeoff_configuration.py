@@ -1,3 +1,5 @@
+# 原有 1.5 m 起飞平台和新增推力参数的跨入口合同测试，不进行动力试验。
+# 检查设置缺失、显式设置、源 YAML 和离线导出都使用相同数值，不借升级改变控制增益。
 """One initial platform height across installed and offline configuration paths."""
 import json
 from pathlib import Path
@@ -15,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class TakeoffConfigurationTests(unittest.TestCase):
+    # 从源 YAML 到实际参数读取路径核对 .50 悬停、.04 起飞预留、.80 上限等候选值。
     def test_attitude_altitude_defaults_load_new_thrust_parameters(self):
         """The shipped YAML is the source consumed by profile generation."""
         params = yaml.safe_load((ROOT/'native/config/attitude_altitude.yaml').read_text())[
@@ -25,6 +28,7 @@ class TakeoffConfigurationTests(unittest.TestCase):
         self.assertEqual(params['aa_thrust_max'], .80)
         self.assertEqual(params['aa_thrust_slew'], .40)
 
+    # 旧人工导航标记缺少新起飞合同，必须在启动前拒绝。
     def test_old_manual_navigation_binary_cannot_pass_new_takeoff_release_check(self):
         with tempfile.TemporaryDirectory() as folder, patch.object(launcher.platform,'machine',return_value='aarch64'):
             entry=Path(folder);binary=entry/'install/lib/jikl_fc01_system/fc01_system_node'
@@ -44,6 +48,7 @@ class TakeoffConfigurationTests(unittest.TestCase):
                                navigation_service.LIFECYCLE_MARKER)
             self.assertEqual(navigation_service.check_controller(entry),binary)
 
+    # 未提供设置与显式默认应保持同一个 1.5 m 平台，不能出现入口分裂。
     def test_missing_settings_and_explicit_settings_share_platform_default(self):
         base = yaml.safe_load((ROOT/'native/config/attitude_altitude.yaml').read_text())
         with tempfile.TemporaryDirectory() as folder, patch.object(navigation_service.standby, 'validate', return_value=base):
@@ -64,6 +69,7 @@ class TakeoffConfigurationTests(unittest.TestCase):
             self.assertEqual(navigation_service.load_profile(entry, entry/'agent', entry)
                              ['fc01_system']['ros__parameters']['rc_target_height'], 2.0)
 
+    # 打包设置和独立导出同样保留高度与增益，排除配置漂移。
     def test_shipping_settings_and_offline_export_use_1p5m_without_changing_gains(self):
         self.assertEqual(json.loads((ROOT/'navigation_settings.json').read_text())['target_height_m'], 1.5)
         base = yaml.safe_load((ROOT/'native/config/attitude_altitude.yaml').read_text())['fc01_system']['ros__parameters']

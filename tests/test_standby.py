@@ -1,3 +1,5 @@
+# 闭门待机监督器的生命周期回归：真实临时 peer/socket/信号配合注入的进程与串口所有权证据。
+# 无 stdin 的待机只请求 STATUS；Agent 恢复不能触发新控制器或任何飞行命令。
 import importlib
 import contextlib
 import io
@@ -15,11 +17,14 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# 覆盖数据新鲜度、日志/状态文件、Agent 重连、旧进程与操作员锁互斥以及优雅退出。
 class StandbyTests(unittest.TestCase):
+    # 加载当前 standby，缺少闭门待机入口即明确失败。
     def module(self):
         self.assertTrue((ROOT/'standby.py').exists(), 'continuous closed-gate standby is missing')
         return importlib.import_module('standby')
 
+    # 建立 socketpair 并启动仅测试用对端；清理在每项测试结束后终止并等待该假进程。
     def peer(self, mode='normal'):
         folder = tempfile.TemporaryDirectory(prefix='fc01_standby_test_')
         self.addCleanup(folder.cleanup)
@@ -36,6 +41,7 @@ class StandbyTests(unittest.TestCase):
         self.addCleanup(cleanup)
         return a, node, trace
 
+    # 等待 stop 事件前持续读反馈；trace 只含一次 STATUS，最后由 peer 写 STOPPED。
     def test_standby_runs_without_stdin_until_signal_and_only_requests_status(self):
         m = self.module()
         a, node, trace = self.peer()
@@ -56,6 +62,7 @@ class StandbyTests(unittest.TestCase):
         self.assertEqual([line.split()[1] for line in lines[:-1]], ['STATUS'])
         self.assertTrue(any(row['status'] == 'CONNECTED' for row in states))
 
+    # 对端 socket 先断而进程仍活时，监督器必须请求优雅停止并等它退出。
     def test_socket_failure_waits_for_live_native_exit(self):
         m = self.module()
         a, node, trace = self.peer('close')
@@ -64,6 +71,7 @@ class StandbyTests(unittest.TestCase):
         self.assertEqual(node.returncode, 0)
         self.assertIn('STOPPED', trace.read_text())
 
+    # 无输出存活进程不能把 WAITING 提升为 CONNECTED。
     def test_no_fresh_state_is_waiting_even_while_native_is_alive(self):
         m = self.module()
         a, node, trace = self.peer('silent')
@@ -76,6 +84,7 @@ class StandbyTests(unittest.TestCase):
         self.assertFalse(any(x['status'] == 'CONNECTED' for x in states))
         self.assertTrue(any(x['status'] == 'WAITING' for x in states))
 
+    # 稳定反馈时需要定期写当前快照，不能因状态内容不变而让显示误过期。
     def test_steady_feedback_refreshes_snapshot_before_view_freshness_expires(self):
         m = self.module()
         a, node, _ = self.peer()
@@ -91,6 +100,7 @@ class StandbyTests(unittest.TestCase):
         self.assertGreaterEqual(len(current), 2, 'steady live feedback needs periodic current snapshots')
         self.assertLessEqual(max(b-a for a, b in zip(current, current[1:])), 1.5)
 
+    # 100 KB 实际管道输出被轮转到有界三文件，末尾 LAST_RECORD 不丢失。
     def test_native_log_pump_rotates_real_subprocess_output(self):
         m = self.module()
         with tempfile.TemporaryDirectory() as d:
@@ -109,6 +119,7 @@ class StandbyTests(unittest.TestCase):
             for handler in log.handlers:
                 handler.close()
 
+    # 重复写状态只保留最新 status.json，临时发布文件不得累积。
     def test_latest_status_is_atomic_and_does_not_accumulate_files(self):
         m = self.module()
         with tempfile.TemporaryDirectory() as d:
@@ -118,6 +129,7 @@ class StandbyTests(unittest.TestCase):
                 self.assertEqual(json.loads((path/'status.json').read_text())['attempt'], i)
             self.assertEqual([p.name for p in path.iterdir()], ['status.json'])
 
+    # 从基线生成开机待机副本，所有动作门必须 false，原数据有效性保护仍保留。
     def test_boot_config_keeps_all_action_gates_closed(self):
         m = self.module()
         import yaml
@@ -127,6 +139,7 @@ class StandbyTests(unittest.TestCase):
         self.assertTrue(all(config['fc01_system']['ros__parameters'][x] is False for x in ACTION_FLAGS))
         self.assertTrue(config['fc01_system']['ros__parameters']['aa_vertical_feedback_guard_enabled'])
 
+    # 用 sleep 模拟 Agent 丢失/恢复；原 native peer 持续存活且仍只收到 STATUS。
     def test_agent_loss_recovers_transport_without_stopping_or_commanding_native(self):
         m = self.module()
         a, node, trace = self.peer()
@@ -159,6 +172,7 @@ class StandbyTests(unittest.TestCase):
             self.assertEqual(trace.read_text().splitlines()[-1], 'STOPPED')
             self.assertEqual([line.split()[1] for line in trace.read_text().splitlines()[:-1]], ['STATUS'])
 
+    # 未知 UART 占用者不杀不抢；退避减少探查频率，并明确 RECOVERING 原因。
     def test_transport_unknown_uart_owner_is_retained_with_backoff(self):
         m = self.module()
         with tempfile.TemporaryDirectory() as d:
@@ -174,6 +188,7 @@ class StandbyTests(unittest.TestCase):
             self.assertEqual(transport.snapshot()['agent_transport_status'], 'RECOVERING')
             self.assertIn('未知程序', transport.snapshot()['agent_transport_reason'])
 
+    # 已有唯一正确 Agent 则复用、标记非 owned，关闭 transport 也不得终止它。
     def test_transport_reuses_one_matching_agent_and_never_spawns_duplicate(self):
         m = self.module()
         from launcher import Process
@@ -190,6 +205,7 @@ class StandbyTests(unittest.TestCase):
             self.assertFalse(launch.called)
             self.assertIsNone(transport.close())
 
+    # 旧控制器残存时只允许恢复 Agent 链路，严禁启动第二个 native。
     def test_orphan_wait_only_restores_transport_until_original_native_exits(self):
         m = self.module()
         from launcher import Process
@@ -222,6 +238,7 @@ class StandbyTests(unittest.TestCase):
             self.assertIsNone(launches[0].poll(), 'Agent must survive while native safely finishes')
             launches[0].terminate(); launches[0].wait(timeout=3)
 
+    # 没有 stop 请求的 code=0 同样是意外退出，必须记录原因进入受控重试。
     def test_child_exit_zero_without_user_stop_is_recorded_and_retried(self):
         m = self.module()
         from launcher import Process
@@ -261,6 +278,7 @@ class StandbyTests(unittest.TestCase):
             self.assertIn('原生控制器退出，code=0', (home/'state/standby.log').read_text())
             self.assertEqual(final['status'], 'STOPPED')
 
+    # 连接失败不能据“看起来陈旧”删除外部 socket/普通文件。
     def test_unknown_existing_socket_is_preserved_on_connect_failure(self):
         m = self.module()
         from unittest.mock import Mock
@@ -271,6 +289,7 @@ class StandbyTests(unittest.TestCase):
                 m.connect_controller(path, Mock(poll=lambda: None), timeout=.01)
             self.assertEqual(path.read_text(), 'unknown previous owner')
 
+    # 缺 UART 时 30 秒退避，期间保持当前 WAITING 状态，不制造大量新会话目录。
     def test_missing_device_retries_after_30_seconds_without_new_session_folders(self):
         m = self.module()
         manager = importlib.import_module('autostart')
@@ -309,6 +328,7 @@ class StandbyTests(unittest.TestCase):
             self.assertEqual(json.loads((home/'FC01_autostart/status.json').read_text())['status'], 'STOPPED')
             self.assertFalse((home/'FC01_control_runs').exists())
 
+    # 人工入口已持锁时自动监督器不能 preflight 或并行启动。
     def test_supervisor_respects_existing_operator_lock(self):
         m = self.module()
         import fcntl
@@ -326,6 +346,7 @@ class StandbyTests(unittest.TestCase):
                     m.supervise(home/'project', home/'agent', home/'state', StopOnWait())
             self.assertIn('旧入口正在运行', (home/'state/standby.log').read_text())
 
+    # 真实 fixture 解析实际 argv/YAML，确认只读 STATUS、空 CSV、外部日志关闭和所有动作门关闭。
     def test_full_supervisor_reuses_agent_and_launches_closed_gate_native(self):
         m = self.module()
         import yaml
@@ -378,6 +399,7 @@ class StandbyTests(unittest.TestCase):
             self.assertTrue(trace['all_gates_closed'])
             self.assertEqual(list((home/'.cache/fc01_operator/ipc').iterdir()), [])
 
+    # 用合法 YAML 空字符串覆盖源 CSV 路径，避免进入同步磁盘输出路径。
     def test_standby_overrides_source_csv_file_path_with_yaml_empty_string(self):
         m = self.module()
         import yaml
@@ -388,6 +410,7 @@ class StandbyTests(unittest.TestCase):
         self.assertIsInstance(effective, str)
         self.assertEqual(effective, '')
 
+    # 第一次停机缺少接地证据而保留的自建 Agent，第二轮应复用同一进程而不再创建。
     def test_retained_owned_agent_is_reused_after_standby_stop_and_start(self):
         m = self.module()
         import yaml
@@ -442,6 +465,7 @@ class StandbyTests(unittest.TestCase):
                     a.close()
                     b.close()
 
+    # 即使锁没有继承，进程清单里仍存活的 native 也必须阻止新启动。
     def test_surviving_native_blocks_start_even_without_inherited_lock(self):
         self.module()
         import launcher

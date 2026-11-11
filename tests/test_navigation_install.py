@@ -1,3 +1,5 @@
+# 旧 install 入口的配置、地面许可和构建复用回归：真实文件只写临时树，管理命令全部注入。
+# Probe 不控制飞行；构建完成、准备就绪和服务切换是三项不同证据，不能互相替代。
 import configparser
 import importlib
 import json
@@ -12,12 +14,16 @@ from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
 
+# 检查 status/land 的独立进度、源身份、发布者数量和 armed 历史锁存。
 class ProbeTests(unittest.TestCase):
+    # 每项用真实 GroundEvidence 新实例，避免前一项观测污染后续许可。
     def evidence(self):
         return importlib.import_module('navigation_probe').GroundEvidence()
+    # stamp 单位秒，消息转换为 PX4 微秒；收发时钟差固定 100 秒以测显式同步关系。
     def observe(self,e,kind,stamp,**extra):
         msg=dict(timestamp=int(stamp*1e6),system_id=1,component_id=1,arming_state=1,landed=True,at_rest=True)
         msg.update(extra);e.observe(kind,msg,stamp,stamp-100)
+    # 新样本、恰好一个发布源、接地静止同时满足才可得到临时地面许可。
     def test_probe_requires_advancing_clock_and_exclusive_fresh_ground(self):
         e=self.evidence()
         for stamp in (1000.,1001.):
@@ -25,6 +31,7 @@ class ProbeTests(unittest.TestCase):
         self.assertTrue(e.ready(1001.,901.,1,1),e.reason)
         self.assertFalse(e.ready(1001.,901.,2,1))
         self.assertFalse(e.ready(1005.,905.,1,1))
+    # 重复样本、源时间异常、未静止和其他 system_id 逐个破坏许可。
     def test_duplicates_unsynchronized_and_unrest_are_not_ground_proof(self):
         for mode in ('duplicate','clock','rest','source'):
             e=self.evidence()
@@ -34,11 +41,13 @@ class ProbeTests(unittest.TestCase):
                 self.observe(e,'land',t,**kw)
                 self.observe(e,'status',t,**({'system_id':2} if mode=='source' else {}))
             self.assertFalse(e.ready(1001.,901.,1,1),mode)
+    # 曾观察到 armed 即须保留，不能因同时源时间无效而忽略这一危险证据。
     def test_armed_observation_latches_even_with_invalid_clock(self):
         e=self.evidence();self.observe(e,'status',1000.,arming_state=2,timestamp=1)
         for stamp in (1001.,1002.):
             self.observe(e,'status',stamp);self.observe(e,'land',stamp)
         self.assertFalse(e.ready(1002.,902.,1,1));self.assertTrue(e.armed_seen)
+    # 注入 ROS callback 并禁止 Popen，证明被动 probe 只订阅两类反馈且复用已有 Agent。
     def test_live_probe_is_subscription_only_and_retains_matching_agent(self):
         import sys
         import types
@@ -65,8 +74,10 @@ class ProbeTests(unittest.TestCase):
             self.assertTrue(json.loads(path.read_text())['ok'])
             self.assertEqual(len(callbacks),2)
 
+# 验证服务/桌面转义、隔离单任务构建、有界安装缓存及服务变更前的重新观测。
 class InstallTests(unittest.TestCase):
     def module(self):return importlib.import_module('navigation_install')
+    # 含空格、$ 和 % 的路径经合法 unit/desktop 转义，不能变成 shell 注入或自动起飞入口。
     def test_units_and_desktop_paths_support_space_dollar_percent_without_shell(self):
         m=self.module();entry=Path('/home/orangepi/Navigate 10% $x')
         text=m.render_unit('orangepi',Path('/home/orangepi'),entry,Path('/tmp/native'))
@@ -88,6 +99,7 @@ class InstallTests(unittest.TestCase):
         self.assertIn('10%%',desktop);self.assertNotIn('takeoff',desktop)
         with self.assertRaises(ValueError):m.render_desktop(Path('/tmp/bad\nExec=x'))
 
+    # 默认服务运行诊断模式；flight-test 必须带明确确认才可生成启动文本。
     def test_service_defaults_to_diagnostic_and_flight_test_is_explicit(self):
         m=self.module();entry=Path('/opt/fc01-nav');home=Path('/home/orangepi')
         diagnostic=m.render_unit('orangepi',home,entry,Path('/tmp/native'))
@@ -96,6 +108,7 @@ class InstallTests(unittest.TestCase):
         with self.assertRaises(ValueError):m.render_unit('orangepi',home,entry,Path('/tmp/native'),'flight-test')
         flight=m.render_unit('orangepi',home,entry,Path('/tmp/native'),'flight-test',True)
         self.assertIn('run --mode flight-test --confirm-flight-test',flight)
+    # 配置/编译/安装均指向独立前缀，编译只用一个任务且不能 apt 下载依赖。
     def test_build_is_offline_single_job_and_staged(self):
         m=self.module();commands=[]
         with patch.object(m.shutil,'which',return_value='/usr/bin/tool'):
@@ -109,6 +122,7 @@ class InstallTests(unittest.TestCase):
         with patch.object(m.shutil,'which',return_value=None),self.assertRaises(RuntimeError):
             m.build_native(ROOT,Path('/tmp/a'),Path('/tmp/b'),run=lambda *a,**k:commands.append(a))
         self.assertEqual(commands,[])
+    # 可先准备编译与配置，但 probe 失败必须阻止进入 deploy。
     def test_ground_failure_happens_after_build_validation_before_service_mutation(self):
         m=self.module();trace=[]
         with tempfile.TemporaryDirectory() as d:
@@ -120,6 +134,7 @@ class InstallTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError,'armed'):m.prepare(entry,home,home/'base')
                 deploy.assert_not_called()
         self.assertEqual(trace,['prepare-config','build','check-config','probe'])
+    # 建立受管理旧待机与候选隔离前缀，runner 仅复制临时服务文件；probe 写当前 boot/单调时钟。
     def fixture(self,folder):
         m=self.module();home=Path(folder);entry=home/'entry 10% $x';entry.mkdir()
         (home/'units').mkdir();prefix=entry/'.build/abc/install';prefix.mkdir(parents=True)
@@ -133,6 +148,7 @@ class InstallTests(unittest.TestCase):
                 return subprocess.CompletedProcess(argv,0,f'FragmentPath={p if p.exists() else ""}\nDropInPaths=\nMainPID=0\nActiveState=inactive\nUnitFileState=enabled\n','')
             if '/usr/bin/install' in argv:shutil.copyfile(argv[-2],argv[-1])
             return subprocess.CompletedProcess(argv,0,'','')
+        # stamp 单位秒，消息转换为 PX4 微秒；收发时钟差固定 100 秒以测显式同步关系。
         def observe(_entry,_home,_project,action,*args):
             self.assertEqual(action,'probe');calls.append(['PROBE'])
             folder=home/'FC01_navigation';folder.mkdir(mode=0o700,exist_ok=True)
@@ -140,6 +156,7 @@ class InstallTests(unittest.TestCase):
                 boot_id=Path('/proc/sys/kernel/random/boot_id').read_text().strip())))
         patcher=patch.object(m,'boot',side_effect=observe);patcher.start();self.addCleanup(patcher.stop)
         return m,home,entry,prefix,calls,run
+    # 首次升级切换受管服务并设置桌面入口，完全相同的再次安装不得重启。
     def test_managed_upgrade_and_repeat_preserve_existing_candidate(self):
         with tempfile.TemporaryDirectory() as d:
             m,home,entry,prefix,calls,run=self.fixture(d)
@@ -153,6 +170,7 @@ class InstallTests(unittest.TestCase):
             calls.clear()
             m.deploy(entry,home,home/'base',prefix,user='orangepi',units=home/'units',run=run,processes=[])
             self.assertFalse(any(' stop fc01-navigation' in ' '.join(x) or 'restart' in x for x in calls))
+    # 外部单元、drop-in 或桌面文件任一冲突都应在 sudo 前拒绝。
     def test_foreign_unit_dropin_or_foreign_desktop_refuses_before_mutation(self):
         for mode in ('unit','dropin','desktop'):
             with self.subTest(mode=mode),tempfile.TemporaryDirectory() as d:
@@ -167,6 +185,7 @@ class InstallTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     m.deploy(entry,home,home/'base',prefix,user='orangepi',units=home/'units',run=runner,processes=[])
                 self.assertFalse(any(x[0]=='sudo' for x in calls))
+    # 回滚仍先重新观测地面，不因恢复旧版就跳过现场许可。
     def test_rollback_checks_ground_before_stop_and_restores_only_managed_standby(self):
         m=self.module()
         with tempfile.TemporaryDirectory() as d:
@@ -174,6 +193,7 @@ class InstallTests(unittest.TestCase):
             with patch.object(m,'boot',side_effect=lambda _e,_h,_p,action,*a,**k:trace.append(action)),patch.object(m,'rollback_services',side_effect=lambda *a,**k:trace.append('switch')):
                 m.rollback(home/'entry',home)
             self.assertEqual(trace,['probe','switch'])
+    # 未知活动控制器和不认识的 install 链接都保留，不能强制接管其进程/文件。
     def test_live_unknown_controller_and_unmanaged_install_link_are_preserved(self):
         from launcher import Process
         with tempfile.TemporaryDirectory() as d:
@@ -186,6 +206,7 @@ class InstallTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 m.deploy(entry,home,home/'base',prefix,user='orangepi',units=home/'units',run=run,processes=[])
             self.assertFalse(any(x[0]=='sudo' for x in calls))
+    # 读编译器改变 atime 不应触发重建；实际 mtime 变化仍更新构建键。
     def test_compiler_access_time_does_not_force_a_new_live_binary(self):
         m=self.module()
         with tempfile.TemporaryDirectory() as d:
@@ -196,6 +217,7 @@ class InstallTests(unittest.TestCase):
                 self.assertEqual(first,m.source_key(root,root/'base'))
                 os.utime(compiler,ns=(st.st_atime_ns,st.st_mtime_ns+1))
                 self.assertNotEqual(first,m.source_key(root,root/'base'))
+    # C++ 不变但已安装 Python 工具改变也必须切换构建键，防止运行旧工具。
     def test_installed_tool_source_changes_select_a_new_build_key(self):
         m=self.module()
         with tempfile.TemporaryDirectory() as d:
@@ -205,6 +227,7 @@ class InstallTests(unittest.TestCase):
             # 控制器源码没变，但 CMake 安装的 Python 工具变化也需要重新安装。
             tool.write_text('new tool\n')
             self.assertNotEqual(before,m.source_key(entry,entry/'sdk'))
+    # 逐个修改/删除/新增工具、typesupport 和生成消息，整树证据失效后只能选新前缀。
     def test_completion_covers_tools_typesupport_and_generated_messages(self):
         m=self.module()
         installed_names=(
@@ -239,6 +262,7 @@ class InstallTests(unittest.TestCase):
                             m.build_native(entry,prefix,entry/'.build/key/build',run=run)
                         self.assertNotEqual(m.staging_path(entry,'key'),prefix.parent)
                         self.assertTrue(prefix.is_dir())
+    # 旧版只记两个 ELF 的成功文件不代表消息/工具完整，应一次迁移到新证据合同。
     def test_legacy_binary_only_completion_record_is_not_reused(self):
         import hashlib
         m=self.module()
@@ -252,6 +276,7 @@ class InstallTests(unittest.TestCase):
             (prefix.parent/'build-complete.json').write_text(json.dumps(saved))
             self.assertFalse(m.build_complete(prefix))
             self.assertNotEqual(m.staging_path(entry,'key'),prefix.parent)
+    # 中断留下的前缀不得覆盖，重试选择独立 .retry 目录并保留原文件。
     def test_partial_install_prefix_is_retained_and_retry_selects_a_new_stage(self):
         m=self.module()
         with tempfile.TemporaryDirectory() as d:
@@ -261,6 +286,7 @@ class InstallTests(unittest.TestCase):
             self.assertNotEqual(chosen,old.parent)
             self.assertTrue(str(chosen).startswith(str(entry/'.build/key')))
             self.assertEqual((old/'partial').read_text(),'preserve')
+    # 临时链接路径被外部文件占用时先拒绝，不能停掉旧服务后才发现无法发布。
     def test_pending_link_conflict_is_detected_before_disabling_old_service(self):
         with tempfile.TemporaryDirectory() as d:
             m,home,entry,prefix,calls,run=self.fixture(d)
@@ -268,6 +294,7 @@ class InstallTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 m.deploy(entry,home,home/'base',prefix,user='orangepi',units=home/'units',run=run,processes=[])
             self.assertFalse(any(x[0]=='sudo' for x in calls))
+    # 同二进制而参数不同仍须使新配置生效；参数已相同时不再重复重启。
     def test_configuration_only_change_restarts_then_identical_config_does_not(self):
         with tempfile.TemporaryDirectory() as d:
             m,home,entry,prefix,calls,run=self.fixture(d)
@@ -280,17 +307,20 @@ class InstallTests(unittest.TestCase):
             live.write_bytes(prepared.read_bytes());calls.clear()
             m.deploy(entry,home,home/'base',prefix,user='orangepi',units=home/'units',run=run,processes=[])
             self.assertFalse(any(' stop fc01-navigation.service' in ' '.join(x) for x in calls))
+    # 密码输入可能耗时且飞机期间解锁，认证之后必须重新 probe。
     def test_authentication_delay_cannot_reuse_prior_ground_evidence(self):
         with tempfile.TemporaryDirectory() as d:
             m,home,entry,prefix,calls,run=self.fixture(d);armed=[False]
             def runner(argv,**kw):
                 if argv[0]=='sudo' and '-n' not in argv:armed[0]=True # aircraft arms while password prompt waits
                 return run(argv,**kw)
+            # stamp 单位秒，消息转换为 PX4 微秒；收发时钟差固定 100 秒以测显式同步关系。
             def observe(*args,**kwargs):
                 calls.append(['PROBE']);self.assertTrue(armed[0]);raise RuntimeError('armed after authentication')
             with patch.object(m,'boot',side_effect=observe),self.assertRaisesRegex(RuntimeError,'armed after authentication'):
                 m.deploy(entry,home,home/'base',prefix,user='orangepi',units=home/'units',run=runner,processes=[])
             self.assertFalse(any(x[0]=='sudo' and '/usr/bin/systemctl' in x for x in calls))
+    # 前一步管理动作耗尽 2.5 秒许可后，下一个服务变更需新证据，不能沿用旧 success。
     def test_ground_evidence_expiry_reprobes_before_next_service_mutation(self):
         with tempfile.TemporaryDirectory() as d:
             m,home,entry,prefix,calls,run=self.fixture(d);clock=[1000.]
@@ -310,6 +340,7 @@ class InstallTests(unittest.TestCase):
                  self.assertRaisesRegex(RuntimeError,'expired'):
                 m.deploy(entry,home,home/'base',prefix,user='orangepi',units=home/'units',run=runner,processes=[])
             self.assertFalse(any(' stop fc01-navigation.service' in ' '.join(x) for x in calls))
+    # 先完成 sudo 认证再取地面证据，随后 sudo -n 防止等待密码再次过期。
     def test_rollback_authenticates_then_observes_and_uses_noninteractive_mutations(self):
         with tempfile.TemporaryDirectory() as d:
             m,home,entry,prefix,calls,run=self.fixture(d)
@@ -322,7 +353,9 @@ class InstallTests(unittest.TestCase):
             self.assertEqual(len(changes),2)
             self.assertTrue(all('-n' in x for x in changes))
 
+# 检查候选解包路径与当前源码字节，不用历史 dist 脚本证明最新修改。
 class BundleTests(unittest.TestCase):
+    # 开发 ROS A/B 实验不进入候选载荷；候选目录名禁止路径穿越和注入字符。
     def test_candidate_directory_and_development_experiment_exclusion(self):
         b=importlib.import_module('build_navigation_bundle')
         self.assertFalse(any(name.startswith('native/tests/ros_receive_ab/') for name in b.names(ROOT)))
@@ -337,6 +370,7 @@ class BundleTests(unittest.TestCase):
             for invalid in ('../live', 'live/path', "live'", ''):
                 with self.assertRaises(ValueError):b.build(folder/'bad.sh',ROOT,directory_name=invalid)
 
+    # 真实源包解包两次逐文件一致；已有不同内容保留且返回失败。
     def test_exact_self_extraction_repeat_and_conflict(self):
         b=importlib.import_module('build_navigation_bundle')
         with tempfile.TemporaryDirectory() as d:

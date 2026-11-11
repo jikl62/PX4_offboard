@@ -1,3 +1,5 @@
+# 真实 Unix socket/子进程的端到端生命周期测试；测试 peer 模拟飞控，不连接硬件。
+# 核心合同是退出/终端阻塞时仍保持恢复 PING，直到原生侧反馈接地上锁才关闭与生成报告。
 import contextlib
 import importlib
 import io
@@ -16,6 +18,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 
 
+# 把任务编排、IPC 读写、终端输出和原生退出放到同一进程边界验证。
 class LifecycleIntegration(unittest.TestCase):
     @staticmethod
     def console_ground_observer(module):
@@ -32,6 +35,7 @@ class LifecycleIntegration(unittest.TestCase):
 
         return ground_seen, observe
 
+    # 共用恢复场景：等待真实模拟地面反馈、只发一次起飞，再制造退出或输出阻塞。
     def run_quit_with_output_or_report(self, output=None, slow_report=False, pending_arm=False, end_event='quit'):
         m = importlib.import_module('launcher')
         ground_seen, observe = self.console_ground_observer(m)
@@ -101,14 +105,17 @@ class LifecycleIntegration(unittest.TestCase):
                 if hasattr(output, 'release'):
                     output.release.set()
 
+    # 报告故意阻塞超过控制台租约；ZIP 工作必须等原生退出后开始。
     def test_slow_report_cannot_interrupt_live_recovery_heartbeat(self):
         self.run_quit_with_output_or_report(slow_report=True)
 
+    # 请求解锁尚未完成时分别退出、EOF、信号；迟到的 armed 反馈仍需被恢复链处理。
     def test_quit_eof_and_signal_during_pending_arm_keep_recovery_channel(self):
         for event in ('quit', 'eof', 'signal'):
             with self.subTest(event=event):
                 self.run_quit_with_output_or_report(pending_arm=True, end_event=event)
 
+    # BrokenPipeError 只能失去显示，不能放弃仍存活的原生恢复进程。
     def test_broken_stdout_cannot_abandon_native_recovery(self):
         class BrokenOutput:
             def write(self, text):
@@ -117,6 +124,7 @@ class LifecycleIntegration(unittest.TestCase):
                 raise BrokenPipeError('terminal disconnected')
         self.run_quit_with_output_or_report(output=BrokenOutput())
 
+    # 输出端冻结 3.2 秒时，IPC 心跳必须独立继续，不能等待终端恢复。
     def test_blocked_stdout_cannot_block_recovery_heartbeat(self):
         class BlockedOutput:
             def __init__(self):
@@ -127,6 +135,7 @@ class LifecycleIntegration(unittest.TestCase):
                 pass
         self.run_quit_with_output_or_report(output=BlockedOutput())
 
+    # 只读检查模式的实际线协议仅允许 INTERACTIVE/STATUS/PING。
     def test_check_mode_never_sends_preparation_or_motion_commands(self):
         m = importlib.import_module('launcher')
         with tempfile.TemporaryDirectory(prefix='fc01_ck_') as d:
@@ -146,6 +155,7 @@ class LifecycleIntegration(unittest.TestCase):
             self.assertTrue(set(ops).issubset({'INTERACTIVE', 'STATUS', 'PING'}))
             self.assertEqual(result, 'check_pass')
 
+    # 检查 AUTHORITY_RC→ATTITUDE_READY→TAKEOFF→LAND 的顺序及 LAND 后 PING，最终必须 SAFE_DISARMED。
     def test_explicit_takeoff_quit_keeps_heartbeat_through_native_descent(self):
         m = importlib.import_module('launcher')
         ground_seen, observe = self.console_ground_observer(m)
