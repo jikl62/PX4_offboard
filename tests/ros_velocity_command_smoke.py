@@ -275,7 +275,7 @@ def main():
                     'diagnostic default subscription has wrong type or reliability')
             first = make_message(10)
             current = publish_and_wait(best_effort, first,
-                lambda current: current.get('last_message', {}).get('sequence') == 10,
+                lambda current: (current.get('last_message') or {}).get('sequence') == 10,
                 'best effort packet delivery')
             last = current['last_message']
             for key in ('schema_version', 'sequence', 'reset_counter', 'source_id',
@@ -369,7 +369,7 @@ def main():
             wait_for(lambda current: current.get('publisher_count') == 1,
                      'one reliable source')
             publish_and_wait(reliable, make_message(1),
-                lambda current: current.get('last_message', {}).get('sequence') == 1,
+                lambda current: (current.get('last_message') or {}).get('sequence') == 1,
                 'reliable subscription delivery')
             subscriptions = node.get_subscriptions_info_by_topic(TOPIC)
             require(len(subscriptions) == 1 and
@@ -401,7 +401,7 @@ def main():
             require(exit_code == 0, 'SIGINT diagnostic finalization failed')
             final = snapshot()
             require(final is not None and final.get('receiver_running') is False and
-                    final.get('last_message', {}).get('sequence') == 99 and
+                    (final.get('last_message') or {}).get('sequence') == 99 and
                     'COMMAND_INVALID' in final.get('latest_errors', []),
                     'shutdown lost the final invalid observation or running-state marker')
             records = [json.loads(line) for line in snapshot_path.with_name(

@@ -9,9 +9,9 @@
   "created_utc": "2026-11-10T14:22:37.894607+00:00",
   "development_verification": {
     "architecture": "x86_64",
-    "path": "docs/evidence/20261111_vision_review_fixes.json",
-    "scope": "offline vision review fixes; no ARM64/flight acceptance",
-    "sha256": "f211b92f22df1e0c1f9eb1ccbaa4293e37e3e3345e5b8404ad1d3cf012961b8f"
+    "path": "docs/evidence/20261111_vision_followup_verification.json",
+    "scope": "complete offline vision follow-up and clean build; no ARM64/flight acceptance",
+    "sha256": "f86f432ef6efb7d7f9211925265578c11b083cf621047035b683c863de951e27"
   },
   "development_verification_history": [
     {
@@ -19,6 +19,12 @@
       "path": "docs/evidence/20261111_velocity_interface_verification.json",
       "scope": "offline vision interface development; no ARM64/flight acceptance",
       "sha256": "6711a1ac1e71ca14bf92e549b162af304a693c66e3fa1d1aa399f22384bceae6"
+    },
+    {
+      "architecture": "x86_64",
+      "path": "docs/evidence/20261111_vision_review_fixes.json",
+      "scope": "offline vision review fixes; no ARM64/flight acceptance",
+      "sha256": "f211b92f22df1e0c1f9eb1ccbaa4293e37e3e3345e5b8404ad1d3cf012961b8f"
     }
   ],
   "host_verification_sha256": "b4d89ef3607d69773bec799ecc4e2f87feaeed2951f662fa073a0ee995239fdb",
@@ -54,7 +60,8 @@
     "docs/FC01_SERVICE_LIFECYCLE_20261109.md": "739c2f728f41dd5898c1d1729f1ec0e478a194b9aa7028adb1975b2937a6c81e",
     "docs/FC01_VERTICAL_DIAGNOSTIC_20261110.md": "716eedede91e3891d91f2041acb0b8e57ac25f4e7de7dca6cdb74bf1c7a6d3b0",
     "docs/TAKEOFF_AUDIT_20261103.md": "9e0909aa0c0b1ee665156115a63503c68a8b0c274baa560c5b80d90986331914",
-    "docs/VELOCITY_COMMAND_INTERFACE.md": "f2ded29235fa6a8cfb2ce5f8b095eb8cde99286ae431160f92b33fcec483d582",
+    "docs/VELOCITY_COMMAND_INTERFACE.md": "974c7e137417ed7d0287b7a34a70df9210d31e2c3663b483d2561b8defa1a190",
+    "docs/VISION_INTERFACE_FOLLOWUP_20261111.md": "d7cd2e075c80afc01f45517eedfbab4c0ceca0f840d7f057636108f111ba6567",
     "docs/VISION_INTERFACE_REVIEW_FIXES_20261111.md": "16afb6489323456d1f0b8dd1cbec654cae974f1b85f5fa2bff98da26c7673e12",
     "docs/VISION_INTERFACE_VERIFICATION_20261111.md": "eed8785bb353799f342143f74bc7e36e6a2fd5429b87a3b5ad2c1658a36635b5",
     "docs/VISION_NAVIGATION.md": "5a125972b06447ea95c2dbf4ea06ca321f3ce74b56954f354b3e3e4bc519e064",
@@ -73,6 +80,7 @@
     "docs/evidence/20261106_uart_validation.md": "4d993a66826cc32497647e742da1a37e9a0a1c8eac30dc5658e8465323175436",
     "docs/evidence/20261106_user_nsh_excerpt.txt": "3a7a335613c7079fb31c1d0286196f9d7e6069f66b6b2031e38bf3c0cfcef7bb",
     "docs/evidence/20261111_velocity_interface_verification.json": "6711a1ac1e71ca14bf92e549b162af304a693c66e3fa1d1aa399f22384bceae6",
+    "docs/evidence/20261111_vision_followup_verification.json": "f86f432ef6efb7d7f9211925265578c11b083cf621047035b683c863de951e27",
     "docs/evidence/20261111_vision_review_fixes.json": "f211b92f22df1e0c1f9eb1ccbaa4293e37e3e3345e5b8404ad1d3cf012961b8f",
     "docs/navigation_repair_20261031.md": "889854721df20882f04fd0fbd0d0d51757716cd81a744628f320680ef2fde318",
     "docs/superpowers/2026-10-28-navigation-final-review.md": "a53c3705fe4d5f513bb8559e58c798bd40a9f1333098a3dce606ebb44c14c8cd",
@@ -345,7 +353,7 @@
     "tests/native_fixture.py": "f1e51c1e909ee017f66033b985a64877d29d15d2e580ce562011ccba2b07fb88",
     "tests/navigation_peer.py": "625c239c238d501f034f924d8fd9eec70cee7741b38e20a72a50e9e298efa9b0",
     "tests/ros_offline_timing_smoke.py": "4604fe6f2dff2406fe446f37553f728b361fcad20dd21f3ef5e50be1153a0c33",
-    "tests/ros_velocity_command_smoke.py": "b914f9457fa2944d768254aa062e06e6de8bf4cf8c774b11d3056b470821b46a",
+    "tests/ros_velocity_command_smoke.py": "d4c639d2ec17b70bafe02b9bdf378d7470ab930a3a6e8eaf3748340ef2af43ff",
     "tests/ros_vision_smoke.py": "90436c0163a40047778750c06bcb6668043544ca6eddf74cc429e2f7705267c3",
     "tests/run_native_cpp.py": "ac07845843f9ac658c2a6772f909f7fb723da153c1b8b3dc7e7b2df0e68632e1",
     "tests/standby_native.py": "1f31d300f039984629155ff1d15a60aa6fdeae40e087b5eb2fa52c6b2c9eedfe",
@@ -391,8 +399,8 @@
     "starts_previous_controller": false
   },
   "schema_version": 2,
-  "source_commit": "8b57077f0cdd8312e6f115a1ac5fee9e4a74a942",
-  "source_file_count": 356,
+  "source_commit": "e825481ae0734142e5a56cc94dc55bef0edcfbe3",
+  "source_file_count": 358,
   "source_identity_policy": "source_commit is the development baseline; working_tree_dirty records changes verified by development_verification. Exact current source and payload identity is recorded by the SHA256 maps; the final development commit is in Git.",
   "source_sha256": {
     "HOST_VERIFICATION.json": "b4d89ef3607d69773bec799ecc4e2f87feaeed2951f662fa073a0ee995239fdb",
@@ -421,7 +429,8 @@
     "docs/FC01_SERVICE_LIFECYCLE_20261109.md": "739c2f728f41dd5898c1d1729f1ec0e478a194b9aa7028adb1975b2937a6c81e",
     "docs/FC01_VERTICAL_DIAGNOSTIC_20261110.md": "716eedede91e3891d91f2041acb0b8e57ac25f4e7de7dca6cdb74bf1c7a6d3b0",
     "docs/TAKEOFF_AUDIT_20261103.md": "9e0909aa0c0b1ee665156115a63503c68a8b0c274baa560c5b80d90986331914",
-    "docs/VELOCITY_COMMAND_INTERFACE.md": "f2ded29235fa6a8cfb2ce5f8b095eb8cde99286ae431160f92b33fcec483d582",
+    "docs/VELOCITY_COMMAND_INTERFACE.md": "974c7e137417ed7d0287b7a34a70df9210d31e2c3663b483d2561b8defa1a190",
+    "docs/VISION_INTERFACE_FOLLOWUP_20261111.md": "d7cd2e075c80afc01f45517eedfbab4c0ceca0f840d7f057636108f111ba6567",
     "docs/VISION_INTERFACE_REVIEW_FIXES_20261111.md": "16afb6489323456d1f0b8dd1cbec654cae974f1b85f5fa2bff98da26c7673e12",
     "docs/VISION_INTERFACE_VERIFICATION_20261111.md": "eed8785bb353799f342143f74bc7e36e6a2fd5429b87a3b5ad2c1658a36635b5",
     "docs/VISION_NAVIGATION.md": "5a125972b06447ea95c2dbf4ea06ca321f3ce74b56954f354b3e3e4bc519e064",
@@ -440,6 +449,7 @@
     "docs/evidence/20261106_uart_validation.md": "4d993a66826cc32497647e742da1a37e9a0a1c8eac30dc5658e8465323175436",
     "docs/evidence/20261106_user_nsh_excerpt.txt": "3a7a335613c7079fb31c1d0286196f9d7e6069f66b6b2031e38bf3c0cfcef7bb",
     "docs/evidence/20261111_velocity_interface_verification.json": "6711a1ac1e71ca14bf92e549b162af304a693c66e3fa1d1aa399f22384bceae6",
+    "docs/evidence/20261111_vision_followup_verification.json": "f86f432ef6efb7d7f9211925265578c11b083cf621047035b683c863de951e27",
     "docs/evidence/20261111_vision_review_fixes.json": "f211b92f22df1e0c1f9eb1ccbaa4293e37e3e3345e5b8404ad1d3cf012961b8f",
     "docs/navigation_repair_20261031.md": "889854721df20882f04fd0fbd0d0d51757716cd81a744628f320680ef2fde318",
     "docs/superpowers/2026-10-28-navigation-final-review.md": "a53c3705fe4d5f513bb8559e58c798bd40a9f1333098a3dce606ebb44c14c8cd",
@@ -712,7 +722,7 @@
     "tests/native_fixture.py": "f1e51c1e909ee017f66033b985a64877d29d15d2e580ce562011ccba2b07fb88",
     "tests/navigation_peer.py": "625c239c238d501f034f924d8fd9eec70cee7741b38e20a72a50e9e298efa9b0",
     "tests/ros_offline_timing_smoke.py": "4604fe6f2dff2406fe446f37553f728b361fcad20dd21f3ef5e50be1153a0c33",
-    "tests/ros_velocity_command_smoke.py": "b914f9457fa2944d768254aa062e06e6de8bf4cf8c774b11d3056b470821b46a",
+    "tests/ros_velocity_command_smoke.py": "d4c639d2ec17b70bafe02b9bdf378d7470ab930a3a6e8eaf3748340ef2af43ff",
     "tests/ros_vision_smoke.py": "90436c0163a40047778750c06bcb6668043544ca6eddf74cc429e2f7705267c3",
     "tests/run_native_cpp.py": "ac07845843f9ac658c2a6772f909f7fb723da153c1b8b3dc7e7b2df0e68632e1",
     "tests/standby_native.py": "1f31d300f039984629155ff1d15a60aa6fdeae40e087b5eb2fa52c6b2c9eedfe",
