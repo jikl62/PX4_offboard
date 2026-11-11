@@ -1,7 +1,9 @@
 #pragma once
 // 本文件保持独立预览边界：Session 的缓存、错误和计算结果均不进入生产 Runtime。
 // 预览需要显式 Policy 与可信状态；FRD 目标速度先完整旋转到 NED，再与实际 NED 速度作差。
-// 本轮补充函数与成员关系说明，原数学公式、短路顺序、错误锁存和所有公共字段均保持。
+// 三条路径不要混淆：VisionState.velocity是实测NED速度；Target.body_velocity是希望的FRD速度；
+// Preview是二者比较后的离线结果，control_authority始终为false，没有接进Runtime或PX4发布出口。
+// 另一份vision_navigation.hpp接收NavigationCommand模式/位置目标，不会自动消费此Target。
 #include "jikl_fc01_system/vision_navigation.hpp"
 #include "jikl_fc01_system/vision_ros_adapter.hpp"
 #include <string>
@@ -12,6 +14,7 @@
 namespace fc01::velocity_input {
 using Vec3 = vision::Vec3;
 
+// const引用只借用文本；返回true需要有内容、满足UTF-8字节预算且至少一个字符不是所列空白。
 inline bool identity_valid(const std::string& value) {
   // 与独立诊断接收器采用相同的文本长度限制，避免无限增长的来源标识。
   return !value.empty() && vision::identity_within_budget(value) &&
@@ -23,6 +26,7 @@ enum class Mode { Disabled, VelocityPreview };
 
 // 上层给出的“希望怎么运动”，不是飞机的实际速度反馈。
 struct Target {
+  // {}对整型做值初始化得到0；版本0在后续校验中无效，不能默认冒充协议V1。
   std::uint16_t schema_version{};
   std::uint64_t sequence{};
   std::uint64_t stamp_ns{}; // 指令测量/计算时间，使用已约定的 ROS 时钟，单位 ns。
@@ -56,14 +60,16 @@ template <class Message> Target from_message(const Message& message) {
 
 struct Policy {
   // 默认零值表示尚未配置。离线试验必须显式提供已审查的时间与速度限制。
-  double state_timeout{};         // 实际状态接收超时，s。
-  double command_timeout{};       // 目标指令接收超时，s。
-  double max_measurement_delay{}; // 源测量时间允许的最大年龄，s。
+  double state_timeout{};   // 实际状态接收超时，s。
+  double command_timeout{}; // 目标指令接收超时，s。
+  double max_measurement_delay{}; // 到达前传输/排队的最大延迟，s；不是接收后重新开始的TTL。
   double future_tolerance{};      // 源时间允许领先本机的容差，s，可显式为零。
   double max_command_speed_mps{}; // 机体系三维目标速度的模长上限，m/s。
   double max_attitude_sample_skew_sec{}; // 状态姿态与目标指令的最大时间差，s。
   double max_attitude_step_rad{};        // 相邻实际姿态允许的最大夹角，rad。
 
+  // 无副作用返回配置是否完整；本函数不抛配置异常、不替调用者补默认预算。
+  // 范围for依次取局部value副本，不会改写Policy；future_tolerance单列是因它允许显式为0。
   bool configured() const {
     for (double value :
          {state_timeout, command_timeout, max_measurement_delay, max_command_speed_mps,
@@ -100,6 +106,8 @@ struct Preview {
 // q 表示机体 FRD 相对世界 NED 的姿态，必须由调用方先归一化。
 // 使用完整三维旋转：飞机倾斜时，机体“前进”也可能包含世界系垂向速度。
 inline Vec3 rotate_body_to_world(const attitude::Quaternion& q, const Vec3& vector) {
+  // Quaternion按Hamilton[w,x,y,z]存储；下面每一行是旋转矩阵的一行与目标向量的点积。
+  // 如水平且yaw=+90度，FRD的前向目标会转到NED的东向；有roll/pitch时必须保留全部三维项。
   const double w = q[0], x = q[1], y = q[2], z = q[3];
   return {(1 - 2 * (y * y + z * z)) * vector[0] + 2 * (x * y - w * z) * vector[1] +
               2 * (x * z + w * y) * vector[2],
@@ -109,12 +117,16 @@ inline Vec3 rotate_body_to_world(const attitude::Quaternion& q, const Vec3& vect
               (1 - 2 * (x * x + y * y)) * vector[2]};
 }
 
-// 一个 Session 对应一次离线尝试；身份/reset/序号变化和时钟/超时错误首次出现后锁存。
+// 一个Session对应一次离线尝试；身份/reset变化、序号回退/同序号改载荷、时钟/超时错误首次出现后锁存。
+// 正常递增序号允许推进；只有begin_attempt明确重开本离线对象，不是飞机故障恢复。
+// 本类按单线程顺序调用，复制/错误文本可能分配；没有异常回滚承诺，分配异常继续向外传播。
 class Session {
 public:
   // 复制视觉外环配置并校验；另建时间配置以使用本次显式 Policy，不修改原生产配置。
   explicit Session(Policy policy = {}, vision::Config candidate = {})
       : policy_(policy), control_config_(candidate) {
+    // 构造时验证候选外环配置，非法值抛invalid_argument；Policy完整性稍后由configured核验。
+    // 即使candidate.enabled为false，显式VelocityPreview仍只做离线计算，不改变生产视觉开关。
     control_config_.validate();
     time_validation_config_ = control_config_;
     time_validation_config_.max_measurement_delay = policy_.max_measurement_delay;
@@ -133,6 +145,7 @@ public:
     last_ros_now_ns_ = 0;
   }
 
+  // 只读引用避免复制；begin_attempt/latch可能改写同一成员，保存历史应自行复制。
   const std::string& first_error() const {
     return first_error_;
   }
@@ -163,6 +176,8 @@ public:
     if (!vision::identities_within_budget(incoming)) {
       return latch("STATE_IDENTITY_RESOURCE_LIMIT");
     }
+    // 预算通过后才复制到本地value，随后仅改该副本的接收时刻；不改调用者incoming。
+    // true表示新样本已入缓存；false既可能是正常重复，也可能是锁存拒绝，需结合first_error读取。
     vision::State value = incoming;
 
     // 1. 检查当前输入的身份、坐标、必需字段以及可选字段。
@@ -211,6 +226,8 @@ public:
                control_config_.max_position_jump)) {
         return latch("STATE_DISCONTINUITY_REQUIRES_NEW_ATTEMPT");
       }
+      // 两份姿态已分别通过required_state_fields_valid；normalized返回非空optional才可*取值。
+      // auto按值取出归一化副本；不会修改缓存原始四元数，也不把它当成目标姿态。
       const auto previous_attitude = *attitude::normalized(actual_state_.attitude);
       const auto current_attitude = *attitude::normalized(value.attitude);
       double attitude_dot_product = 0;
@@ -236,6 +253,7 @@ public:
     }
 
     // 3. 所有检查完成后才替换实际状态缓存。
+    // move转交本地副本的字符串等所有权；这是接受新样本的逻辑提交点，不是跨线程原子操作。
     actual_state_ = std::move(value);
     has_state_ = true;
     return true;
@@ -255,6 +273,7 @@ public:
         !vision::identity_within_budget(incoming.frame_id)) {
       return latch("COMMAND_IDENTITY_RESOURCE_LIMIT");
     }
+    // 同样先做资源预算再复制；状态/目标各有来源、序号和reset，绝不要求两者reset数值相等。
     Target value = incoming;
 
     value.received_at = received_at;
@@ -268,6 +287,7 @@ public:
     if (!vision::detail::finite(value.body_velocity)) {
       return latch("COMMAND_NONFINITE_VELOCITY");
     }
+    // 限制三维合速度而非每轴各自限幅；例如三轴都接近上限不能组合出更大的斜向命令。
     if (std::hypot(std::hypot(value.body_velocity[0], value.body_velocity[1]),
                    value.body_velocity[2]) > policy_.max_command_speed_mps) {
       return latch("COMMAND_SPEED_OUTSIDE_POLICY");
@@ -307,6 +327,7 @@ public:
   // now 为单调 s、ros_now_ns 为 ROS ns；trusted_yaw_reference 是外部可信航向 rad，消息不自带 yaw。
   Preview preview(Mode mode, double now, std::uint64_t ros_now_ns, double trusted_yaw_reference) {
     Preview result;
+    // Disabled直接返回空预览，不观察时钟、不清已有错误；不是begin_attempt的替代。
     if (mode == Mode::Disabled) {
       result.reason = "VELOCITY_PREVIEW_DISABLED";
       return result;
@@ -341,6 +362,7 @@ public:
     }
 
     // 姿态决定 FRD -> NED 旋转，姿态与目标不能来自相隔过远的时刻。
+    // 先转long double再相减，避免无符号ns做负差而绕回；除1e9把ns变成秒。
     const long double attitude_command_skew_sec =
         std::abs(static_cast<long double>(actual_state_.stamp_ns) -
                  static_cast<long double>(target_.stamp_ns)) /
@@ -365,6 +387,8 @@ public:
                                         control_config_.max_vertical_speed);
 
     // 2. 用“目标速度 - 实测速度”得到误差，反馈不能由目标值代替。
+    // 如NED东向目标0.4m/s、实测0.1m/s，则东向误差为+0.3m/s；两边先在同一世界系才能相减。
+    // 这只是数值例，不修改配置；下一步再把水平误差乘速度增益变成加速度。
     result.measured_world_velocity = actual_state_.velocity;
     for (std::size_t axis = 0; axis < 3; ++axis) {
       result.velocity_error[axis] = result.world_target[axis] - actual_state_.velocity[axis];
@@ -412,6 +436,7 @@ public:
 
 private:
   // 预览至少需要真实速度、姿态和质量；位置可选，与生产位置模式的必需字段不同。
+  // |把所需标志合成掩码，&取出当前已声明的部分；等于required才表示每个必需位都存在。
   bool required_state_fields_valid(const vision::State& value) const {
     constexpr auto required_fields = vision::Velocity | vision::Attitude | vision::Quality;
     if ((value.valid_fields & required_fields) != required_fields ||
@@ -487,6 +512,7 @@ private:
                                    policy_.command_timeout)) {
       return latch("COMMAND_TIME_INVALID");
     }
+    // 只有时钟和旧缓存全部通过后，才推进两种观察水位；ROS ns与单调秒只在各自域里比较。
     last_observed_at_ = now;
     last_ros_now_ns_ = ros_now_ns;
     return true;

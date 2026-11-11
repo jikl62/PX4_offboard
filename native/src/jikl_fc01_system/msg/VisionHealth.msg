@@ -1,3 +1,12 @@
+# 本消息为nav_msgs/Odometry补齐“数值存在也无法推断”的质量与标定承诺，本身不提供运动目标。
+# 发布者必须针对同一条Odometry测量使用完全相同stamp，并明确source_id和原始父/子坐标名。
+# position_valid等为本次测量确认；frame/time/extrinsics/metric等则确认转换前提，各自不可互代。
+# 例如tracking=true不能证明米制尺度或外参正确，time_sync_valid=true也不能让旧数据重新变新。
+# reset_valid明确声明周期已知；默认reset_counter=0不自动等于“估计器从未重置”。
+# 非零安装杆臂的速度转换需要角速度和其来源；没有角速度不能假设杆臂造成的速度为0。
+# extrinsics_id/alignment_id绑定已约定版本；更换地图或重定位需要按周期/撤销规则处理。
+# 应用层对身份文本采用每字段256个UTF-8字节预算；质量/变换适配器仍逐项审核并配对。
+# 配对通过只生成内部实际状态，仍不授权程序解锁、Offboard或动力输出。
 # 一条原始 Odometry 测量的显式健康信息，必须按完全相同的测量时间戳配对。所有确认默认 false。
 uint16 schema_version 1 # 协议版本；默认 1，接收方必须拒绝不兼容的版本。
 builtin_interfaces/Time stamp # 双方明确约定时钟域中的测量时间，不能用回调接收时间替代。

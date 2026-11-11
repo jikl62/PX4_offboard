@@ -1,6 +1,10 @@
 #pragma once
 // 保留的通用位置/速度控制路线，使用PX4 NED实际状态与航向相对的前/左/上目标。
 // 它不是当前人工RC姿态高度1.5m主链，也不是新VelocityCommand诊断入口；Runtime按profile选择，不能据这里的默认高度推断生产目标。
+// 阅读顺序：Velocity是用户希望的速度 → Feedback是PX4实测 → receive缓存目标 → start锁原点 → step形成计划。
+// Output由外层转成PX4位置/速度目标；本类不生成电机PWM或姿态高度主链的归一化推力。
+// 所有状态属于单个Core实例、按单线程顺序调用；这里没有ROS线程、端口或硬件资源所有权。
+// 配置不合法抛invalid_argument；原因字符串可能分配，异常不在本类吞掉，也不承诺回滚此前状态。
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -10,6 +14,7 @@
 
 namespace jikl_velocity {
 constexpr double pi = 3.14159265358979323846;
+// NaN表示“这条计划不选择此字段”；与实测反馈中的NaN必须拒绝，是两个不同场景。
 inline double nan() {
   return std::numeric_limits<double>::quiet_NaN();
 }
@@ -44,16 +49,20 @@ inline double wrap(double x) {
   return std::remainder(x, 2 * pi);
 }
 // 按实际偏航yaw把前/左目标旋转到北/东，向上速度取负成为NED向下速度；yaw单位rad。
+// 例：yaw=0时前进沿北、向左沿西；yaw=+π/2时前进沿东、向左沿北。
+// 这里仅按航向旋转水平速度，不消费roll/pitch，也不能当作body_frd三维速度的完整姿态旋转。
 inline Vec heading_to_ned(Velocity v, double yaw) {
   return {std::cos(yaw) * v.forward + std::sin(yaw) * v.left,
           std::sin(yaw) * v.forward - std::cos(yaw) * v.left, -v.up};
 }
 // 仅接受严格递增、未超过age秒、未来偏差最多0.1秒的源时间；新接收不能续期旧指令。
+// stamp/now/previous应先由调用者放到同一秒域；函数不提供PX4、ROS、steady三种时钟的转换。
 inline bool stamp_valid(double stamp, double now, double previous, double age) {
   return std::isfinite(stamp) && std::isfinite(now) && stamp > 0 && stamp > previous &&
          now - stamp <= age && stamp - now <= .1;
 }
 // 一次更新最多改变delta幅值，用于垂速与偏航速度的加速度约束。
+// 例如old=0、wanted=1、delta=0.1，只前进到0.1；delta由加速度上限乘本周期dt得到。
 inline double approach(double old, double wanted, double delta) {
   return old + std::clamp(wanted - old, -delta, delta);
 }
@@ -163,9 +172,11 @@ public:
   Phase phase() const {
     return phase_;
   }
+  // 返回成员的只读别名；后续步骤可能改写原因，保存历史要复制而非长期保存引用。
   const std::string& reason() const {
     return reason_;
   }
+  // 返回Vec值副本，调用者修改它不会改本Core的起飞原点。
   Vec origin() const {
     return origin_;
   }
@@ -177,7 +188,7 @@ public:
   bool accepts_motion() const {
     return phase_ == Phase::Hold || phase_ == Phase::Velocity || phase_ == Phase::Brake;
   }
-  // 年龄按缓存接收时间计算；无命令使用巨大哨兵值，确保失令保护生效。
+  // 年龄按缓存的寿命起点计算（receive已扣除source_age）；无命令用巨大哨兵值触发失令保护。
   double command_age(double t) const {
     return received_ >= 0 ? t - received_ : 1e9;
   }
@@ -214,8 +225,9 @@ public:
       invalidate();
       return false;
     }
-    // Transport delay consumes the existing lifetime; reception must not renew it.
     // 回溯缓存基准到生成时刻，不允许把迟到目标重新赋予完整command_timeout。
+    // 如t=10.0s、source_age=0.2s，received_记9.8s，此刻command_age已是0.2s而非0。
+    // v按值输入，改本地/缓存不改调用者；true表示目标入缓存，不等于允许运动或实际已发布。
     input_ = v;
     received_ = t - source_age;
     command_valid_ = true;
@@ -231,12 +243,16 @@ public:
     reason_ = not_ready(f, t);
     if (!reason_.empty())
       return false;
+    // f是借用的实测快照；复制原点/保持点/航向/reset，只在本实例保存，不改变传感器参考。
+    // 后面的enter只清阶段时钟，并不自动清所有任务字段，所以新任务记忆在此显式重置。
     origin_ = f.position;
     hold_ = f.position;
     reference_z_ = f.position.z;
     yaw_target_ = f.yaw;
     reset_id_ = f.reset_id;
     last_ = t;
+    // arm_sent_在本Core里是“已计划一次Arm”的防重复位，不是最终命令sink成功证据。
+    // Runtime另记真实发布/ACK；unresolved_arm_保守记命令意图可能尚未结清。
     arm_sent_ = false;
     unresolved_arm_ = false;
     seen_armed_ = false;
@@ -246,7 +262,8 @@ public:
     enter(Phase::Prestream, t);
     return true;
   }
-  // 请求降落会撤销输入；已发Arm结果不明时仍进入降落等待，不能因当前armed=false就判定已安全停止。
+  // 活动且尚未Landing的任务请求降落会撤销输入；其他阶段重复请求直接返回。
+  // 已计划Arm结果不明时仍进入降落等待，不能因当前armed=false就判定已安全停止。
   void land(const Feedback& f, double t, const std::string& reason) {
     if (!active() || phase_ == Phase::Landing)
       return;
@@ -271,14 +288,19 @@ public:
     enter(Phase::Released, t);
   }
 
-  // 每次使用一个完整实际快照；先检查权限/健康/时钟和失令，再推进当前阶段，返回尚待最终sink校验的计划。
+  // 每次使用一个完整实际快照；先检查来源/健康/时钟和失令，再推进当前阶段，返回尚待外层校验的计划。
+  // f为const引用，t为本机单调秒；会写last_/阶段/滤波/未决意图，绝不自行收消息或调用sink。
+  // 读顺序：故障迟到Arm处置 → active/独占 → 接管与健康 → 下降早退 → 当前飞行分支。
+  // if/else if阶段分派一次只取一支；但上方land/enter已改变的phase_会立即影响下方独立if。
+  // return {}丢弃本次局部计划，不撤回已经写入的阶段、原因和Arm意图。
   Output step(const Feedback& f, double t) {
     Output o;
     const double elapsed = t - last_;
     last_ = t;
     // 滤波积分步长最多0.1秒；原始elapsed另用于stall判断，不能用截断dt掩盖控制循环停顿。
     const double dt = std::clamp(elapsed, 0., .1);
-    // 故障后唯一特殊入口是迟到的新armed+Offboard反馈：需要请求降落而非忘记已提交Arm。
+    // 故障后唯一特殊入口是迟到且被外层标为新鲜的armed+Offboard反馈：需请求降落而非忘记Arm意图。
+    // 本Feedback不带源戳，fresh的来源检查由调用者负责，不能从这里声称已验证新独立样本。
     if (phase_ == Phase::Fault) {
       if (unresolved_arm_ && f.fresh && f.armed && f.offboard) {
         seen_armed_ = true;
@@ -338,8 +360,9 @@ public:
       o = position_output(hold_);
       if (t - entered_ >= c_.prestream)
         enter(Phase::Offboard, t);
-      // 位置目标持续发送；模式未确认时有界等待，按原0.5秒间隔重试模式命令。
     } else if (phase_ == Phase::Offboard) {
+      // 位置目标持续发送；模式未确认时有界等待，按原0.5秒间隔再次计划模式命令。
+      // 这是通用路线的历史合同，不可直接套到姿态主链禁止盲重试的176/400事务上。
       o = position_output(hold_);
       if (f.offboard)
         enter(Phase::Arm, t);
@@ -351,8 +374,9 @@ public:
         o.command = VehicleCommand::Offboard;
         last_command_ = t;
       }
-      // 解锁仅发送一次；结果未确认超时后保留unresolved_arm_以处理迟到反馈。
     } else if (phase_ == Phase::Arm) {
+      // Arm只计划一次；结果未确认超时后保留unresolved_arm_以处理迟到反馈。
+      // f.armed是独立实测事实；仅输出Arm意图不能直接推进Takeoff。
       o = position_output(hold_);
       if (f.armed)
         enter(Phase::Takeoff, t);
@@ -364,8 +388,9 @@ public:
         o.command = VehicleCommand::Arm;
         arm_sent_ = unresolved_arm_ = true;
       }
-      // NED上升意味着z下降；轨迹既限制爬升速度，又限制领先实测位置，防止目标提前冲到最终高度。
     } else if (phase_ == Phase::Takeoff) {
+      // NED上升意味着z下降；轨迹既限制爬升速度，又限制领先实测位置，防止目标提前冲到最终高度。
+      // max选较大的NED z，等于选较低的上正高度；不能把它改成直觉中的“取最大上升高度”。
       const double final_z = origin_.z - c_.height;
       reference_z_ = std::max(
           final_z, std::max(reference_z_ - c_.climb_speed * dt, f.position.z - c_.reference_lead));
@@ -398,6 +423,7 @@ private:
   Output motion_output(const Feedback& f, double t, double dt) {
     Output o;
     // 超时目标立即替换为零；制动完成后重新捕获当前保持点，避免跳回旧坐标。
+    // 条件表达式只取一边，Velocity{}四轴默认0；旧目标超时后不会继续借用input_非零值。
     const Velocity cmd = command_fresh(t) ? input_ : Velocity{};
     if (phase_ == Phase::Hold && zero(cmd))
       return position_output(hold_);
@@ -416,12 +442,15 @@ private:
     }
     desired.z = std::clamp(desired.z, -c_.z_speed, c_.z_speed);
     // XY采用向量增量限幅，保持加速方向；垂向与偏航分别用approach约束。
+    // 此处是目标速度的加速度限幅，不是把实测误差直接当推力。
+    // delta为待变化XY向量长度，scale最多1；每帧改变量的长度最多xy_accel*dt。
     const double dx = desired.x - filtered_.x, dy = desired.y - filtered_.y;
     const double delta = std::hypot(dx, dy),
                  scale = delta > 0 ? std::min(1., c_.xy_accel * dt / delta) : 0.;
     filtered_.x += dx * scale;
     filtered_.y += dy * scale;
     filtered_.z = approach(filtered_.z, desired.z, c_.z_accel * dt);
+    // 用户ccw逆时针为正，NED yaw沿下轴顺时针为正，故此处先取负号。
     filtered_yaw_ = approach(filtered_yaw_, std::clamp(-cmd.ccw, -c_.yaw_speed, c_.yaw_speed),
                              c_.yaw_accel * dt);
     yaw_target_ = wrap(yaw_target_ + filtered_yaw_ * dt);
@@ -431,6 +460,8 @@ private:
     o.velocity = filtered_;
     o.yaw = yaw_target_;
     o.yaw_rate = filtered_yaw_;
+    // stopping要求目标为零，dwell另要求实测速度与滤波目标都小；单靠“松杆”不能立刻称已停稳。
+    // &&短路使非stopping时不推进该制动窗口，enter已在阶段改变时清掉旧窗口。
     if (stopping &&
         dwell(norm(f.velocity) < .15 && norm(filtered_) < .01 && std::abs(filtered_yaw_) < .01, t,
               .3)) {
@@ -498,7 +529,8 @@ private:
       o.yaw = f.yaw;
       o.yaw_rate = 0;
     }
-    // Request LAND until telemetry confirms PX4 Land. Never force disarm.
+    // PX4尚未报告Land时按既有1秒间隔计划Land；本类不输出强制Disarm。
+    // 外层Runtime还会按自己的恢复/事务规则处理这些意图，本地生成不等于飞控已经接受。
     if (!f.landing && t - last_command_ >= 1.) {
       o.command = VehicleCommand::Land;
       last_command_ = t;
@@ -508,6 +540,7 @@ private:
   // 以下是该实例的配置、阶段、输入与滤波记忆；不与姿态高度主链共享隐式全局状态。
   Config c_;
   Phase phase_ = Phase::Idle;
+  // input_是前/左/上/逆时针目标；filtered_却是NED速度，不能将二者直接逐轴比较。
   Velocity input_;
   Vec origin_, hold_, filtered_;
   double filtered_yaw_ = 0, yaw_target_ = 0, reference_z_ = 0;

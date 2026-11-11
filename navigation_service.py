@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # 正式RC导航服务入口：生成诊断或人工解锁起飞配置，校验当前二进制标识，再交给standby监督。
 # 目标高度相对地面向上为正，默认1.5m；视觉始终关闭，Python不产生姿态/推力设定值。
+# 阅读顺序：main解析入口 → load_profile组配置 → _run_navigation_service交监督器。
+# 配置“允许动作”和当前飞机“已获授权”是不同层次，后者仍由原生状态机与新鲜遥测判断。
 """Native manual-RC navigation service; Python never emits flight setpoints."""
 from __future__ import annotations
 import argparse
@@ -32,6 +34,7 @@ MODES = (DIAGNOSTIC, FLIGHT_TEST)
 
 # 模式白名单决定源YAML；默认诊断不共享旧运行YAML以免继承飞行门。
 def candidate_config_path(mode, entry=ENTRY):
+    # mode是运行模式字符串，entry是安装目录；返回路径，不在这里读文件或启动进程。
     if mode not in MODES:
         raise ControlError('运行模式必须为 diagnostic 或 flight-test')
     return (
@@ -44,6 +47,7 @@ def candidate_config_path(mode, entry=ENTRY):
 
 # 只写身份路径/版本，供报告对齐真正运行源，不构成动作许可。
 def _metadata(config, mode, *, config_path=None, source_path=None):
+    # 原位修改并返回同一个config字典。这里只补来源身份，不把路径存在当作动作许可。
     p = config['fc01_system']['ros__parameters']
     p['fc01_runtime_mode'] = mode
     p['fc01_entry_version'] = ENTRY_VERSION
@@ -56,6 +60,7 @@ def _metadata(config, mode, *, config_path=None, source_path=None):
 
 # 深拷贝原候选后明确关闭全部动作/视觉门、禁用CSV，目标仅用于诊断显示。
 def diagnostic_profile(base, target=DEFAULT_TAKEOFF_HEIGHT_M):
+    # runtime_profile先复制候选配置；后续仅写新字典。非法高度抛ControlError，不悄悄改成默认值。
     config = runtime_profile(base, False)
     p = config['fc01_system']['ros__parameters']
     if (
@@ -84,6 +89,7 @@ def diagnostic_profile(base, target=DEFAULT_TAKEOFF_HEIGHT_M):
 
 # 保留原10度/30秒包络；RC人工解锁路线只开动作总门与起飞门，程序arm与视觉均关闭。
 def navigation_profile(base, target=DEFAULT_TAKEOFF_HEIGHT_M, mode_slot=6, mode=FLIGHT_TEST):
+    # 返回该模式的新配置；diagnostic先分派独立关闭门路径，不能沿用flight-test的更新集合。
     if mode == DIAGNOSTIC:
         return diagnostic_profile(base, target)
     if mode != FLIGHT_TEST:
@@ -121,6 +127,7 @@ def navigation_profile(base, target=DEFAULT_TAKEOFF_HEIGHT_M, mode_slot=6, mode=
 
 # 读取导航高度/档位选择；缺少设置只用原默认高度，最终数值仍由profile验证。
 def settings(entry=ENTRY):
+    # 文件不存在才用默认值；存在但JSON损坏、读盘失败仍向上传播，不能假装用户没做过设置。
     path = entry / 'navigation_settings.json'
     return (
         json.loads(path.read_text())
@@ -136,6 +143,7 @@ def controller_path(entry=ENTRY, prefix=None):
 
 # 先验真实可执行架构，再检查人工解锁、起飞证据、离散事件和生命周期四个能力标识。
 def check_controller(entry=ENTRY, prefix=None):
+    # 返回已通过检查的二进制路径，不运行它。四次read_bytes保持原顺序，任何读盘/核验错误都向上传播。
     binary = controller_path(entry, prefix)
     verify_binary(binary)
     if MARKER not in binary.read_bytes():
@@ -151,6 +159,8 @@ def check_controller(entry=ENTRY, prefix=None):
 
 # 验证源YAML/环境并合成当前模式；返回含真实配置来源路径的新配置对象。
 def load_profile(root, agent, entry=ENTRY, mode=FLIGHT_TEST, *, config_path=None):
+    # root只用于依赖环境，源YAML由当前entry/mode选定；返回含来源标识的独立配置。
+    # validate、读取设置、profile校验按此顺序执行；任一步失败都不产生可运行的替代配置。
     source = candidate_config_path(mode, entry)
     base = standby.validate(root, agent, config_path=source)
     selected = settings(entry)
@@ -161,12 +171,13 @@ def load_profile(root, agent, entry=ENTRY, mode=FLIGHT_TEST, *, config_path=None
     config = navigation_profile(
         base, selected.get('target_height_m', DEFAULT_TAKEOFF_HEIGHT_M), slot, mode
     )
-    # Visual navigation is deliberately disabled in both operator modes.
+    # 两种操作模式都显式关闭视觉；添加视觉接口不等于开通本入口的视觉控制权。
     return _metadata(config, mode, config_path=config_path, source_path=source)
 
 
 # 展示层把当前原生phase映射友好状态；历史控制器数据不能用作本次故障锁存或准备提示。
 def describe_row(row):
+    # 返回显示用浅副本，不改变输入row或其原生state；历史数据继续显示，但不能当作本次故障/READY事实。
     state = row.get('state') or {}
     phase = state.get('phase')
     result = dict(row)
@@ -302,9 +313,11 @@ def _run_navigation_service(args, root, agent):
     """按已确认模式构造运行配置并交给既有standby监督器；信号只置停止事件。保留打印、控制器核验与配置工厂调用顺序，不新增解锁或飞行权限。"""
     # 信号只置停止事件；standby负责在Agent还活着时等待原生恢复/释放，不能直接杀电机控制进程。
     stopped = threading.Event()
+    # lambda忽略信号参数，只置事件；真正的停止、原生恢复和Agent归属处理留给standby。
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
         signal.signal(sig, lambda *_: stopped.set())
     runtime_path = Path.home() / 'FC01_navigation' / 'runtime.yaml'
+    # 这次加载用于启动说明/元数据；监督器每次真正启动前还要调用下面的工厂重新核验，不能复用旧对象。
     profile = load_profile(root, agent, ENTRY, args.mode, config_path=runtime_path)
     p = profile['fc01_system']['ros__parameters']
     print(
@@ -329,16 +342,20 @@ def _run_navigation_service(args, root, agent):
         ),
         flush=True,
     )
+
+    def checked_runtime_profile(runtime_root, runtime_agent):
+        # 具名配置工厂：每次尝试都先检查控制器，再加载本次配置；检查失败就直接向上传播。
+        # args.mode与runtime_path保留闭包读取语义，不在定义时把它们绑定为默认参数或缓存配置。
+        check_controller()
+        return load_profile(runtime_root, runtime_agent, ENTRY, args.mode, config_path=runtime_path)
+
     standby.supervise(
         root,
         agent,
         Path.home() / 'FC01_navigation',
         stopped,
         controller=controller_path(),
-        config_factory=lambda r, a: (
-            check_controller(),
-            load_profile(r, a, ENTRY, args.mode, config_path=runtime_path),
-        )[1],
+        config_factory=checked_runtime_profile,
         status_metadata={
             'runtime_mode': args.mode,
             'entry_version': ENTRY_VERSION,
@@ -362,6 +379,7 @@ def _run_navigation_service(args, root, agent):
 
 # 显式子命令分离环境/构建/配置/探针与run；默认诊断，flight-test没有确认直接拒绝。
 def main(argv=None):
+    # 返回退出码；只有run分支交给长期监督循环。其余分支仅做所选构建、校验、配置或无动力探针操作。
     args, parser = _parse_service_args(argv)
     os.umask(0o077)
     root = (

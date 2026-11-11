@@ -99,9 +99,11 @@ class LegacyCppRunnerLinkTests(unittest.TestCase):
                     links = {arg for arg in argv if arg.startswith('-Wl,--wrap=') or arg == '-ldl'}
                     self.assertEqual(
                         links,
-                        {'-Wl,--wrap=fcntl', '-Wl,--wrap=write', '-ldl'}
-                        if argv == special[0]
-                        else set(),
+                        (
+                            {'-Wl,--wrap=fcntl', '-Wl,--wrap=write', '-ldl'}
+                            if argv == special[0]
+                            else set()
+                        ),
                     )
 
     def test_failing_ordinary_test_still_stops_the_entry(self):

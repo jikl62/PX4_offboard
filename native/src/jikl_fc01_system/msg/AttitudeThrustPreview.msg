@@ -1,3 +1,10 @@
+# 阅读顺序：accepted/reason说明输入检查 → 序号/reset追溯来源 → 目标量说明计算 → sink观测说明边界。
+# 这是观察/离线预览合同；不是向PX4发送的VehicleAttitudeSetpoint，也不是电机驱动接口。
+# active或accepted为true仅说明对应预览结果；不能替代RC控制权、飞行动作门和真正发布证据。
+# attitude/thrust_body是目标，不能当实测姿态/实际推力；推力为归一化比例，-0.5不等于-0.5N。
+# velocity_target/acceleration_target在世界NED，target_height却是相对地面向上为正，注意符号区别。
+# state_sequence和command_sequence来自两个独立序列，数字相等不代表同步；stamp也不证明执行。
+# 两个sink_allowed只保留相应检查/提交的观察结果，不能单凭本消息证明PX4采用或飞机已离地。
 # 离线观测消息；不是执行器命令，也不是 PX4 输入。
 uint16 schema_version 1 # 协议版本；默认 1，接收方必须拒绝不兼容的版本。
 builtin_interfaces/Time stamp # 该预览的时间记录；不能单凭它认定飞控已经执行。

@@ -7,8 +7,7 @@
 #include <cstddef>
 
 namespace fc01 {
-// Signed diagnostic values retain future timestamps. Unavailable timestamps
-// remain unavailable; zero is never substituted for a missing measurement.
+// 诊断保留有符号未来年龄；缺时间戳保持不可用，不能填成“0秒延迟”。
 struct AgeMeasurement {
   double seconds{};
   bool available{};
@@ -64,10 +63,10 @@ inline const char* source_time_reason_name(SourceTimeReason reason) {
   }
   return "UNKNOWN";
 }
-// This explains the existing source_clock.hpp predicate without changing it.
 // 按既有 source_clock 谓词解释失败原因；只解释，不更新缓存或估计偏移来“修正”时间。
 inline SourceTimeReason source_time_reason(std::uint64_t envelope, std::uint64_t sample,
                                            bool sampled, std::uint64_t host, double timeout) {
+  // 源戳微秒、timeout秒；只返回首个原因，不改缓存或source_clock判定，不估算偏移来补成有效。
   if (!envelope)
     return SourceTimeReason::MissingEnvelope;
   if (sampled && !sample)
@@ -113,6 +112,7 @@ inline const char* receipt_time_reason_name(ReceiptTimeReason reason) {
   return "UNKNOWN";
 }
 inline ReceiptTimeReason receipt_time_reason(double received, double now, double timeout) {
+  // received/now均单调秒；源年龄与接收进展各自可能过期，不能合成一句含糊的“消息新鲜”。
   if (!std::isfinite(received) || received < 0)
     return ReceiptTimeReason::MissingReceipt;
   if (!std::isfinite(now) || now < 0)
@@ -167,13 +167,11 @@ inline SourceTiming diagnose_source_timing(std::uint64_t envelope, std::uint64_t
   return result;
 }
 
-// Classify an expiry for a ground preparation retry, never permission to
-// publish. The caller must separately prove no arm/command/sink history,
-// no clock/reset fault, healthy ground feedback and all authority checks.
 // 只分类“地面准备可重试的来源年龄过期”；调用者仍须证明无解锁/命令历史、无时钟/reset 故障及健康地面。
 inline bool
 only_preparation_source_age_expired(const SourceTimingSet& sources,
                                     const std::array<ReceiptTimeReason, 2>& raw_progress) {
+  // 返回true也只是一项分类结果，不执行恢复动作或授予输出权限。
   bool expired = false;
   for (std::size_t i = 0; i < sources.size(); ++i) {
     const auto& source = sources[i];
@@ -197,14 +195,8 @@ struct SourceReceiptTiming {
   double steady_stamp{-1};
   AgeMeasurement envelope_host_age, sample_host_age, middleware_callback_age;
 };
-// Record this at callback entry. It describes this callback's payload, even
-// when the existing safety receiver rejects that payload as reordered. RMW
-// receive timestamps are optional nanoseconds; zero means unavailable. The
-// receive-to-callback subtraction requires an RMW using the host wall epoch
-// (verified for the deployed Fast DDS implementation). Other RMWs may use a
-// different epoch. This signed difference alone is not proof of queue delay,
-// and is diagnostic evidence only, never a TTL or a validity override.
-// RMW 接收戳仅在实现使用 host wall epoch 时可作差；符号差不是队列延迟证明，不能改变 TTL。
+// RMW接收戳为可选纳秒，0表示不可用；与主机墙钟作差前须确认同epoch。
+// 既有FastDDS取证采用此时钟域，其它RMW不能直接假定；差值只诊断，不是队列延迟或有效性证明。
 inline SourceReceiptTiming observe_source_receipt(std::uint64_t envelope, std::uint64_t sample,
                                                   bool sampled, std::uint64_t host, double received,
                                                   std::int64_t rmw_received_ns = 0) {
@@ -253,12 +245,8 @@ struct HostClockObservation {
   AgeMeasurement wall_delta, steady_delta, delta_error, anchor_error;
   bool host_regressed{}, steady_regressed{};
 };
-// Wall and monotonic clocks are compared only by elapsed increments, never
-// by subtracting their unrelated epochs. No estimated offset is applied to
-// source timestamps or used to relax their validity. The reporting budget
-// reuses the existing 100 ms skew budget. Sampling preemption can also cause
-// an increment mismatch: this is evidence to investigate, not proof of a
-// wall-clock adjustment. It cannot make any source valid or enable output.
+// 只比墙钟/单调时钟的经过增量，绝不直接减不同epoch；诊断沿用100ms预算，不用估算偏移修消息戳。
+// 采样抢占也可造成增量不一致，因此这里只给调查证据，不证明发生调时，也不能授权输出。
 // 通过“墙钟增量-单调增量”诊断偏差，首帧固定锚点；采样被抢占也会产生差异，不能直接认定 NTP 调时。
 class HostClockMonitor {
 public:
@@ -289,7 +277,7 @@ public:
       result.change = HostClockChange::ForwardJump;
     else
       result.change = HostClockChange::Consistent;
-    // Preserve the last monotonic observation on an impossible regression.
+    // 单调时钟回退时保留最后可信观测，不能把新的错误基线洗成下一帧正常。
     if (!result.steady_regressed) {
       previous_host_ = host;
       previous_steady_ = now;

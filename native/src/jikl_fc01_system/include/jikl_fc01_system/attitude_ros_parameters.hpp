@@ -6,12 +6,15 @@
 #include <rclcpp/rclcpp.hpp>
 namespace fc01 {
 inline attitude::Config attitude_parameters(rclcpp::Node& node) {
+  // 输入：借用的ROS参数节点；输出：配置值；副作用：按原顺序声明/读取参数，不发布消息。
+  // 此处不完成整份Config校验，声明异常经read_ros_config继续传播；默认值不是实机已确认参数。
   attitude::Config c;
   // 视觉、RC 起飞和动作门分开声明：打开视觉开关不能代替解锁/起飞/人工确认合同。
   c.visual.enabled = node.declare_parameter<bool>("visual_navigation_enabled", false);
   c.rc_navigation_enabled = node.declare_parameter<bool>("rc_navigation_enabled", false);
   c.rc_target_height = node.declare_parameter<double>("rc_target_height", c.rc_target_height);
   c.rc_navigation_mode_slot = node.declare_parameter<std::int64_t>("rc_navigation_mode_slot", 6);
+  // 6是缺省声明值，不是当前部署档位；navigation_settings/profile的实际覆盖须另查。
   c.rc_arm_to_navigation_timeout =
       node.declare_parameter<double>("rc_arm_to_navigation_timeout", 8.);
   // 四类动作/确认参数各自独立，缺省拒绝；人工 RC 解锁路线仍由原 Core 检查。
@@ -34,6 +37,8 @@ inline attitude::Config attitude_parameters(rclcpp::Node& node) {
     const char* name;
     double* value;
   };
+  // Entry把字面量参数名与局部c内一个double地址配对；&取地址，*e.value读/写成员。
+  // 这些借用指针只在本函数内遍历，不随返回值流出，也不指向需delete的独立分配对象。
   for (const auto& e :
        {Entry{"visual_state_timeout", &c.visual.state_timeout},
         {"visual_command_timeout", &c.visual.command_timeout},
@@ -100,6 +105,7 @@ inline attitude::Config attitude_parameters(rclcpp::Node& node) {
         {"aa_px4_land_ack_seconds", &c.px4_land_ack_seconds},
         {"aa_saturation_seconds", &c.saturation_seconds},
         {"aa_max_flight_seconds", &c.max_flight_seconds}})
+    // 先以原成员值声明，再将实际启动值写回同一成员；遍历顺序保留首个ROS异常的次序。
     *e.value = node.declare_parameter<double>(e.name, *e.value);
   // 仅在显式高度下界为正时传递给垂向控制器；未设值沿用控制器原默认边界。
   c.vertical.ground_lower_margin =

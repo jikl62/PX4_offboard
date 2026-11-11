@@ -2,7 +2,11 @@
 // 已有视觉导航外环：实际 VisionState 与模式 NavigationCommand 分别校验，再生成姿态/高度目标。
 // 该控制器只有 config.enabled=true 且原 Core 允许 HeightHold 运动时才使用；当前默认视觉关闭。
 // 世界系 NED（北/东/下）、机体系 FRD（前/右/下），位置 m、速度 m/s、加速度 m/s²、角度 rad。
-// 这里不是 SLAM、PX4 EKF 或角速度内环，也不是新 VelocityCommand 的生产适配器。
+// 这里不是SLAM、PX4 EKF或角速度内环，也不是新VelocityCommand的生产适配器。
+// 阅读路线：State/Command说明两种输入 → detail是纯数学/校验 → Controller形成计划 → Inbox保留回调证据。
+// 实际接线从ROS回调经字段适配进入Inbox，控制周期取值快照后才交Controller，最终仍走原Core发布门。
+// 本文件不拥有ROS节点/线程、不调用发布器；字符串/快照复制可能抛分配异常，原样交上层处理。
+// Controller/Inbox都按同一控制线程顺序使用；“最后接受”是逻辑记账，不是线程同步或异常回滚。
 #include "jikl_fc01_system/attitude_reference.hpp"
 #include "jikl_fc01_system/vision_resource_budget.hpp"
 #include <algorithm>
@@ -16,12 +20,14 @@
 #include <utility>
 
 namespace fc01::vision {
+// using是类型别名；Vec3固定3个double并按值存储，不是会自动增长的容器。
 using Vec3 = std::array<double, 3>;
 using Quaternion = attitude::Quaternion;
 // 缺失测量用 NaN 显式表达；有效位未置位时不能把默认 0 当作可信位置或速度。
 inline double missing() {
   return std::numeric_limits<double>::quiet_NaN();
 }
+// 模板参数N在编译期给出长度；如missing_array<3>()得到三个NaN，不创建动态数组。
 template <std::size_t N> inline std::array<double, N> missing_array() {
   std::array<double, N> values{};
   values.fill(missing());
@@ -39,8 +45,10 @@ enum Field : std::uint16_t {
   TwistCovariance = 32,
   Quality = 64
 };
-// 外环的时间、增益与速度/加速度/倾角/半径/高度包络；validate 检查物理上可用的有限正值。
+// 外环候选的时间、增益与速度/加速度/倾角/半径/高度包络；validate只查数值和既有配置关系。
+// 配置通过不证明某架飞机实际可飞，还需上游完成尺度、标定、坐标对齐和闭环验证。
 struct Config {
+  // bool的{}默认false；此默认值和YAML中的视觉关闭都保留，收到消息本身不能打开它。
   bool enabled{};
   // 接收与源时效单位 s；max_measurement_delay 限制到达前传输耗时，future_tolerance 限制源时钟领先。
   double state_timeout{.25}, command_timeout{.30}, max_measurement_delay{.20},
@@ -54,6 +62,7 @@ struct Config {
 };
 // 来自视觉估计器的实际运动，不是上层希望怎么运动；received_at 只能由本机 Inbox 写入。
 struct State {
+  // sequence是发送会话内的顺序号；stamp_ns是测量源时刻(ns)，两者不能互相替代。
   std::uint64_t sequence{}, stamp_ns{};
   double received_at{-1};
   std::uint32_t reset_counter{};
@@ -99,8 +108,8 @@ struct Input {
   Command command;
   std::uint64_t ros_now_ns{};
   std::size_t state_publishers{}, command_publishers{};
-  // Local inbox evidence only, never populated from a ROS/wire field. This
-  // preserves A->B->A source/reset changes between control-loop snapshots.
+  // 仅本机Inbox累加的撤销代数，消息里没有这个字段；保存两次控制快照之间的A→B→A变化。
+  // 即使最终来源/reset又变回A，代数仍不同，Controller不能假装中间从未撤销。
   std::uint64_t revocation_generation{};
 };
 // active=可向原 Core 提供本次计划；request_land=撤销运动并请求原下降，不是直接向 PX4 发布命令。
@@ -108,6 +117,7 @@ struct Result {
   bool active{}, request_land{};
   Mode mode{Mode::Disabled};
   std::string reason;
+  // q为目标姿态；单位四元数只是缺省结果，active=false时不能据它向飞机发出控制。
   Quaternion q{1, 0, 0, 0};
   double target_height{missing()}, yaw{missing()};
   Vec3 velocity_target{0, 0, 0}, acceleration_target{0, 0, 0};
@@ -169,10 +179,12 @@ inline bool clock_valid(std::uint64_t stamp, double received, std::uint64_t ros_
   if (!stamp || !ros_now || !std::isfinite(now) || !std::isfinite(received) || received < 0 ||
       now < received || now - received >= timeout)
     return false;
+  // 先将两端ns转到有符号的大范围浮点再做差，避免uint64负差绕回；1e9L按秒换算。
   const long double age =
       (static_cast<long double>(ros_now) - static_cast<long double>(stamp)) / 1e9L;
-  // The arrival transport cap is not another TTL. Extrapolate ROS at receipt
-  // using the independent steady elapsed age; delay consumes source lifetime.
+  // 到达前延迟不是第二份可重新开始的TTL：用当前源年龄减去本机已缓存的单调时长，估算收到时年龄。
+  // 如源已50ms、在缓存待了30ms，则到达前约20ms；接收时刻不能把50ms变回0。
+  // 这是按两时钟对应关系作检查，不提供时钟同步服务；同步/暂停/跳变还需调用者保证和监测。
   const long double arrival_age = age - static_cast<long double>(now - received);
   return age >= -static_cast<long double>(c.future_tolerance) &&
          age < static_cast<long double>(timeout) &&
@@ -188,12 +200,15 @@ inline bool covariance_valid(const std::array<double, 36>& covariance) {
       return false;
   return true;
 }
+// 三维欧氏差模长，单位跟随输入；嵌套hypot避免直接逐项平方造成不必要的中间溢出。
 inline double distance(const Vec3& first, const Vec3& second) {
   return std::hypot(std::hypot(first[0] - second[0], first[1] - second[1]), first[2] - second[2]);
 }
+// remainder按2π周期取等价角，单位rad；±π边界沿原浮点规则，不自行重定义转向优先级。
 inline double wrap(double angle) {
   return std::remainder(angle, 2 * pi);
 }
+// Hamilton[w,x,y,z]提取NED偏航；调用者先保证q可归一化，atan2的返回单位为rad。
 inline double yaw(const Quaternion& q) {
   return std::atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] * q[2] + q[3] * q[3]));
 }
@@ -205,16 +220,18 @@ inline void bound_xy(Vec3& vector, double limit) {
     vector[1] *= limit / length;
   }
 }
-// The requested body-down axis is [-a_N,-a_E,g], with an exact ZYX yaw.
-// Positive right acceleration is positive roll; forward acceleration is negative pitch.
-// 期望机体下轴与 [-a_N,-a_E,g] 对齐；向右加速需正 roll，向前加速需负 pitch，yaw 保持指定 ZYX。
+// 把已限幅的NED水平加速度变成机体FRD→NED姿态目标，保持指定ZYX偏航，不在这里计算推力。
+// 期望机体下轴与[-a_N,-a_E,g]对齐：机体升力沿负z，加速方向因倾斜而产生。
+// 向右加速需正roll，向前加速需负pitch；输入m/s²和rad，输出Hamilton[w,x,y,z]值。
 inline Quaternion attitude_target(const Vec3& acceleration, double yaw_target) {
+  // 先按目标yaw把世界水平加速度投到机头前/右，再求roll/pitch；不是完整速度目标的三维坐标转换。
   const double forward =
       std::cos(yaw_target) * acceleration[0] + std::sin(yaw_target) * acceleration[1];
   const double right =
       -std::sin(yaw_target) * acceleration[0] + std::cos(yaw_target) * acceleration[1];
   const double roll = std::atan2(right, std::hypot(gravity, forward));
   const double pitch = std::atan2(-forward, gravity);
+  // cr/sr等是半角三角函数；下面四项展开ZYX旋转的四元数乘法，不能随意交换乘加顺序。
   const double cr = std::cos(roll / 2), sr = std::sin(roll / 2), cp = std::cos(pitch / 2),
                sp = std::sin(pitch / 2);
   const double cy = std::cos(yaw_target / 2), sy = std::sin(yaw_target / 2);
@@ -225,10 +242,15 @@ inline Quaternion attitude_target(const Vec3& acceleration, double yaw_target) {
 // 一轮视觉任务的状态机：保存原点/模式/位置及航向目标；运行中拒绝会锁存 Land，后续正常包不清除。
 class Controller {
 public:
+  // 按值保存配置，非法候选抛invalid_argument；构造不会获得飞行权限或创建任何通信资源。
   explicit Controller(Config config = {}) : c_(config) {
     c_.validate();
   }
-  // 输入实际状态与目标快照，now/dt 为单调 s；px4_height 为上正 m，px4_yaw 为当前可信航向 rad。
+  // 输入in为本周期的值快照；const引用只借用它，本类只在接受时另复制完整快照供最终核对。
+  // now是本机单调时刻，dt是本周期时长(s)；px4_height上正m，px4_yaw为当前可信航向rad。
+  // 返回Result只是原Core的候选姿态/高度；会更新模式、保持点、积分目标和拒绝/降落锁存。
+  // 顺序是终态/总开关 → 控制样本/撤销 → 命令 → 实测状态/连续性 → 模式数学 → 接受结果。
+  // 早return不会回滚此前成员变化；这里既不调用sink，也不把计算成功当作实际飞行反馈。
   Result step(const Input& in, double now, double px4_height, double px4_yaw, double dt) {
     // stop 与 Land 锁存优先返回旧终态，不能靠再次调用 step 自动重新取得运动权限。
     if (stopped_)
@@ -254,7 +276,7 @@ public:
     const auto command_error = validate_command(in, now);
     if (!command_error.empty())
       return reject(command_error);
-    // An explicit, fresh Land request needs no metric vision estimate.
+    // Land仍须通过上面的命令来源/时间/有效性检查，只是不要求继续有完整米制视觉状态。
     if (in.command.mode == Mode::Land)
       return land("NAVIGATION_LAND_REQUESTED");
     if (in.command.mode == Mode::Disabled)
@@ -271,6 +293,7 @@ public:
         return reject(continuity_error);
     }
     // 只在首次进入或模式变化时锁新 Hold 点/Follow 高度；普通新帧不能不停重写保持目标。
+    // ||短路：从未接受过计划时即视为进入；同模式新序号不会反复捕获新的Hold点。
     const bool entering = !accepted_ || in.command.mode != mode_;
     // 第一帧锁世界视觉原点和可信 PX4 yaw，后续半径限制相对该任务原点。
     if (!accepted_) {
@@ -303,6 +326,8 @@ public:
     output.reset_counter = in.state.reset_counter;
     // Follow 水平目标用视觉 yaw 将右/前杆量转 N/E；上杆量增加上正高度，NED 目标 vz 因而为负。
     if (in.command.mode == Mode::Follow) {
+      // Follow杆量是右/前/右偏航/上升，按yaw做水平旋转；它与body_frd三维速度合同不同。
+      // *normalized取已验证optional中的归一化姿态副本，既不改实测q，也不跳过有效位检查。
       const double vision_yaw = detail::yaw(*attitude::normalized(in.state.attitude));
       const double forward = in.command.sticks[1] * c_.max_speed,
                    right = in.command.sticks[0] * c_.max_speed;
@@ -325,8 +350,9 @@ public:
       output.velocity_target = raw_velocity_target;
       output.velocity_target[2] =
           std::clamp(raw_velocity_target[2], -c_.max_vertical_speed, c_.max_vertical_speed);
-      // Only the target is translated; PX4 Z/Vz remains the vertical feedback.
-      // 只把视觉垂向位置误差转成 PX4 高度目标；真正垂向反馈仍使用原 PX4 Z/Vz。
+      // 只把视觉垂向位置误差转成PX4高度目标；真正垂向反馈仍使用原PX4 Z/Vz。
+      // NED向下为正，所以视觉目标z数值比实测z小0.2m时，PX4向上高度目标增加0.2m。
+      // 两系统的绝对z原点无须数值相等；这里转译的是已对齐坐标下的差值，不能免除尺度/方向校验。
       output.target_height = px4_height + in.state.position[2] - position_target_[2];
       yaw_target_ =
           detail::wrap(yaw_target_ + std::clamp(detail::wrap(yaw_goal_ - yaw_target_),
@@ -340,6 +366,8 @@ public:
         !std::isfinite(std::hypot(output.velocity_target[0], output.velocity_target[1])))
       return reject("NAVIGATION_NONFINITE_PLAN");
     detail::bound_xy(output.velocity_target, c_.max_speed);
+    // 目标速度和实测速度都在同一世界NED才能作差；速度增益(1/s)把m/s误差变成m/s²。
+    // 这里只输出水平加速度，垂向由上面的高度目标交给原高度闭环，不能把第三项0当成垂向实测为0。
     output.acceleration_target = {
         c_.velocity_gain * (output.velocity_target[0] - in.state.velocity[0]),
         c_.velocity_gain * (output.velocity_target[1] - in.state.velocity[1]), 0};
@@ -356,7 +384,9 @@ public:
     if (!detail::finite(output.velocity_target) || !detail::finite(output.acceleration_target) ||
         !attitude::normalized(output.q))
       return reject("NAVIGATION_NONFINITE_PLAN");
-    // 所有中间量/四元数通过后才原子式替换本对象的已接受输入和最后结果，拒绝路径不提交新计划。
+    // 数学与四元数全通过后才记入“已接受输入/最后结果”；这是逻辑提交点，不是线程原子或异常事务。
+    // 先前捕获的原点/目标成员可能已改变；拒绝时走明确等待/降落结果，不承诺自动恢复旧成员。
+    // 字符串/输入副本分配异常仍向外传播，由上层处理；这里不把异常伪装成成功计划。
     output.active = true;
     mode_ = in.command.mode;
     accepted_input_ = in;
@@ -366,6 +396,8 @@ public:
     return last_;
   }
   // 最终 sink 用它证明输入仍与已计算计划完全相同且未过期；只看最后 active 不足以继续发布。
+  // const检查不更新目标或刷新接收时间；输入内容和原计划完全匹配才继续有效。
+  // 它检查的是视觉输入合同，最终Core控制权限、控制周期截止和真实sink门仍须另查。
   bool current(const Input& in, double now) const {
     return c_.enabled && accepted_ && !stopped_ && !land_latched_ && last_.active &&
            std::isfinite(now) && now >= last_now_ && in.ros_now_ns >= accepted_input_.ros_now_ns &&
@@ -377,10 +409,12 @@ public:
            in.state.sequence == last_.state_sequence &&
            in.command.sequence == last_.command_sequence;
   }
+  // 返回成员的只读别名；下次step/stop可能改写它，需保存历史时由调用者复制。
   const Result& last() const {
     return last_;
   }
-  // Stop is an ownership release, not a landing command and not a reset API.
+  // stop撤销本视觉对象继续规划的资格；不发送降落、不清上层故障，也不允许下次step自行重开。
+  // 原Core的下降/任务生命周期负责后续处置，只有重建对象才重新开始本对象。
   void stop() {
     stopped_ = true;
     last_ = {};
@@ -436,6 +470,8 @@ private:
     if (!detail::clock_valid(state.stamp_ns, state.received_at, in.ros_now_ns, now,
                              c_.state_timeout, c_))
       return "VISION_STATE_TIME_INVALID";
+    // required以|合成必需位；(mask&required)==required要求每个位都存在。
+    // ~allowed取允许位以外的位，&后非0就说明含未定义位；不能将未知协议静默当成V1。
     constexpr std::uint16_t required = Position | Velocity | Attitude | Quality;
     constexpr std::uint16_t allowed = required | AngularVelocity | PoseCovariance | TwistCovariance;
     if ((state.valid_fields & required) != required || (state.valid_fields & ~allowed) != 0)
@@ -528,6 +564,8 @@ inline void Config::validate() const {
     throw std::invalid_argument("VISION_NAVIGATION_CONFIG_OUTSIDE_ENVELOPE");
 }
 // ROS 回调缓存与控制计算分层；保存最新值，同时用 revocation_generation 记录中间身份/reset/撤销。
+// state/command返回true只表示本地缓存或撤销证据发生变化，不等于该载荷获得控制资格。
+// 此对象无ROS资源/线程；调用者顺序喂入回调，控制周期通过snapshot取独立的值副本。
 class Inbox {
 public:
   // 状态身份/坐标/reset 变化和健康→撤销即使序号未增也必须保留，避免被旧序号过滤隐藏失效。
@@ -551,17 +589,22 @@ public:
       ++revocation_generation_;
       return true;
     }
+    // 预算通过后才复制；身份变化可以重开本来源序号水位，普通同源旧序号不覆盖现缓存。
     State value = incoming;
     const bool changed =
         state_seen_ &&
         (value.source_id != state_.source_id || value.reset_counter != state_.reset_counter ||
          value.frame_id != state_.frame_id || value.body_frame_id != state_.body_frame_id);
+    // withdrawn只识别健康→撤销且测量戳未旧的过渡；changed独立识别来源/坐标/reset变化。
+    // 先算这两类事件，再过滤序号，避免同序号的关键撤销在“重复包”分支被丢掉。
     const bool withdrawn = state_seen_ && state_retracted(value) && !state_retracted(state_) &&
                            value.stamp_ns && value.stamp_ns >= state_.stamp_ns;
     if (!changed && !withdrawn && (!value.sequence || value.sequence <= state_sequence_))
       return false;
     if (changed || withdrawn)
       ++revocation_generation_;
+    // changed开启不同身份的局部序列；同身份用max守住已见最高序号，撤销不能让水位倒退。
+    // A→B→A即使水位重起，revocation_generation已经累加，原Controller计划仍会被撤销。
     state_sequence_ = changed ? value.sequence : std::max(state_sequence_, value.sequence);
     state_seen_ = true;
     value.received_at = received_at;
@@ -602,6 +645,7 @@ public:
       ++revocation_generation_;
       return true;
     }
+    // 按值复制后只改自己的副本；无效目标/Disabled/Land也要留下撤销，不靠旧目标继续运动。
     Command value = incoming;
     const bool changed = command_seen_ && (value.source_id != command_.source_id ||
                                            value.reset_counter != command_.reset_counter ||
@@ -626,6 +670,8 @@ public:
     return true;
   }
   // 快照复制两个缓存，附上当前图来源数量与 ROS 时间；不从消息接收任何“本机撤销代数”。
+  // 参数now此处为ROS纳秒，不是其他函数的steady秒；states/commands来自本机ROS图观察。
+  // 复制缓存中的received_at，不重新设成now；每次取快照不能给旧数据续期。
   Input snapshot(std::uint64_t now, std::size_t states, std::size_t commands) const {
     Input in;
     in.state = state_;
@@ -673,6 +719,7 @@ private:
           return true;
     return false;
   }
+  // 缓存各自拥有字符串和数组；snapshot复制后，后续回调修改这里不改变已交出的输入副本。
   State state_;
   Command command_;
   bool state_seen_{}, command_seen_{};

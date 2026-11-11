@@ -13,6 +13,7 @@ struct OwnershipCounts {
 };
 // 存在竞争者立即拒绝；地面 profile 要求零发布者，动力 profile 只允许所选的一类设定值。
 inline bool owns_setpoints(const std::string& profile, const OwnershipCounts& c) {
+  // 纯bool输出，无状态副作用。ROS图数量匹配仍不证明对端已收到/采用目标；最终出口需再观察。
   if (c.other_publishers)
     return false;
   if (profile == "ground")

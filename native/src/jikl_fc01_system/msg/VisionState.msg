@@ -1,3 +1,14 @@
+# 阅读顺序：来源/序号/源时刻 → 坐标/reset → 健康确认 → 有效位 → 实测数组。
+# 本消息回答“飞机现在实际怎样运动”。上层希望的速度必须另发VelocityCommand，不能填进velocity。
+# 本文件的type name是ROS消息声明，不是C++变量定义：float64[3]是固定3项数组，string可变长。
+# C++接收侧对身份字段逐项限制为256个UTF-8字节；不是256个汉字，也不代表DDS线上报文已被限制。
+# 所有数组的默认零都缺少物理证明；只有声明了相应valid_fields且通过有限性/质量检查才可使用。
+# 位掩码例：POSITION|VELOCITY|ATTITUDE|QUALITY = 1|2|4|64 = 71；缺任一必需位不能用默认值补全。
+# stamp记录实际测量时刻；回调接收的本机单调时刻由Inbox另记，重复发布不能刷新旧测量寿命。
+# 同一来源的sequence与stamp应推进；重定位/reset/来源变化需撤销旧周期计划，不能暗改世界原点。
+# fc01_vision_ned必须经过明确对齐才有共同方向/米制尺度；frame_id文字相同本身不完成坐标变换。
+# 姿态为机体到世界的wxyz，和nav_msgs/Odometry原始xyzw不同；转换由上游适配器负责。
+# 接入并接收到本消息不授权Arm、Offboard或起飞，生产视觉开关仍需保持false。
 # FC01 内部实际状态合同 V1；这不是相机厂商接口，也不是目标指令。
 uint16 schema_version 1 # 协议版本；默认 1，接收方必须拒绝不兼容的版本。
 uint16 POSITION=1 # valid_fields 的位置有效位；对应 NED 米制位置。

@@ -50,6 +50,7 @@ inline const char* name(State s) {
 }
 class Core {
 public:
+  // 这是地面链路验证Core，不是姿态高度Core；方法接收值快照并更新自己的记账，不保存外部引用。
   // 收到已解锁或倒退时间戳立即 Block；只有发送之后的新状态才能证明模式变化。
   void status(const Status& s, double now) {
     if (finished())
@@ -90,13 +91,12 @@ public:
   }
   // ACK 必须属于命令 176、请求者身份和当前水位；from_external 只诊断，不能误当 PX4 必然置真的字段。
   bool ack(const Ack& a, double now) {
-    // PX4 v1.16 Commander::answer_command() targets the ACK to the requester's
-    // source system/component but leaves VehicleCommandAck::from_external at
-    // its zero-initialized value. Correlate by request identity and freshness;
-    // keep from_external diagnostic-only.
+    // PX4 v1.16应答目标为请求者source system/component，from_external仍可能是默认0。
+    // 因此按1/191请求者身份及时间关联，而非要求external=true；ACK本身不证明模式已改变。
     if (a.command != 176 || a.system != 1 || a.component != 191)
       return false;
     if (state_ != State::Sent) {
+      // 非等待期也推进ACK水位，防止先来的旧应答被稍后新请求认领；false表示未归属本请求。
       if (a.timestamp > ack_watermark_)
         ack_watermark_ = a.timestamp;
       return false;
@@ -112,6 +112,7 @@ public:
     ack_seen_ = true;
     ack_result_ = a.result;
     if (a.result == 0)
+      // 0为ACCEPTED，5为IN_PROGRESS；进展应答不直接终结，还需独立模式反馈。
       accepted_ = true;
     else if (a.result != 5) {
       state_ = State::Rejected;
@@ -121,6 +122,7 @@ public:
   }
   // 先查来源/命令独占和当前地面条件；连续 2 s 稳定后只返回一次发送许可。
   bool tick(double now, const Traffic& t) {
+    // true仅为一次地面176计划，本对象没有publisher；先写发送记账再返回，失败处理仍属调用者。
     if (finished())
       return false;
     if (t.status_publishers > 1 || t.land_publishers > 1 || t.ack_publishers > 1 ||
@@ -194,6 +196,7 @@ private:
   }
   // 地面验证缺任何一个来源或新鲜状态都拒绝，不把“无消息”当作安全。
   std::string guard(double now, const Traffic& t) const {
+    // 只读返回首个缺条件的协议字符串，空字符串为本层通过；不修改源时钟或补齐缺失反馈。
     if (t.status_publishers != 1 || t.land_publishers != 1 || t.ack_publishers != 1 ||
         t.command_subscribers != 1 || t.command_publishers != 1)
       return "SOURCE_MISSING";

@@ -12,11 +12,9 @@ struct HasRcAxes<M,
                  std::void_t<decltype(std::declval<M>().roll), decltype(std::declval<M>().pitch),
                              decltype(std::declval<M>().yaw), decltype(std::declval<M>().throttle)>>
     : std::true_type {};
-// Observation-only adapter shared by the real ROS node and deterministic tests.
-// RC link readiness is derived from the selected ManualControlSetpoint source,
-// not raw InputRc transport. ManualControlSwitches remains an independent
-// RC_TAKEOVER requirement. Received Kill stays asserted until a newer OFF
-// observation; staleness/unknown data must not turn a known Kill into OFF.
+// 实际节点与测试共用：链路按已选ManualControlSetpoint来源推导，不能拿原始InputRc流量代替。
+// ManualControlSwitches仍是独立条件；遥测Kill保持到可信更新的OFF，Core任务锁存另有寿命。
+// void_t/decltype只在编译期探测字段；下方if constexpr丢弃不适用消息类型的字段访问分支。
 class AuthorityTelemetry {
 public:
   // ready 与 fresh、源选择和源时钟分别记录，方便诊断具体哪条授权证据缺失。
@@ -35,6 +33,8 @@ public:
   template <class Manual>
   void manual(const Manual& message, double now, std::uint64_t host_stamp = 0,
               double timeout = .5) {
+    // 输入为只读消息、单调秒及同步微秒；更新缓存/水位，不保存外部引用、不执行模式或Arm命令。
+    // host_stamp=0仅保留离线旧调用兼容，不证明生产同步已核验；实际节点传入host时间。
     using M = std::decay_t<Manual>;
 
     const auto envelope = message.timestamp;
@@ -51,6 +51,7 @@ public:
     // 当前选中控制源失效时，及时撤销 RC 准入。
     // 即使原始采样时间没有推进，也不能继续沿用旧的有效状态。
     if (!message.valid || message.data_source != M::SOURCE_RC) {
+      // 先撤销失效来源，即使raw sample未推进也不能继续沿用旧有效源的准入资格。
       if (!manual_stamp_.accept(envelope, now))
         return;
 
@@ -97,7 +98,7 @@ public:
     const auto envelope = message.timestamp;
     const auto sample = message.timestamp_sample;
     if (host_stamp && !source_sample_in_clock(envelope, sample, host_stamp, timeout)) {
-      // An invalid-clock OFF cannot erase a known Kill. ON remains a veto.
+      // 不可信时钟的OFF不能擦掉已知Kill；ON仍保守否决，且不推进正常开关水位。
       if (message.kill_switch == 1)
         kill_latched_ = true;
       switch_clock_rejected_ = true;
@@ -131,10 +132,9 @@ public:
     auto recent = [timeout](std::uint64_t envelope, std::uint64_t raw) {
       return raw > 0 && raw <= envelope && double(envelope - raw) / 1e6 < timeout;
     };
-    // Two advancing raw observations within the existing freshness window are
-    // required, including after a stale gap. This does not confirm RC mapping,
-    // takeover ergonomics, or PX4 parameter configuration.
+    // 断流后也需窗口内前后两次raw推进；不由此证明RC物理映射、接管手感或PX4参数已正确。
     auto progressed = [now, timeout](double previous) {
+      // 按值捕获本次时间窗，调用期间不另取时钟；前帧时刻为哨兵时不伪造连续采样。
       return previous >= 0 && now >= previous && now - previous < timeout;
     };
     Facts out;
@@ -168,6 +168,7 @@ public:
                          progressed(sample_previous_received_) &&
                          recent(switch_timestamp_, sample_timestamp_) && switch_clock;
     out.rc_switches_ready = out.switches_fresh && kill_ == 3;
+    // ready要求Kill明确OFF(3)，unknown(0)不能当OFF；out.kill则保留遥测锁存，两者职责不同。
     out.kill = kill_latched_;
     out.mode_slot = switches_[0];
     out.arm_switch = switches_[1];
@@ -177,6 +178,7 @@ public:
     out.rc_throttle = throttle_;
     out.switch_sample_stamp = sample_timestamp_;
     const auto off = [](std::uint8_t x) {
+      // 仅辅助开关合同容许0或3，不可把此规则复用给Kill（其准入仍必须==3）。
       return x == 0 || x == 3;
     };
     out.rc_aux_switches_safe = off(switches_[2]) && off(switches_[3]) && off(switches_[4]);
@@ -218,6 +220,7 @@ private:
     using M = std::decay_t<Manual>;
     // 归一化 roll/pitch/yaw 需在 ±0.15 内；throttle 需接近 -1（低油门），才满足地面重准备轴安全。
     if constexpr (HasRcAxes<M>::value) {
+      // 编译期有字段才读取，旧/简化接口缺字段时不能自动拥有安全中杆、低油门证据。
       throttle_ = message.throttle;
       axes_safe_ = std::isfinite(message.roll) && std::isfinite(message.pitch) &&
                    std::isfinite(message.yaw) && std::isfinite(throttle_) &&

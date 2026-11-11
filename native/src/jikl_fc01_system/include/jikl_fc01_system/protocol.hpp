@@ -16,6 +16,8 @@ struct Request {
   std::vector<double> values;
 };
 inline Request parse_request(const std::string& line) {
+  // 输入是已分帧的一行文本，输出拥有自己的字符串/数值副本；不借用line内部指针到返回后。
+  // 语法错误抛invalid_argument，stod还可能抛out_of_range；分配错误也原样传播，上层决定断连。
   // 限制单行 1024 字节，避免未分帧的大输入无界占用资源。
   if (line.size() > 1024)
     throw std::invalid_argument("LINE_TOO_LONG");
@@ -26,12 +28,14 @@ inline Request parse_request(const std::string& line) {
     throw std::invalid_argument("REQUEST_FORMAT");
   // 完整解析无符号请求号，禁止尾随垃圾和 0；防重放的严格递增由 UnixServer 维护。
   auto result = std::from_chars(token.data(), token.data() + token.size(), r.seq);
+  // 两个指针标记半开区间[起点,终点)，result.ptr必须恰好到终点才算完整解析，避免“12abc”被当12。
   if (result.ec != std::errc{} || result.ptr != token.data() + token.size() || r.seq == 0)
     throw std::invalid_argument("SEQUENCE_INVALID");
   // 每个数值必须被 stod 完整消费、为有限值且总数不超过四个，NaN/Inf 不进入控制器。
   while (input >> token) {
     std::size_t used{};
     double n = std::stod(token, &used);
+    // &used让stod写回已消费字符数；n是局部数值，先完整/有限校验再入vector，不接受NaN/Inf。
     if (used != token.size() || !std::isfinite(n) || r.values.size() >= 4)
       throw std::invalid_argument("ARGUMENT_INVALID");
     r.values.push_back(n);
@@ -40,6 +44,7 @@ inline Request parse_request(const std::string& line) {
 }
 // 输出 JSON 字符串时转义引号、反斜杠及常见控制符；其它低控制字节按原策略丢弃。
 inline std::string quote(const std::string& value) {
+  // 只构造JSON字符串副本，不修改value；这里的转义不等于校验外部来源身份或给命令授权。
   std::string out = "\"";
   for (unsigned char c : value) {
     if (c == '"' || c == '\\') {

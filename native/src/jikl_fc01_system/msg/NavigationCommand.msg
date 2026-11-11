@@ -1,3 +1,11 @@
+# 本消息回答“旧视觉导航外环希望使用什么模式/位置/归一化杆量”，不是实测状态。
+# 它不同于VelocityCommand的FRD米/秒速度合同；FOLLOW sticks是[-1,1]请求，不能直接当m/s。
+# HOLD只在进入时锁当前位置，CRUISE给世界系绝对点，FOLLOW按当前视觉yaw转换水平杆量。
+# LAND仍须命令来源/时间/有效性检查，只是可在缺米制视觉状态时请求原下降路径。
+# reset_counter必须匹配VisionState估计周期；这与VelocityCommand独立生产方reset的约定不同。
+# sequence是本发送会话水位、stamp是源生成时刻；回调接收时间由本机另记，不在本消息里伪造。
+# 身份字段按每字段256个UTF-8字节预算检查；来源文字和单一发布者均不能单独构成控制权限。
+# position/yaw/sticks各自的valid只表示提供了字段，最终还查有限性、模式所需项和飞行包络。
 # 内部运动请求；不能授权 ARM、Offboard 或任何控制租约。
 uint16 schema_version 1 # 协议版本；默认 1，接收方必须拒绝不兼容的版本。
 uint8 DISABLED=0 # 撤销运动输入；已有视觉运动按原退出规则处理。

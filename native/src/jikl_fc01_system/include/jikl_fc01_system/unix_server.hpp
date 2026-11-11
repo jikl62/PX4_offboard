@@ -17,6 +17,8 @@ class UnixServer {
 public:
   // 构造先持路径锁、确认旧路径不存在，再 bind；只保存自己新建 socket 的设备号和 inode。
   explicit UnixServer(std::string path) : path_(std::move(path)) {
+    // 本对象唯一拥有listener_/client_，unique_ptr成员拥有租约；成员会在构造失败时自动析构，
+    // 但原始fd不会自动close，所以每个取得fd后的失败分支都必须显式关闭，不能只说“RAII会处理一切”。
     if (path_.size() >= sizeof(sockaddr_un::sun_path))
       throw std::runtime_error("socket path too long");
     lease_ = std::make_unique<SocketPathLease>(path_);
@@ -30,6 +32,7 @@ public:
     } else if (errno != ENOENT)
       throw std::runtime_error("SOCKET_PATH_UNKNOWN: activation refused");
     listener_ = ::socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+    // ::明确调用系统socket而非同名成员；reinterpret_cast仅适配POSIX地址类型，不改变内存内容。
     sockaddr_un a = address();
     if (listener_ < 0 || ::bind(listener_, reinterpret_cast<sockaddr*>(&a), sizeof(a)) != 0) {
       if (listener_ >= 0)
@@ -59,6 +62,7 @@ public:
     remove_owned_socket();
   }
   UnixServer(const UnixServer&) = delete;
+  // 禁复制保住fd和socket清理所有权；析构只删除与记录device/inode匹配且仍持原锁的自建socket。
   UnixServer& operator=(const UnixServer&) = delete;
   bool connected() const {
     return client_ >= 0;
@@ -71,6 +75,9 @@ public:
   // 同一轮先尝试接入，再发送残留、接收并分行处理；第二客户端只收到 CONSOLE_BUSY 后关闭。
   void poll(const std::function<std::string(const Request&)>& handle,
             const std::function<void()>& disconnected) {
+    // 两个std::function通过const引用同步借用，poll不保存它们；捕获本帧快照引用不会跨控制周期悬空。
+    // handle的std::exception派生异常在分帧层走原断连路径；其它异常或try外分配失败仍向外传播。
+    // disconnected由Runtime处理，socket层不自行改飞控模式。
     accept_client();
     if (client_ < 0)
       return;
@@ -94,6 +101,7 @@ private:
         input_.clear();
         output_.clear();
         last_seq_ = 0;
+        // 新连接用独立请求序列；上一客户端的残行/响应不可挪给新用户。
       }
     }
   }
@@ -108,6 +116,7 @@ private:
     }
     if (!output_.empty()) {
       auto n = ::send(client_, output_.data(), output_.size(), MSG_NOSIGNAL);
+      // MSG_NOSIGNAL使断管变成返回错误；只erase实际发送的前缀，短写或EAGAIN保留剩余数据。
       if (n > 0)
         output_.erase(0, std::size_t(n));
       else if (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -134,6 +143,7 @@ private:
       return;
     }
     input_.append(buffer, std::size_t(n));
+    // buffer是本次栈数组，append复制字节进成员；不会让下一轮使用已经失效的栈指针。
     // 只有完整换行消息才解析；语法错误、非递增序号或处理异常一律断开，防止不确定会话继续。
     for (std::size_t pos; (pos = input_.find('\n')) != std::string::npos;) {
       std::string line = input_.substr(0, pos);
@@ -143,6 +153,7 @@ private:
         if (r.seq <= last_seq_)
           throw std::invalid_argument("SEQUENCE_NOT_NEW");
         last_seq_ = r.seq;
+        // 先消费请求号再执行handle；即使业务拒绝，此序号也不能在同会话复用成新的授权意图。
         publish(handle(r));
       } catch (const std::exception&) {
         drop(disconnected);
@@ -161,6 +172,7 @@ private:
       ::unlink(path_.c_str());
   }
   sockaddr_un address() const {
+    // 返回地址结构的值副本；构造器已检查路径长度，复制含尾零的路径到POSIX固定数组。
     sockaddr_un a{};
     a.sun_family = AF_UNIX;
     std::memcpy(a.sun_path, path_.c_str(), path_.size() + 1);
@@ -168,6 +180,7 @@ private:
   }
   // 先释放 fd 并清缓存，再通知上层，避免回调观察到已失效客户端仍连接。
   void drop(const std::function<void()>& fn) {
+    // 先让connected()可见地变false、清自己的缓存，最后同步通知上层；不能在回调前留下旧连接状态。
     if (client_ >= 0)
       ::close(client_);
     client_ = -1;

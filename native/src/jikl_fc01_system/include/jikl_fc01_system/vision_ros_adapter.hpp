@@ -6,18 +6,23 @@
 #include <cstdint>
 
 namespace fc01::vision {
-// Pure mapping: accepts generated ROS messages or narrow host fixtures. Callback
-// receive time belongs to Inbox, never to a timestamp supplied by a publisher.
+// 模板只要求输入对象具备用到的同名字段，因此真实ROS消息和离线小夹具可以复用同一转换。
+// 字段映射不是坐标变换：本层假定上游已经提供内部NED/FRD，绝不把任意Odometry直接改名后使用。
+// 回调接收时间只由本机Inbox填，不能相信发布者传来的“我刚被接收”时间。
 template <class Stamp>
 // ROS sec/nanosec 转无符号 ns；负秒或超范围纳秒返回 0，让后续时间验证拒绝。
 std::uint64_t message_stamp_ns(const Stamp& stamp) {
   if (stamp.sec < 0 || stamp.nanosec >= 1000000000U)
     return 0;
+  // 先提升到64位再乘十亿，避免先在较窄整数中计算而溢出；0也作为后续校验的无效时间。
+  // 这里只转换单位，不证明两端ROS时钟同步；时钟年龄/未来容差还要在核心检查。
   return std::uint64_t(stamp.sec) * 1000000000ULL + std::uint64_t(stamp.nanosec);
 }
 template <class Message>
 // 实际状态与目标命令分开：保留身份/序号/reset 证据，版本或掩码错误时不复制有效测量。
+// 返回State按值持有数值和字符串；文本复制可能抛分配异常，交给调用者处理。
 State state_from_message(const Message& message) {
+  // State默认的数值是NaN、有效位为0；提前返回的是可撤销旧资格的无效载荷，并非“没有回调”。
   State out;
   out.sequence = message.sequence;
   out.stamp_ns = message_stamp_ns(message.stamp);
@@ -37,6 +42,8 @@ State state_from_message(const Message& message) {
   // V1 只定义低 7 个有效位；未知位不能被静默忽略成合法状态。
   if (message.schema_version != 1 || !out.stamp_ns || (message.valid_fields & ~std::uint16_t(127)))
     return out;
+  // valid_fields按位声明测量：例如1|2|4|64=71，表示位置、速度、姿态和质量有效。
+  // 数组恰好全0不构成有效性证据；未声明的数组继续保留NaN。
   out.initialized = message.initialized;
   out.tracking = message.tracking;
   out.calibration_valid = message.calibration_valid;
@@ -59,7 +66,9 @@ State state_from_message(const Message& message) {
 }
 template <class Message>
 // NavigationCommand 是既有模式/位置/杆量目标，不能与新 VelocityCommand 的 FRD 目标速度互换。
+// 返回Command拥有所复制的字符串；不持有输入消息引用，分配失败向调用者传播。
 Command command_from_message(const Message& message) {
+  // 这是旧模式/位置/归一化杆量合同；与body_frd速度目标是两种类型，不在这里猜测或换算。
   Command out;
   out.sequence = message.sequence;
   out.stamp_ns = message_stamp_ns(message.stamp);
@@ -73,6 +82,7 @@ Command command_from_message(const Message& message) {
   // 模式只允许既有 Disabled/Hold/Cruise/Follow/Land；非法版本/时间/枚举保持默认无效。
   if (message.schema_version != 1 || !out.stamp_ns || message.mode > 4)
     return out;
+  // 先把版本、时间和枚举范围挡住，才static_cast到内部枚举；强制类型转换本身不会自动验范围。
   out.mode = static_cast<Mode>(message.mode);
   out.valid = message.valid;
   out.position_valid = message.position_valid;
