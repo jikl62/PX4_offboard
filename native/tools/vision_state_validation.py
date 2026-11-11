@@ -333,9 +333,18 @@ class Validator:
         if not _number(received_at) or received_at < 0 or not _integer(ros_now_ns, 2**64-1):
             raise ValueError('independent receive clocks must be finite and nonnegative')
         self.counters['received'] += 1
+        reasons = self._observe_clocks(received_at, ros_now_ns)
+        if not reasons:
+            expired, _ = self._cache_age_errors(received_at, ros_now_ns)
+            if expired:
+                # Existing-cache lifetime depends on the observed clocks, not
+                # the new packet's identity. Record a proven gap even when the
+                # incoming epoch will be rejected and clear that cache below.
+                self._cache = None
+                self._previously_rejected = True
+                self._event('expired', expired, observed_at=received_at, observed_on_receive=True)
         epoch = self._observe_epoch(raw, health, metadata)
         same_epoch = epoch is not None and epoch == self._accepted_epoch
-        reasons = self._observe_clocks(received_at, ros_now_ns)
         if epoch is None:
             reasons.append('EPOCH_IDENTITY_INVALID')
         elif not same_epoch:
@@ -343,14 +352,6 @@ class Validator:
                 reasons.append('RETIRED_EPOCH_REPLAY')
             elif len(self._trusted_epochs) >= self.config.epoch_history_capacity:
                 reasons.append('EPOCH_HISTORY_CAPACITY_REACHED')
-        if not reasons:
-            expired, _ = self._cache_age_errors(received_at, ros_now_ns)
-            if expired:
-                # A receive callback may run before a periodic current() check.
-                # New traffic cannot erase the already-proven old-cache gap.
-                self._cache = None
-                self._previously_rejected = True
-                self._event('expired', expired, observed_at=received_at, observed_on_receive=True)
         raw_stamp = _stamp(getattr(getattr(raw, 'header', None), 'stamp', None))
         health_stamp = _stamp(getattr(health, 'stamp', None))
         seq = getattr(health, 'sequence', None)

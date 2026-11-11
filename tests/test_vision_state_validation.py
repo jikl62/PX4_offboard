@@ -173,6 +173,84 @@ class StateValidationTests(unittest.TestCase):
         self.assertTrue(feed(validator, 2, now=1.2, stamp_ns=10200000000).accepted)
         self.assertFalse(validator.current(1.21, 0).accepted)
 
+    def test_expired_cache_is_recorded_before_retired_epoch_rejection_and_recovery(self):
+        validator = m.Validator(config(max_position_step_m=.1))
+        self.assertTrue(feed(validator, 1, now=1., stamp_ns=10000000000).accepted)
+        self.assertTrue(feed(validator, 1, now=1.05, stamp_ns=10050000000,
+                             reset_counter=1, position=(10., 0., 0.)).accepted)
+        validator.drain_events()
+        rejected = feed(validator, 99, now=1.5, stamp_ns=10500000000,
+                        reset_counter=0, position=(0., 0., 0.))
+        self.assertFalse(rejected.accepted)
+        self.assertIn('RETIRED_EPOCH_REPLAY', rejected.diagnostics['reasons'])
+        self.assertEqual(rejected.diagnostics['counters'].get('expired', 0), 1)
+        self.assertEqual(rejected.diagnostics['trusted_epoch_count'], 2)
+        events = validator.drain_events()
+        expiry = next(event for event in events if event['kind'] == 'expired')
+        refusal = next(event for event in events if event['kind'] == 'rejected')
+        self.assertLess(expiry['event_id'], refusal['event_id'])
+        self.assertIn('RECEIVE_SAMPLE_EXPIRED', expiry['reasons'])
+        self.assertTrue(expiry['observed_on_receive'])
+        recovered = feed(validator, 2, now=1.55, stamp_ns=10550000000,
+                         reset_counter=1, position=(10., 0., 0.))
+        self.assertTrue(recovered.accepted)
+        self.assertEqual(recovered.diagnostics['counters']['expired'], 1)
+        self.assertEqual(recovered.diagnostics['last_anomaly'], refusal)
+
+    def test_invalid_identity_cannot_erase_expiry_or_poison_trusted_state(self):
+        for source, reason in (('unknown-source', 'SOURCE_FRAME_OR_CALIBRATION_ID_MISMATCH'),
+                               ('', 'EPOCH_IDENTITY_INVALID')):
+            with self.subTest(source=source):
+                validator = m.Validator(config(max_position_step_m=.1))
+                self.assertTrue(feed(validator, 1, now=1., stamp_ns=10000000000).accepted)
+                validator.drain_events()
+                rejected = feed(validator, 999, now=1.4, stamp_ns=10400000000,
+                                source_id=source, position=(100., 0., 0.))
+                self.assertFalse(rejected.accepted)
+                self.assertIn(reason, rejected.diagnostics['reasons'])
+                self.assertEqual(rejected.diagnostics['counters'].get('expired', 0), 1)
+                self.assertEqual(rejected.diagnostics['trusted_epoch_count'], 1)
+                # Further rejection/current observations cannot count the same
+                # already-revoked cache as another expired sample.
+                self.assertFalse(feed(validator, 1000, now=1.42, stamp_ns=10420000000,
+                                      source_id=source).accepted)
+                self.assertFalse(validator.current(1.43, 10440000000).accepted)
+                recovered = feed(validator, 2, now=1.45, stamp_ns=10450000000)
+                self.assertTrue(recovered.accepted)
+                self.assertEqual(recovered.diagnostics['counters']['expired'], 1)
+                self.assertEqual(recovered.diagnostics['trusted_epoch_count'], 1)
+                expiries = [event for event in validator.drain_events() if event['kind'] == 'expired']
+                self.assertEqual(len(expiries), 1)
+
+    def test_invalid_epoch_cannot_erase_source_age_expiry_with_recent_receipt(self):
+        validator = m.Validator(config(receive_timeout_sec=1., max_source_age_sec=.05))
+        self.assertTrue(feed(validator, 1, now=1., stamp_ns=10000000000).accepted)
+        validator.drain_events()
+        rejected = feed(validator, 2, now=1.1, stamp_ns=10100000000, source_id='')
+        self.assertFalse(rejected.accepted)
+        events = validator.drain_events()
+        expiries = [event for event in events if event['kind'] == 'expired']
+        self.assertEqual(len(expiries), 1)
+        expiry = expiries[0]
+        self.assertEqual(expiry['reasons'], ['SOURCE_SAMPLE_OUTSIDE_TIME_WINDOW'])
+        self.assertTrue(feed(validator, 2, now=1.15, stamp_ns=10150000000).accepted)
+        self.assertEqual(validator.counters['expired'], 1)
+
+    def test_regressed_clock_does_not_create_an_expiry_before_epoch_rejection(self):
+        for received, ros_now, reason in ((1.5, 9990000000, 'ROS_CLOCK_REGRESSION'),
+                                          (.9, 10500000000, 'RECEIVE_CLOCK_REGRESSION')):
+            with self.subTest(reason=reason):
+                validator = m.Validator(config())
+                self.assertTrue(feed(validator, 1, now=1., stamp_ns=10000000000).accepted)
+                validator.drain_events()
+                rejected = feed(validator, 99, now=received, ros_now=ros_now,
+                                stamp_ns=10500000000, source_id='')
+                self.assertFalse(rejected.accepted)
+                self.assertIn(reason, rejected.diagnostics['reasons'])
+                self.assertEqual(validator.counters['expired'], 0)
+                self.assertFalse(any(event['kind'] == 'expired' for event in validator.drain_events()))
+                self.assertTrue(feed(validator, 2, now=1.55, stamp_ns=10550000000).accepted)
+
     def test_duplicate_and_regression_revoke_without_renewing_age(self):
         validator = m.Validator(config())
         feed(validator, 4)

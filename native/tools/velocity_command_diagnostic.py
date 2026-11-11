@@ -10,6 +10,7 @@ import json
 import math
 import os
 from pathlib import Path
+import sys
 import tempfile
 import time
 
@@ -121,6 +122,35 @@ class Receiver:
                         last_valid_age_sec=now - self._last_valid['received_at'],
                         last_valid_sequence=self._last_valid['sequence'])
 
+    def _observe_candidate_expiry(self, now, ros_now_ns):
+        # Both callbacks and snapshots observe the old candidate before any
+        # new packet can replace it. Source lifetime may be shorter than the
+        # receive timeout, so the two clocks need independent checks.
+        errors = []
+        if self._candidate is None:
+            return errors
+        candidate = self._candidate
+        age = now - candidate['received_at']
+        source_age = ((ros_now_ns - candidate['stamp_ns']) / 1e9
+                      if ros_now_ns and candidate['stamp_ns'] else None)
+        if age < 0:
+            errors.append('RECEIVE_CLOCK_REGRESSION')
+        elif self.config.timeout_sec and age >= self.config.timeout_sec:
+            errors.append('RECEIVE_TIMEOUT')
+        if source_age is None:
+            errors.append('ROS_CLOCK_UNAVAILABLE')
+        elif self.config.max_source_age_sec and source_age >= self.config.max_source_age_sec:
+            errors.append('SOURCE_AGE_LIMIT_EXCEEDED')
+        elif self.config.future_tolerance_sec and source_age < -self.config.future_tolerance_sec:
+            errors.append('SOURCE_STAMP_IN_FUTURE')
+        if errors:
+            self._candidate = None
+            self.counters['source_expired'] += 1
+            self._event('cache_revoked', errors, now, ros_now_ns,
+                        last_candidate_sequence=candidate['sequence'],
+                        last_candidate_source_age_sec=source_age)
+        return errors
+
     def _event(self, kind, reasons, now, ros_now_ns, **fields):
         self._event_id += 1
         event = _json_safe(dict(event_id=self._event_id, kind=kind, reasons=list(reasons),
@@ -139,6 +169,10 @@ class Receiver:
         result = list(self._events)
         self._events.clear()
         return result
+
+    @property
+    def last_observed_ros_ns(self):
+        return self._last_observation_ros or 0
 
     def observe_publishers(self, count, now, ros_now_ns):
         if not _integer(count, 2**32 - 1):
@@ -159,6 +193,7 @@ class Receiver:
             raise ValueError('independent receive clocks must be finite and nonnegative')
         clock_errors = self._observe_clocks(received_at, ros_now_ns)
         self._observe_receive_timeout(received_at, ros_now_ns)
+        self._observe_candidate_expiry(received_at, ros_now_ns)
         self.observe_publishers(publisher_count, received_at, ros_now_ns)
         self.counters['received'] += 1
         stamp = getattr(message, 'stamp', None)
@@ -284,6 +319,7 @@ class Receiver:
             raise ValueError('snapshot clocks must be finite and nonnegative')
         self._observe_clocks(now, ros_now_ns)
         self._observe_receive_timeout(now, ros_now_ns)
+        candidate_errors = self._observe_candidate_expiry(now, ros_now_ns)
         if publisher_count is not None:
             self.observe_publishers(publisher_count, now, ros_now_ns)
         age = now - self._last_valid['received_at'] if self._last_valid else None
@@ -302,25 +338,6 @@ class Receiver:
             last['receive_age_sec'] = now - last['received_at']
             last['source_age_sec'] = ((ros_now_ns - last['stamp_ns']) / 1e9
                                       if ros_now_ns and last['stamp_ns'] else None)
-        candidate_errors = []
-        if self._candidate is not None:
-            candidate_age = now - self._candidate['received_at']
-            source_age = ((ros_now_ns - self._candidate['stamp_ns']) / 1e9
-                          if ros_now_ns and self._candidate['stamp_ns'] else None)
-            if candidate_age < 0:
-                candidate_errors.append('RECEIVE_CLOCK_REGRESSION')
-            elif self.config.timeout_sec and candidate_age >= self.config.timeout_sec:
-                candidate_errors.append('RECEIVE_TIMEOUT')
-            if source_age is None:
-                candidate_errors.append('ROS_CLOCK_UNAVAILABLE')
-            elif self.config.max_source_age_sec and source_age >= self.config.max_source_age_sec:
-                candidate_errors.append('SOURCE_AGE_LIMIT_EXCEEDED')
-            elif self.config.future_tolerance_sec and source_age < -self.config.future_tolerance_sec:
-                candidate_errors.append('SOURCE_STAMP_IN_FUTURE')
-            if candidate_errors:
-                self._candidate = None
-                self.counters['source_expired'] += 1
-                self._event('cache_revoked', candidate_errors, now, ros_now_ns)
         if self._candidate is None:
             candidate_errors.append('NO_CURRENT_CANDIDATE')
         if not all(getattr(self.config, name) > 0 for name in LIMIT_NAMES):
@@ -403,13 +420,15 @@ class DiagnosticWriter:
             return False
         return self._write(event, now)
 
-    def flush(self, now):
+    def flush(self, now, *, force=False):
         if self._pending_anomaly is None:
             return False
-        if self.last_logged_at is not None and 0 <= now - self.last_logged_at < self.min_interval:
+        if not force and self.last_logged_at is not None and 0 <= now - self.last_logged_at < self.min_interval:
             return False
-        pending, self._pending_anomaly = self._pending_anomaly, None
-        return self._write(pending, now)
+        written = self._write(self._pending_anomaly, now)
+        if written:
+            self._pending_anomaly = None
+        return written
 
     def _write(self, event, now):
         value = dict(event, log_events_suppressed=self.suppressed)
@@ -447,10 +466,51 @@ class DiagnosticWriter:
                 os.unlink(temporary)
 
 
+def finalize_diagnostic(receiver, writer, topic, now, system_now_ns):
+    """Persist final evidence without querying a possibly stopped ROS context.
+
+    The caller supplies the independent steady/system observations. Keep the
+    last observed ROS time for cache checks: system time is not interchangeable
+    with a simulated or otherwise separate ROS clock. The receiver also keeps
+    its last graph observation. File failures are reported after the remaining
+    output operations have been attempted.
+    """
+    if not _integer(system_now_ns, 2**64 - 1):
+        raise ValueError('shutdown system time must be a nonnegative integer')
+    ros_now_ns = receiver.last_observed_ros_ns
+    value = receiver.snapshot(now, ros_now_ns)
+    value.update(topic=topic, receiver_running=False,
+                 stopped_at_monotonic=now, stopped_at_ros_ns=ros_now_ns,
+                 stopped_at_system_ns=system_now_ns,
+                 shutdown_clock_source='last_observed_ros_clock',
+                 cache_usable=False, current_candidate=None)
+    value['cache_errors'] = list(dict.fromkeys(value['cache_errors'] + ['RECEIVER_STOPPED']))
+    failures = []
+    for event in receiver.drain_events():
+        try:
+            writer.record(event, now)
+        except (OSError, ValueError) as error:
+            failures.append(error)
+    try:
+        writer.flush(now, force=True)
+    except (OSError, ValueError) as error:
+        failures.append(error)
+    value['log_events_suppressed'] = writer.suppressed
+    try:
+        writer.snapshot(value)
+    except (OSError, ValueError) as error:
+        failures.append(error)
+    if failures:
+        raise failures[0]
+    return value
+
+
 def main(args=None):
     import rclpy
     from rclpy.node import Node
+    from rclpy.executors import ExternalShutdownException
     from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+    from rcl_interfaces.msg import ParameterDescriptor
     from jikl_fc01_system.msg import VelocityCommand
 
     class DiagnosticNode(Node):
@@ -458,7 +518,8 @@ def main(args=None):
             super().__init__('fc01_velocity_command_diagnostic')
 
             def parameter(name, default):
-                return self.declare_parameter(name, default).value
+                return self.declare_parameter(name, default, descriptor=ParameterDescriptor(
+                    read_only=True, description='Startup-only diagnostic configuration; restart to change.')).value
 
             self.topic = parameter('topic', DEFAULT_TOPIC)
             depth = parameter('qos_depth', 5)
@@ -498,6 +559,7 @@ def main(args=None):
             now, ros_now, publishers = self.receive_context()
             value = self.receiver.snapshot(now, ros_now, publishers)
             value['topic'] = self.topic
+            value['receiver_running'] = True
             value['log_events_suppressed'] = self.writer.suppressed
             self.flush_events(now)
             self.writer.flush(now)
@@ -508,11 +570,19 @@ def main(args=None):
     try:
         node = DiagnosticNode()
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         if node is not None:
-            node.destroy_node()
+            try:
+                finalize_diagnostic(node.receiver, node.writer, node.topic,
+                                    time.monotonic(), time.time_ns())
+            except Exception as error:
+                # The logger and DDS context may already have shut down.
+                # A storage failure must not replace the original exception.
+                print('FC01_DIAGNOSTIC_FINALIZE_FAILED ' + repr(error), file=sys.stderr)
+            finally:
+                node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
 

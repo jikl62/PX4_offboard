@@ -159,11 +159,22 @@ class Session {
     if(!std::isfinite(trusted_yaw_reference))return rejected("YAW_REFERENCE_INVALID");
     out.body_target=target_.body_velocity;
     out.world_target=rotate_body_to_world(*attitude::normalized(state_.attitude),out.body_target);
+    // Validate each intermediate before a limiter can turn an infinite norm
+    // into a zero scale or clamp an infinite vertical value into a finite one.
+    if(!vision::detail::finite(out.world_target)||
+       !std::isfinite(std::hypot(out.world_target[0],out.world_target[1])))
+      return rejected("VELOCITY_PREVIEW_NONFINITE_WORLD_TARGET");
     vision::detail::bound_xy(out.world_target,c_.max_speed);
     out.world_target[2]=std::clamp(out.world_target[2],-c_.max_vertical_speed,c_.max_vertical_speed);
     out.measured_world_velocity=state_.velocity;
     for(std::size_t i=0;i<3;++i)out.velocity_error[i]=out.world_target[i]-state_.velocity[i];
+    if(!vision::detail::finite(out.velocity_error)||
+       !std::isfinite(std::hypot(std::hypot(out.velocity_error[0],out.velocity_error[1]),out.velocity_error[2])))
+      return rejected("VELOCITY_PREVIEW_NONFINITE_VELOCITY_ERROR");
     out.horizontal_acceleration={c_.velocity_gain*out.velocity_error[0],c_.velocity_gain*out.velocity_error[1],0};
+    if(!vision::detail::finite(out.horizontal_acceleration)||
+       !std::isfinite(std::hypot(out.horizontal_acceleration[0],out.horizontal_acceleration[1])))
+      return rejected("VELOCITY_PREVIEW_NONFINITE_ACCELERATION");
     const double limit=std::min(c_.max_acceleration,vision::detail::gravity*std::tan(c_.max_tilt_deg*vision::detail::pi/180));
     vision::detail::bound_xy(out.horizontal_acceleration,limit);
     out.yaw_reference=vision::detail::wrap(trusted_yaw_reference);

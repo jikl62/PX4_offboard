@@ -134,6 +134,49 @@ static void bad_command_never_recovers_through_good_tail(){
     feed(session);need(preview(session).valid,"new explicit offline attempt can recover");
   }
 }
+static void intermediate_overflow_is_not_hidden_by_limits(){
+  auto wanted=target();wanted.body_velocity={0,0,0};
+  for(const auto& velocity:{vi::Vec3{1.2e308,1.2e308,0},
+                            vi::Vec3{1.3e308,1.3e308,0},
+                            vi::Vec3{std::numeric_limits<double>::max(),0,0}}){
+    vi::Session session(policy());auto measured=state();measured.velocity=velocity;
+    feed(session,measured,wanted);const auto out=preview(session);
+    need(!out.valid,"finite input with an overflowing error, product or norm must not qualify preview");
+    need(out.reason=="VELOCITY_PREVIEW_NONFINITE_VELOCITY_ERROR"||
+         out.reason=="VELOCITY_PREVIEW_NONFINITE_ACCELERATION","overflow retains its calculation stage");
+    need(std::isnan(out.horizontal_acceleration[0])&&std::isnan(out.attitude_preview[0]),
+         "rejected overflow must not expose a usable zero-braking preview");
+    need(!preview(session).valid,"overflow cannot be cleared by another preview call");
+  }
+  // Exercise subtraction overflow separately from gain/norm overflow.
+  auto large_policy=policy();large_policy.max_command_speed_mps=1.5e308;
+  v::Config large_config;large_config.max_speed=1.5e308;
+  vi::Session difference(large_policy,large_config);auto measured=state();
+  measured.velocity={-1.2e308,0,0};wanted.body_velocity={1.2e308,0,0};
+  feed(difference,measured,wanted);auto out=preview(difference);
+  need(!out.valid&&out.reason=="VELOCITY_PREVIEW_NONFINITE_VELOCITY_ERROR",
+       "opposite finite velocities cannot overflow subtraction then be washed through a limiter");
+
+  // Large representable norms still retain their direction and normal limits.
+  vi::Session representable(policy());measured=state();measured.velocity={1.e308,1.e308,0};
+  wanted.body_velocity={0,0,0};feed(representable,measured,wanted);out=preview(representable);
+  need(out.valid,"representable finite acceleration norm remains computable");
+  need(out.horizontal_acceleration[0]<0&&out.horizontal_acceleration[1]<0&&
+       near(out.horizontal_acceleration[0],out.horizontal_acceleration[1]),
+       "representable large feedback preserves the braking direction");
+  need(near(std::hypot(out.horizontal_acceleration[0],out.horizontal_acceleration[1]),.6),
+       "representable large feedback uses the existing acceleration limit");
+
+  for(double multiplier:{.999999,1.,1.000001}){
+    vi::Session ordinary(policy());measured=state();
+    measured.velocity={-.3*multiplier,-.4*multiplier,0};feed(ordinary,measured,wanted);out=preview(ordinary);
+    const double expected=std::min(.6,.6*multiplier);
+    need(out.valid&&near(std::hypot(out.horizontal_acceleration[0],out.horizontal_acceleration[1]),expected),
+         "ordinary vectors on either side of the acceleration bound retain normal limiting");
+    need(near(out.horizontal_acceleration[0]/out.horizontal_acceleration[1],.75),
+         "ordinary limiting preserves acceleration direction");
+  }
+}
 static void bad_states_and_graph_events_are_sticky(){
   for(int fault=0;fault<12;++fault){
     vi::Session session(policy());feed(session);auto bad=state();bad.sequence=2;bad.stamp_ns+=50000000;
@@ -200,6 +243,7 @@ static void clocks_sequences_and_duplicate_leases(){
 int main(){
   wire_contract_and_unconfigured_policy();actual_target_separation_and_modes();
   full_three_dimensional_body_rotation_and_limits();bad_command_never_recovers_through_good_tail();
+  intermediate_overflow_is_not_hidden_by_limits();
   bad_states_and_graph_events_are_sticky();clocks_sequences_and_duplicate_leases();
   std::cout<<"VELOCITY_COMMAND_INPUT_PREVIEW_ONLY_PASS checks="<<checks<<" control_authority=false\n";
 }

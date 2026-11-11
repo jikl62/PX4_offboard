@@ -91,6 +91,8 @@ def main():
     from rclpy.node import Node
     from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
     from rclpy.serialization import serialize_message, deserialize_message
+    from rcl_interfaces.msg import Parameter, ParameterValue, ParameterType
+    from rcl_interfaces.srv import DescribeParameters, GetParameters, SetParameters
     from rosidl_runtime_py.utilities import get_message
     from jikl_fc01_system.msg import VelocityCommand
 
@@ -139,6 +141,46 @@ def main():
     def count(current, key):
         return current.get('counters', {}).get(key, 0)
 
+    def parameter_call(service_type, suffix, request):
+        client = node.create_client(service_type, '/' + DIAGNOSTIC_NODE + '/' + suffix)
+        try:
+            require(client.wait_for_service(timeout_sec=5.),
+                    'diagnostic parameter service missing: ' + suffix)
+            future = client.call_async(request)
+            deadline = time.monotonic() + 5.
+            while not future.done() and time.monotonic() < deadline:
+                rclpy.spin_once(node, timeout_sec=.05)
+                isolated_graph()
+            require(future.done(), 'diagnostic parameter call timed out: ' + suffix)
+            return future.result()
+        finally:
+            node.destroy_client(client)
+
+    def check_startup_parameters_are_read_only():
+        names = ['topic', 'qos_depth', 'reliable', 'snapshot_period_sec',
+                 'timeout_sec', 'max_source_age_sec', 'future_tolerance_sec',
+                 'max_speed_mps', 'expected_source_id', 'output_dir',
+                 'log_max_bytes', 'log_backup_count', 'log_min_interval_sec']
+        described = parameter_call(DescribeParameters, 'describe_parameters',
+                                   DescribeParameters.Request(names=names))
+        require(len(described.descriptors) == len(names) and
+                all(value.read_only for value in described.descriptors),
+                'startup-only diagnostic parameter advertised as mutable')
+        changes = [Parameter(name='timeout_sec', value=ParameterValue(
+                       type=ParameterType.PARAMETER_DOUBLE, double_value=2.)),
+                   Parameter(name='expected_source_id', value=ParameterValue(
+                       type=ParameterType.PARAMETER_STRING, string_value='unbound-change'))]
+        changed = parameter_call(SetParameters, 'set_parameters',
+                                 SetParameters.Request(parameters=changes))
+        require(len(changed.results) == 2 and all(not value.successful for value in changed.results),
+                'startup-only parameter update silently succeeded')
+        current = parameter_call(GetParameters, 'get_parameters',
+                                 GetParameters.Request(names=['timeout_sec', 'expected_source_id']))
+        require(len(current.values) == 2 and
+                current.values[0].double_value == TEST_TIMEOUT_SEC and
+                current.values[1].string_value == '',
+                'rejected runtime parameter update changed the startup configuration')
+
     def make_message(sequence, reset=0, source='synthetic-smoke-A', valid=True):
         message = VelocityCommand(sequence=sequence, reset_counter=reset,
                                   source_id=source, frame_id='body_frd', valid=valid,
@@ -171,7 +213,7 @@ def main():
     def stop_process():
         nonlocal process
         if process is None:
-            return
+            return None
         if process.poll() is None:
             process.send_signal(signal.SIGINT)
             try:
@@ -183,16 +225,18 @@ def main():
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait(timeout=5)
+        code = process.returncode
         process = None
+        return code
 
     try:
         with tempfile.TemporaryDirectory(prefix='fc01_velocity_ros_smoke_') as temporary:
             directory = Path(temporary)
             logs = tempfile.TemporaryFile(mode='w+')
 
-            def start_diagnostic(reliable):
+            def start_diagnostic(reliable, *, name=None, overrides=None):
                 nonlocal process, snapshot_path
-                output = directory / ('reliable' if reliable else 'best_effort')
+                output = directory / (name or ('reliable' if reliable else 'best_effort'))
                 output.mkdir()
                 snapshot_path = output / 'velocity_command_diagnostic.json'
                 command = [sys.executable, str(args.diagnostic), '--ros-args']
@@ -201,6 +245,7 @@ def main():
                               'timeout_sec': str(TEST_TIMEOUT_SEC),
                               'snapshot_period_sec': '0.05',
                               'log_min_interval_sec': '0.01'}
+                parameters.update(overrides or {})
                 for key, value in parameters.items():
                     command += ['-p', key + ':=' + value]
                 process = subprocess.Popen(command, stdin=subprocess.DEVNULL,
@@ -214,6 +259,12 @@ def main():
                 isolated_graph()
 
             start_diagnostic(False)
+            check_startup_parameters_are_read_only()
+            unchanged = wait_for(lambda current: current.get('limits', {}).get('timeout_sec') == TEST_TIMEOUT_SEC,
+                                 'startup override retained after rejected parameter update')
+            require(unchanged.get('expected_source_id') is None,
+                    'rejected source binding appeared in receiver configuration')
+            result['checks'].append('startup_overrides_and_read_only_runtime_parameters')
             best_effort = new_publisher(False)
             wait_for(lambda current: current.get('publisher_count') == 1,
                      'one best effort source')
@@ -327,6 +378,40 @@ def main():
             result['checks'].append('reliable_to_reliable')
             isolated_graph()
             stop_process()
+            destroy_publisher(reliable)
+            wait_deadline = time.monotonic() + 8.
+            while DIAGNOSTIC_NODE in node.get_node_names() and time.monotonic() < wait_deadline:
+                rclpy.spin_once(node, timeout_sec=.05)
+            require(DIAGNOSTIC_NODE not in node.get_node_names(),
+                    'reliable diagnostic still appears before shutdown test')
+
+            # Deliberately long fixture periods keep the invalid event pending
+            # until SIGINT; this checks finalization after rclpy shuts its context.
+            start_diagnostic(True, name='shutdown', overrides={
+                'snapshot_period_sec': '60.0', 'log_min_interval_sec': '60.0'})
+            reliable = new_publisher(True)
+            wait_for(lambda _: reliable.get_subscription_count() == 1,
+                     'shutdown test reliable subscription')
+            reliable.publish(make_message(99, valid=False))
+            delivery_deadline = time.monotonic() + 1.
+            while time.monotonic() < delivery_deadline:
+                rclpy.spin_once(node, timeout_sec=.05)
+                isolated_graph()
+            exit_code = stop_process()
+            require(exit_code == 0, 'SIGINT diagnostic finalization failed')
+            final = snapshot()
+            require(final is not None and final.get('receiver_running') is False and
+                    final.get('last_message', {}).get('sequence') == 99 and
+                    'COMMAND_INVALID' in final.get('latest_errors', []),
+                    'shutdown lost the final invalid observation or running-state marker')
+            records = [json.loads(line) for line in snapshot_path.with_name(
+                'velocity_command_diagnostic.log').read_text().splitlines()]
+            require(any('COMMAND_INVALID' in (entry.get('reasons', []) +
+                                             entry.get('coalesced_reasons', [])) for entry in records),
+                    'SIGINT lost the throttled pending anomaly from the log')
+            require(final.get('control_authority') is False and not final.get('cache_usable'),
+                    'stopped diagnostic retained a usable control candidate')
+            result['checks'].append('sigint_final_snapshot_and_forced_anomaly_flush')
             result['passed'] = True
             if args.report:
                 args.report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n',

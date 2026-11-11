@@ -8,6 +8,7 @@ import sys
 import tempfile
 from types import SimpleNamespace as NS
 import unittest
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'native/tools/velocity_command_diagnostic.py'
@@ -316,6 +317,47 @@ class ReceiverTests(unittest.TestCase):
         self.assertEqual(state['last_anomaly']['last_valid_sequence'], 1)
         self.assertAlmostEqual(state['last_anomaly']['last_valid_age_sec'], .4)
 
+    def test_source_gap_is_recorded_before_a_healthy_tail_without_snapshot(self):
+        receiver = self.receiver(timeout_sec=1., max_speed_mps=.5, max_source_age_sec=.05,
+                                 future_tolerance_sec=.01, expected_source_id='synthetic-session-1')
+        receiver.receive(message(stamp=NS(sec=100, nanosec=0)), 10., 100000000000, 1)
+        receiver.drain_events()
+        accepted = receiver.receive(message(2, stamp=NS(sec=100, nanosec=100000000)),
+                                    10.1, 100100000000, 1)
+        self.assertTrue(accepted['accepted'])
+        state = receiver.snapshot(10.1, 100100000000)
+        self.assertTrue(state['cache_usable'])
+        self.assertEqual(state['counters']['timeout'], 0)
+        self.assertEqual(state['counters']['source_expired'], 1)
+        self.assertEqual(state['last_anomaly']['kind'], 'cache_revoked')
+        self.assertEqual(state['last_anomaly']['last_candidate_sequence'], 1)
+        self.assertEqual(state['last_anomaly']['reasons'], ['SOURCE_AGE_LIMIT_EXCEEDED'])
+        events = receiver.drain_events()
+        self.assertEqual([value['kind'] for value in events], ['cache_revoked', 'message'])
+        self.assertEqual(events[0]['event_id'], state['last_anomaly']['event_id'])
+
+    def test_source_gap_survives_invalid_tail_and_is_not_double_counted(self):
+        receiver = self.receiver(timeout_sec=1., max_speed_mps=.5, max_source_age_sec=.05,
+                                 future_tolerance_sec=.01, expected_source_id='synthetic-session-1')
+        receiver.receive(message(stamp=NS(sec=100, nanosec=0)), 10., 100000000000, 1)
+        receiver.drain_events()
+        rejected = receiver.receive(message(2, valid=False, stamp=NS(sec=100, nanosec=100000000)),
+                                    10.1, 100100000000, 1)
+        self.assertFalse(rejected['accepted'])
+        state = receiver.snapshot(10.11, 100110000000)
+        self.assertFalse(state['cache_usable'])
+        self.assertEqual(state['counters']['source_expired'], 1)
+        events = receiver.drain_events()
+        self.assertEqual([value['kind'] for value in events], ['cache_revoked', 'message'])
+        self.assertIn('SOURCE_AGE_LIMIT_EXCEEDED', events[0]['reasons'])
+        self.assertIn('COMMAND_INVALID', events[1]['reasons'])
+        receiver.receive(message(3, stamp=NS(sec=100, nanosec=120000000)),
+                         10.12, 100120000000, 1)
+        state = receiver.snapshot(10.13, 100130000000)
+        self.assertTrue(state['cache_usable'])
+        self.assertEqual(state['counters']['source_expired'], 1)
+        self.assertIn('COMMAND_INVALID', state['last_anomaly']['reasons'])
+
     def test_stream_history_capacity_never_evicts_old_replay_evidence(self):
         receiver = self.qualified()
         for reset in range(diagnostic.STREAM_HISTORY_CAPACITY):
@@ -422,6 +464,92 @@ class WriterTests(unittest.TestCase):
             self.assertEqual(len(lines), 2)
             self.assertEqual(lines[-1]['reasons'], ['COMMAND_INVALID'])
             self.assertEqual(lines[-1]['log_events_suppressed'], 2)
+
+    def test_forced_flush_writes_pending_anomaly_once_before_interval(self):
+        with tempfile.TemporaryDirectory(prefix='fc01_velocity_diag_force_') as directory:
+            writer = diagnostic.DiagnosticWriter(directory, log_min_interval_sec=60.)
+            writer.record(dict(kind='message', event_id=1, reasons=[]), 10.)
+            writer.record(dict(kind='message', event_id=2, reasons=['COMMAND_INVALID']), 10.1)
+            self.assertFalse(writer.flush(10.2))
+            self.assertTrue(writer.flush(10.2, force=True))
+            self.assertFalse(writer.flush(10.2, force=True))
+            lines = [json.loads(line) for line in (Path(directory) / 'velocity_command_diagnostic.log').read_text().splitlines()]
+            self.assertEqual(len(lines), 2)
+            self.assertEqual(lines[-1]['event_id'], 2)
+            self.assertEqual(lines[-1]['reasons'], ['COMMAND_INVALID'])
+
+    def test_failed_forced_flush_retains_pending_anomaly_for_retry(self):
+        with tempfile.TemporaryDirectory(prefix='fc01_velocity_diag_force_retry_') as directory:
+            writer = diagnostic.DiagnosticWriter(directory, log_min_interval_sec=60.)
+            writer.record(dict(kind='message', event_id=1, reasons=[]), 10.)
+            writer.record(dict(kind='message', event_id=2, reasons=['COMMAND_INVALID']), 10.1)
+            with patch.object(writer, '_write', side_effect=OSError('synthetic full disk')):
+                with self.assertRaises(OSError):
+                    writer.flush(10.2, force=True)
+            self.assertTrue(writer.flush(10.3, force=True))
+            self.assertFalse(writer.flush(10.3, force=True))
+
+    def test_shutdown_persists_pending_anomaly_and_terminal_snapshot_without_ros(self):
+        with tempfile.TemporaryDirectory(prefix='fc01_velocity_diag_stop_') as directory:
+            receiver = diagnostic.Receiver()
+            writer = diagnostic.DiagnosticWriter(directory, log_min_interval_sec=60.)
+            receiver.receive(message(valid=False), 10., 100001000000, 1)
+            for event in receiver.drain_events():
+                writer.record(event, 10.)
+            value = diagnostic.finalize_diagnostic(receiver, writer, '/synthetic/velocity',
+                                                  10.1, 100101000000)
+            self.assertFalse(value['receiver_running'])
+            self.assertFalse(value['cache_usable'])
+            self.assertIsNone(value['current_candidate'])
+            self.assertIn('RECEIVER_STOPPED', value['cache_errors'])
+            self.assertEqual(value['publisher_count'], 1)
+            self.assertEqual(value['stopped_at_monotonic'], 10.1)
+            self.assertEqual(value['stopped_at_ros_ns'], 100001000000)
+            self.assertEqual(value['stopped_at_system_ns'], 100101000000)
+            self.assertEqual(value['last_message']['sequence'], 1)
+            snapshot = json.loads((Path(directory) / 'velocity_command_diagnostic.json').read_text())
+            self.assertEqual(snapshot, value)
+            self.assertIn('COMMAND_INVALID', snapshot['latest_errors'])
+            lines = [json.loads(line) for line in (Path(directory) / 'velocity_command_diagnostic.log').read_text().splitlines()]
+            self.assertTrue(any('COMMAND_INVALID' in row['reasons'] for row in lines))
+
+    def test_shutdown_does_not_substitute_system_time_for_simulated_ros_clock(self):
+        receiver = diagnostic.Receiver(diagnostic.DiagnosticConfig(
+            timeout_sec=1., max_speed_mps=.5, max_source_age_sec=.05,
+            future_tolerance_sec=.01, expected_source_id='synthetic-session-1'))
+        receiver.receive(message(stamp=NS(sec=100, nanosec=0)), 10., 100000000000, 1)
+        receiver.drain_events()
+        system_now_ns = 1700000000000000000
+        value = diagnostic.finalize_diagnostic(receiver, diagnostic.DiagnosticWriter(),
+                                              '/synthetic/velocity', 10.01, system_now_ns)
+        self.assertEqual(value['stopped_at_ros_ns'], 100000000000)
+        self.assertEqual(value['stopped_at_system_ns'], system_now_ns)
+        self.assertEqual(value['shutdown_clock_source'], 'last_observed_ros_clock')
+        self.assertEqual(value['counters']['source_expired'], 0)
+        self.assertEqual(value['counters']['clock_regression'], 0)
+        self.assertIsNone(value['last_anomaly'])
+        self.assertFalse(value['cache_usable'])
+        self.assertIsNone(value['current_candidate'])
+        self.assertIn('RECEIVER_STOPPED', value['cache_errors'])
+
+    def test_shutdown_without_ros_observation_keeps_clock_unknown(self):
+        value = diagnostic.finalize_diagnostic(diagnostic.Receiver(), diagnostic.DiagnosticWriter(),
+                                              '/synthetic/velocity', 10., 1700000000000000000)
+        self.assertEqual(value['stopped_at_ros_ns'], 0)
+        self.assertEqual(value['shutdown_clock_source'], 'last_observed_ros_clock')
+        self.assertFalse(value['receiver_running'])
+
+    def test_shutdown_snapshot_is_attempted_after_log_io_failure(self):
+        receiver = diagnostic.Receiver()
+        receiver.receive(message(valid=False), 10., 100001000000, 1)
+        writer = diagnostic.DiagnosticWriter()
+        with patch.object(writer, 'record', side_effect=OSError('synthetic log failure')), \
+             patch.object(writer, 'flush', side_effect=OSError('synthetic flush failure')), \
+             patch.object(writer, 'snapshot') as snapshot:
+            with self.assertRaisesRegex(OSError, 'synthetic log failure'):
+                diagnostic.finalize_diagnostic(receiver, writer, '/synthetic/velocity', 10.1, 100101000000)
+            snapshot.assert_called_once()
+            self.assertFalse(snapshot.call_args.args[0]['receiver_running'])
 
     def test_oversize_event_cannot_break_file_limit(self):
         with tempfile.TemporaryDirectory(prefix='fc01_velocity_diag_oversize_') as directory:
