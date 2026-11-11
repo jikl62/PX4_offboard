@@ -317,6 +317,46 @@ static void yaw_wrap_all_quadrants_and_covariance(){
   in=input();in.command.mode=v::Mode::Land;in.state={};v::Controller land(config());
   require(land.step(in,10,.5,0,.05).request_land,"explicit fresh Land needs no valid vision estimate");
 }
+static void intermediate_overflow_cannot_be_hidden_by_control_limits(){
+  // 每轴仍有限、合加速度却溢出的输入，不能在限幅时被洗成零制动并激活。
+  for(const auto& velocity:{v::Vec3{1.2e308,1.2e308,0},v::Vec3{1.3e308,1.3e308,0},
+                            v::Vec3{1.7e308,0,0}}){
+    auto in=input();in.state.velocity=velocity;v::Controller c(config());
+    const auto out=step(c,in);
+    require(!out.active&&!out.request_land&&out.reason=="NAVIGATION_NONFINITE_PLAN",
+            "first overflowing calculation must wait without exposing an active zero-braking plan");
+  }
+
+  // 大而可表示的合加速度仍按原限幅保留刹车方向，不能一律拒绝大数。
+  auto in=input();in.state.velocity={1.e308,1.e308,0};v::Controller representable(config());
+  const auto good=step(representable,in);
+  require(good.active&&good.acceleration_target[0]<0&&good.acceleration_target[1]<0,
+          "representable large feedback retains both braking directions");
+  require(near(std::hypot(good.acceleration_target[0],good.acceleration_target[1]),.6),
+          "representable feedback obeys the existing acceleration cap");
+
+  // 正在执行的控制计划遇到相同算术异常，沿用既有降落锁存而不是静默归零。
+  auto permissive=config();permissive.max_velocity_jump=1.e308;
+  v::Controller active(permissive);require(step(active,in).active,"activate representable input first");
+  advance(in);in.state.velocity={1.3e308,1.3e308,0};const auto failed=step(active,in);
+  require(failed.request_land&&!failed.active&&failed.reason=="NAVIGATION_NONFINITE_PLAN",
+          "active arithmetic overflow must retain the existing landing latch");
+  advance(in);in.state.velocity={1.e308,1.e308,0};const auto healthy_tail=step(active,in);
+  require(healthy_tail.request_land&&!healthy_tail.active&&healthy_tail.reason==failed.reason,
+          "fresh representable feedback cannot clear an arithmetic landing latch");
+
+  // 位置增益、速度误差减法与垂向预限幅分别构造溢出，避免只覆盖二维范数。
+  for(int fault=0;fault<3;++fault){
+    auto large=config();large.position_gain=1.3e308;large.max_speed=1.5e308;
+    in=input();in.command.mode=v::Mode::Cruise;in.command.position_valid=true;
+    in.command.position={1,1,0};
+    if(fault==1){large.position_gain=1.e308;in.command.position={1,0,0};in.state.velocity={-1.e308,0,0};}
+    if(fault==2){large.position_gain=1.e308;in.command.position={0,0,-2};}
+    v::Controller c(large);const auto out=step(c,in);
+    require(!out.active&&out.reason=="NAVIGATION_NONFINITE_PLAN",
+            "target norm, velocity subtraction and vertical product overflow cannot be clamped into validity");
+  }
+}
 int main(){
   waiting_and_validity();cruise_and_feedback();hold_is_stable();follow_axes();inbox_replay_and_invalidation();
   current_revalidates_both_clocks_and_identity();active_faults_latch_land();optional_fields_and_limits();
@@ -324,5 +364,6 @@ int main(){
   arrival_delay_consumes_ttl_without_replacing_it();
   inbox_identity_revocation_precedes_sequence_deduplication();inbox_health_revocation_is_sticky_without_renewing_old_samples();
   inbox_initialization_can_recover_before_first_plan();
+  intermediate_overflow_cannot_be_hidden_by_control_limits();
   std::cout<<"VISION_NAVIGATION_INBOX_CLOCKS_VALIDITY_XY_FEEDBACK_FOUR_AXES_FINAL_CURRENT_LANDING_LATCH_PASS\n";
 }

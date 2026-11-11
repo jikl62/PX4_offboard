@@ -192,18 +192,30 @@ class Controller {
       yaw_target_=detail::wrap(yaw_target_+in.command.sticks[2]*c_.max_yaw_rate*dt);
       yaw_goal_=yaw_target_;
     }else{
-      output.velocity_target={c_.position_gain*(position_target_[0]-in.state.position[0]),
+      // 先保留三轴位置误差乘增益的原始结果；垂向限幅不能掩盖计算溢出。
+      const Vec3 raw_velocity_target{c_.position_gain*(position_target_[0]-in.state.position[0]),
         c_.position_gain*(position_target_[1]-in.state.position[1]),
-        std::clamp(c_.position_gain*(position_target_[2]-in.state.position[2]),-c_.max_vertical_speed,c_.max_vertical_speed)};
+        c_.position_gain*(position_target_[2]-in.state.position[2])};
+      if(!detail::finite(raw_velocity_target))return reject("NAVIGATION_NONFINITE_PLAN");
+      output.velocity_target=raw_velocity_target;
+      output.velocity_target[2]=std::clamp(raw_velocity_target[2],-c_.max_vertical_speed,c_.max_vertical_speed);
       // Only the target is translated; PX4 Z/Vz remains the vertical feedback.
       output.target_height=px4_height+in.state.position[2]-position_target_[2];
       yaw_target_=detail::wrap(yaw_target_+std::clamp(detail::wrap(yaw_goal_-yaw_target_),-c_.max_yaw_rate*dt,c_.max_yaw_rate*dt));
     }
     if(!std::isfinite(output.target_height)||output.target_height<0||output.target_height>c_.max_height)
       return reject("NAVIGATION_HEIGHT_TARGET_OUTSIDE_ENVELOPE");
+    // 有限分量的合速度仍可能溢出；必须在限幅前拒绝，避免乘以零后伪装成正常目标。
+    if(!detail::finite(output.velocity_target)||
+       !std::isfinite(std::hypot(output.velocity_target[0],output.velocity_target[1])))
+      return reject("NAVIGATION_NONFINITE_PLAN");
     detail::bound_xy(output.velocity_target,c_.max_speed);
     output.acceleration_target={c_.velocity_gain*(output.velocity_target[0]-in.state.velocity[0]),
       c_.velocity_gain*(output.velocity_target[1]-in.state.velocity[1]),0};
+    // 加速度使用世界 NED 的 m/s²；先检查误差增益结果及二维模长，再执行原有倾角/加速度限幅。
+    if(!detail::finite(output.acceleration_target)||
+       !std::isfinite(std::hypot(output.acceleration_target[0],output.acceleration_target[1])))
+      return reject("NAVIGATION_NONFINITE_PLAN");
     const double acceleration_limit=std::min(c_.max_acceleration,detail::gravity*std::tan(c_.max_tilt_deg*detail::pi/180));
     detail::bound_xy(output.acceleration_target,acceleration_limit);
     output.yaw=yaw_target_;output.q=detail::attitude_target(output.acceleration_target,yaw_target_);
