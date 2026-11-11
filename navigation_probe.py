@@ -136,6 +136,96 @@ class RcGroundEvidence:
         )
 
 
+def _create_ground_subscriptions(node, evidence, rc, status_type, land_type, qos):
+    """只创建原只读话题订阅，返回(subs, rc_topics)保持订阅生命周期；回调记录墙钟/单调秒。
+
+    rc可为None；不创建发布者、不修改飞控。
+    订阅顺序和冻结kind的规则保持原样。
+    """
+
+    # ROS回调只抽取合同字段并记录此刻wall/monotonic，不修改PX4。
+    def receive(kind, msg):
+        fields = (
+            ('timestamp', 'system_id', 'component_id', 'arming_state')
+            if kind == 'status'
+            else ('timestamp', 'landed', 'at_rest')
+        )
+        evidence.observe(kind, {k: getattr(msg, k) for k in fields}, time.time(), time.monotonic())
+
+    subs = [
+        node.create_subscription(
+            status_type,
+            '/fmu/out/vehicle_status_v1',
+            lambda m: receive('status', m),
+            qos,
+        ),
+        node.create_subscription(
+            land_type,
+            '/fmu/out/vehicle_land_detected',
+            lambda m: receive('land', m),
+            qos,
+        ),
+    ]
+    rc_topics = {}
+    if rc is not None:
+        from px4_msgs.msg import ManualControlSetpoint, ManualControlSwitches, FailsafeFlags
+
+        rc_topics = {
+            'manual': '/fmu/out/manual_control_setpoint',
+            'switches': '/fmu/out/manual_control_switches',
+            'flags': '/fmu/out/failsafe_flags',
+        }
+        rc_fields = {
+            'manual': (
+                'timestamp',
+                'timestamp_sample',
+                'valid',
+                'data_source',
+                'sticks_moving',
+                'roll',
+                'pitch',
+                'yaw',
+                'throttle',
+            ),
+            'switches': (
+                'timestamp',
+                'timestamp_sample',
+                'arm_switch',
+                'kill_switch',
+                'mode_slot',
+                'return_switch',
+                'loiter_switch',
+                'offboard_switch',
+            ),
+            'flags': ('timestamp', 'manual_control_signal_lost'),
+        }
+
+        # 各lambda通过默认参数冻结kind，避免循环闭包把不同RC话题混为同一链。
+        def receive_rc(kind, msg):
+            rc.observe(
+                kind,
+                {k: getattr(msg, k) for k in rc_fields[kind]},
+                time.time(),
+                time.monotonic(),
+            )
+
+        for kind, cls in (
+            ('manual', ManualControlSetpoint),
+            ('switches', ManualControlSwitches),
+            ('flags', FailsafeFlags),
+        ):
+            subs.append(
+                node.create_subscription(
+                    cls,
+                    rc_topics[kind],
+                    lambda m, k=kind: receive_rc(k, m),
+                    qos,
+                )
+            )
+
+    return subs, rc_topics
+
+
 # 18秒内只观察；优先复用同用户同UART既有Agent，在线激活可要求已有Agent，禁止临时启动第二个。
 def probe(
     root,
@@ -179,87 +269,9 @@ def probe(
         rclpy.init()
         node = rclpy.create_node('fc01_install_ground_observer')
 
-        # ROS回调只抽取合同字段并记录此刻wall/monotonic，不修改PX4。
-        def receive(kind, msg):
-            fields = (
-                ('timestamp', 'system_id', 'component_id', 'arming_state')
-                if kind == 'status'
-                else ('timestamp', 'landed', 'at_rest')
-            )
-            evidence.observe(
-                kind, {k: getattr(msg, k) for k in fields}, time.time(), time.monotonic()
-            )
-
-        subs = [
-            node.create_subscription(
-                VehicleStatus,
-                '/fmu/out/vehicle_status_v1',
-                lambda m: receive('status', m),
-                qos_profile_sensor_data,
-            ),
-            node.create_subscription(
-                VehicleLandDetected,
-                '/fmu/out/vehicle_land_detected',
-                lambda m: receive('land', m),
-                qos_profile_sensor_data,
-            ),
-        ]
-        rc_topics = {}
-        if rc is not None:
-            from px4_msgs.msg import ManualControlSetpoint, ManualControlSwitches, FailsafeFlags
-
-            rc_topics = {
-                'manual': '/fmu/out/manual_control_setpoint',
-                'switches': '/fmu/out/manual_control_switches',
-                'flags': '/fmu/out/failsafe_flags',
-            }
-            rc_fields = {
-                'manual': (
-                    'timestamp',
-                    'timestamp_sample',
-                    'valid',
-                    'data_source',
-                    'sticks_moving',
-                    'roll',
-                    'pitch',
-                    'yaw',
-                    'throttle',
-                ),
-                'switches': (
-                    'timestamp',
-                    'timestamp_sample',
-                    'arm_switch',
-                    'kill_switch',
-                    'mode_slot',
-                    'return_switch',
-                    'loiter_switch',
-                    'offboard_switch',
-                ),
-                'flags': ('timestamp', 'manual_control_signal_lost'),
-            }
-
-            # 各lambda通过默认参数冻结kind，避免循环闭包把不同RC话题混为同一链。
-            def receive_rc(kind, msg):
-                rc.observe(
-                    kind,
-                    {k: getattr(msg, k) for k in rc_fields[kind]},
-                    time.time(),
-                    time.monotonic(),
-                )
-
-            for kind, cls in (
-                ('manual', ManualControlSetpoint),
-                ('switches', ManualControlSwitches),
-                ('flags', FailsafeFlags),
-            ):
-                subs.append(
-                    node.create_subscription(
-                        cls,
-                        rc_topics[kind],
-                        lambda m, k=kind: receive_rc(k, m),
-                        qos_profile_sensor_data,
-                    )
-                )
+        subs, rc_topics = _create_ground_subscriptions(
+            node, evidence, rc, VehicleStatus, VehicleLandDetected, qos_profile_sensor_data
+        )
         # 等待有界；看到armed立即停止，只有全部新鲜证据满足才记录verified_at。
         deadline = time.monotonic() + 18
         while time.monotonic() < deadline:

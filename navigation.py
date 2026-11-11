@@ -50,10 +50,8 @@ def snapshot(home):
         return {}
 
 
-# 先确认服务与快照身份，再计算IPC/原生/飞机反馈各自新鲜度；历史与当前显示严格区分。
-def render_status(row, info, now=None):
-    now = time.time() if now is None else now
-    state = row.get('state') if isinstance(row.get('state'), dict) else {}
+def _snapshot_display_status(row, info, now):
+    """只读比较服务身份与快照墙钟年龄，返回(status, reason)；不推断飞机状态、不修改输入。先身份后年龄的拒绝优先级保持原样。"""
     active = info.get('ActiveState')
     if active not in ('active', 'activating', 'deactivating'):
         status = 'STOPPED'
@@ -73,43 +71,22 @@ def render_status(row, info, now=None):
     else:
         status = row.get('status', 'WAITING')
         reason = row.get('reason', '等待状态')
-    # 快照中的age必须加上生成到显示所过时间，不能让反复读同一文件延长飞控消息寿命。
+    return status, reason
+
+
+def _display_feedback_age(row, now):
+    """返回显示时的反馈年龄(秒)或None；输入now为墙钟秒。只累加快照存放时间，不给历史反馈续鲜、不修改row。"""
     age = row.get('state_age_seconds')
     if type(age) not in (int, float) or not math.isfinite(age) or age < 0:
         age = None
     updated = row.get('updated_unix')
     if age is not None and type(updated) in (int, float) and math.isfinite(updated):
         age += max(0, now - updated)
-    native_current = status not in (
-        'STARTING',
-        'STALE',
-        'STOPPED',
-        'STOPPING',
-    ) and controller_state_current(row, age=age)
-    locked_fault = native_current and state.get('phase') == 'SAFETY'
-    current = (
-        native_current
-        and row.get('feedback_current') is True
-        and age is not None
-        and age <= 3
-        and state.get('status_fresh') is True
-        and state.get('local_fresh') is True
-        and aircraft_feedback_current(state, age)
-    )
-    # 当前控制器故障锁存即使飞机反馈过期也保留FAULT；但不能由此推断当前已上锁或已接地。
-    if locked_fault:
-        status = 'FAULT'
-        reason = state.get('reason') or reason
-    elif not current and status not in ('STARTING', 'STALE', 'STOPPED', 'STOPPING', 'WAITING'):
-        reason = f'飞机反馈已过期或无效；最近状态 {status}；{reason}'
-        status = 'STALE'
-    if current and status == 'HEIGHT_HOLD' and state.get('liftoff_confirmed') is False:
-        status = 'LIFTOFF_UNCONFIRMED'
-        reason = '离地未确认：' + str(state.get('liftoff_unconfirmed_reason', '反馈证据未满足'))
-    diagnostic = preparation_diagnostic_reason(state)
-    if current and diagnostic and status not in ('FAULT', 'STOPPING'):
-        status = 'DIAGNOSTIC'
-        reason = diagnostic
+    return age
+
+
+def _feedback_display_lines(state, status, reason, locked_fault, current, age):
+    """按已判定的新鲜度生成首段显示行；高度单位m、推断权限不在此授予。仅返回新列表，当前/历史标签与故障顺序保持不变。"""
     mode = {15: 'Stabilized', 14: 'Offboard', 1: 'Altitude'}.get(
         state.get('nav_state'), str(state.get('nav_state', '未知（未收到 nav_state）'))
     )
@@ -140,6 +117,64 @@ def render_status(row, info, now=None):
         )
     else:
         lines.append('当前飞机状态未知：尚未收到飞机反馈；模式、armed 和相对高度均未知。')
+    return lines
+
+
+def _append_recovery_lines(lines, state, status, current, native_current, age, gate):
+    """在调用者的lines尾部追加恢复诊断；窗口秒数与样本计数仅供观察。
+
+    按原Runtime/Core阻塞优先级读state，不复位故障或开启动作门。
+    """
+    # 恢复显示分别保留首故障、最新故障、Runtime/Core阻塞及独立新样本计数，便于定位卡住来源。
+    if (
+        state.get('rc_first_fault_reason')
+        or state.get('rc_latest_fault_reason')
+        or state.get('phase') == 'SAFETY'
+        or status == 'FAULT'
+        or state.get('rc_recovery_window_active') is True
+    ):
+        label = (
+            ('恢复观察' if current else '恢复观察（飞控反馈过期）')
+            if native_current
+            else '最近恢复观察（历史）'
+        )
+        first = state.get('rc_first_fault_reason') or '未记录'
+        latest = state.get('rc_latest_fault_reason') or '未记录'
+        lines.append(f'{label}：首次故障 {first}；最新故障 {latest}')
+        runtime_block = state.get('rc_reprepare_block_reason')
+        core_block = state.get('rc_recovery_block_reason')
+        blocked = runtime_block
+        if not blocked or blocked == 'RC_CORE_RESTART_CONDITIONS_NOT_MET':
+            blocked = core_block or blocked
+        blocked = blocked or '未报告阻塞'
+        lines.append(f'恢复等待原因：{blocked}')
+        if native_current:
+            observations = recovery_wait_details(state)
+            if observations:
+                snapshot_age = f'（{age:.1f} 秒前）' if age is not None else ''
+                lines.append('恢复条件快照' + snapshot_age + '：' + '；'.join(observations))
+        elapsed = state.get('rc_recovery_elapsed_s')
+        required = state.get('rc_recovery_required_s')
+        valid_seconds = (
+            lambda value: type(value) in (int, float) and math.isfinite(value) and value >= 0
+        )
+        window = (
+            f'{elapsed:.2f}/{required:.2f} 秒'
+            if valid_seconds(elapsed) and valid_seconds(required)
+            else '未知'
+        )
+        counts = ' / '.join(
+            str(state.get('rc_recovery_' + name + '_samples', '未知'))
+            for name in ('status', 'land', 'local')
+        )
+        lines.append(f'恢复地面窗口：{window}；新样本 status / land / local：{counts}')
+        lines.append(
+            f"恢复证据就绪={gate('rc_recovery_ready')}  本轮不安全事件={gate('rc_recovery_event_blocked')}  故障允许恢复={gate('rc_fault_recoverable')}"
+        )
+
+
+def _append_control_lines(lines, state, status, current, native_current, age):
+    """向lines按原顺序追加动作门、恢复、离地和本地推力信息；state只读。FRD推力与真实PX4采用证据仍区分，函数不发送控制请求。"""
     if state:
         gate = lambda name: str(state[name]).lower() if type(state.get(name)) is bool else '未知'
         gate_label = '原生动作门' if current else '最近动作门（历史）'
@@ -160,52 +195,7 @@ def render_status(row, info, now=None):
             preparation = preparation_wait_details(state)
             if preparation:
                 lines.append('准备等待：' + '；'.join(preparation))
-        # 恢复显示分别保留首故障、最新故障、Runtime/Core阻塞及独立新样本计数，便于定位卡住来源。
-        if (
-            state.get('rc_first_fault_reason')
-            or state.get('rc_latest_fault_reason')
-            or state.get('phase') == 'SAFETY'
-            or status == 'FAULT'
-            or state.get('rc_recovery_window_active') is True
-        ):
-            label = (
-                ('恢复观察' if current else '恢复观察（飞控反馈过期）')
-                if native_current
-                else '最近恢复观察（历史）'
-            )
-            first = state.get('rc_first_fault_reason') or '未记录'
-            latest = state.get('rc_latest_fault_reason') or '未记录'
-            lines.append(f'{label}：首次故障 {first}；最新故障 {latest}')
-            runtime_block = state.get('rc_reprepare_block_reason')
-            core_block = state.get('rc_recovery_block_reason')
-            blocked = runtime_block
-            if not blocked or blocked == 'RC_CORE_RESTART_CONDITIONS_NOT_MET':
-                blocked = core_block or blocked
-            blocked = blocked or '未报告阻塞'
-            lines.append(f'恢复等待原因：{blocked}')
-            if native_current:
-                observations = recovery_wait_details(state)
-                if observations:
-                    snapshot_age = f'（{age:.1f} 秒前）' if age is not None else ''
-                    lines.append('恢复条件快照' + snapshot_age + '：' + '；'.join(observations))
-            elapsed = state.get('rc_recovery_elapsed_s')
-            required = state.get('rc_recovery_required_s')
-            valid_seconds = (
-                lambda value: type(value) in (int, float) and math.isfinite(value) and value >= 0
-            )
-            window = (
-                f'{elapsed:.2f}/{required:.2f} 秒'
-                if valid_seconds(elapsed) and valid_seconds(required)
-                else '未知'
-            )
-            counts = ' / '.join(
-                str(state.get('rc_recovery_' + name + '_samples', '未知'))
-                for name in ('status', 'land', 'local')
-            )
-            lines.append(f'恢复地面窗口：{window}；新样本 status / land / local：{counts}')
-            lines.append(
-                f"恢复证据就绪={gate('rc_recovery_ready')}  本轮不安全事件={gate('rc_recovery_event_blocked')}  故障允许恢复={gate('rc_fault_recoverable')}"
-            )
+        _append_recovery_lines(lines, state, status, current, native_current, age, gate)
         if state.get('takeoff_stage'):
             liftoff = (
                 '本轮曾通过离地反馈确认，实际离地需现场核对'
@@ -219,6 +209,47 @@ def render_status(row, info, now=None):
         thrust = state.get('last_target_local_thrust_z')
         if type(thrust) in (int, float) and math.isfinite(thrust):
             lines.append(f'本地推力 FRD z：{thrust:.3f}；PX4 采用尚未取证（需对应飞控记录）')
+
+
+# 先确认服务与快照身份，再计算IPC/原生/飞机反馈各自新鲜度；历史与当前显示严格区分。
+def render_status(row, info, now=None):
+    now = time.time() if now is None else now
+    state = row.get('state') if isinstance(row.get('state'), dict) else {}
+    status, reason = _snapshot_display_status(row, info, now)
+    # 快照中的age必须加上生成到显示所过时间，不能让反复读同一文件延长飞控消息寿命。
+    age = _display_feedback_age(row, now)
+    native_current = status not in (
+        'STARTING',
+        'STALE',
+        'STOPPED',
+        'STOPPING',
+    ) and controller_state_current(row, age=age)
+    locked_fault = native_current and state.get('phase') == 'SAFETY'
+    current = (
+        native_current
+        and row.get('feedback_current') is True
+        and age is not None
+        and age <= 3
+        and state.get('status_fresh') is True
+        and state.get('local_fresh') is True
+        and aircraft_feedback_current(state, age)
+    )
+    # 当前控制器故障锁存即使飞机反馈过期也保留FAULT；但不能由此推断当前已上锁或已接地。
+    if locked_fault:
+        status = 'FAULT'
+        reason = state.get('reason') or reason
+    elif not current and status not in ('STARTING', 'STALE', 'STOPPED', 'STOPPING', 'WAITING'):
+        reason = f'飞机反馈已过期或无效；最近状态 {status}；{reason}'
+        status = 'STALE'
+    if current and status == 'HEIGHT_HOLD' and state.get('liftoff_confirmed') is False:
+        status = 'LIFTOFF_UNCONFIRMED'
+        reason = '离地未确认：' + str(state.get('liftoff_unconfirmed_reason', '反馈证据未满足'))
+    diagnostic = preparation_diagnostic_reason(state)
+    if current and diagnostic and status not in ('FAULT', 'STOPPING'):
+        status = 'DIAGNOSTIC'
+        reason = diagnostic
+    lines = _feedback_display_lines(state, status, reason, locked_fault, current, age)
+    _append_control_lines(lines, state, status, current, native_current, age)
     if row.get('retry_in_seconds') is not None:
         lines.append(f"重试：{row['retry_in_seconds']} 秒后")
     error = row.get('ipc_error')

@@ -650,6 +650,183 @@ def validate(root, agent, *, controller=None, config_path=None):
     return config
 
 
+class _StatusPublisher:
+    """监督器单次进程的历史状态与显示所有者；只向异步writer提交快照，不授予飞行权限。"""
+
+    def __init__(self, writer, status_metadata, row_formatter):
+        """绑定writer/可选格式器并记录本监督器身份；时钟为主机单调秒与boot_id，无飞机坐标。"""
+        self.writer = writer
+        self.row_formatter = row_formatter
+        self.last_message = None
+        self.last_state, self.last_state_at, self.last_state_pid = {}, -math.inf, None
+        self.diagnostics = {}
+        self.metadata = dict(status_metadata or {})
+        self.metadata['supervisor_pid'] = os.getpid()
+        try:
+            self.metadata['boot_id'] = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        except OSError:
+            self.metadata['boot_id'] = ''
+
+    def __call__(self, row):
+        """按原先后顺序合并诊断、维护真实反馈年龄、格式化后提交；无新状态时只保留历史且强制失效。row不用于控制，消息去重状态仅归此对象。"""
+        row = {**self.diagnostics, **row}
+        now = time.monotonic()
+        if row.get('state'):
+            self.last_state = row['state']
+            age = row.get('state_age_seconds')
+            self.last_state_at = (
+                now - age if type(age) in (int, float) and math.isfinite(age) else -math.inf
+            )
+            self.last_state_pid = row.get('state_controller_pid', row.get('controller_pid'))
+        else:
+            row.update(
+                state=self.last_state,
+                feedback_current=False,
+                state_controller_pid=self.last_state_pid,
+                state_age_seconds=(
+                    max(0, now - self.last_state_at) if self.last_state_at != -math.inf else None
+                ),
+            )
+        row = self.row_formatter(row) if self.row_formatter else row
+        row = {**self.metadata, **row}
+        self.writer.submit(row)
+        key = row['status'] + ': ' + row['reason']
+        if key != self.last_message:
+            self.writer.message(key)
+            self.last_message = key
+
+
+def _close_supervised_attempt(
+    node,
+    agent,
+    transport,
+    channel,
+    diagnostics,
+    pump,
+    native_log,
+    ipc,
+    state,
+    state_at,
+    lock,
+    publish,
+    writer,
+):
+    """结束一次原生生命周期；参数均为本次资源及真实单调秒证据。
+
+    先等原生退出且Agent传输仍活，再关传输/IPC/日志，最后仅凭新鲜地面证据处理自建Agent并释放锁；不强杀、不重放任务。
+    """
+    # 清理也要先请求并等待原生优雅退出；等待期间传输线程仍在，允许原生获得新的恢复证据。
+    if node is not None and node.poll() is None:
+        NodeStop(node).request()
+        publish(
+            dict(
+                status='STOPPING',
+                reason='等待原生控制器优雅退出',
+                controller_pid=node.pid,
+            )
+        )
+        while node.poll() is None:
+            time.sleep(0.1)
+    if transport is not None:
+        agent = transport.close()
+    if channel is not None:
+        channel.sock.close()
+    if node is not None:
+        diagnostics.update(controller_result(node))
+    if pump is not None:
+        pump.join(timeout=3)
+    elif native_log is not None:
+        for handler in native_log.handlers:
+            handler.close()
+    if ipc is not None:
+        try:
+            ipc.unlink(missing_ok=True)
+            ipc.parent.rmdir()
+        except OSError as exc:
+            writer.message('保留本次 IPC 目录：%s', exc)
+    # 仅自建 Agent 可进入停止判断；仍缺新鲜未解锁接地证据时保留，禁止用强杀完成退出。
+    if agent is not None:
+        if finish_agent(
+            agent,
+            True,
+            node is not None and node.poll() == 0,
+            state,
+            state_at,
+            time.monotonic(),
+        ):
+            try:
+                agent.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                writer.message('Agent 尚未退出，未强制终止 PID=%s', agent.pid)
+        else:
+            writer.message('保留自建 Agent PID=%s；缺少新鲜未解锁接地退出证据', agent.pid)
+    if lock is not None:
+        lock.close()
+
+
+def _wait_supervisor_retry(stopped, failure, diagnostics, publish):
+    """原生已结束后才执行既有30秒可中断重试退避；每5秒发布只读等待原因。无新进程/任务副作用，诊断退出原因拼接与停止优先级保持不变。"""
+    if not stopped.is_set():
+        remaining = RETRY_SECONDS
+        while remaining > 0 and not stopped.is_set():
+            reason = failure or '等待重新连接'
+            exit_reason = diagnostics.get('controller_exit_reason')
+            if exit_reason and exit_reason not in reason:
+                reason += '；' + exit_reason
+            publish(dict(status='WAITING', reason=reason, retry_in_seconds=remaining))
+            step = min(5, remaining)
+            if stopped.wait(step):
+                break
+            remaining -= step
+
+
+def _start_supervised_agent(agent_binary):
+    """创建本轮自有串口Agent并返回Popen句柄，仅在无可复用Agent时调用。
+
+    agent_binary为已预检路径；UART/波特率和脱离管道的stdio保持原值。
+    不发送飞行指令；调用者持有入口锁并拥有后续地面证据停止判断权。
+    """
+    return subprocess.Popen(
+        [
+            str(agent_binary),
+            'serial',
+            '-D',
+            '/dev/ttyS2',
+            '-b',
+            '115200',
+            '-v',
+            '0',
+        ],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+
+
+def _start_supervised_controller(binary, folder, ipc):
+    """按已写入的runtime.yaml创建原生进程并返回Popen句柄，保持原argv与stdout管道。
+
+    binary已预检，folder为本轮私有目录，ipc为本轮唯一socket路径。
+    调用者须先启动传输并准备日志，成功后立即建立日志泵/监控；本函数不改动作门或控制参数。
+    """
+    return subprocess.Popen(
+        [
+            str(binary),
+            '--ros-args',
+            '--disable-external-lib-logs',
+            '--params-file',
+            str(folder / 'runtime.yaml'),
+            '-p',
+            'socket_path:=' + str(ipc),
+        ],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+
+
 # 整个后台生命周期的资源所有者：同一时刻一把入口锁、一个原生控制器、一个传输恢复线程。
 def supervise(
     root,
@@ -670,44 +847,8 @@ def supervise(
     private_dir(cache)
     log = rotating_logger(folder / 'standby.log', max_bytes=1024 * 1024)
     writer = StatusWriter(folder, log)
-    last_message = None
-    last_state, last_state_at, last_state_pid = {}, -math.inf, None
-    diagnostics = {}
-    metadata = dict(status_metadata or {})
-    metadata['supervisor_pid'] = os.getpid()
-    try:
-        metadata['boot_id'] = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
-    except OSError:
-        metadata['boot_id'] = ''
-
-    # 没有新状态时可保留历史内容供诊断，但强制 feedback_current=false，且保留原 PID 与真实增长的年龄。
-    def publish(row):
-        nonlocal last_message, last_state, last_state_at, last_state_pid
-        row = {**diagnostics, **row}
-        now = time.monotonic()
-        if row.get('state'):
-            last_state = row['state']
-            age = row.get('state_age_seconds')
-            last_state_at = (
-                now - age if type(age) in (int, float) and math.isfinite(age) else -math.inf
-            )
-            last_state_pid = row.get('state_controller_pid', row.get('controller_pid'))
-        else:
-            row.update(
-                state=last_state,
-                feedback_current=False,
-                state_controller_pid=last_state_pid,
-                state_age_seconds=(
-                    max(0, now - last_state_at) if last_state_at != -math.inf else None
-                ),
-            )
-        row = row_formatter(row) if row_formatter else row
-        row = {**metadata, **row}
-        writer.submit(row)
-        key = row['status'] + ': ' + row['reason']
-        if key != last_message:
-            writer.message(key)
-            last_message = key
+    publish = _StatusPublisher(writer, status_metadata, row_formatter)
+    diagnostics = publish.diagnostics
 
     try:
         while not stopped.is_set():
@@ -742,22 +883,7 @@ def supervise(
                 ipc = make_socket_path(cache / 'ipc')
                 if existing is None:
                     # An Agent retained after shutdown has no pipe dependency on us.
-                    agent = subprocess.Popen(
-                        [
-                            str(agent_binary),
-                            'serial',
-                            '-D',
-                            '/dev/ttyS2',
-                            '-b',
-                            '115200',
-                            '-v',
-                            '0',
-                        ],
-                        stdin=subprocess.DEVNULL,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        start_new_session=True,
-                    )
+                    agent = _start_supervised_agent(agent_binary)
                 # Agent 的恢复周期与原生监控分开，传输中断不触发原生进程替换或重新执行任务。
                 transport = AgentTransport(agent_binary, agent, existing, cache, writer.message)
                 transport.start()
@@ -765,24 +891,11 @@ def supervise(
                 # this attempt's handlers after it starts reading stdout.
                 # 先准备存储再启动原生；每次 LogPump 独占此次处理器，旧日志线程不能关闭下一次启动的新处理器。
                 native_log = rotating_logger(folder / 'controller.log')
-                node = subprocess.Popen(
-                    [
-                        str(binary),
-                        '--ros-args',
-                        '--disable-external-lib-logs',
-                        '--params-file',
-                        str(folder / 'runtime.yaml'),
-                        '-p',
-                        'socket_path:=' + str(ipc),
-                    ],
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True,
-                )
+                node = _start_supervised_controller(binary, folder, ipc)
                 # Keep the last native outcome through failed reconnect checks;
                 # a successfully started replacement begins a new IPC lifetime.
                 diagnostics = {}
+                publish.diagnostics = diagnostics
                 # Each pump solely owns its handlers. An old pump delayed by
                 # storage cannot close a replacement controller's logger.
                 pump = LogPump(node.stdout, native_log)
@@ -806,73 +919,32 @@ def supervise(
                     channel, node, stopped, observe, diagnostics=diagnostics
                 )
                 if state:
-                    last_state, last_state_at, last_state_pid = state, state_at, node.pid
+                    publish.last_state, publish.last_state_at, publish.last_state_pid = (
+                        state,
+                        state_at,
+                        node.pid,
+                    )
                 channel = None
             except Exception as exc:
                 failure = str(exc)[:2000]
             finally:
-                # 清理也要先请求并等待原生优雅退出；等待期间传输线程仍在，允许原生获得新的恢复证据。
-                if node is not None and node.poll() is None:
-                    NodeStop(node).request()
-                    publish(
-                        dict(
-                            status='STOPPING',
-                            reason='等待原生控制器优雅退出',
-                            controller_pid=node.pid,
-                        )
-                    )
-                    while node.poll() is None:
-                        time.sleep(0.1)
-                if transport is not None:
-                    agent = transport.close()
-                if channel is not None:
-                    channel.sock.close()
-                if node is not None:
-                    diagnostics.update(controller_result(node))
-                if pump is not None:
-                    pump.join(timeout=3)
-                elif native_log is not None:
-                    for handler in native_log.handlers:
-                        handler.close()
-                if ipc is not None:
-                    try:
-                        ipc.unlink(missing_ok=True)
-                        ipc.parent.rmdir()
-                    except OSError as exc:
-                        writer.message('保留本次 IPC 目录：%s', exc)
-                # 仅自建 Agent 可进入停止判断；仍缺新鲜未解锁接地证据时保留，禁止用强杀完成退出。
-                if agent is not None:
-                    if finish_agent(
-                        agent,
-                        True,
-                        node is not None and node.poll() == 0,
-                        state,
-                        state_at,
-                        time.monotonic(),
-                    ):
-                        try:
-                            agent.wait(timeout=5)
-                        except subprocess.TimeoutExpired:
-                            writer.message('Agent 尚未退出，未强制终止 PID=%s', agent.pid)
-                    else:
-                        writer.message(
-                            '保留自建 Agent PID=%s；缺少新鲜未解锁接地退出证据', agent.pid
-                        )
-                if lock is not None:
-                    lock.close()
+                _close_supervised_attempt(
+                    node,
+                    agent,
+                    transport,
+                    channel,
+                    diagnostics,
+                    pump,
+                    native_log,
+                    ipc,
+                    state,
+                    state_at,
+                    lock,
+                    publish,
+                    writer,
+                )
             # 一次原生生命周期真正结束后才进入 30 秒重试；重试不恢复上次起飞任务或飞行授权。
-            if not stopped.is_set():
-                remaining = RETRY_SECONDS
-                while remaining > 0 and not stopped.is_set():
-                    reason = failure or '等待重新连接'
-                    exit_reason = diagnostics.get('controller_exit_reason')
-                    if exit_reason and exit_reason not in reason:
-                        reason += '；' + exit_reason
-                    publish(dict(status='WAITING', reason=reason, retry_in_seconds=remaining))
-                    step = min(5, remaining)
-                    if stopped.wait(step):
-                        break
-                    remaining -= step
+            _wait_supervisor_retry(stopped, failure, diagnostics, publish)
         publish(dict(status='STOPPED', reason='后台待命已停止'))
     finally:
         writer.close()

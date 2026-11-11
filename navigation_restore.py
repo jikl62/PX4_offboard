@@ -397,6 +397,83 @@ def _restore_snapshot(home, backup, manifest, units, run):
             live.unlink(missing_ok=True)
 
 
+def _verified_active_backup(entry, home, project, unit, info, binary, agent, boot_policy, units):
+    """只在重复activate已核验真实运行状态后读取/建立回滚记录并返回backup。
+
+    路径必须位于受控备份根下；不停止或重启服务，异常不覆盖原服务。
+    """
+    state_path = entry / 'ACTIVATION_STATE.json'
+    if state_path.is_file():
+        prior = json.loads(state_path.read_text())
+        backup = Path(prior['backup'])
+        allowed = (home / 'FC01_navigation/service-backups').resolve()
+        if (
+            not backup.resolve().is_relative_to(allowed)
+            or backup.resolve() == allowed
+            or not (backup / 'manifest.json').is_file()
+            or prior.get('service') != SERVICE
+            or prior.get('entry') != str(entry.resolve())
+        ):
+            raise ControlError('已有启用状态的回滚记录无效，保留当前服务')
+    else:
+        backup, _ = _snapshot(entry, home, project, unit, info, binary, agent, boot_policy, units)
+    return backup
+
+
+def _wait_activation_verified(entry, home, binary, agent, run, verify_timeout):
+    """在单调秒截止时间内重试既有运行验收并返回row；按原0.2秒退避。只读取验收证据，不重启服务，最后一次异常保留为失败原因。"""
+    deadline = time.monotonic() + verify_timeout
+    while True:
+        try:
+            row = verify_running(entry, home, binary, agent, run)
+            break
+        except (ControlError, OSError, ValueError) as exc:
+            if time.monotonic() >= deadline:
+                raise ControlError('新版启动验收失败：' + str(exc)) from exc
+            time.sleep(0.2)
+    return row
+
+
+def _recover_failed_activation(
+    entry, home, project, agent, run, units, path, backup, manifest, *, started, changed, error
+):
+    """处理单次启用失败并始终抛ControlError；started/changed来自调用者的原事务水位。
+
+    先停新控制器、确认退出、再按摘要恢复，禁止抢占外来修改；保留原异常因果链。
+    """
+    try:
+        if started:
+            _stop(entry, home, project, agent, run)
+        if changed:
+            stopped_services(units, run)
+            if path.is_file() and _digest(path) not in (
+                manifest['unit_sha256'],
+                manifest.get('original_sha256'),
+            ):
+                raise ControlError('当前服务文件已被其他程序修改，保留它')
+            _restore_snapshot(home, backup, manifest, units, run)
+        _activation_state(
+            entry,
+            backup,
+            'failed_restored' if changed else 'failed_unchanged',
+            error=str(error),
+        )
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as recovery:
+        _activation_state(
+            entry,
+            backup,
+            'failed_requires_manual_recovery',
+            error=str(error),
+            recovery_error=str(recovery),
+        )
+        raise ControlError(
+            str(error) + '；安全恢复未完成：' + str(recovery) + '；回滚记录=' + str(backup)
+        ) from error
+    raise ControlError(
+        str(error) + '；原配置已保留/恢复，控制器不会自动重启；回滚记录=' + str(backup)
+    ) from error
+
+
 # 完整在线事务：验证构建→发现身份→认证/备份→新地面证据→停旧→复验→切换→启动→真实验收。
 def activate(
     entry,
@@ -433,23 +510,9 @@ def activate(
         and info[OLD].get('UnitFileState') not in ('enabled', 'enabled-runtime')
     ):
         verify_running(entry, home, binary, agent, run)
-        state_path = entry / 'ACTIVATION_STATE.json'
-        if state_path.is_file():
-            prior = json.loads(state_path.read_text())
-            backup = Path(prior['backup'])
-            allowed = (home / 'FC01_navigation/service-backups').resolve()
-            if (
-                not backup.resolve().is_relative_to(allowed)
-                or backup.resolve() == allowed
-                or not (backup / 'manifest.json').is_file()
-                or prior.get('service') != SERVICE
-                or prior.get('entry') != str(entry.resolve())
-            ):
-                raise ControlError('已有启用状态的回滚记录无效，保留当前服务')
-        else:
-            backup, _ = _snapshot(
-                entry, home, project, unit, info, binary, agent, boot_policy, units
-            )
+        backup = _verified_active_backup(
+            entry, home, project, unit, info, binary, agent, boot_policy, units
+        )
         _activation_state(entry, backup, 'active', already_active=True)
         print('FC01_NEW_SERVICE_ACTIVE_ALREADY_VERIFIED rollback=' + str(backup), flush=True)
         return backup
@@ -510,15 +573,7 @@ def activate(
             started = True
             run(['sudo', '-n', '/usr/bin/systemctl', 'start', SERVICE], check=True)
             _activation_state(entry, backup, 'verifying')
-            deadline = time.monotonic() + verify_timeout
-            while True:
-                try:
-                    row = verify_running(entry, home, binary, agent, run)
-                    break
-                except (ControlError, OSError, ValueError) as exc:
-                    if time.monotonic() >= deadline:
-                        raise ControlError('新版启动验收失败：' + str(exc)) from exc
-                    time.sleep(0.2)
+            row = _wait_activation_verified(entry, home, binary, agent, run, verify_timeout)
             _activation_state(
                 entry, backup, 'active', controller_pid=row['controller_pid'], agent_pid=agent.pid
             )
@@ -535,37 +590,20 @@ def activate(
             return backup
         # 失败先安全停新控制器，再在无外来变更前提下还原；恢复自身失败则保留人工恢复证据。
         except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
-            try:
-                if started:
-                    _stop(entry, home, project, agent, run)
-                if changed:
-                    stopped_services(units, run)
-                    if path.is_file() and _digest(path) not in (
-                        manifest['unit_sha256'],
-                        manifest.get('original_sha256'),
-                    ):
-                        raise ControlError('当前服务文件已被其他程序修改，保留它')
-                    _restore_snapshot(home, backup, manifest, units, run)
-                _activation_state(
-                    entry,
-                    backup,
-                    'failed_restored' if changed else 'failed_unchanged',
-                    error=str(exc),
-                )
-            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as recovery:
-                _activation_state(
-                    entry,
-                    backup,
-                    'failed_requires_manual_recovery',
-                    error=str(exc),
-                    recovery_error=str(recovery),
-                )
-                raise ControlError(
-                    str(exc) + '；安全恢复未完成：' + str(recovery) + '；回滚记录=' + str(backup)
-                ) from exc
-            raise ControlError(
-                str(exc) + '；原配置已保留/恢复，控制器不会自动重启；回滚记录=' + str(backup)
-            ) from exc
+            _recover_failed_activation(
+                entry,
+                home,
+                project,
+                agent,
+                run,
+                units,
+                path,
+                backup,
+                manifest,
+                started=started,
+                changed=changed,
+                error=exc,
+            )
 
 
 # 只检查，不隐式stop/kill；旧开机入口仍有效或有覆盖配置时拒绝第二个入口。

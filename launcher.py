@@ -488,6 +488,62 @@ def connect_controller(path, node, timeout=12):
     raise ControlError('等待控制器 socket 超时，未删除任何旧 socket')
 
 
+def _handle_console_input(text, mission, now, send, say, evidence, close_session):
+    """处理一次现场输入；now为单调秒，目标高度m。
+
+    仅显式takeoff推进Mission；EOF由调用者处理。
+    返回True只表示空输入应跳过本轮，命令/错误/退出副作用顺序与原控制台一致。
+    """
+    try:
+        parts = shlex.split(text)
+        if not parts:
+            return True
+        if parts[0] == 'takeoff' and len(parts) in (1, 2):
+            mission.request_takeoff(
+                float(parts[1]) if len(parts) == 2 else DEFAULT_TAKEOFF_HEIGHT_M,
+                now,
+            )
+            say(
+                '准备起飞 %.2f m；核对 RC 和实时反馈后由原生控制器执行一次 TAKEOFF。'
+                % mission.target
+            )
+        elif parts == ['land']:
+            mission.cancel()
+            send('LAND', [])
+            say('已请求原生降落/地面释放。')
+        elif parts == ['status']:
+            send('STATUS', [])
+            say(state_line(evidence.last_state))
+            say(
+                '等待条件：'
+                + (', '.join(readiness_issues(evidence.last_state)) or '地面反馈已齐备')
+            )
+        elif parts == ['quit']:
+            close_session('operator_quit')
+        else:
+            say(f'命令：takeoff [{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit')
+    except (ControlError, ValueError) as exc:
+        evidence.failure(exc)
+        say('未执行：' + str(exc))
+    return False
+
+
+def _show_console_state(obj, now, say, mission, closing, printed_phase, last_print):
+    """按阶段变化和单调秒节流显示状态，返回新的(printed_phase,last_print)。
+
+    只读Mission与反馈、不提交动作；先状态行后等待条件，保持原输出及节流间隔。
+    """
+    phase = obj.get('phase')
+    if phase != printed_phase or now - last_print >= (3 if closing else 5):
+        say(state_line(obj))
+        if not closing and not mission.submitted:
+            issues = readiness_issues(obj)
+            if issues:
+                say('等待条件：' + ', '.join(issues))
+        printed_phase, last_print = phase, now
+    return printed_phase, last_print
+
+
 # 一次现场会话主循环：持续收状态和发 PING，Mission 仅安排请求，原生端仍拥有最终动作判断权。
 def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
     display = Display(sys.stdout)
@@ -564,14 +620,9 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
                         if obj.get('kind') in ('reply', 'state') and 'phase' in obj:
                             mission.observe(obj, now)
                             healthy_seen |= not readiness_issues(obj)
-                            phase = obj.get('phase')
-                            if phase != printed_phase or now - last_print >= (3 if closing else 5):
-                                say(state_line(obj))
-                                if not closing and not mission.submitted:
-                                    issues = readiness_issues(obj)
-                                    if issues:
-                                        say('等待条件：' + ', '.join(issues))
-                                printed_phase, last_print = phase, now
+                            printed_phase, last_print = _show_console_state(
+                                obj, now, say, mission, closing, printed_phase, last_print
+                            )
                         if obj.get('kind') == 'reply':
                             pending = mission.pending
                             mission.reply(obj, now)
@@ -602,42 +653,10 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
                 if not text:
                     close_session('operator_eof')
                 else:
-                    try:
-                        parts = shlex.split(text)
-                        if not parts:
-                            continue
-                        if parts[0] == 'takeoff' and len(parts) in (1, 2):
-                            mission.request_takeoff(
-                                float(parts[1]) if len(parts) == 2 else DEFAULT_TAKEOFF_HEIGHT_M,
-                                now,
-                            )
-                            say(
-                                '准备起飞 %.2f m；核对 RC 和实时反馈后由原生控制器执行一次 TAKEOFF。'
-                                % mission.target
-                            )
-                        elif parts == ['land']:
-                            mission.cancel()
-                            send('LAND', [])
-                            say('已请求原生降落/地面释放。')
-                        elif parts == ['status']:
-                            send('STATUS', [])
-                            say(state_line(evidence.last_state))
-                            say(
-                                '等待条件：'
-                                + (
-                                    ', '.join(readiness_issues(evidence.last_state))
-                                    or '地面反馈已齐备'
-                                )
-                            )
-                        elif parts == ['quit']:
-                            close_session('operator_quit')
-                        else:
-                            say(
-                                f'命令：takeoff [{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit'
-                            )
-                    except (ControlError, ValueError) as exc:
-                        evidence.failure(exc)
-                        say('未执行：' + str(exc))
+                    if _handle_console_input(
+                        text, mission, now, send, say, evidence, close_session
+                    ):
+                        continue
             # Mission.poll 返回待请求动作；发送成功后关联序号，后续回复须按该序号推进流程。
             if flight and not closing and channel is not None:
                 action = mission.poll(now)
@@ -752,8 +771,8 @@ def preflight(root, agent_binary, device, *, controller=None, config_path=None):
     return node, existing
 
 
-# 默认只检查；--flight 仍要求 TTY 和后续显式 takeoff。每次运行生成独立配置与私有证据目录。
-def main(argv=None):
+def _parse_launcher_args(argv):
+    """只解析交互/检查模式与5至60秒检查期限，返回args；不创建运行资源。错误先于umask/证据目录/信号安装，保持原入口拒绝顺序。"""
     parser = argparse.ArgumentParser(description='FC01 香橙派单入口：检查 / 交互起飞、定高、降落')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
@@ -772,6 +791,52 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if not math.isfinite(args.check_seconds) or not 5 <= args.check_seconds <= 60:
         parser.error('--check-seconds 必须在 [5,60] 秒内')
+    return args
+
+
+def _write_console_config(root, folder, flight):
+    """在预检已通过后从既有候选派生并独占写入会话runtime.yaml，返回(params, config_path)。
+
+    不改源配置或PX4参数；保留原模式/来源元数据和写入顺序。
+    """
+    import yaml
+
+    with open(root / 'config/attitude_altitude.yaml', encoding='utf8') as f:
+        config = runtime_profile(yaml.safe_load(f), flight)
+    params = config['fc01_system']['ros__parameters']
+    config_path = folder / 'runtime.yaml'
+    # Keep the standalone legacy console compatible with native launch
+    # provenance checks. Navigation service mode selection is separate;
+    # this path remains an explicitly interactive --flight session.
+    # 运行模式与配置来源随会话写入，供原生核验启动来源；不借用导航服务的自动任务入口。
+    params.update(
+        fc01_runtime_mode='flight-test' if flight else 'diagnostic',
+        fc01_entry_version='launcher-legacy',
+        fc01_config_path=str(config_path.resolve()),
+        fc01_config_source_path=str((root / 'config/attitude_altitude.yaml').resolve()),
+    )
+    with open(config_path, 'x', encoding='utf8') as f:
+        yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False)
+    return params, config_path
+
+
+def _announce_console_configuration(say, params, flight):
+    """只显示刚写入的原会话参数与现场确认提示；米/秒/角度单位不变，无状态变更或控制请求。调用者须先完成配置写入再调用。"""
+    say(
+        '会话配置：20 Hz；UART 115200；定高上限 %.1f m；最长 %.1f s；倾角上限 %.1f°。'
+        % (params['aa_max_height'], params['aa_max_flight_seconds'], params['aa_max_tilt_deg'])
+    )
+    say(
+        '候选参数原样保留：hover=%.3f，起飞余量=%.3f；本包没有完成实机标定。'
+        % (params['aa_hover_thrust'], params['aa_takeoff_reserve_thrust'])
+    )
+    if flight:
+        say('--flight 已开启本次会话动作门并选择 RC 接管路径；输入 takeoff 才请求解锁起飞。')
+
+
+# 默认只检查；--flight 仍要求 TTY 和后续显式 takeoff。每次运行生成独立配置与私有证据目录。
+def main(argv=None):
+    args = _parse_launcher_args(argv)
     os.umask(0o077)
     display = Display(sys.stdout)
     say = display.say
@@ -811,34 +876,8 @@ def main(argv=None):
         except BlockingIOError as exc:
             raise ControlError('另一个本入口仍在运行；保持现有会话') from exc
         binary, existing = preflight(root, args.agent, '/dev/ttyS2')
-        import yaml
-
-        with open(root / 'config/attitude_altitude.yaml', encoding='utf8') as f:
-            config = runtime_profile(yaml.safe_load(f), args.flight)
-        params = config['fc01_system']['ros__parameters']
-        config_path = folder / 'runtime.yaml'
-        # Keep the standalone legacy console compatible with native launch
-        # provenance checks. Navigation service mode selection is separate;
-        # this path remains an explicitly interactive --flight session.
-        # 运行模式与配置来源随会话写入，供原生核验启动来源；不借用导航服务的自动任务入口。
-        params.update(
-            fc01_runtime_mode='flight-test' if args.flight else 'diagnostic',
-            fc01_entry_version='launcher-legacy',
-            fc01_config_path=str(config_path.resolve()),
-            fc01_config_source_path=str((root / 'config/attitude_altitude.yaml').resolve()),
-        )
-        with open(config_path, 'x', encoding='utf8') as f:
-            yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False)
-        say(
-            '会话配置：20 Hz；UART 115200；定高上限 %.1f m；最长 %.1f s；倾角上限 %.1f°。'
-            % (params['aa_max_height'], params['aa_max_flight_seconds'], params['aa_max_tilt_deg'])
-        )
-        say(
-            '候选参数原样保留：hover=%.3f，起飞余量=%.3f；本包没有完成实机标定。'
-            % (params['aa_hover_thrust'], params['aa_takeoff_reserve_thrust'])
-        )
-        if args.flight:
-            say('--flight 已开启本次会话动作门并选择 RC 接管路径；输入 takeoff 才请求解锁起飞。')
+        params, config_path = _write_console_config(root, folder, args.flight)
+        _announce_console_configuration(say, params, args.flight)
         ipc = make_socket_path(cache / 'ipc')
         # 没有可复用 Agent 才由本会话创建；复用已有进程时没有停止它的所有权。
         if existing is None:

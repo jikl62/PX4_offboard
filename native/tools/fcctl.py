@@ -129,8 +129,11 @@ def show(obj, raw):
             )
 
 
-# 一次连接拥有独立递增序号、待回复表和最近状态；INTERACTIVE 后每 0.2 秒维持心跳，不能靠缓存续租。
-def run(args):
+def _initial_console_command(args):
+    """解析一次性请求并检查TTY权限，返回初始命令或None；飞行动作/权限切换只允许现场控制台。
+
+    先完成原拒绝检查再建立socket，错误文本与顺序不变。
+    """
     initial = parse_command(args.command) if args.command else None
     # 单次 --command 不能提交飞行、运动或权限切换；避免管道脚本在没有现场交互的情况下发动作。
     if initial and initial[0] in {
@@ -151,6 +154,114 @@ def run(args):
         raise ValueError(
             'Live interactive console requires a TTY; use --command for status/mode/attitude-ready'
         )
+    return initial
+
+
+def _arm_only_preflight(args, arm_attempt_consumed, latest_state, latest_state_at, now):
+    """只读检查单次台架确认的最新状态并返回拒绝文本或None；now/state_at为单调秒，NED地面Vz单位m/s。
+
+    调用者仍拥有唯一提交水位；本检查不发送ARM，原字段类型和首拒绝顺序严格保留。
+    """
+    # Secondary UI guard, not a substitute for the C++ runtime and PX4 checks.
+    if not args.bench_arm_only:
+        return '需要使用 --bench-arm-only 启动交互控制台'
+    if arm_attempt_consumed:
+        return '本控制台会话已经提交过 ARM_ONLY；禁止重复提交'
+    if latest_state is None or now - latest_state_at > 1.0:
+        return '没有最近1秒内的实时控制器状态'
+    s = latest_state
+    # 逐项核对专用台架状态；通用起飞门必须关闭，ARM_ONLY 允许也不表示 TAKEOFF 允许。
+    expected = {
+        'profile': 'attitude_altitude',
+        'bench_arm_only_enabled': True,
+        'phase': 'OFFBOARD_READY',
+        'nav_state': 14,
+        'armed': False,
+        'landed': True,
+        'at_rest': True,
+        'status_fresh': True,
+        'local_fresh': True,
+        'land_fresh': True,
+        'failsafe_fresh': True,
+        'battery_fresh': True,
+        'source_clock_valid': True,
+        'source_clock_validated': True,
+        'attitude_fresh': True,
+        'z_valid': True,
+        'vz_valid': True,
+        'preflight': True,
+        'battery_connected': True,
+        'authority_mode': 'RC_TAKEOVER',
+        'authority_ready': True,
+        'authority_attempt_mode': 'RC_TAKEOVER',
+        'authority_locked': True,
+        'rc_link_ready': True,
+        'rc_switches_ready': True,
+        'rc_kill_latched': False,
+        'flight_actions_enabled': True,
+        'arm_enabled': True,
+        'takeoff_enabled': False,
+        'flight_parameters_confirmed': True,
+        'publication_fault_latched': False,
+        'authority_ground_failed_mask': 0,
+    }
+    for key, value in expected.items():
+        if type(s.get(key)) is not type(value) or s.get(key) != value:
+            return f'状态条件不满足：{key} 应为 {value!r}，实际 {s.get(key)!r}'
+    for key in (
+        'stationary_seconds',
+        'required_ground_seconds',
+        'ground_vz_ned',
+        'ground_vz_tolerance',
+    ):
+        value = s.get(key)
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+        ):
+            return f'缺少有效地面诊断数据：{key}'
+    if s['required_ground_seconds'] < 2 or s['stationary_seconds'] < s['required_ground_seconds']:
+        return '连续静止时间尚未满足控制器阈值'
+    if s['ground_vz_tolerance'] <= 0 or abs(s['ground_vz_ned']) > s['ground_vz_tolerance']:
+        return 'Vz尚未满足控制器地面阈值'
+    return None
+
+
+def _console_state_signature(obj):
+    """返回界面节流所需状态签名；仅读取既有字段，不更新状态寿命、不影响ACK归属或命令提交。字段排列与原输出变化判定一致。"""
+    return tuple(
+        obj.get(k)
+        for k in (
+            'phase',
+            'nav_state',
+            'armed',
+            'reason',
+            'authority_mode',
+            'authority_ready',
+            'authority_ground_failed_mask',
+            'source_clock_valid',
+            'rc_kill_latched',
+            'bench_operator_required',
+        )
+    )
+
+
+def _print_console_help():
+    """显示原两段帮助；无参数、返回None、无飞行或权限副作用。只由显式HELP输入调用，保留文本与输出顺序。"""
+    print(
+        '速度单位 m/s；左旋 rad/s；时长 <=2 s。mode / attitude-ready 需要 ACK+新模式状态；attitude-ready 不解锁。quit/断线清除旧速度并请求降落。',
+        flush=True,
+    )
+    print(
+        'authority rc/autonomous 只选择策略，不确认失效保护、不改 PX4 参数；准备后锁定。takeover 释放本次控制；reset 仅在安全地面、输出停止且事务结束后回到 UNSET。',
+        flush=True,
+    )
+
+
+# 一次连接拥有独立递增序号、待回复表和最近状态；INTERACTIVE 后每 0.2 秒维持心跳，不能靠缓存续租。
+def run(args):
+    initial = _initial_console_command(args)
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.settimeout(3)
     sock.connect(args.socket)
@@ -166,76 +277,6 @@ def run(args):
     latest_state_at = -1.0
     arm_confirmation_deadline = 0.0
     arm_attempt_consumed = False
-
-    # 此处只是界面第二道检查，不替代原生/PX4；需 1 秒内状态、完整地面证据、专用门和严格字段类型。
-    def arm_only_preflight(now):
-        # Secondary UI guard, not a substitute for the C++ runtime and PX4 checks.
-        if not args.bench_arm_only:
-            return '需要使用 --bench-arm-only 启动交互控制台'
-        if arm_attempt_consumed:
-            return '本控制台会话已经提交过 ARM_ONLY；禁止重复提交'
-        if latest_state is None or now - latest_state_at > 1.0:
-            return '没有最近1秒内的实时控制器状态'
-        s = latest_state
-        # 逐项核对专用台架状态；通用起飞门必须关闭，ARM_ONLY 允许也不表示 TAKEOFF 允许。
-        expected = {
-            'profile': 'attitude_altitude',
-            'bench_arm_only_enabled': True,
-            'phase': 'OFFBOARD_READY',
-            'nav_state': 14,
-            'armed': False,
-            'landed': True,
-            'at_rest': True,
-            'status_fresh': True,
-            'local_fresh': True,
-            'land_fresh': True,
-            'failsafe_fresh': True,
-            'battery_fresh': True,
-            'source_clock_valid': True,
-            'source_clock_validated': True,
-            'attitude_fresh': True,
-            'z_valid': True,
-            'vz_valid': True,
-            'preflight': True,
-            'battery_connected': True,
-            'authority_mode': 'RC_TAKEOVER',
-            'authority_ready': True,
-            'authority_attempt_mode': 'RC_TAKEOVER',
-            'authority_locked': True,
-            'rc_link_ready': True,
-            'rc_switches_ready': True,
-            'rc_kill_latched': False,
-            'flight_actions_enabled': True,
-            'arm_enabled': True,
-            'takeoff_enabled': False,
-            'flight_parameters_confirmed': True,
-            'publication_fault_latched': False,
-            'authority_ground_failed_mask': 0,
-        }
-        for key, value in expected.items():
-            if type(s.get(key)) is not type(value) or s.get(key) != value:
-                return f'状态条件不满足：{key} 应为 {value!r}，实际 {s.get(key)!r}'
-        for key in (
-            'stationary_seconds',
-            'required_ground_seconds',
-            'ground_vz_ned',
-            'ground_vz_tolerance',
-        ):
-            value = s.get(key)
-            if (
-                isinstance(value, bool)
-                or not isinstance(value, (int, float))
-                or not math.isfinite(value)
-            ):
-                return f'缺少有效地面诊断数据：{key}'
-        if (
-            s['required_ground_seconds'] < 2
-            or s['stationary_seconds'] < s['required_ground_seconds']
-        ):
-            return '连续静止时间尚未满足控制器阈值'
-        if s['ground_vz_tolerance'] <= 0 or abs(s['ground_vz_ned']) > s['ground_vz_tolerance']:
-            return 'Vz尚未满足控制器地面阈值'
-        return None
 
     # 写前消耗序号，0.3 秒总期限内处理部分写；非 PING 请求进入待回复表，按回复序号关联。
     def send(op, values=()):
@@ -312,21 +353,7 @@ def run(args):
                     if obj.get('kind') == 'state':
                         latest_state = obj
                         latest_state_at = time.monotonic()
-                        signature = tuple(
-                            obj.get(k)
-                            for k in (
-                                'phase',
-                                'nav_state',
-                                'armed',
-                                'reason',
-                                'authority_mode',
-                                'authority_ready',
-                                'authority_ground_failed_mask',
-                                'source_clock_valid',
-                                'rc_kill_latched',
-                                'bench_operator_required',
-                            )
-                        )
+                        signature = _console_state_signature(obj)
                         should_show = (
                             args.json
                             or initial
@@ -373,7 +400,9 @@ def run(args):
                 text = text.strip()
                 # 二次确认前重新检查全部实时状态与 10 秒窗口；提交后即消耗本会话唯一 ARM_ONLY 机会。
                 if text == 'BENCH ARM CONFIRM' and arm_confirmation_deadline:
-                    why = arm_only_preflight(time.monotonic())
+                    why = _arm_only_preflight(
+                        args, arm_attempt_consumed, latest_state, latest_state_at, time.monotonic()
+                    )
                     if why or time.monotonic() > arm_confirmation_deadline:
                         print('ARM_ONLY 取消：' + (why or '确认超时'), flush=True)
                         arm_confirmation_deadline = 0.0
@@ -398,7 +427,13 @@ def run(args):
                         continue
                     # 第一次 arm-only 只打开确认窗口，不发解锁；其他输入或超时取消，专用台架会话始终禁止 TAKEOFF。
                     if op == 'ARM_ONLY':
-                        why = arm_only_preflight(time.monotonic())
+                        why = _arm_only_preflight(
+                            args,
+                            arm_attempt_consumed,
+                            latest_state,
+                            latest_state_at,
+                            time.monotonic(),
+                        )
                         if why:
                             print('ARM_ONLY 拒绝：' + why, flush=True)
                             continue
@@ -409,14 +444,7 @@ def run(args):
                         )
                         continue
                     if op == 'HELP':
-                        print(
-                            '速度单位 m/s；左旋 rad/s；时长 <=2 s。mode / attitude-ready 需要 ACK+新模式状态；attitude-ready 不解锁。quit/断线清除旧速度并请求降落。',
-                            flush=True,
-                        )
-                        print(
-                            'authority rc/autonomous 只选择策略，不确认失效保护、不改 PX4 参数；准备后锁定。takeover 释放本次控制；reset 仅在安全地面、输出停止且事务结束后回到 UNSET。',
-                            flush=True,
-                        )
+                        _print_console_help()
                         continue
                     # 任何新的操作先取消旧定时速度，防止旧运动在新指令后继续周期重发。
                     # Any new operator command cancels the previous timed movement.

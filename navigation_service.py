@@ -206,8 +206,11 @@ def describe_row(row):
     return result
 
 
-# 显式子命令分离环境/构建/配置/探针与run；默认诊断，flight-test没有确认直接拒绝。
-def main(argv=None):
+def _parse_service_args(argv):
+    """解析并校验入口参数，返回(args, parser)；仅Flight Test双重确认成立才选择该模式。
+
+    本函数不启动服务、不改配置，错误顺序保留。
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         'action',
@@ -241,6 +244,125 @@ def main(argv=None):
         args.mode = FLIGHT_TEST
     if args.mode == FLIGHT_TEST and not args.confirm_flight_test:
         parser.error('Flight Test 必须同时提供 --confirm-flight-test；不会隐式开启动作门')
+    return args, parser
+
+
+def _check_runtime_config(args, parser):
+    """检查所选配置并返回退出码；diagnostic逐门确切False，flight-test调用既有配置检查器。
+
+    按原错误优先级执行，未提供有效配置时不启动控制器。
+    """
+    if args.file is None:
+        parser.error('check-config requires --file')
+    try:
+        config = yaml.safe_load(args.file.read_text())
+    except (OSError, yaml.YAMLError) as exc:
+        raise ControlError('读取配置失败：' + str(exc)) from exc
+    if (
+        not isinstance(config, dict)
+        or not isinstance(config.get('fc01_system'), dict)
+        or not isinstance(config['fc01_system'].get('ros__parameters'), dict)
+    ):
+        raise ControlError('配置缺少 fc01_system/ros__parameters')
+    p = config['fc01_system']['ros__parameters']
+    # 诊断check-config只接受所有门确切False；飞行候选则调用已构建C++同一Config校验。
+    if args.mode == DIAGNOSTIC:
+        required = (
+            'flight_enabled',
+            'flight_actions_enabled',
+            'arm_enabled',
+            'takeoff_enabled',
+            'rc_navigation_enabled',
+            'bench_arm_only_enabled',
+            'visual_navigation_enabled',
+            'flight_parameters_confirmed',
+            'rc_takeover_confirmed',
+            'autonomous_failsafe_confirmed',
+        )
+        if any(p.get(key) is not False for key in required):
+            raise ControlError('diagnostic 配置动作门/视觉必须全部关闭')
+        return 0
+    check_controller(prefix=args.prefix)
+    checker = (args.prefix or ENTRY / 'install') / 'lib/jikl_fc01_system/fc01_config_check'
+    if not checker.is_file() or not os.access(checker, os.X_OK):
+        raise ControlError('缺少已编译的原生配置检查器')
+    return subprocess.run(
+        [
+            str(checker),
+            '--ros-args',
+            '--disable-external-lib-logs',
+            '--params-file',
+            str(args.file),
+        ],
+        check=False,
+    ).returncode
+
+
+def _run_navigation_service(args, root, agent):
+    """按已确认模式构造运行配置并交给既有standby监督器；信号只置停止事件。保留打印、控制器核验与配置工厂调用顺序，不新增解锁或飞行权限。"""
+    # 信号只置停止事件；standby负责在Agent还活着时等待原生恢复/释放，不能直接杀电机控制进程。
+    stopped = threading.Event()
+    for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, lambda *_: stopped.set())
+    runtime_path = Path.home() / 'FC01_navigation' / 'runtime.yaml'
+    profile = load_profile(root, agent, ENTRY, args.mode, config_path=runtime_path)
+    p = profile['fc01_system']['ros__parameters']
+    print(
+        'FC01 导航启动 version=%s mode=%s hover_thrust=%.3f reserve=%.3f target=%.3f permissions=%s visual=%s config=%s'
+        % (
+            ENTRY_VERSION,
+            args.mode,
+            p.get('aa_hover_thrust', float('nan')),
+            p.get('aa_takeoff_reserve_thrust', 0.0),
+            p.get('rc_target_height', DEFAULT_TAKEOFF_HEIGHT_M),
+            ','.join(
+                '%s=%s' % (k, p.get(k))
+                for k in (
+                    'flight_actions_enabled',
+                    'arm_enabled',
+                    'takeoff_enabled',
+                    'rc_navigation_enabled',
+                )
+            ),
+            p.get('visual_navigation_enabled', False),
+            runtime_path,
+        ),
+        flush=True,
+    )
+    standby.supervise(
+        root,
+        agent,
+        Path.home() / 'FC01_navigation',
+        stopped,
+        controller=controller_path(),
+        config_factory=lambda r, a: (
+            check_controller(),
+            load_profile(r, a, ENTRY, args.mode, config_path=runtime_path),
+        )[1],
+        status_metadata={
+            'runtime_mode': args.mode,
+            'entry_version': ENTRY_VERSION,
+            'config_path': str(runtime_path),
+            'config_source_path': str(candidate_config_path(args.mode)),
+            'rc_navigation_enabled': p.get('rc_navigation_enabled', False),
+            'flight_enabled': p.get('flight_enabled', False),
+            'flight_actions_enabled': p.get('flight_actions_enabled', False),
+            'arm_enabled': p.get('arm_enabled', False),
+            'takeoff_enabled': p.get('takeoff_enabled', False),
+            'rc_target_height': p.get('rc_target_height', DEFAULT_TAKEOFF_HEIGHT_M),
+            'aa_hover_thrust': p.get('aa_hover_thrust'),
+            'aa_takeoff_reserve_thrust': p.get('aa_takeoff_reserve_thrust'),
+            'automatic_arm': False,
+            'visual_navigation_enabled': False,
+        },
+        config_path=candidate_config_path(args.mode),
+        row_formatter=describe_row,
+    )
+
+
+# 显式子命令分离环境/构建/配置/探针与run；默认诊断，flight-test没有确认直接拒绝。
+def main(argv=None):
+    args, parser = _parse_service_args(argv)
     os.umask(0o077)
     root = (
         Path(os.environ.get('FC01_PROJECT_ROOT', str(Path.home() / PROJECT))).expanduser().resolve()
@@ -267,50 +389,7 @@ def main(argv=None):
 
         build_native(ENTRY, args.prefix, args.build_dir)
     elif args.action == 'check-config':
-        if args.file is None:
-            parser.error('check-config requires --file')
-        try:
-            config = yaml.safe_load(args.file.read_text())
-        except (OSError, yaml.YAMLError) as exc:
-            raise ControlError('读取配置失败：' + str(exc)) from exc
-        if (
-            not isinstance(config, dict)
-            or not isinstance(config.get('fc01_system'), dict)
-            or not isinstance(config['fc01_system'].get('ros__parameters'), dict)
-        ):
-            raise ControlError('配置缺少 fc01_system/ros__parameters')
-        p = config['fc01_system']['ros__parameters']
-        # 诊断check-config只接受所有门确切False；飞行候选则调用已构建C++同一Config校验。
-        if args.mode == DIAGNOSTIC:
-            required = (
-                'flight_enabled',
-                'flight_actions_enabled',
-                'arm_enabled',
-                'takeoff_enabled',
-                'rc_navigation_enabled',
-                'bench_arm_only_enabled',
-                'visual_navigation_enabled',
-                'flight_parameters_confirmed',
-                'rc_takeover_confirmed',
-                'autonomous_failsafe_confirmed',
-            )
-            if any(p.get(key) is not False for key in required):
-                raise ControlError('diagnostic 配置动作门/视觉必须全部关闭')
-            return 0
-        check_controller(prefix=args.prefix)
-        checker = (args.prefix or ENTRY / 'install') / 'lib/jikl_fc01_system/fc01_config_check'
-        if not checker.is_file() or not os.access(checker, os.X_OK):
-            raise ControlError('缺少已编译的原生配置检查器')
-        return subprocess.run(
-            [
-                str(checker),
-                '--ros-args',
-                '--disable-external-lib-logs',
-                '--params-file',
-                str(args.file),
-            ],
-            check=False,
-        ).returncode
+        return _check_runtime_config(args, parser)
     elif args.action == 'probe':
         profile = load_profile(root, agent, ENTRY, args.mode)
         from navigation_probe import probe
@@ -330,64 +409,7 @@ def main(argv=None):
             return probe(root, agent, args.file, require_existing_agent=True)
         return probe(root, agent, args.file)
     else:
-        # 信号只置停止事件；standby负责在Agent还活着时等待原生恢复/释放，不能直接杀电机控制进程。
-        stopped = threading.Event()
-        for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
-            signal.signal(sig, lambda *_: stopped.set())
-        runtime_path = Path.home() / 'FC01_navigation' / 'runtime.yaml'
-        profile = load_profile(root, agent, ENTRY, args.mode, config_path=runtime_path)
-        p = profile['fc01_system']['ros__parameters']
-        print(
-            'FC01 导航启动 version=%s mode=%s hover_thrust=%.3f reserve=%.3f target=%.3f permissions=%s visual=%s config=%s'
-            % (
-                ENTRY_VERSION,
-                args.mode,
-                p.get('aa_hover_thrust', float('nan')),
-                p.get('aa_takeoff_reserve_thrust', 0.0),
-                p.get('rc_target_height', DEFAULT_TAKEOFF_HEIGHT_M),
-                ','.join(
-                    '%s=%s' % (k, p.get(k))
-                    for k in (
-                        'flight_actions_enabled',
-                        'arm_enabled',
-                        'takeoff_enabled',
-                        'rc_navigation_enabled',
-                    )
-                ),
-                p.get('visual_navigation_enabled', False),
-                runtime_path,
-            ),
-            flush=True,
-        )
-        standby.supervise(
-            root,
-            agent,
-            Path.home() / 'FC01_navigation',
-            stopped,
-            controller=controller_path(),
-            config_factory=lambda r, a: (
-                check_controller(),
-                load_profile(r, a, ENTRY, args.mode, config_path=runtime_path),
-            )[1],
-            status_metadata={
-                'runtime_mode': args.mode,
-                'entry_version': ENTRY_VERSION,
-                'config_path': str(runtime_path),
-                'config_source_path': str(candidate_config_path(args.mode)),
-                'rc_navigation_enabled': p.get('rc_navigation_enabled', False),
-                'flight_enabled': p.get('flight_enabled', False),
-                'flight_actions_enabled': p.get('flight_actions_enabled', False),
-                'arm_enabled': p.get('arm_enabled', False),
-                'takeoff_enabled': p.get('takeoff_enabled', False),
-                'rc_target_height': p.get('rc_target_height', DEFAULT_TAKEOFF_HEIGHT_M),
-                'aa_hover_thrust': p.get('aa_hover_thrust'),
-                'aa_takeoff_reserve_thrust': p.get('aa_takeoff_reserve_thrust'),
-                'automatic_arm': False,
-                'visual_navigation_enabled': False,
-            },
-            config_path=candidate_config_path(args.mode),
-            row_formatter=describe_row,
-        )
+        _run_navigation_service(args, root, agent)
     return 0
 
 
