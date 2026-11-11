@@ -1,0 +1,77 @@
+{
+  "baseline": "1e824f883fe6255f8d265b1cece339a83594b059",
+  "location": "evidence.zip member paths",
+  "candidates": [
+    {
+      "id": "C1",
+      "severity": "P2",
+      "confirmed": "Ground evidence host-time gap:3 detector samples span0.1s then freeze1.9s still qualifiesREADY at2.05s. No automatic arm/nonzero thrust.",
+      "patch": {
+        "path": "candidates/S6_C1_ground_burst.patch",
+        "sha256": "3a8aa6da946b483819c784f60ab92dbf79155caa3080005e99ca928de4365790",
+        "git_apply_check_exit": 0,
+        "applied_to_production": false
+      },
+      "test_source": "candidates/S6_C1_ground_burst.cpp",
+      "original_and_candidate": "control/ground_candidate_runs.json",
+      "independent_review": [
+        "root/ground_cross_review.json",
+        "lifecycle/ground_candidate_cross_review.json"
+      ],
+      "human_review_required": true,
+      "deployed": false,
+      "limitations": "Readiness and anchor timing intentionally change; host arrival span does not prove physical observation span or source clock sync. Need target detector rates/jitter/multitask no-power evidence."
+    },
+    {
+      "id": "C2",
+      "severity": "P2",
+      "confirmed": "Per-poll synchronous status response work can exceed budget before next flush check; actual encoder fakeROS evidence retained. No ARM or flight stall proof.",
+      "patch": {
+        "path": "candidates/ipc_send_budget/CANDIDATE_NOT_DEPLOYED.patch",
+        "sha256": "a4051125e042a1ac4707a2792306d1b437e88337d0b607b622e179a127e35b9f",
+        "git_apply_check_exit": 0,
+        "applied_to_production": false
+      },
+      "original_evidence": [
+        "ipc/candidate_ipc_burst.json",
+        "ipc/actual_state_measure.json"
+      ],
+      "initial_candidate_evidence": "ipc/candidate_ipc_budget.json and candidates/ipc_send_budget/REVIEW_REQUIRED.json refer to pre-review candidate SHA; final corrected SHA and scope in control/ipc_cross_review.json.",
+      "final_candidate_validation": "control/ipc_candidate_drop_review_runs.json: precision2requests final callback1,error preserved; no repeated burst test.",
+      "human_review_required": true,
+      "deployed": false,
+      "limitations": "Post-handler budget check does not bound individual allocation or all short replies; earlier disconnect affects runtime recovery/queue ordering."
+    },
+    {
+      "id": "C3",
+      "severity": "P2",
+      "confirmed": "Native start poll/killpg natural-exit race skips owned Agent cleanup in fakeprocess trace.",
+      "patch": {
+        "path": "candidates/start_exit_race.patch",
+        "sha256": "5df4f51d511df09313521cf444e4257829d61b45f42db7911e7b75092e09aa1a",
+        "git_apply_check_exit": 0,
+        "applied_to_production": false
+      },
+      "original_and_candidate": "lifecycle/supervisor_exit_race.json",
+      "human_review_required": true,
+      "deployed": false,
+      "limitations": "Only ProcessLookupError recheck; existing formal navigation service does not use this legacy start entry, no live UART/motor defect proven."
+    },
+    {
+      "id": "C4",
+      "severity": "P2",
+      "confirmed": "Pre-launch Thread.start failure then join unstarted thread interrupts supervisor cleanup/retry, confirmed with actual Thread object/fake start.",
+      "patch": null,
+      "original_evidence": "lifecycle/standby_unstarted_transport.json",
+      "why_no_patch": "lifecycle/standby_candidate_disposition.json: ident None/not alive does not exclude post-admission worker waiting to start; safe handshake requires design review.",
+      "human_review_required": true,
+      "deployed": false
+    }
+  ],
+  "production_candidate_behavior_changes": false,
+  "normal_error_contract_debt": {
+    "severity": "P3",
+    "evidence": "root/numeric_rejection_audit.json",
+    "fact": "Huge JSON ints failclosed with OverflowError in profile/permit paths, no malformed acceptance. No source gate behavior changed; defer isolated error-boundary handling."
+  }
+}

@@ -1,0 +1,742 @@
+{
+  "baseline": "1e824f883fe6255f8d265b1cece339a83594b059",
+  "root": {
+    "baseline": "1e824f883fe6255f8d265b1cece339a83594b059",
+    "files": [
+      {
+        "path": "navigation_deploy.py",
+        "sha256": "fdc11f8bae767a17ec8c3f17e53a9839714df472aa760b2b5303da82bad23a95",
+        "baseline_sha256": "b8fb776755ea946ed43d7a53abbfe8357979e775ccf67699183a67422f32791b",
+        "exactly_unchanged": false,
+        "reviewed_scope": "Log constructor/final write and exception ownership; offline/online/main/step AST identical. Root tested disk failure and repeated close. Deployment operations not executed."
+      },
+      {
+        "path": "navigation_install.py",
+        "sha256": "ef6b80d0d8fcf83f440ef7026b9e60f9bcaed01718fa6b1be372169c09dfda7b",
+        "baseline_sha256": "ef6b80d0d8fcf83f440ef7026b9e60f9bcaed01718fa6b1be372169c09dfda7b",
+        "exactly_unchanged": true,
+        "reviewed_scope": "Read only build identity, single-handler boot cleanup, ground permit freshness/invalid timestamp boundary. Huge timestamp rejects via OverflowError; no acceptance bypass. Old ordinary close error may mask business exception; no broad refactor."
+      },
+      {
+        "path": "navigation_service.py",
+        "sha256": "dcdc64abc435ede5617f323a4aa0df30c0c4230190847ba1097c0309dc350940",
+        "baseline_sha256": "dcdc64abc435ede5617f323a4aa0df30c0c4230190847ba1097c0309dc350940",
+        "exactly_unchanged": true,
+        "reviewed_scope": "Read only explicit mode/confirmation, closed vision and arm gates, config projection and malformed numeric targets; huge target error-contract gap recorded."
+      },
+      {
+        "path": "navigation_restore.py",
+        "sha256": "bc97282e0b5b42a8049975202f81ab1a9bd54adcfa73dd58e935de0a3ca9bc4a",
+        "baseline_sha256": "bc97282e0b5b42a8049975202f81ab1a9bd54adcfa73dd58e935de0a3ca9bc4a",
+        "exactly_unchanged": true,
+        "reviewed_scope": "Read only online signal/rollback/control handoff ordering; no lifecycle behavior changes or actual activation. No renewed exhaustive line audit."
+      },
+      {
+        "path": "navigation_report.py",
+        "sha256": "7ccf3b01fe9b536bfdc5e701457bc703bd7d4bc1a8853cae3a920b8401e8ce68",
+        "baseline_sha256": "7ccf3b01fe9b536bfdc5e701457bc703bd7d4bc1a8853cae3a920b8401e8ce68",
+        "exactly_unchanged": true,
+        "reviewed_scope": "Read bounded regular-file capture, source path containment and status non-atomic evidence; existing path checks retained. No new confirmed bypass within scoped review."
+      },
+      {
+        "path": "navigation_build_evidence.py",
+        "sha256": "95d5bb59dde4da51f3b886aeb9e6c8a76ee79eff58fb7d33a22d184ad959f5a8",
+        "baseline_sha256": "95d5bb59dde4da51f3b886aeb9e6c8a76ee79eff58fb7d33a22d184ad959f5a8",
+        "exactly_unchanged": true,
+        "reviewed_scope": "Read independent source/installed ELF identity and owned-temp cleanup; existing tests retained in full regression, not used as sole proof."
+      },
+      {
+        "path": "vision_settings.py",
+        "sha256": "25f77a5c09ba3f68b335d7278b14a567bd64bc9288f2403ca9520168483a5877",
+        "baseline_sha256": "25f77a5c09ba3f68b335d7278b14a567bd64bc9288f2403ca9520168483a5877",
+        "exactly_unchanged": true,
+        "reviewed_scope": "Reinspect independent actual input and command rejection, error contract and explicit disabled path; no automatic runtime activation. Stage5 quality candidate not promoted to defect."
+      },
+      {
+        "path": "navigation_collect.py",
+        "sha256": "489879af68ba34ed20a29cf16f419dbfc9245c13666977c79f1bb85400a3aa55",
+        "baseline_sha256": "490e6ac77a420b9c03302829bb30b2a3f6bcd00b9278b90330d221366225360e",
+        "exactly_unchanged": false,
+        "reviewed_scope": "Independent review of owned Context, partial init, Node destroy failure and exception chaining; original9+new15 rerun; three real passive Humble cycles no fmu publishers."
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
+        "sha256": "6ad57d9dbcb7665eec10027d71db8c82a9cdabaa24f6a74340ceaeea93478842",
+        "baseline_sha256": "6ad57d9dbcb7665eec10027d71db8c82a9cdabaa24f6a74340ceaeea93478842",
+        "exactly_unchanged": true,
+        "reviewed_scope": "Read producer/consumer ownership and mutex fields: pending/queue/bytes guarded by same mutex, deadline+dropped atomic, consumer releases queue mutex before nonblocking write/poll. Lost wakeup avoidance has deadline under predicate mutex. Constructor restores acquired flags/signal on thread failure. Current usage assumes logger outlives all stream writers; streambuffer replacement during concurrent external writes not proved safe. Destructor join is no hard realtime bound; allocator/mutex stalls remain. No new race proved; TSan runtime unavailable."
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp",
+        "sha256": "0ac823c9daaa1d001db0908dc4d5a5bc9d0f823f655eede874421e7b06250253",
+        "baseline_sha256": "0ac823c9daaa1d001db0908dc4d5a5bc9d0f823f655eede874421e7b06250253",
+        "exactly_unchanged": true,
+        "reviewed_scope": "Read full cooperative budget/order: monotonic invalid/regressed counter rejects, sticky stop untilbegin, firstpass exceptions explicit, max10 passes not max10callbacks and no preemption of blocking callback. Control authority remains final context responsibility."
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp",
+        "sha256": "98677753de1b5c5e1097777aee54307acdedf60ed6ab7ae57673155155789d04",
+        "baseline_sha256": "98677753de1b5c5e1097777aee54307acdedf60ed6ab7ae57673155155789d04",
+        "exactly_unchanged": true,
+        "reviewed_scope": "Read capacity/overflow/acknowledge/clear: queue32 and sticky overflow, healthytail cannot directly clear; single-threaded Node owns mutation. noexcept not assumed for deque allocation: actual arbitrary OOM progression remains outside proof."
+      }
+    ],
+    "deployment_protected_AST": [
+      {
+        "name": "offline",
+        "full_AST_unchanged": true
+      },
+      {
+        "name": "online",
+        "full_AST_unchanged": true
+      },
+      {
+        "name": "main",
+        "full_AST_unchanged": true
+      },
+      {
+        "name": "DeploymentLog.record",
+        "full_AST_unchanged": true
+      },
+      {
+        "name": "DeploymentLog.step",
+        "full_AST_unchanged": true
+      }
+    ],
+    "scope": "Adversarial focused audit plus requested regression; not full path/state-space proof or fresh deep review of every file."
+  },
+  "lifecycle": {
+    "baseline": "1e824f883fe6255f8d265b1cece339a83594b059",
+    "scope": "Independent targeted resource/lifecycle audit. Tests use fake resources; no real ROS/Agent/service/UART/motor operations. This is not renewed full-file line-by-line review of every unrelated launcher path.",
+    "files": [
+      {
+        "path": "navigation_collect.py",
+        "decision": "modified",
+        "classification": "P2 confirmed passive collector cleanup",
+        "reviewed_scope": "Node destroy failure skipped shutdown; partial init failure outside cleanup; minimal owned-context and first-error repair, 15 new methods and original 9 passed.",
+        "sha256": "489879af68ba34ed20a29cf16f419dbfc9245c13666977c79f1bb85400a3aa55",
+        "baseline_sha256": "490e6ac77a420b9c03302829bb30b2a3f6bcd00b9278b90330d221366225360e",
+        "exactly_unchanged": false
+      },
+      {
+        "path": "navigation_probe.py",
+        "decision": "reviewed unchanged",
+        "classification": "existing safety protection",
+        "reviewed_scope": "Ground status/land source progression and armed latch; per-step cleanup/cause order. Default Context ownership is serial-only, not a concurrent caller isolation contract. No new defect confirmed in scoped review.",
+        "sha256": "d5e853669bf2d8e8fbc8744d99e79851c765d4205bc4be2e05c339ce5f645994",
+        "baseline_sha256": "d5e853669bf2d8e8fbc8744d99e79851c765d4205bc4be2e05c339ce5f645994",
+        "exactly_unchanged": true
+      },
+      {
+        "path": "feedback_age_probe.py",
+        "decision": "reviewed unchanged",
+        "classification": "existing diagnostic cleanup",
+        "reviewed_scope": "Explicit resource ordering and first-error handling; bounded window and aged reports. Existing Stage4 fixes retained; no new confirmed issue, no repeated ROS hardware smoke.",
+        "sha256": "d8dbb09dca98a851b98f961e805b31b8565b98246209cf11fc1604f347b00539",
+        "baseline_sha256": "d8dbb09dca98a851b98f961e805b31b8565b98246209cf11fc1604f347b00539",
+        "exactly_unchanged": true
+      },
+      {
+        "path": "native/tools/vision_odometry_adapter.py",
+        "decision": "reviewed unchanged",
+        "classification": "existing exit protection",
+        "reviewed_scope": "Node constructed before configure, context ownership, deferred signal requests, remove/destroy/shutdown/handler restore with independent cleanup attempts. Baseline allocation and signal tests inspected; not claimed fresh exhaustive proof.",
+        "sha256": "89dd21c97be568889313b0d59d1c9e1a8bf6400d82d0e3b0d77ca4bfa709c9c0",
+        "baseline_sha256": "89dd21c97be568889313b0d59d1c9e1a8bf6400d82d0e3b0d77ca4bfa709c9c0",
+        "exactly_unchanged": true
+      },
+      {
+        "path": "native/tools/velocity_command_diagnostic.py",
+        "decision": "reviewed unchanged",
+        "classification": "existing exit protection",
+        "reviewed_scope": "Configure failure and final snapshot resource ownership; stop request defers cleanup to current callback completion. No source behavior changes; no real ROS execution in this subtask.",
+        "sha256": "d5b7f470d37e2a89870283dde9f48c35406a05bcd9e16b665efbf5ea257cdb68",
+        "baseline_sha256": "d5b7f470d37e2a89870283dde9f48c35406a05bcd9e16b665efbf5ea257cdb68",
+        "exactly_unchanged": true
+      },
+      {
+        "path": "standby.py",
+        "decision": "reviewed unchanged",
+        "classification": "P2 confirmed lifecycle candidate",
+        "reviewed_scope": "AgentTransport.start failure leaves unstarted Thread; close join raises and skips subsequent cleanup/retry. Simulated before launch, no new worker/process. Other failing release steps can abort later cleanup, but not all are independently classified as defects.",
+        "sha256": "51d8d6e761e21f10ec01398de274ebbadeb4a44e87b0a40713ab4ea144ee4614",
+        "baseline_sha256": "51d8d6e761e21f10ec01398de274ebbadeb4a44e87b0a40713ab4ea144ee4614",
+        "exactly_unchanged": true
+      },
+      {
+        "path": "native/tools/start.py",
+        "decision": "reviewed unchanged",
+        "classification": "P2 confirmed race candidate",
+        "reviewed_scope": "poll→killpg natural exit ESRCH interrupts owned Agent cleanup. Candidate catches only ESRCH then rechecks node poll; unconfirmed-live still preserves Agent and original failure. Not applied to production.",
+        "sha256": "fe5aa1d0cf09a091a5df8255b2eedfb685e1954a5dae2eebb53c1c144233525f",
+        "baseline_sha256": "fe5aa1d0cf09a091a5df8255b2eedfb685e1954a5dae2eebb53c1c144233525f",
+        "exactly_unchanged": true
+      },
+      {
+        "path": "launcher.py",
+        "decision": "reviewed unchanged",
+        "classification": "existing safety boundaries / structural risk",
+        "reviewed_scope": "Inspected graceful NodeStop, finish_agent fresh-ground evidence, final cleanup sequence. Some cleanup exceptions can skip later plain statements; no new isolated fix or comprehensive failure proof made because lifecycle/order affects active control dependencies.",
+        "sha256": "9089f43f4346643f968dbb9ca1f53bf8302e63f3e4b963df35f20d175b8374ce",
+        "baseline_sha256": "9089f43f4346643f968dbb9ca1f53bf8302e63f3e4b963df35f20d175b8374ce",
+        "exactly_unchanged": true
+      }
+    ],
+    "fixed_issue": {
+      "priority": "P2",
+      "id": "PASSIVE-COLLECT-EXCEPTION-CLEANUP",
+      "original_results": "15 methods: failures=7 errors=1, including KeyboardInterrupt/SystemExit subtest failures. Original full source and logs saved.",
+      "final_results": "24 methods (9 original +15 new), pass/no skip; repeated12 cycles; three normal/partial canonical-result/resource traces baseline-identical.",
+      "invariants": "Original business error identity/cause remains; cleanup errors visible; each next owned cleanup attempted; existing Context not closed. Shutdown failure proves attempt only."
+    },
+    "isolated_candidates": [
+      {
+        "id": "NATIVE-START-EXIT-RACE",
+        "priority": "P2",
+        "patch": "../candidates/start_exit_race.patch",
+        "needs_human_review": true,
+        "production_modified": false,
+        "evidence": "supervisor_exit_race.json"
+      },
+      {
+        "id": "STANDBY-UNSTARTED-TRANSPORT-JOIN",
+        "priority": "P2",
+        "patch": null,
+        "needs_human_review": true,
+        "production_modified": false,
+        "evidence": "standby_unstarted_transport.json",
+        "next_step": "Review start/close publication ownership and live Agent handoff before candidate implementation; no blind all-actions cleanup."
+      }
+    ],
+    "independent_cross_review": "deployment_logs_cross_review.json",
+    "unsupported_claims_avoided": [
+      "No proof of live persistent lock/UART leak after interpreter teardown",
+      "No new motor/permission fault proven",
+      "No live hardware, DDS load or ARM64 performance result",
+      "No mathematical proof of all failures or arbitrary OOM safety"
+    ]
+  },
+  "control": {
+    "baseline": "1e824f883fe6255f8d265b1cece339a83594b059",
+    "reviewed_production_files": [
+      {
+        "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+        "sha256": "ce6536cbbd115996a42ccdd8097fe33ed89e7460a4d3baba2f5cb1bf6e29a51c",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+        "sha256": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+        "sha256": "c7e9b9951f02cc7380d7d06e62b889ac22a1ba349871c952718f529a77820d26",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+        "sha256": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+        "sha256": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+        "sha256": "242d7d64d137d835fae4e682ead34e71998d6aaa90fd80860235e67eb8389ab6",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp",
+        "sha256": "98677753de1b5c5e1097777aee54307acdedf60ed6ab7ae57673155155789d04",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp",
+        "sha256": "0ac823c9daaa1d001db0908dc4d5a5bc9d0f823f655eede874421e7b06250253",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+        "sha256": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+        "sha256": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/control_diagnostics.hpp",
+        "sha256": "57549f2b5bd371b940055533bd747beacbf1b948c664ba1b495954b366c1df1e",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp",
+        "sha256": "35d3c0b30c77d22c3598be88b2555eafd4b71bdd01ee386f9db66b3f26e55a18",
+        "baseline_unchanged": true
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
+        "sha256": "4886efd0342aad2040a6f94c3d075578d44a5ace728169f4f6a08ba43269595e",
+        "baseline_unchanged": true
+      }
+    ],
+    "confirmed_issues": [
+      {
+        "id": "S6-C1-RC-GROUND-DETECTOR-BURST",
+        "severity": "P2",
+        "kind": "confirmed application ground-proof evidence defect; safety candidate only",
+        "root_cause": "now-ground_since measures host idle interval; three early land frames can qualify without detector observations spanning ground_seconds; gap checked only upon new land",
+        "original_observation": {
+          "ready_at_seconds": 2.05,
+          "land_frames": 3,
+          "land_span_seconds": 0.1,
+          "land_idle_seconds": 1.9,
+          "configured_max_gap_seconds": 1.25,
+          "source_receipt_timeout_seconds": 2.5,
+          "flight_started": false,
+          "automatic_arm_or_nonzero": false
+        },
+        "patch": "candidates/S6_C1_ground_burst.patch",
+        "patch_sha256": "3a8aa6da946b483819c784f60ab92dbf79155caa3080005e99ca928de4365790",
+        "candidate_header_sha256": "19aa5dc4df0346019b597c26524d045dc93afc511f4bca0dfba458108036f350",
+        "driver": "candidates/S6_C1_ground_burst.cpp",
+        "driver_sha256": "0bb55d965e3f6e74a22b9736f8e3fa79761ccde81c138b54b04865025680c28c",
+        "original_failure_and_candidate_pass": "control/ground_candidate_runs.json",
+        "candidate_regression": "control/targeted_checks.json",
+        "candidate_not_deployed": true,
+        "human_review_required": true
+      }
+    ],
+    "historical_faults": {
+      "CONTROL_LOOP_STALL": "Safety rejection exists in raw elapsed, CurrentControlCycle and final sink contexts; cooperative callbacks/IPC cannot be preempted. Not removed.",
+      "VERTICAL_VELOCITY_INCONSISTENT": "Diagnostic only in current guard; hard data/time/gap/position integral gates remain. Legacy reason in recovery whitelist not active hard fault.",
+      "PARTIAL_OR_FAILED_SETPOINT_PUBLICATION": "Non-atomic target/heartbeat is conservatively latched when second stage fails; exact local evidence preserved.",
+      "HEARTBEAT_FINAL_CONTEXT_CHANGED": "Third context may reject after target; cannot return as fully unattempted. TTL/stall tests pass.",
+      "ground_reference": "Disarmed current evidence may rebuild, armed reference frozen; confirmed detector-duration candidate above."
+    },
+    "tests": {
+      "programs": [
+        {
+          "source": "native/tests/test_rc_navigation.cpp",
+          "sha256": "de0ed642be059a959ad21602c794ad6f5100f45fc94bafad0cb97559ec72ecdf",
+          "variant": "isolated candidate overlay",
+          "steps": [
+            {
+              "argv": [
+                "g++",
+                "-std=c++17",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-pedantic",
+                "-pthread",
+                "-I",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/candidates/S6_C1_overlay",
+                "-I",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tests/test_rc_navigation.cpp",
+                "-o",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_navigation_candidate"
+              ],
+              "returncode": 0,
+              "seconds": 1.0798106520014699,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_navigation_candidate.compile.log"
+            },
+            {
+              "argv": [
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_navigation_candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.025898452004184946,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_navigation_candidate.run.log"
+            }
+          ],
+          "passed": true
+        },
+        {
+          "source": "native/tests/test_rc_recovery_progress.cpp",
+          "sha256": "70c723357090dc8ccf0138a85b5144a92cdbd8d7761a811d2713cd8eb5fdb63d",
+          "variant": "isolated candidate overlay",
+          "steps": [
+            {
+              "argv": [
+                "g++",
+                "-std=c++17",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-pedantic",
+                "-pthread",
+                "-I",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/candidates/S6_C1_overlay",
+                "-I",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tests/test_rc_recovery_progress.cpp",
+                "-o",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_recovery_progress_candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.7322666600011871,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_recovery_progress_candidate.compile.log"
+            },
+            {
+              "argv": [
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_recovery_progress_candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.00225046699779341,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_recovery_progress_candidate.run.log"
+            }
+          ],
+          "passed": true
+        },
+        {
+          "source": "native/tests/test_rc_preparation_defer.cpp",
+          "sha256": "017a2e2b7e6f5a8adeb0c09dbc109e24eb1d86765f6c541d4b651e384211635e",
+          "variant": "isolated candidate overlay",
+          "steps": [
+            {
+              "argv": [
+                "g++",
+                "-std=c++17",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-pedantic",
+                "-pthread",
+                "-I",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/candidates/S6_C1_overlay",
+                "-I",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tests/test_rc_preparation_defer.cpp",
+                "-o",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_preparation_defer_candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.8747084150018054,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_preparation_defer_candidate.compile.log"
+            },
+            {
+              "argv": [
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_preparation_defer_candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.0040922180050984025,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_preparation_defer_candidate.run.log"
+            }
+          ],
+          "passed": true
+        },
+        {
+          "source": "native/tests/test_rc_timing_recovery.cpp",
+          "sha256": "f9966a9464b9bcb533784869d1968444bb67be1ec40324f354e89bd9e9ae08ee",
+          "variant": "unchanged production",
+          "steps": [
+            {
+              "argv": [
+                "g++",
+                "-std=c++17",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-pedantic",
+                "-pthread",
+                "-I",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tests/test_rc_timing_recovery.cpp",
+                "-o",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_timing_recovery_original"
+              ],
+              "returncode": 0,
+              "seconds": 1.09212101099547,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_timing_recovery_original.compile.log"
+            },
+            {
+              "argv": [
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_timing_recovery_original"
+              ],
+              "returncode": 0,
+              "seconds": 0.0055922140018083155,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_rc_timing_recovery_original.run.log"
+            }
+          ],
+          "passed": true
+        },
+        {
+          "source": "native/tests/test_vertical_feedback_guard.cpp",
+          "sha256": "8165afca76f1792816a554392cc22b42219bac310ed563d45a0defcd96679789",
+          "variant": "unchanged production",
+          "steps": [
+            {
+              "argv": [
+                "g++",
+                "-std=c++17",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-pedantic",
+                "-pthread",
+                "-I",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tests/test_vertical_feedback_guard.cpp",
+                "-o",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_vertical_feedback_guard_original"
+              ],
+              "returncode": 0,
+              "seconds": 0.3138116859990987,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_vertical_feedback_guard_original.compile.log"
+            },
+            {
+              "argv": [
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_vertical_feedback_guard_original"
+              ],
+              "returncode": 0,
+              "seconds": 0.0017260169988730922,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_vertical_feedback_guard_original.run.log"
+            }
+          ],
+          "passed": true
+        },
+        {
+          "source": "native/tests/test_stage3_publication_combinations.cpp",
+          "sha256": "6b174e3e079533dd1452b55fe70fa2a78d485650d58ae15f6af34576ef43eafc",
+          "variant": "unchanged production",
+          "steps": [
+            {
+              "argv": [
+                "g++",
+                "-std=c++17",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-pedantic",
+                "-pthread",
+                "-I",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tests/test_stage3_publication_combinations.cpp",
+                "-o",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_stage3_publication_combinations_original"
+              ],
+              "returncode": 0,
+              "seconds": 0.5825766589987325,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_stage3_publication_combinations_original.compile.log"
+            },
+            {
+              "argv": [
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_stage3_publication_combinations_original"
+              ],
+              "returncode": 0,
+              "seconds": 0.0022033200002624653,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_stage3_publication_combinations_original.run.log"
+            }
+          ],
+          "passed": true
+        },
+        {
+          "source": "native/tests/test_offline_timing.cpp",
+          "sha256": "d854a63ee94cfa42ffb778457c7f497a59470c11289886701a500f45a8475379",
+          "variant": "unchanged production",
+          "steps": [
+            {
+              "argv": [
+                "g++",
+                "-std=c++17",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-pedantic",
+                "-pthread",
+                "-I",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tests/test_offline_timing.cpp",
+                "-o",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_offline_timing_original"
+              ],
+              "returncode": 0,
+              "seconds": 0.5749895080007263,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_offline_timing_original.compile.log"
+            },
+            {
+              "argv": [
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_offline_timing_original"
+              ],
+              "returncode": 0,
+              "seconds": 0.001803769999241922,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/test_offline_timing_original.run.log"
+            }
+          ],
+          "passed": true
+        },
+        {
+          "source": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/candidates/S6_C1_ground_burst.cpp",
+          "sha256": "0bb55d965e3f6e74a22b9736f8e3fa79761ccde81c138b54b04865025680c28c",
+          "variant": "isolated candidate ASan/UBSan",
+          "steps": [
+            {
+              "argv": [
+                "g++",
+                "-std=c++17",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-pedantic",
+                "-pthread",
+                "-fsanitize=address,undefined",
+                "-fno-omit-frame-pointer",
+                "-g",
+                "-I",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/candidates/S6_C1_overlay",
+                "-I",
+                "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/candidates/S6_C1_ground_burst.cpp",
+                "-o",
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/ground_contract_candidate_asan_ubsan"
+              ],
+              "returncode": 0,
+              "seconds": 4.0689205630042125,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/ground_contract_candidate_sanitizer.compile.log"
+            },
+            {
+              "argv": [
+                "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/ground_contract_candidate_asan_ubsan"
+              ],
+              "returncode": 0,
+              "seconds": 0.018850899999961257,
+              "log": "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/ground_contract_candidate_sanitizer.run.log"
+            }
+          ],
+          "passed": true
+        }
+      ],
+      "all_passed": true
+    },
+    "static_analyzer": {
+      "compiler": "/usr/bin/clang++",
+      "version": "Ubuntu clang version 14.0.0-1ubuntu1.1",
+      "argv": [
+        "/usr/bin/clang++",
+        "--analyze",
+        "-std=c++17",
+        "-Wall",
+        "-Wextra",
+        "-pedantic",
+        "-pthread",
+        "-I",
+        "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/candidates/S6_C1_overlay",
+        "-I",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+        "-Xanalyzer",
+        "-analyzer-output=text",
+        "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/candidates/S6_C1_ground_burst.cpp",
+        "-o",
+        "/home/jikl62/.cache/fc01-logic-stage6-20261112-6_1ed60o/control/S6_C1_analyzer.plist"
+      ],
+      "returncode": 0,
+      "seconds": 1.466595405996486,
+      "warning_count": 0,
+      "error_count": 0
+    },
+    "ipc_independent_review": "control/ipc_cross_review.json",
+    "production_control_source_modifications": false,
+    "new_repo_tests_added_by_this_agent": false,
+    "no_real_ros_hardware_push_commit_deploy": true,
+    "limits": [
+      "Finite host/fake sink scenarios only",
+      "No ARM64/real flight scheduling conclusion",
+      "No mathematical state-space proof",
+      "No new sufficiently supported P0/P1 finding",
+      "Final C2 candidate precise exception fixture only, original burst intentionally not rerun"
+    ]
+  },
+  "ipc_independent_review": {
+    "scope": "Independent read-only inspection of already-produced IPC evidence; corrected only isolated candidate catch boundary and precision two-request fixture. No burst replay, real ROS, network data stream, services, Agent or hardware by reviewer. Original IPC agent was stopped by platform risk detection before final delivery; its logs are preserved and not described as a completed fresh run by this reviewer.",
+    "production_unchanged": true,
+    "production_source": {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
+      "sha256": "4886efd0342aad2040a6f94c3d075578d44a5ace728169f4f6a08ba43269595e"
+    },
+    "repo_host_contract": {
+      "path": "native/tests/test_overnight_stage6_ipc.cpp",
+      "sha256": "d63ececb0fab67cd19e808759d00409cb20242577a3d1c618f3243901e69c2e6",
+      "reviewed": true,
+      "meaningful_cases": [
+        "split/coalesced frames",
+        "malformed and nonfinite operands",
+        "sequence replay",
+        "handler exception and reconnect cleanup",
+        "raw-sample TTL and regression latch"
+      ],
+      "prior_sanitizer_log": "ipc/new_contract.json records initial new-test fixture bug found by ASan then corrected; logs/snapshot preserved, not a production memory bug."
+    },
+    "reviewed_original_artifacts": [
+      "ipc/candidate_ipc_burst.json",
+      "ipc/candidate_ipc_budget.json",
+      "ipc/actual_state_measure.json",
+      "ipc/new_contract.json"
+    ],
+    "original_observations": {
+      "synthetic_handler_callbacks": 350,
+      "synthetic_response_bytes": 1433950,
+      "real_encoder_fake_ros_response_bytes": 4106092,
+      "real_encoder_fake_ros_poll_seconds": 0.0119099,
+      "scope": "Real UnixServer; fake ROS API and actual SystemNode state encoder, Runtime STATUS. No tick/control step/real DDS/power sink. Host measurement does not establish ARM64 or real flight stall."
+    },
+    "root_cause": "UnixServer checks output >65536 only at start of next poll; one <=4096-byte receive may synchronously handle many complete requests and encode responses before next check.",
+    "severity": "P2 reliability safety candidate; earlier disconnect changes Runtime disconnect timing and needs human review. Not proof of CONTROL_LOOP_STALL on real hardware or of unauthorized output.",
+    "production_call_chain": [
+      {
+        "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+        "lines": [
+          427,
+          429,
+          431,
+          438,
+          451,
+          463,
+          464,
+          465,
+          467,
+          520
+        ],
+        "fact": "poll synchronously invokes Runtime.request and state encoder before runtime.step; cycle/current rejects overdue output before attitude publication; each final boundary resamples current context."
+      },
+      {
+        "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+        "lines": [
+          298,
+          299
+        ],
+        "fact": "!control_fresh denies ControlStall; a loop overrun is protected rejection, not a bypass."
+      }
+    ],
+    "initial_candidate_review_finding": {
+      "confirmed": "drop(disconnected) inside handler try could call disconnected twice if disconnected itself throws std::exception.",
+      "precision_fixture": "control/ipc_candidate_drop_exception.cpp: only two STATUS lines, one synthetic65537-byte reply and a throwing disconnect callback.",
+      "before_result": "handled1/disconnect2/original error propagated; exit1",
+      "corrected_result": "handled1/disconnect1/original error propagated; exit0",
+      "exact_runs": "control/ipc_candidate_drop_review_runs.json"
+    },
+    "final_candidate": {
+      "path": "candidates/ipc_send_budget/CANDIDATE_NOT_DEPLOYED.patch",
+      "sha256": "a4051125e042a1ac4707a2792306d1b437e88337d0b607b622e179a127e35b9f",
+      "header_sha256": "5e03665e69bfdc1de7c21f4e9f042c8edbe365571aca8694df0f245217e3e005",
+      "old_header_snapshot": "candidates/ipc_send_budget/unix_server.before_catch_review.hpp",
+      "old_patch_snapshot": "candidates/ipc_send_budget/CANDIDATE_BEFORE_CATCH_REVIEW.patch",
+      "change": "Budget drop after request catch; existing parse/handler exception catch remains original.",
+      "limits": [
+        "Still only checks after one handler/reply allocation",
+        "No request-count/time bound for tiny replies",
+        "LAND/STOP queued ordering and earlier disconnect descent/preparation changes need explicit policy review",
+        "Final corrected candidate burst not rerun, intentionally limited to precision exception test"
+      ],
+      "human_review_required": true,
+      "adopted_into_production": false
+    }
+  },
+  "scope": "Fresh focused adversarial source review across listed paths and requested full regression. This ledger is not a renewed line-by-line audit of every historical test/config or an exhaustive state-space proof."
+}
