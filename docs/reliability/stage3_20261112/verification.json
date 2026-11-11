@@ -1,0 +1,398 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+  "source_head_before_final_metadata": "e8a856ad94d4d579cd4a0e20e9497259eb5a8ad1",
+  "scope": "Stage3 host reliability fixes; isolated ROS and pure control traces; no ARM64 or real flight acceptance",
+  "acceptance": "host affected-module and full regression passed; TSan initialization failed; no ARM64/flight acceptance",
+  "configuration": "configuration_invariants.json",
+  "changed_files": "changed_files.json",
+  "intentional_differences": [
+    "probe finalization always attempts all owned cleanup; original body/first-finalization exception wins; borrowed active context is preserved",
+    "adapter configuration failure explicitly destroys constructed Node; primary/secondary exception chains and caller Context are retained",
+    "visual identity fields reject >256 UTF-8 bytes, NUL and malformed Unicode without caching/logging original text; invalidation does not reset trusted sequence watermarks",
+    "AsyncLog initialization rollback; allocation failure is dropped and counted without corrupting budget or terminating destructor"
+  ],
+  "strict_equivalence": {
+    "node": {
+      "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+      "comparison": "strict-byte-identical",
+      "controlled_fixture_input": {
+        "diagnostic_controller_pid": 4242
+      },
+      "state_samples": 1350,
+      "lines": 1908,
+      "sha256": "5f968a9e84f787e3cbc6dd03939cb965a1c62303688d3190f88ad9df80803c2d"
+    },
+    "powered-node": {
+      "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+      "comparison": "strict-byte-identical",
+      "driver_sha256": "fd0d83488b03c66f5734b72b9f1f9c9c1ecd5ab4dad4e474c9fe547fd901415d",
+      "state_samples": 707,
+      "phase_counts": {
+        "IDLE": 41,
+        "RC_PRESTREAM": 80,
+        "RC_READY_WAIT_ARM": 11,
+        "RC_ARMED_WAIT_NAVIGATION": 3,
+        "ARMED_GROUND": 21,
+        "THRUST_RAMP": 117,
+        "ASCEND": 131,
+        "HEIGHT_HOLD": 6,
+        "DESCENT": 155,
+        "LANDED": 61,
+        "REQUEST_DISARM": 3,
+        "SAFE_DISARMED": 1,
+        "SAFETY": 77
+      },
+      "sink_order_counts": {
+        "TARGET,HEARTBEAT": 587,
+        "TARGET,HEARTBEAT,COMMAND": 1
+      },
+      "trace_sha256": "f47d3a0f1fc2258afd2f7a18b0bcbb8758b77aeb93a9b3279817262376512790",
+      "normalization": {
+        "diagnostic_controller_pid": 4242
+      },
+      "float_sink_encoding": "hexfloat exact for all target/command floating fields",
+      "scope": "Synthetic 20Hz source feedback and fake ROS; production node/control/publish code.",
+      "hardware_or_flight_validation": false
+    },
+    "test_stage2_control_trace": {
+      "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+      "source_sha256": "4b8f684b367f210b31c84195e605e874550b376125e5f30a187e763a144f86c5",
+      "comparison": "strict-byte-identical",
+      "lines": 14626,
+      "bytes": 2485479,
+      "sha256": "82efd1071b1affe0feb8a62c164989d6616d7471af068a1ef6be585fa2838675"
+    },
+    "test_stage2_publication_trace": {
+      "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+      "source_sha256": "0e0ee079fdaf5e9569189beeae28cfcbea1d41d095ec53bd4ec830709ba1c1ca",
+      "comparison": "strict-byte-identical",
+      "lines": 10779,
+      "bytes": 466537,
+      "sha256": "4a9a25a5511b6156a9539bcfa55f67429af8bb425b54e1133d595ebf91c1605a"
+    },
+    "test_stage2_runtime_trace": {
+      "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+      "source_sha256": "69ba8fb940af92194a521eef394401ddd12f8a8eadfd32965ca492a4af0ac0b7",
+      "comparison": "strict-byte-identical",
+      "lines": 966,
+      "bytes": 256454,
+      "sha256": "dfe14871bca040c800d1062a5e5f0349c0ea51a48276a40030d4b31984ca6408"
+    },
+    "test_stage3_publication_combinations": {
+      "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+      "source_sha256": "6b174e3e079533dd1452b55fe70fa2a78d485650d58ae15f6af34576ef43eafc",
+      "comparison": "strict-byte-identical",
+      "lines": 523,
+      "bytes": 29506,
+      "sha256": "6b07bec0d8e633fd3c11ec1378bc8d9464541917deb225ad4507c6ea7dbf8dfb"
+    },
+    "test_stage3_state_invariants": {
+      "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+      "source_sha256": "969cc4104dd12b86602a8f1eae8dd4643331cbbe9316fbf62a0ecfb2c0d84ff8",
+      "comparison": "strict-byte-identical",
+      "lines": 282,
+      "bytes": 15709,
+      "sha256": "63d41e4ef9729995b729aeb1ec01a268e093072270283bcfb9bb8d0a18d2e269"
+    },
+    "ordinary_cpp_vision": "stage3_vision_budget/dynamic_equivalence.json: 2400 records, strict bytes",
+    "ordinary_python_vision": "stage3_vision_budget/python_equivalence.json: 80 full canonical JSON records, strict bytes"
+  },
+  "tests": {
+    "cpp_ctest": {
+      "executables": 80,
+      "passed": true,
+      "build": "Debug assert enabled",
+      "log": "ctest-final.log",
+      "commands": [
+        "cmake -S native/tests -B CACHE/ctest-build -DCMAKE_BUILD_TYPE=Debug",
+        "cmake --build CACHE/ctest-build -j2",
+        "ctest --test-dir CACHE/ctest-build --output-on-failure -j2"
+      ]
+    },
+    "python_native": {
+      "executions": 41,
+      "passed": true,
+      "log": "python-native-final.log",
+      "command": "python3 -m unittest discover -s native/tests -p test_*.py -v"
+    },
+    "format": [
+      {
+        "language": "cpp",
+        "files": 130,
+        "returncode": 0,
+        "scope": "Same accepted Stage2 active-source list plus every Stage3 added/modified source; immutable historical counterexamples retained unchanged.",
+        "command_prefix": [
+          "clang-format",
+          "--dry-run",
+          "--Werror"
+        ],
+        "complete_command_file": "format.json"
+      },
+      {
+        "language": "python",
+        "files": 113,
+        "returncode": 0,
+        "scope": "Same accepted Stage2 active-source list plus every Stage3 added/modified source; immutable historical counterexamples retained unchanged.",
+        "command_prefix": [
+          "python3",
+          "-m",
+          "black"
+        ],
+        "complete_command_file": "format.json"
+      }
+    ],
+    "asan_ubsan": {
+      "unique_programs": 9,
+      "passed": true,
+      "safety_six": "stage3_sanitizers/summary.json",
+      "logging_two": "stage3_async_log/module_report.json",
+      "budget_one": "stage3_vision_budget/sanitizer.json",
+      "source_identity": "module/source_hashes JSON records; code unchanged since runs"
+    },
+    "tsan": {
+      "utc": "2026-11-11T17:20:14.444943+00:00",
+      "compile_command": [
+        "g++",
+        "-std=c++17",
+        "-O1",
+        "-g",
+        "-fno-omit-frame-pointer",
+        "-fsanitize=thread",
+        "-pthread",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-I/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system/include",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/tests/test_async_log.cpp",
+        "-o",
+        "/home/jikl62/.cache/fc01-stage3-20261112/run-jv6ltzrw/stage3_sanitizers/test_async_log_tsan"
+      ],
+      "run_command": [
+        "/home/jikl62/.cache/fc01-stage3-20261112/run-jv6ltzrw/stage3_sanitizers/test_async_log_tsan"
+      ],
+      "source_sha256": "e0ea5f54354123e3c95a055bdcb2158049f08f9c37fd0d48583f584ef7ac3cd1",
+      "production_header_sha256": "044eda56a75ddd7ebaae9da94dd47fa35cf087f77f5a236d478a18f8cc8d4f64",
+      "passed": false,
+      "compile_exit": 0,
+      "run_exit": 66,
+      "stdout_stderr": "FATAL: ThreadSanitizer: unexpected memory mapping 0x64945c8f7000-0x64945c8fa000\n",
+      "runtime_supported": false,
+      "qualification": "Only return code 0 would count as passed; failed runtime initialization is no race-safety evidence."
+    },
+    "lifecycle": {
+      "probe_real_ros_cases": 28,
+      "probe_log": "stage3_probe/real-ros-probe-followup.json",
+      "adapter_real_ros_cases": 20,
+      "adapter_log": "stage3_vision_lifecycle/lifecycle.final.report.json",
+      "scope": "Host localhost-only isolated domains; no real Agent or control node, probe ground readiness is test fixture only",
+      "adapter_source": "/home/jikl62/.cache/fc01-stage3-20261112/run-jv6ltzrw/ros/install/jikl_fc01_system/lib/jikl_fc01_system/vision_odometry_adapter.py",
+      "adapter_domain": 229,
+      "adapter_final_source_verified": true
+    },
+    "python_root": {
+      "executions": 534,
+      "passed": true,
+      "skipped": 0,
+      "log": "python-root-accepted.log",
+      "sha256": "eae7b5da382084fa91d0c61af083c4b6283082b9d978fb28488565d9e3373510",
+      "command": "python3 -m unittest discover -s tests -p 'test_*.py' -v"
+    },
+    "python_total_executions": 575,
+    "counting_policy": "534 root + 41 native Python test method executions. Native/CMake runners both execute the same 80 C++ programs; do not add these reruns or 9 sanitizer programs as independent test counts.",
+    "packaging": {
+      "executions": 11,
+      "passed": true,
+      "command": "PYTHONPATH=tests python3 -m unittest test_navigation_install.BundleTests test_vertical_diagnostic_bundle -v",
+      "log": "packaging-final.log",
+      "sha256": "ae09b8bae0d7631387b46af71c4f99cf00859ed20aaed20db25ec92a59db22dd",
+      "scope": "fixtures and current manifest generation guards; exact final checkout payload independently compared after metadata freeze"
+    }
+  },
+  "limitations": [
+    "Finite deterministic cases are not an exhaustive mathematical state-space proof",
+    "DDS may allocate strings during deserialization before this application gate",
+    "No ARM64 compiler/emulator or Orange Pi available in this x86_64 host run",
+    "No real PX4 actuator adoption, visual tracking, calibration or flight dynamics measured"
+  ],
+  "operational_actions": {
+    "pushed": false,
+    "merged": false,
+    "rebased": false,
+    "force_pushed": false,
+    "deployed": false,
+    "main_modified": false,
+    "px4_parameters_changed": false,
+    "production_controller_started": false,
+    "agent_serial_or_systemd_used": false,
+    "motors_or_flight": false,
+    "dist_regenerated": false
+  },
+  "ros": {
+    "clean_humble_build_passed": true,
+    "build_command": "ros/build.command.sh",
+    "build_log": "ros/build.log",
+    "vision": {
+      "passed": true,
+      "domain_id": 231,
+      "localhost_only": true,
+      "adapter_path": "/home/jikl62/.cache/fc01-stage3-20261112/run-jv6ltzrw/ros/install/jikl_fc01_system/lib/jikl_fc01_system/vision_odometry_adapter.py",
+      "checks": [
+        "read_only_startup_parameters",
+        "valid_conversion",
+        "raw_conflict_revoked",
+        "no_fmu_publishers",
+        "sigint_clean_exit",
+        "utf8_identity_budget_revoked",
+        "fresh_pair_after_resource_rejection"
+      ],
+      "publisher_endpoints": [
+        [
+          "/fc01_demo/state",
+          [
+            "jikl_fc01_system/msg/VisionState"
+          ]
+        ],
+        [
+          "/parameter_events",
+          [
+            "rcl_interfaces/msg/ParameterEvent"
+          ]
+        ],
+        [
+          "/rosout",
+          [
+            "rcl_interfaces/msg/Log"
+          ]
+        ]
+      ],
+      "shutdown_exit_code": 0
+    },
+    "velocity": {
+      "domain_id": 232,
+      "localhost_only": true,
+      "control_authority": false,
+      "interface": {
+        "type": "jikl_fc01_system/msg/VelocityCommand",
+        "fields": {
+          "schema_version": "uint16",
+          "sequence": "uint64",
+          "stamp": "builtin_interfaces/Time",
+          "reset_counter": "uint32",
+          "source_id": "string",
+          "frame_id": "string",
+          "valid": "boolean",
+          "vx": "double",
+          "vy": "double",
+          "vz": "double"
+        },
+        "default_frame_id": "",
+        "serialization_round_trip": true
+      },
+      "checks": [
+        "startup_overrides_and_read_only_runtime_parameters",
+        "best_effort_type_and_payload",
+        "unconfigured_policy_does_not_qualify_cache",
+        "duplicate_and_out_of_order",
+        "invalid_and_retained_anomaly",
+        "reset_and_source_changes",
+        "source_count_and_reliable_to_best_effort",
+        "explicit_test_timeout",
+        "diagnostic_has_no_fmu_publishers",
+        "reliable_to_reliable",
+        "sigint_final_snapshot_and_forced_anomaly_flush"
+      ],
+      "test_timeout_sec": 1.0,
+      "timeout_is_test_fixture": true,
+      "diagnostic_publishers": [
+        [
+          "/parameter_events",
+          [
+            "rcl_interfaces/msg/ParameterEvent"
+          ]
+        ],
+        [
+          "/rosout",
+          [
+            "rcl_interfaces/msg/Log"
+          ]
+        ]
+      ],
+      "passed": true
+    },
+    "installed_headers": 35,
+    "installed_python_files": 4,
+    "messages": 5,
+    "field_roundtrip_comparisons": 1010,
+    "install_evidence": "ros/install_semantic_verification.json",
+    "benchmark": "ros/host_performance.json"
+  },
+  "development_failures": [
+    "Candidate nested-finally could mask original error and close borrowed Context; replaced with owned cleanup and explicit primary failure",
+    "Independent review: implicit exception context was hidden by first adapter chain draft; fixed and retested",
+    "Independent review: new resource rejection cleared identity and lowered sequence watermark; fixed, new state/command regressions",
+    "Independent review: sys.exc_info could inherit caller handled exception and hide probe write error; explicit local primary exception fix committed separately",
+    "First root full suite: 534 executions, one failure because Python native runner omitted test-only linker wraps; fixed runner/cache identity, final 534-case full rerun passed",
+    "First format command accidentally included immutable historical counterexamples; preserved those files and reran same established active-source list plus all Stage3 changes",
+    "All module reproduction/compile harness corrections retained in module reports; TSan failed initialization and is not a pass",
+    "Extra final installed-adapter lifecycle precheck: domain 233 rejected by FastDDS port limit before adapter started; original failure preserved; valid isolated domain229 precheck and all20 scenarios passed"
+  ],
+  "module_commits": [
+    "3fbb3f7986a0af7fdc594e6f20e7261fdaef7ae9 fix(probe): release owned ROS resources while preserving primary failures",
+    "9e9d7396d8341e28b62a7b05d71c437ccecbc0b6 fix(vision): own partially configured nodes and preserve lifecycle failure chains",
+    "769ad51602f9a6107cee3d66214f49e3528d9c2c fix(probe): distinguish handled caller exceptions from current failures",
+    "2af4ede0773a2573277de9eb12ddcdb8062739f2 fix(logging): roll back startup failures and retain bounded logs under allocation errors",
+    "522923c3c13dcde0ac1f1be9a930283e8ccdcbd0 test(control): verify ordered hazards, publication failures and stage3 baseline traces",
+    "0e1937ae47e1fcbbad7a8b8029a937041e794812 fix(vision): bound UTF-8 identities before caching and retain revocation watermarks",
+    "e8a856ad94d4d579cd4a0e20e9497259eb5a8ad1 test(logging): link resource injection consistently in the native runner"
+  ],
+  "source_sha256": {
+    "native/src/jikl_fc01_system/CMakeLists.txt": "43d4deaece7d9153028a9c788e19495fbbfc70d349e4383a51eebbf02b41e2b8",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp": "044eda56a75ddd7ebaae9da94dd47fa35cf087f77f5a236d478a18f8cc8d4f64",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp": "8a91b56d51740979ba0cc53f4824136d2239793397fcd916b10d011c529bf563",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp": "7a6ae9a7f32681e0edd2376bc1be808e13ed362f6d2b50eb31e08e309f7e082e",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_resource_budget.hpp": "04a87f7dfe99fd9c96dde1eb0d8b3ca2344095c59d43fa6da5f11ed56285135c",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp": "c16f81a93fe753378d2a8b28401dbdbc14685fd7d12dda7e1df3647d732c4b6c",
+    "native/tests/CMakeLists.txt": "be2a68c448d7c3c79cc22838778f158a7bc2f3b375eb99551757508af2ac086a",
+    "native/tests/test_stage3_async_log_resources.cpp": "3a78722231922a9b95c353c6fb03b9cb9ed0b4f09064fce006b274144d50bfe0",
+    "native/tests/test_stage3_publication_combinations.cpp": "6b174e3e079533dd1452b55fe70fa2a78d485650d58ae15f6af34576ef43eafc",
+    "native/tests/test_stage3_state_invariants.cpp": "969cc4104dd12b86602a8f1eae8dd4643331cbbe9316fbf62a0ecfb2c0d84ff8",
+    "native/tests/test_stage3_vision_resource_budget.cpp": "a757bb9553d3d7c0c10d3cfae76c411ada3d60955002d40fc1aa4632f1799eb7",
+    "native/tools/velocity_command_diagnostic.py": "96b74fa8452da8b4faeafa0439d0af7f92a384b51bfb5470f44faf081009b578",
+    "native/tools/vision_odometry_adapter.py": "5378771c2bcfc7eb284ce125c99b5b059a7045958bf3699d381b996a9a461416",
+    "native/tools/vision_resource_budget.py": "c479c97b6b84686fba0ff3443592c757d9a2c35425b7e0db7a521f06d9c28927",
+    "native/tools/vision_state_validation.py": "f15c4604ba242d8b1263075f813c7f1787c073d33942783a75d4adc5c1a0e0ca",
+    "navigation_probe.py": "49cbe25644307fdc2f0300d963b19c424f81af590b1336a2a4e14a31c9949f4b",
+    "tests/ros_vision_smoke.py": "bf7e307087ca2e8d2cade15e752c8642c9d23cf3ad000f687c49fc1ae2d9f067",
+    "tests/run_native_cpp.py": "efa523b49b4a782c9b1d2d3798c911a0852e9706a6cab002fc902212028ef6e9",
+    "tests/stage2_python_trace.py": "0886f00cc2c56a0d377641a306a84bb56af8ebaf79dd4f8ef04485ed2a444930",
+    "tests/test_native_install_layout.py": "37bdd71b68abdd23d85597f9f53983f137f4bf75e7a5f0a645ad4349a3569ffd",
+    "tests/test_stage2_python_equivalence.py": "10a90779c1ea41d78b7a3c34d86f970ba210911bd04aa85e7da5db6342b0335e",
+    "tests/test_stage2_vision_equivalence.py": "0d7dacbbaa9979575fb95a34b8d2e1fc0fe39e5cacd948d0c5cb36d1fa053aee",
+    "tests/test_stage3_adapter_budget.py": "7c1ede474eb3fe8f938d8287932e8ce7ac6d3671e37699ee7ea6a3958d3367ce",
+    "tests/test_stage3_control_equivalence.py": "48382e06af3f7a4b479a3e0ab5c6322320f47b78fa18617c39347f1d9c1387e5",
+    "tests/test_stage3_probe_lifecycle.py": "91f7c54ed8bc99c987d7e60a3912f92ed31f47ebff2a28b5db0dc88b3c8ad2f7",
+    "tests/test_stage3_vision_lifecycle.py": "09bb86f4125961fd354c3bcf6d82922a3b3d8e5f0610c3afed1a23fee6e63268",
+    "tests/test_stage3_vision_resource_budget.py": "5462f7c73edc011abedb540725eef3c6b0dc4f312f7f29ff906466cf9b5ca293"
+  },
+  "independent_final_review": [
+    "stage3_probe/final-delivery-review.json",
+    "stage3_vision_budget/final_resource_contract_review.json"
+  ],
+  "evidence_index": "evidence_index.json",
+  "structural_debt": "structural_debt.json",
+  "final_payload_verification": {
+    "script_in_full_archive": "verify_final_delivery.py",
+    "result_cache_only": "/home/jikl62/.cache/fc01-stage3-20261112/run-jv6ltzrw/final_integrity_verification.json",
+    "required_checks": [
+      "bundle ZIP CRC",
+      "all current file bytes match",
+      "SHA map and sidecar match",
+      "all evidence ZIP member SHA match",
+      "512 files /8MiB total /1MiB per-file unchanged",
+      "protected config/control/history/dist still unchanged"
+    ],
+    "scope": "Runs after final delivery metadata is frozen, never extracts or deploys. See post-archive result for actual measured bytes and outcome."
+  }
+}

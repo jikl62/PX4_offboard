@@ -1,0 +1,135 @@
+{
+  "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+  "historical_list": "docs/readability/stage2_20261111/refactor_coverage.json",
+  "partial_count": 12,
+  "files": [
+    {
+      "path": "launcher.py",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "cf9dc10bc8b609c3599dbba614a90de3b5a0f1c2dbaba660b48531e41c05c095",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "交互循环与异常恢复的早返回顺序仍集中；未分离持有channel的异常恢复循环，避免关闭/续租所有权变化。"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "e53fdf955b4923a0cb17f8c5feba22cd3cbb1436c09b167654c13c8f80f78108",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "Core::step仍795行，公共检查和其余阶段转移仍耦合。",
+        "observe_safety_event保留128行逐来源拒绝优先级和健康尾帧不能清故障合同。",
+        "observe_rc_recovery仍91行，窗口断续/首拒绝条件和就绪计算仍连续保留。"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "5eaed14da1a55806d4cb63440ea5073b0d198839802cec4e386a2051f12de300",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "主策略125行，阶段白名单和动力后包络仍集中；短路顺序具有权限语义。"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "b973a96663a6c0485f859d82ec8c85d326a95c0c074fc254ea3dee6635ab681b",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "observe_ground_reference仍87行，独立DDS源计数/窗口不连续/参考重捕获集中。",
+        "step仍109行，公共健康门和WaitArm转换保留。"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "a0bc3838b62fbc496c90cca4866d860c4155e3322fafb8ad956fa1791bc3f1a5",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "request/ack/step仍137/112/151行；同步域候选与400歧义必须保留独立状态确认。"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "10aaac1ae27ab4c694cc9a3ede8927ad428475378e917a08ba82aaf88396d7b7",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "step118行仍包含健康和准备/Offboard/Arm/Takeoff分派。"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "status": "partial",
+      "byte_unchanged_from_baseline": false,
+      "sha256": "7a6ae9a7f32681e0edd2376bc1be808e13ed362f6d2b50eb31e08e309f7e082e",
+      "stage3_work": "新增有界输入校验、撤销保留水位；外环状态顺序未拆分",
+      "remaining": [
+        "step136行仍持有模式目标捕获、运动计划和中间有限性/姿态限制。"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "535aa142fb718c28371b3b35b9b637c8ce1bf078891575e542940f9f6d2cf47f",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "构造197行未拆，profile/QoS/回调注册顺序保留。",
+        "tick360行，危险事件→计划→重采样→目标→心跳→动作→报告→恢复仍原地可见。",
+        "snapshot71行负责采样时点/独占/路线组合，state148行仍有其余诊断分组。"
+      ]
+    },
+    {
+      "path": "native/tools/fcctl.py",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "67e8162a325d6f37f1474195ab3075082b441e6772dfd7a83d34320eb96bf080",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "run仍199行；ACK匹配、速度期限及一次性Arm确认水位继续由单一循环拥有，不为缩短函数分散状态。"
+      ]
+    },
+    {
+      "path": "navigation_probe.py",
+      "status": "partial",
+      "byte_unchanged_from_baseline": false,
+      "sha256": "49cbe25644307fdc2f0300d963b19c424f81af590b1336a2a4e14a31c9949f4b",
+      "stage3_work": "证据写入与资源所有权修复；等待/观测协调仍保留",
+      "remaining": [
+        "Agent取得、ok/verified_at写水位与finally仍处于同一probe；将等待封装成返回值会改变异常期间已观察ok的记录，故保留。"
+      ],
+      "resolved_in_stage3": [
+        "原finally写盘错误跳过ROS清理的缺口已正式修复，原候选只作历史证据"
+      ]
+    },
+    {
+      "path": "navigation_restore.py",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "b182c66bd49b35bdf85034d007bfe558af207d7244f62493246f7027325b108e",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "activate中的changed/started仍在实际动作前更新，停旧/切换/启动的补偿水位不抽成返回bool，防止异常导致水位丢失。"
+      ]
+    },
+    {
+      "path": "standby.py",
+      "status": "partial",
+      "byte_unchanged_from_baseline": true,
+      "sha256": "ba8a2e4677da76ee6f2ea582390a9ceaedab6a7237c5e195d62fa3109c7c1cce",
+      "stage3_work": "维持原顺序，通过受影响模块及全量/差分验证；未拆分主协调逻辑",
+      "remaining": [
+        "supervise保留启动锁、preflight、配置写入、传输先行、原生创建、日志泵、监控的协调顺序；不把一次资源取得封装成丢失部分失败所有权的返回对象。"
+      ]
+    }
+  ]
+}
