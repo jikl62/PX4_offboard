@@ -17,8 +17,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LifecycleIntegration(unittest.TestCase):
+    @staticmethod
+    def console_ground_observer(module):
+        # 以 Mission 真正消费了地面反馈作为输入握手；进程启动 0.1 秒不代表已收到状态。
+        ground_seen = threading.Event()
+        original_observe = module.Mission.observe
+
+        def observe(mission, state, now):
+            # 原方法先更新任务状态，测试只观察结果，不伪造反馈或放宽任何准备条件。
+            original_observe(mission, state, now)
+            if state.get('phase') == 'IDLE' and not module.readiness_issues(state):
+                # 只有完整、未解锁的可准备地面状态，才允许模拟操作员发送起飞输入。
+                ground_seen.set()
+
+        return ground_seen, observe
+
     def run_quit_with_output_or_report(self, output=None, slow_report=False, pending_arm=False, end_event='quit'):
         m = importlib.import_module('launcher')
+        ground_seen, observe = self.console_ground_observer(m)
         with tempfile.TemporaryDirectory(prefix='fc01_io_') as d:
             root = Path(d)
             a, b = socket.socketpair()
@@ -47,7 +63,10 @@ class LifecycleIntegration(unittest.TestCase):
 
             def operator():
                 with os.fdopen(wfd, 'w', buffering=1) as writer:
-                    time.sleep(0.1)
+                    # 最多等 3 秒真实反馈；超时退出，由主线程明确报告握手失败。
+                    if not ground_seen.wait(timeout=3):
+                        writer.write('quit\n')
+                        return
                     writer.write('takeoff 0.5\n')
                     end = time.monotonic()+3
                     while time.monotonic() < end:
@@ -65,12 +84,13 @@ class LifecycleIntegration(unittest.TestCase):
             t = threading.Thread(target=operator)
             t.start()
             try:
-                with patch.object(sys, 'stdin', reader), patch.object(e, 'report', side_effect=report), contextlib.redirect_stdout(output or io.StringIO()):
+                with patch.object(m.Mission, 'observe', observe), patch.object(sys, 'stdin', reader), patch.object(e, 'report', side_effect=report), contextlib.redirect_stdout(output or io.StringIO()):
                     result = m.run_console(m.Channel(a), node, e, {'aa_max_height': 5.0}, True, 15, stop_signal)
                 node.wait(timeout=3)
                 report('after_native_exit')
                 rows = [json.loads(row) for row in trace.read_text().splitlines()]
                 ops = [r['op'] for r in rows]
+                self.assertTrue(ground_seen.is_set(), 'console did not consume ready ground feedback')
                 self.assertEqual(result, {'quit':'operator_quit', 'eof':'operator_eof', 'signal':'operator_signal'}[end_event])
                 self.assertEqual(ops.count('TAKEOFF'), 1)
                 self.assertTrue(any(r['op'] == 'PING' for r in rows[ops.index('LAND')+1:]))
@@ -128,6 +148,7 @@ class LifecycleIntegration(unittest.TestCase):
 
     def test_explicit_takeoff_quit_keeps_heartbeat_through_native_descent(self):
         m = importlib.import_module('launcher')
+        ground_seen, observe = self.console_ground_observer(m)
         with tempfile.TemporaryDirectory(prefix='fc01_it_') as d:
             root = Path(d)
             trace = root/'trace.jsonl'
@@ -145,7 +166,10 @@ class LifecycleIntegration(unittest.TestCase):
 
             def operator():
                 with os.fdopen(wfd, 'w', buffering=1) as writer:
-                    time.sleep(0.1)
+                    # 此测试同样等到 Mission 已消费地面反馈，不依赖测试机的进程启动速度。
+                    if not ground_seen.wait(timeout=3):
+                        writer.write('quit\n')
+                        return
                     writer.write('takeoff 0.5\n')
                     end = time.monotonic()+3
                     while time.monotonic() < end:
@@ -157,12 +181,13 @@ class LifecycleIntegration(unittest.TestCase):
 
             t = threading.Thread(target=operator)
             t.start()
-            with patch.object(sys, 'stdin', reader), contextlib.redirect_stdout(io.StringIO()):
+            with patch.object(m.Mission, 'observe', observe), patch.object(sys, 'stdin', reader), contextlib.redirect_stdout(io.StringIO()):
                 result = m.run_console(channel, node, e, {'aa_max_height': 5.0}, True, 15, [False])
             t.join(timeout=4)
             node.wait(timeout=3)
             rows = [json.loads(line) for line in trace.read_text().splitlines()]
             ops = [row['op'] for row in rows]
+            self.assertTrue(ground_seen.is_set(), 'console did not consume ready ground feedback')
             self.assertEqual(result, 'operator_quit')
             self.assertEqual(ops.count('TAKEOFF'), 1)
             self.assertLess(ops.index('AUTHORITY_RC'), ops.index('ATTITUDE_READY'))
