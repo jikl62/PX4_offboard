@@ -1,0 +1,101 @@
+{
+  "source_head": "4c3c360941575049ebac78dbbf4ce58f098d93b6",
+  "report_sha256": "c53b124b7f8d6b2b1c43d388f05537ca3fe9ac3bf7e52ddd5c2eb5b4a1f7230f",
+  "initial_528_tracked_files_byte_identical": true,
+  "protected_14_refs_unchanged": true,
+  "report_local_links": [
+    {
+      "target": "BASELINE.json",
+      "exists": true
+    },
+    {
+      "target": "final_stage7/night_changes.json",
+      "exists": true
+    },
+    {
+      "target": "cpp_stage2/README_zh.md",
+      "exists": true
+    },
+    {
+      "target": "interfaces_stage3/README_zh.md",
+      "exists": true
+    },
+    {
+      "target": "python_stage4/README_zh.md",
+      "exists": true
+    },
+    {
+      "target": "vision_stage5/README_zh.md",
+      "exists": true
+    },
+    {
+      "target": "logic_stage6/README_zh.md",
+      "exists": true
+    },
+    {
+      "target": "final_stage7/file_index.tsv",
+      "exists": true
+    },
+    {
+      "target": "final_stage7/READABILITY_REVIEW_zh.md",
+      "exists": true
+    },
+    {
+      "target": "final_stage7/BEHAVIOR_REVIEW_zh.md",
+      "exists": true
+    },
+    {
+      "target": "final_stage7/ROS_REVIEW_zh.md",
+      "exists": true
+    },
+    {
+      "target": "final_stage7/final_payload_audit.json",
+      "exists": true
+    },
+    {
+      "target": "logic_stage6/candidate_index.json",
+      "exists": true
+    },
+    {
+      "target": "final_stage7/verification.json",
+      "exists": true
+    },
+    {
+      "target": "final_stage7/evidence_index.json",
+      "exists": true
+    },
+    {
+      "target": "final_stage7/evidence.zip",
+      "exists": true
+    }
+  ],
+  "json_parsed": [
+    "verification.json",
+    "final_payload_audit.json",
+    "night_changes.json",
+    "evidence_index.json"
+  ],
+  "tsv_candidates": 350,
+  "archive_sha256": "7efb1277f0fe7e0959b956384af51c68f10293fa896220b02f928d98fe3e302e",
+  "archive_bytes": 1031064,
+  "archive_member_count": 228,
+  "crc_and_all_member_sha_passed": true,
+  "duplicate_text_content_alias_count": 15,
+  "aliases_content_sha_passed": true,
+  "credential_pattern_scan": {
+    "checked": "new acceptance ZIP only; raw keys/tokens are never printed",
+    "suspected_count": 0,
+    "limits": "Pattern check is not an exhaustive privacy guarantee."
+  },
+  "test_counts_and_source_identity_cross_checks": true,
+  "current_HEAD_frozen_during_acceptance": true,
+  "candidate_application": false,
+  "push_deploy_hardware": false,
+  "review_artifacts": [
+    "root/final_behavior_cross_review.json",
+    "root/final_readability_cross_review.json",
+    "root/final_ros_cross_review.json",
+    "root/python_changes_independent_review.json"
+  ],
+  "review_followup": "Root applied the reported wording corrections for TSV fields, C++ compression-rule scope and historical vertical diagnostic label; no production edits."
+}

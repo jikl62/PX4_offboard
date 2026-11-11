@@ -1,0 +1,696 @@
+{
+  "schema_version": 1,
+  "stage": 7,
+  "source_accepted_head": "4c3c360941575049ebac78dbbf4ce58f098d93b6",
+  "overnight_start": "5b86eeb4094ada009903c0140f66289cfe89411e",
+  "branch": "readability/fc01-chinese-20261111",
+  "final_archive_commit": "Obtain with git log -1 --format=%H -- docs/readability/overnight_20261112/FINAL_REPORT_zh.md; self commit is not embedded recursively.",
+  "stage7_production_changes": 0,
+  "all_528_initial_tracked_files_unchanged_before_new_docs": true,
+  "night_changes": {
+    "files_before_stage7_docs": 122,
+    "categories": {
+      "production/tool/interface": 67,
+      "report/evidence": 38,
+      "test": 17
+    },
+    "commits_before_stage7_archive": 23,
+    "independent_fix_commits": 12,
+    "added_python_test_methods": 101,
+    "added_top_level_host_cpp_programs": 2
+  },
+  "readability": {
+    "tracked_files": 528,
+    "all_source_configuration_metadata_candidates": 350,
+    "current_scanner_source_count": 316,
+    "explicit_additional_metadata": 7,
+    "current_source_and_metadata_candidates": 323,
+    "categories": {
+      "active": 323,
+      "generated_release_bundle": 6,
+      "historical_evidence": 1,
+      "frozen_historical_backup": 10,
+      "historical_reproduction": 10
+    },
+    "current_languages": {
+      "formatter_config": 1,
+      "metadata": 7,
+      "python": 126,
+      "shell": 36,
+      "yaml": 11,
+      "cmake": 3,
+      "cpp": 132,
+      "ros_message": 5,
+      "package_xml": 1,
+      "python_tool_config": 1
+    },
+    "current_review_depths": {
+      "full_file_manual_read": 34,
+      "automated_inventory_and_structure_only": 276,
+      "manual_key_flow_inspection": 13
+    },
+    "current_full_manual_file_count": 34,
+    "current_key_flow_file_count": 13,
+    "all_files_fully_reassessed": false,
+    "current_candidate_paths_changed_since_overnight_start": 84,
+    "files_with_cross_cpp_fixture_include": 25,
+    "files_with_compressed_statement_candidates": 0,
+    "source_changed_during_audit": [],
+    "head_changed_during_audit": false
+  },
+  "python_root": {
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-v"
+    ],
+    "cwd": "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+    "returncode": 1,
+    "seconds": 97.513702465003,
+    "env_overrides": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "tests_run": 635,
+    "errors": [
+      "test_candidate_directory_and_development_experiment_exclusion (test_navigation_install.BundleTests)",
+      "test_exact_self_extraction_repeat_and_conflict (test_navigation_install.BundleTests)",
+      "test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests)"
+    ],
+    "failures": [],
+    "skips": [],
+    "log_sha256": "88565d8f4931e2c6cd50e33e2f4236f3d550ab5ee49ec718bf8ad40e9fed5e37",
+    "passed_methods": 632
+  },
+  "python_native": {
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "native/tests",
+      "-v"
+    ],
+    "cwd": "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+    "returncode": 0,
+    "seconds": 28.919245570003113,
+    "env_overrides": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "tests_run": 41,
+    "errors": [],
+    "failures": [],
+    "skips": [],
+    "log_sha256": "08acd8dad437c575f83572a2365a1d106c83c1016387da05f8fc5f569fb21cb2",
+    "passed_methods": 41
+  },
+  "python_total": {
+    "method_executions": 676,
+    "passed": 673,
+    "errors": 3,
+    "failed": 0,
+    "skipped": 0
+  },
+  "host_cpp": {
+    "current_program_count": 82,
+    "passed": true,
+    "evidence": "root/python_root.log: NativeNavigationTests.test_cpp_regressions_and_rc_navigation passed; it executes tests/run_native_cpp.py and requires exit0. Each content-keyed program is actually run; successful child stdout captured by unittest, not printed.",
+    "included_in_python_root_aggregate": true,
+    "no_extra_82_added_to_unittest_count": true
+  },
+  "fresh_night_baseline_differential": {
+    "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+    "head": "4c3c360941575049ebac78dbbf4ce58f098d93b6",
+    "seconds": 27.618492432993662,
+    "testsRun": 7,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [],
+    "successful": true,
+    "manifest": [
+      {
+        "path": "node-baseline.log",
+        "bytes": 16162534,
+        "sha256": "5f968a9e84f787e3cbc6dd03939cb965a1c62303688d3190f88ad9df80803c2d"
+      },
+      {
+        "path": "node-current.log",
+        "bytes": 16162534,
+        "sha256": "5f968a9e84f787e3cbc6dd03939cb965a1c62303688d3190f88ad9df80803c2d"
+      },
+      {
+        "path": "node.json",
+        "bytes": 299,
+        "sha256": "9c3014603a43eb697eb9b330f6f3fc5f85744fb5a55dfe8e1043bcce94255619"
+      },
+      {
+        "path": "powered-node-baseline-full.log",
+        "bytes": 10211619,
+        "sha256": "972f99c529ffeeae7e6a94f7a9b9f4ba0dc9802a22c0f99bff92cc8f4ed204ce"
+      },
+      {
+        "path": "powered-node-baseline-stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "powered-node-baseline.log",
+        "bytes": 9032313,
+        "sha256": "f47d3a0f1fc2258afd2f7a18b0bcbb8758b77aeb93a9b3279817262376512790"
+      },
+      {
+        "path": "powered-node-current-full.log",
+        "bytes": 10211618,
+        "sha256": "308a314dfde737d633468cec8888baedd7f8ba3d36f2394ceb7e55c9ba8b3058"
+      },
+      {
+        "path": "powered-node-current-stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "powered-node-current.log",
+        "bytes": 9032313,
+        "sha256": "f47d3a0f1fc2258afd2f7a18b0bcbb8758b77aeb93a9b3279817262376512790"
+      },
+      {
+        "path": "powered-node.json",
+        "bytes": 999,
+        "sha256": "b31d405a616fa907a59d97431ad44109bf8027c865cedaa5435add539ed99356"
+      },
+      {
+        "path": "test_stage2_control_trace-baseline.log",
+        "bytes": 2485479,
+        "sha256": "82efd1071b1affe0feb8a62c164989d6616d7471af068a1ef6be585fa2838675"
+      },
+      {
+        "path": "test_stage2_control_trace-current.log",
+        "bytes": 2485479,
+        "sha256": "82efd1071b1affe0feb8a62c164989d6616d7471af068a1ef6be585fa2838675"
+      },
+      {
+        "path": "test_stage2_control_trace.json",
+        "bytes": 307,
+        "sha256": "92b14d42cc5429eb557d670d9e9910383e4dbeff007e53e60c15a92be0f7b6be"
+      },
+      {
+        "path": "test_stage2_publication_trace-baseline.log",
+        "bytes": 466537,
+        "sha256": "4a9a25a5511b6156a9539bcfa55f67429af8bb425b54e1133d595ebf91c1605a"
+      },
+      {
+        "path": "test_stage2_publication_trace-current.log",
+        "bytes": 466537,
+        "sha256": "4a9a25a5511b6156a9539bcfa55f67429af8bb425b54e1133d595ebf91c1605a"
+      },
+      {
+        "path": "test_stage2_publication_trace.json",
+        "bytes": 306,
+        "sha256": "454f7369b0621ade82bab7423b081b4e42de3a59f541a453386f4f513107b534"
+      },
+      {
+        "path": "test_stage2_runtime_trace-baseline.log",
+        "bytes": 256454,
+        "sha256": "dfe14871bca040c800d1062a5e5f0349c0ea51a48276a40030d4b31984ca6408"
+      },
+      {
+        "path": "test_stage2_runtime_trace-current.log",
+        "bytes": 256454,
+        "sha256": "dfe14871bca040c800d1062a5e5f0349c0ea51a48276a40030d4b31984ca6408"
+      },
+      {
+        "path": "test_stage2_runtime_trace.json",
+        "bytes": 304,
+        "sha256": "0ddc39b95ea8aaa7eb29b761367f13f224621573ea8b4c7458092c224d5dcd2c"
+      },
+      {
+        "path": "test_stage3_publication_combinations-baseline.log",
+        "bytes": 29506,
+        "sha256": "6b07bec0d8e633fd3c11ec1378bc8d9464541917deb225ad4507c6ea7dbf8dfb"
+      },
+      {
+        "path": "test_stage3_publication_combinations-current.log",
+        "bytes": 29506,
+        "sha256": "6b07bec0d8e633fd3c11ec1378bc8d9464541917deb225ad4507c6ea7dbf8dfb"
+      },
+      {
+        "path": "test_stage3_publication_combinations.json",
+        "bytes": 303,
+        "sha256": "005dac6cbb10140fcd3928a7956ea0ce6aae3ce7db1d28d957ac035821190f9c"
+      },
+      {
+        "path": "test_stage3_state_invariants-baseline.log",
+        "bytes": 15709,
+        "sha256": "63d41e4ef9729995b729aeb1ec01a268e093072270283bcfb9bb8d0a18d2e269"
+      },
+      {
+        "path": "test_stage3_state_invariants-current.log",
+        "bytes": 15709,
+        "sha256": "63d41e4ef9729995b729aeb1ec01a268e093072270283bcfb9bb8d0a18d2e269"
+      },
+      {
+        "path": "test_stage3_state_invariants.json",
+        "bytes": 303,
+        "sha256": "a876f7399ab518f8a74a596cadb6473ab867e7a5e2aff75bba5e53c3079b2174"
+      }
+    ],
+    "scope": "No hardware or actual ROS control node; fake sinks run actual production Core, Runtime and SystemNode."
+  },
+  "asan_ubsan": {
+    "programs": 9,
+    "runs_per_program": 3,
+    "successful": true,
+    "details": "behavior/sanitizers/summary.json",
+    "leak_detection": true,
+    "note": "Separate from regular82; not added to unittest totals."
+  },
+  "fresh_ROS_Humble": {
+    "passed": true,
+    "source_head": "4c3c360941575049ebac78dbbf4ce58f098d93b6",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+    "architecture": "x86_64",
+    "build": {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/build.command.sh"
+      ],
+      "returncode": 0,
+      "seconds": 45.69007157700253,
+      "log": "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/build.log"
+    },
+    "generated_interfaces": {
+      "messages": 5,
+      "passed": true,
+      "result": {
+        "argv": [
+          "bash",
+          "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/generated_interfaces.command.sh"
+        ],
+        "returncode": 0,
+        "seconds": 0.5046378780025407,
+        "log": "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/generated_interfaces.log"
+      },
+      "ros_init_called": false
+    },
+    "vision_smoke": {
+      "checks": 7,
+      "passed": true,
+      "result": {
+        "argv": [
+          "bash",
+          "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/vision.command.sh"
+        ],
+        "returncode": 0,
+        "seconds": 4.581695223998395,
+        "log": "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/vision.log"
+      },
+      "domain": 223,
+      "check_names": [
+        "read_only_startup_parameters",
+        "valid_conversion",
+        "raw_conflict_revoked",
+        "no_fmu_publishers",
+        "sigint_clean_exit",
+        "utf8_identity_budget_revoked",
+        "fresh_pair_after_resource_rejection"
+      ]
+    },
+    "velocity_smoke": {
+      "checks": 11,
+      "passed": true,
+      "result": {
+        "argv": [
+          "bash",
+          "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/velocity.command.sh"
+        ],
+        "returncode": 0,
+        "seconds": 9.566871301998617,
+        "log": "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/velocity.log"
+      },
+      "domain": 224,
+      "check_names": [
+        "startup_overrides_and_read_only_runtime_parameters",
+        "best_effort_type_and_payload",
+        "unconfigured_policy_does_not_qualify_cache",
+        "duplicate_and_out_of_order",
+        "invalid_and_retained_anomaly",
+        "reset_and_source_changes",
+        "source_count_and_reliable_to_best_effort",
+        "explicit_test_timeout",
+        "diagnostic_has_no_fmu_publishers",
+        "reliable_to_reliable",
+        "sigint_final_snapshot_and_forced_anomaly_flush"
+      ]
+    },
+    "collector_lifecycle": {
+      "cycles": 3,
+      "passed": true,
+      "result": {
+        "argv": [
+          "bash",
+          "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/collect.command.sh"
+        ],
+        "returncode": 0,
+        "seconds": 4.653782746005163,
+        "log": "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/ros/collect.log"
+      },
+      "domain": 225
+    },
+    "graph_pre_post_checks": {
+      "count": 6,
+      "all_passed": true,
+      "domains": [
+        223,
+        224,
+        225
+      ],
+      "localhost_only": true,
+      "production_graph_endpoints_seen": false
+    },
+    "source_identity": {
+      "native_tracked_files": 240,
+      "native_before_after_final_equal": true,
+      "acceptance_files": 8,
+      "acceptance_before_after_equal": true,
+      "installed_byte_identical_sources": 9
+    },
+    "production_controller_executed": false,
+    "production_config_check_executed": false,
+    "hardware_agent_service_or_deployment_started": false,
+    "limits": [
+      "Synthetic vision and command samples only; no sensor precision, latency under aircraft load or flight capability claim.",
+      "Only x86_64 Humble build; no ARM64 run, no PX4 connected.",
+      "Collector ran three normal lifecycle cycles; exception paths are covered by separate deterministic resource tests.",
+      "5 generated message classes, 7 vision assertions, 11 velocity assertions and 3 lifecycle cycles are separate units; do not report as one unittest count."
+    ]
+  },
+  "static": {
+    "python_compile_count": 128,
+    "shell_parse_count": 42,
+    "yaml_parse_count": 11,
+    "all_python_syntax_passed": true,
+    "all_shell_syntax_passed": true,
+    "all_yaml_parse_passed": true,
+    "format_returncodes": [
+      0,
+      0,
+      0
+    ],
+    "clang_analyzer": [
+      {
+        "argv": [
+          "clang++",
+          "--analyze",
+          "-std=c++17",
+          "-pthread",
+          "-I",
+          "native/src/jikl_fc01_system/include",
+          "-Xanalyzer",
+          "-analyzer-output=text",
+          "native/tests/test_stage3_state_invariants.cpp"
+        ],
+        "returncode": 0,
+        "seconds": 0.8237804149976,
+        "log": "test_stage3_state_invariants.clang_analyze.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostics": ""
+      },
+      {
+        "argv": [
+          "clang++",
+          "--analyze",
+          "-std=c++17",
+          "-pthread",
+          "-I",
+          "native/src/jikl_fc01_system/include",
+          "-Xanalyzer",
+          "-analyzer-output=text",
+          "native/tests/test_stage3_publication_combinations.cpp"
+        ],
+        "returncode": 0,
+        "seconds": 0.5151724440001999,
+        "log": "test_stage3_publication_combinations.clang_analyze.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostics": ""
+      },
+      {
+        "argv": [
+          "clang++",
+          "--analyze",
+          "-std=c++17",
+          "-pthread",
+          "-I",
+          "native/src/jikl_fc01_system/include",
+          "-Xanalyzer",
+          "-analyzer-output=text",
+          "native/tests/test_rc_navigation.cpp"
+        ],
+        "returncode": 0,
+        "seconds": 4.41419308699551,
+        "log": "test_rc_navigation.clang_analyze.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostics": ""
+      }
+    ],
+    "cppcheck": {
+      "argv": [
+        "cppcheck",
+        "--enable=warning,performance,portability",
+        "--inconclusive",
+        "--std=c++17",
+        "--language=c++",
+        "--inline-suppr",
+        "-j2",
+        "--xml",
+        "--xml-version=2",
+        "-I",
+        "native/src/jikl_fc01_system/include",
+        "native/src/jikl_fc01_system/src",
+        "native/src/jikl_fc01_system/include"
+      ],
+      "returncode": 0,
+      "seconds": 0.2906526529986877,
+      "log": "cppcheck.log",
+      "log_sha256": "c18f8c0ce10f09c7f7a1517e24b1227324d596bfdb8d7f0be916e4226f1b2620",
+      "internal_error_observed": true
+    },
+    "tsan": [
+      {
+        "argv": [
+          "g++",
+          "-std=c++17",
+          "-pthread",
+          "-fsanitize=thread",
+          "-fno-omit-frame-pointer",
+          "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/static/tsan_runtime_probe.cpp",
+          "-o",
+          "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/static/tsan_runtime_probe"
+        ],
+        "returncode": 0,
+        "seconds": 0.13177643100061687,
+        "log": "tsan_compile.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv": [
+          "/home/jikl62/.cache/fc01-final-stage7-20261112-r2tfb_gb/static/tsan_runtime_probe"
+        ],
+        "returncode": 66,
+        "seconds": 0.0032303030020557344,
+        "log": "tsan_runtime.log",
+        "log_sha256": "07b9bbe61035ea9eeaff6f43ce8043401ac0900a2dc16e749301ecb03978dca7"
+      }
+    ],
+    "meaning": "cppcheck internal AST error and TSan initialization failure are not passes."
+  },
+  "packaging_before_stage7_docs": {
+    "error_type": "RuntimeError",
+    "error": "Curated source payload exceeds extractor bounds",
+    "files_without_manifest": 489,
+    "files_with_manifest": 490,
+    "bytes_without_manifest": 10508409,
+    "file_limit": 512,
+    "byte_limit": 8388608,
+    "oversized_members": [],
+    "manifest_preserved": true
+  },
+  "packaging_after_stage7_docs": "See final_payload_audit.json for read-only final disk enumeration; no installer generated, no bounds altered.",
+  "earlier_phase_evidence": [
+    {
+      "path": "docs/readability/overnight_20261112/cpp_stage2/evidence.zip",
+      "bytes": 304235,
+      "sha256": "26f7534f5a0e47703d8e77f5186280fe26812fe879d2eb261645d3cd2fce7299",
+      "member_count": 53,
+      "crc_error": null
+    },
+    {
+      "path": "docs/readability/overnight_20261112/interfaces_stage3/evidence.zip",
+      "bytes": 257336,
+      "sha256": "08c4343bc03bccdfac17397f2d305c30b34d0b23742441b7b9915cb9a8e30350",
+      "member_count": 96,
+      "crc_error": null,
+      "archive_sha_matches_index": true,
+      "all_indexed_members_match": true
+    },
+    {
+      "path": "docs/readability/overnight_20261112/logic_stage6/evidence.zip",
+      "bytes": 280029,
+      "sha256": "dfc5a856f2d01a37dcfc0db7cf8a95e4be9b7a934fead259203173d3101c8890",
+      "member_count": 177,
+      "crc_error": null,
+      "archive_sha_matches_index": true,
+      "all_indexed_members_match": true
+    },
+    {
+      "path": "docs/readability/overnight_20261112/python_stage4/evidence.zip",
+      "bytes": 276032,
+      "sha256": "a269770c2caf65061df21e2e8f2068e4d748a32b28fcbecd1e73fca5eca6f8cb",
+      "member_count": 134,
+      "crc_error": null,
+      "archive_sha_matches_index": true,
+      "all_indexed_members_match": true
+    },
+    {
+      "path": "docs/readability/overnight_20261112/review_evidence.zip",
+      "bytes": 78133,
+      "sha256": "f9190b3d1c654327491a2d865baa80127d56c3fd49385889783e8dfafbb6a3db",
+      "member_count": 2,
+      "crc_error": null
+    },
+    {
+      "path": "docs/readability/overnight_20261112/vision_stage5/evidence.zip",
+      "bytes": 304428,
+      "sha256": "8cda1dc90e38202777dcaf3c2477815de5e814a2ba3132becd2344c0e8cd6d62",
+      "member_count": 134,
+      "crc_error": null,
+      "archive_sha_matches_index": true,
+      "all_indexed_members_match": true
+    }
+  ],
+  "protected_refs": [
+    {
+      "ref": "refs/heads/audit/fc01-engineering-20261111",
+      "before": "053eb2c3be90240e6ed5521714efdcc0113c2b33",
+      "now": "053eb2c3be90240e6ed5521714efdcc0113c2b33",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/dev/feedback-drain-20261107",
+      "before": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "now": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/dev/offline-control-stability-20261107",
+      "before": "97eb691b9b4809451b3d8ce70ecdc9e462c712b7",
+      "now": "97eb691b9b4809451b3d8ce70ecdc9e462c712b7",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/dev/uart-topology-20261105",
+      "before": "fcc35162536da75a00e0ae995e8ef50cf2244d96",
+      "now": "fcc35162536da75a00e0ae995e8ef50cf2244d96",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/feature/vision-navigation",
+      "before": "28bdf958abddc29200319b5877d617f856b96c14",
+      "now": "28bdf958abddc29200319b5877d617f856b96c14",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/fix/takeoff-readiness-20261103",
+      "before": "6c5b185526b7ac194138d05ec9698fccadf288c0",
+      "now": "6c5b185526b7ac194138d05ec9698fccadf288c0",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/navigation-repair-20261031",
+      "before": "6b440ab71af66536ddbcd17e90bd16e693a1667c",
+      "now": "6b440ab71af66536ddbcd17e90bd16e693a1667c",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/release/fc01-recovery-v5-20261110",
+      "before": "89bbc9f0988e0b1d42111ab418800147069df2aa",
+      "now": "89bbc9f0988e0b1d42111ab418800147069df2aa",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/dev/feedback-drain-20261107",
+      "before": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "now": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/feature/vision-navigation",
+      "before": "28bdf958abddc29200319b5877d617f856b96c14",
+      "now": "28bdf958abddc29200319b5877d617f856b96c14",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/main",
+      "before": "377a945d9cd1147baad8871cd5387b9e63cd774d",
+      "now": "377a945d9cd1147baad8871cd5387b9e63cd774d",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/r62c-review3-bench-20261016",
+      "before": "cdd6223470e919190fbfc466f943404fcee81294",
+      "now": "cdd6223470e919190fbfc466f943404fcee81294",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/readability/fc01-chinese-20261111",
+      "before": "5198d33f25aaaf2abc7e4b078169ae84d5c4b2c4",
+      "now": "5198d33f25aaaf2abc7e4b078169ae84d5c4b2c4",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/release/fc01-recovery-v5-20261110",
+      "before": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "now": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "unchanged": true
+    }
+  ],
+  "all_protected_refs_unchanged": true,
+  "baseline_is_ancestor": true,
+  "merge_commits": [],
+  "candidates": {
+    "P2": [
+      "C1 ground observation span",
+      "C2 per-poll IPC work/reply bound",
+      "C3 start poll-killpg race",
+      "C4 standby failed thread start/join"
+    ],
+    "applied": false,
+    "source": "../logic_stage6/candidate_index.json and evidence.zip",
+    "fresh_candidate_tests_in_stage7": false,
+    "C2_final_candidate_burst_tested": false
+  },
+  "independent_changed_python_review": {
+    "files": 23,
+    "AST_equal": 14,
+    "AST_changed": 9,
+    "result": "All changed hunks reviewed; no new flight permission finding; not a proof of unchanged lines.",
+    "evidence": "root/python_changes_independent_review.json"
+  },
+  "unresolved_release_blocker": "P2 packaging payload bounds; three errors retained.",
+  "unreproduced_P3_lead": "Existing navigation_deploy.main prints after log creation and before try may raise BrokenPipeError before explicit close; static lead only, not confirmed failure.",
+  "remaining_limits": [
+    "276 current readability candidates retain only byte/structure indexing in dedicated audit; cannot claim exhaustive semantic review.",
+    "No mathematical safety proof; finite synthetic traces and fake sinks.",
+    "No ARM64 build/performance, real PX4/DDS adoption, flight or real camera/SLAM validation.",
+    "R62 complete historical CSV replay remains unavailable.",
+    "Application budgets do not bound pre-callback DDS allocation.",
+    "TSan initialization unavailable; cppcheck incomplete."
+  ],
+  "network_push_merge_rebase_deploy_hardware": false,
+  "visual_navigation_enabled": false,
+  "velocity_command_is_read_only": true,
+  "evidence": "evidence.zip and evidence_index.json; full original raw trace contents preserved once with exact SHA aliases for duplicate bytes. No binaries or build/install directories."
+}
