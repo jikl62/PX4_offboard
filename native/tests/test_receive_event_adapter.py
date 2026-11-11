@@ -6,6 +6,7 @@ This exercises production adapter code without DDS, motors or ROS execution.
 """
 from pathlib import Path
 import os
+import re
 import subprocess
 import tempfile
 import unittest
@@ -298,10 +299,14 @@ class ReceiveEventAdapterTest(unittest.TestCase):
                     + '};}\n'
                 )
             source = (fixture.ROOT / 'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
-            # 只修改临时副本的可见性和main名称，使夹具能直接调用真实节点内部路径。
-            source = source.replace(' private:', ' public:', 1).replace(
-                'int main(', 'int adapter_program_main(', 1
+            # 仅允许访问标签和入口 token 之间的空白变化；每个插桩必须恰好匹配一处。
+            # 改动只落在临时副本，不放宽任何飞行断言，也不修改生产源码的访问权限。
+            source, private_count = re.subn(r'(?m)^([ \t]*)private[ \t]*:', r'\1public:', source)
+            self.assertEqual(private_count, 1, 'Expected exactly one SystemNode private section')
+            source, main_count = re.subn(
+                r'(?m)^([ \t]*)int\s+main\s*\(', r'\1int adapter_program_main(', source
             )
+            self.assertEqual(main_count, 1, 'Expected exactly one native main entry')
             (root / 'adapter_under_test.cpp').write_text(source)
             (root / 'test.cpp').write_text(HARNESS)
             executable = root / 'test'

@@ -9,6 +9,7 @@ No DDS, device connection or flight command is executed.
 from pathlib import Path
 import json
 import os
+import re
 import subprocess
 import tempfile
 import unittest
@@ -218,16 +219,30 @@ def write_fixture(root):
             'std::uint16_t schema_version{1};' + fields + '};}\n'
         )
     source = (fixture.ROOT / 'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
-    # 必须精确找到原steady实现再替换；匹配失败提示夹具更新，不悄悄改用真实时间。
+    # 只允许原 steady 实现的同一组 C++ token，token 之间可改变空白排版。
+    # 正则从这条固定实现生成，不删除任意源码中的注释或字符串；实现改变仍须更新夹具。
     clock = 'double steady(){return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();}'
-    if source.count(clock) != 1:
+    clock_tokens = re.findall(r'[A-Za-z_]\w*|::|[^\s]', clock)
+    clock_pattern = r'(?m)^[ \t]*' + r'\s*'.join(
+        r'\b' + re.escape(token) + r'\b' if token.isidentifier() else re.escape(token)
+        for token in clock_tokens
+    )
+    source, clock_count = re.subn(
+        clock_pattern, 'double steady(){return recovery_test_steady;}', source
+    )
+    if clock_count != 1:
         raise AssertionError(
             'Update the deterministic clock fixture for the node clock implementation'
         )
-    source = source.replace(clock, 'double steady(){return recovery_test_steady;}', 1)
-    source = source.replace(' private:', ' public:', 1).replace(
-        'int main(', 'int adapter_program_main(', 1
+    # 只在临时副本匹配独立的访问标签与函数入口；都必须恰好一处，不能静默漏插桩。
+    source, private_count = re.subn(r'(?m)^([ \t]*)private[ \t]*:', r'\1public:', source)
+    if private_count != 1:
+        raise AssertionError('Expected exactly one SystemNode private section in the fixture')
+    source, main_count = re.subn(
+        r'(?m)^([ \t]*)int\s+main\s*\(', r'\1int adapter_program_main(', source
     )
+    if main_count != 1:
+        raise AssertionError('Expected exactly one native main entry in the fixture')
     (root / 'adapter_under_test.cpp').write_text(source)
     (root / 'test.cpp').write_text(HARNESS)
 
