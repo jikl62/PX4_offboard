@@ -11,14 +11,14 @@ namespace vt = vision_test;
 namespace v = fc01::vision;
 namespace a = fc01::attitude;
 // 配置布尔量只接受 true/false 字面量；非法值抛异常，不把其他文本猜成关闭。
-static bool strict_bool(const std::string &value) {
+static bool strict_bool(const std::string& value) {
   if (value != "true" && value != "false")
     throw std::invalid_argument("INVALID_CONFIG_BOOL");
   return value == "true";
 }
 // 将 P 记录映射到离线配置；include 中是与 Python 编码器一致的参数映射。
 // 返回 false 表示其他 ROS 适配器字段，不在这里消费；此路径不修改 YAML 文件。
-static bool parameter(fc01::Config &cfg, const std::string &key, const std::string &value) {
+static bool parameter(fc01::Config& cfg, const std::string& key, const std::string& value) {
   if (key == "profile") {
     cfg.profile = value;
     return true;
@@ -32,24 +32,23 @@ static bool parameter(fc01::Config &cfg, const std::string &key, const std::stri
 }
 // V 记录只能调整视觉候选参数白名单；未知键抛异常，避免拼写错误被静默忽略。
 // map 的值是 cfg 成员地址，只在本次同步调用中使用，不保留外部悬空指针。
-static void candidate(v::Config &cfg, const std::string &key, double value) {
-  const std::map<std::string, double *> values{
-      {"state_timeout", &cfg.state_timeout},
-      {"command_timeout", &cfg.command_timeout},
-      {"max_measurement_delay", &cfg.max_measurement_delay},
-      {"future_tolerance", &cfg.future_tolerance},
-      {"position_gain", &cfg.position_gain},
-      {"velocity_gain", &cfg.velocity_gain},
-      {"max_speed", &cfg.max_speed},
-      {"max_acceleration", &cfg.max_acceleration},
-      {"max_tilt_deg", &cfg.max_tilt_deg},
-      {"max_yaw_rate", &cfg.max_yaw_rate},
-      {"max_vertical_speed", &cfg.max_vertical_speed},
-      {"max_radius", &cfg.max_radius},
-      {"max_height", &cfg.max_height},
-      {"min_quality", &cfg.min_quality},
-      {"max_position_jump", &cfg.max_position_jump},
-      {"max_velocity_jump", &cfg.max_velocity_jump}};
+static void candidate(v::Config& cfg, const std::string& key, double value) {
+  const std::map<std::string, double*> values{{"state_timeout", &cfg.state_timeout},
+                                              {"command_timeout", &cfg.command_timeout},
+                                              {"max_measurement_delay", &cfg.max_measurement_delay},
+                                              {"future_tolerance", &cfg.future_tolerance},
+                                              {"position_gain", &cfg.position_gain},
+                                              {"velocity_gain", &cfg.velocity_gain},
+                                              {"max_speed", &cfg.max_speed},
+                                              {"max_acceleration", &cfg.max_acceleration},
+                                              {"max_tilt_deg", &cfg.max_tilt_deg},
+                                              {"max_yaw_rate", &cfg.max_yaw_rate},
+                                              {"max_vertical_speed", &cfg.max_vertical_speed},
+                                              {"max_radius", &cfg.max_radius},
+                                              {"max_height", &cfg.max_height},
+                                              {"min_quality", &cfg.min_quality},
+                                              {"max_position_jump", &cfg.max_position_jump},
+                                              {"max_velocity_jump", &cfg.max_velocity_jump}};
   const auto it = values.find(key);
   if (it == values.end())
     throw std::invalid_argument("UNKNOWN_VISUAL_CANDIDATE");
@@ -62,7 +61,7 @@ static fc01::Config simulation_config(fc01::Config cfg) {
   // service, socket, ARM transaction or Offboard-entry transaction is changed.
   cfg.profile = "attitude_altitude";
   cfg.flight_enabled = false;
-  auto &p = cfg.attitude;
+  auto& p = cfg.attitude;
   p.flight_actions_enabled = p.takeoff_enabled = p.parameters_confirmed = true;
   p.arm_enabled = p.bench_arm_only_enabled = p.autonomous_failsafe_confirmed = false;
   p.rc_takeover_confirmed = p.rc_navigation_enabled = true;
@@ -74,7 +73,7 @@ static fc01::Config simulation_config(fc01::Config cfg) {
 }
 // 读取一个完整数值 token，拒绝截断和数字后的额外字符；非有限值仍可用于
 // 回放未知/坏测量，最终有效性由被测控制链校验，不能在此补零修正输入。
-static double real(std::istream &in) {
+static double real(std::istream& in) {
   std::string text;
   if (!(in >> text))
     throw std::invalid_argument("TRUNCATED_NUMBER");
@@ -85,14 +84,14 @@ static double real(std::istream &in) {
   return value;
 }
 // 按协议固定长度读取向量/协方差；顺序与 Python 编码器逐项一致。
-template <std::size_t N> static void array(std::istream &in, std::array<double, N> &value) {
-  for (double &x : value)
+template <std::size_t N> static void array(std::istream& in, std::array<double, N>& value) {
+  for (double& x : value)
     x = real(in);
 }
 // 解码实际视觉状态：世界系 NED 的位置 m、速度 m/s（z 正向下），姿态
 // Hamilton [w,x,y,z] 为 FRD→NED。stamp_ns 为测量纳秒，received_at 是
 // 模拟单调秒 now 减输入接收年龄；两者分开，不能由新包络替旧测量续期。
-static v::State state(std::istream &in, double now) {
+static v::State state(std::istream& in, double now) {
   v::State s;
   double age;
   unsigned mask;
@@ -114,7 +113,7 @@ static v::State state(std::istream &in, double now) {
 }
 // 解码运动目标，位置是 NED 绝对目标 m，不是实际反馈；模式与各有效位
 // 由控制链再校验。received_at 只用于本机年龄，不替代测量/命令源时间。
-static v::Command command(std::istream &in, double now) {
+static v::Command command(std::istream& in, double now) {
   v::Command c;
   double age;
   unsigned mode;
@@ -137,7 +136,7 @@ static void number(double value) {
     std::cout << "null";
 }
 // 保留数组顺序写 JSON，逐项复用有限值编码，不把未知项变为零。
-template <class Number, std::size_t N> static void json_array(const std::array<Number, N> &values) {
+template <class Number, std::size_t N> static void json_array(const std::array<Number, N>& values) {
   std::cout << '[';
   for (std::size_t i = 0; i < N; ++i) {
     if (i)
@@ -147,7 +146,7 @@ template <class Number, std::size_t N> static void json_array(const std::array<N
   std::cout << ']';
 }
 // 转义引号、反斜杠和控制字符，随后恢复数值流格式，避免污染后续日志数字。
-static void json_string(const std::string &value) {
+static void json_string(const std::string& value) {
   std::cout << '"';
   for (unsigned char ch : value) {
     if (ch == '"' || ch == '\\')
@@ -162,10 +161,10 @@ static void json_string(const std::string &value) {
 }
 // 导出实际状态、目标、边界结果与模拟提交计数；仅同时通过双 sink 才有
 // 对应提交证据。error 是调用者提供的位置误差 m，未知时输出 null。
-static void emit(const vt::VisionFlight &q, const std::string &dataset, double replay_time,
+static void emit(const vt::VisionFlight& q, const std::string& dataset, double replay_time,
                  double error = NAN) {
-  const auto &result = q.r.attitude_core().visual_result();
-  const auto &in = q.s.attitude.visual_input;
+  const auto& result = q.r.attitude_core().visual_result();
+  const auto& in = q.s.attitude.visual_input;
   std::cout << std::setprecision(12)
             << "{\"schema_version\":1,\"simulation\":true,\"dataset_kind\":";
   json_string(dataset);
@@ -228,8 +227,8 @@ static void emit(const vt::VisionFlight &q, const std::string &dataset, double r
 }
 // 构造理想模型的明确有效实际状态；quality=1 仅属于该理想仿真，
 // 不能复制为真实视觉设备的默认健康值。seq 推进，stamp 为模拟测量纳秒。
-static v::State demo_state(std::uint64_t seq, std::uint64_t stamp, const v::Vec3 &p,
-                           const v::Vec3 &velocity, const a::Quaternion &q) {
+static v::State demo_state(std::uint64_t seq, std::uint64_t stamp, const v::Vec3& p,
+                           const v::Vec3& velocity, const a::Quaternion& q) {
   v::State s;
   s.sequence = seq;
   s.stamp_ns = stamp;
@@ -246,7 +245,7 @@ static v::State demo_state(std::uint64_t seq, std::uint64_t stamp, const v::Vec3
 }
 // 内置 cruise/height 场景先进入模拟保持，再按固定 0.05 秒推进 180 步。
 // 不拟合真实机体动力学，只检验实际提交输出能否形成闭合回放数据流。
-static void demo(fc01::Config cfg, const std::string &scenario) {
+static void demo(fc01::Config cfg, const std::string& scenario) {
   if (scenario != "cruise" && scenario != "height")
     throw std::invalid_argument("UNKNOWN_DEMO");
   vt::VisionFlight q(simulation_config(cfg));
@@ -342,7 +341,7 @@ int main() {
           flight = std::make_unique<vt::VisionFlight>(simulation_config(cfg));
           flight->reach_hold();
         }
-        auto &q = *flight;
+        auto& q = *flight;
         const double dt = real(in), now = q.t + dt;
         std::uint64_t ros_now;
         std::size_t states, commands;
@@ -375,7 +374,7 @@ int main() {
         throw std::invalid_argument("UNKNOWN_NATIVE_RECORD");
     }
     return 0;
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     std::cerr << "native replay: " << e.what() << '\n';
     return 2;
   }

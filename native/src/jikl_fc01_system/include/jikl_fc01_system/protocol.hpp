@@ -10,35 +10,50 @@
 #include <vector>
 namespace fc01 {
 // seq 为非零单调请求号；op 保留原协议命令字；values 仅存有限 double，不携带执行授权。
-struct Request {std::uint64_t seq{};std::string op;std::vector<double> values;};
-inline Request parse_request(const std::string& line){
+struct Request {
+  std::uint64_t seq{};
+  std::string op;
+  std::vector<double> values;
+};
+inline Request parse_request(const std::string& line) {
   // 限制单行 1024 字节，避免未分帧的大输入无界占用资源。
-  if(line.size()>1024)throw std::invalid_argument("LINE_TOO_LONG");
-  std::istringstream input(line);std::string token;Request r;
-  if(!(input>>token>>r.op))throw std::invalid_argument("REQUEST_FORMAT");
+  if (line.size() > 1024)
+    throw std::invalid_argument("LINE_TOO_LONG");
+  std::istringstream input(line);
+  std::string token;
+  Request r;
+  if (!(input >> token >> r.op))
+    throw std::invalid_argument("REQUEST_FORMAT");
   // 完整解析无符号请求号，禁止尾随垃圾和 0；防重放的严格递增由 UnixServer 维护。
-  auto result=std::from_chars(token.data(),token.data()+token.size(),r.seq);
-  if(result.ec!=std::errc{}||result.ptr!=token.data()+token.size()||r.seq==0)
+  auto result = std::from_chars(token.data(), token.data() + token.size(), r.seq);
+  if (result.ec != std::errc{} || result.ptr != token.data() + token.size() || r.seq == 0)
     throw std::invalid_argument("SEQUENCE_INVALID");
   // 每个数值必须被 stod 完整消费、为有限值且总数不超过四个，NaN/Inf 不进入控制器。
-  while(input>>token){
-    std::size_t used{};double n=std::stod(token,&used);
-    if(used!=token.size()||!std::isfinite(n)||r.values.size()>=4)
+  while (input >> token) {
+    std::size_t used{};
+    double n = std::stod(token, &used);
+    if (used != token.size() || !std::isfinite(n) || r.values.size() >= 4)
       throw std::invalid_argument("ARGUMENT_INVALID");
     r.values.push_back(n);
   }
   return r;
 }
 // 输出 JSON 字符串时转义引号、反斜杠及常见控制符；其它低控制字节按原策略丢弃。
-inline std::string quote(const std::string& value){
-  std::string out="\"";
-  for(unsigned char c:value){
-    if(c=='"'||c=='\\'){out+='\\';out+=char(c);}
-    else if(c=='\n')out+="\\n";
-    else if(c=='\r')out+="\\r";
-    else if(c=='\t')out+="\\t";
-    else if(c>=32)out+=char(c);
+inline std::string quote(const std::string& value) {
+  std::string out = "\"";
+  for (unsigned char c : value) {
+    if (c == '"' || c == '\\') {
+      out += '\\';
+      out += char(c);
+    } else if (c == '\n')
+      out += "\\n";
+    else if (c == '\r')
+      out += "\\r";
+    else if (c == '\t')
+      out += "\\t";
+    else if (c >= 32)
+      out += char(c);
   }
-  return out+'"';
+  return out + '"';
 }
 } // namespace fc01

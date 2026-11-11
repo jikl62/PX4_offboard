@@ -8,85 +8,164 @@
 #include <string>
 
 // NED z比旧参考低约0.27 m，用于复现长期未解锁准备后参考漂移，不代表允许空中放弃。
-static a::BoundaryContext ground_ctx(){
-  auto c=a::BoundaryContext{};c.profile="attitude_altitude";
-  c.phase=a::Phase::ReleaseOffboard;
-  c.control_fresh=c.reference_ready=c.offboard_observed=true;
-  c.reference_z=2.;c.config.height_tolerance=.15;
-  c.config.speed_tolerance=.15;
-  c.config.ground_vz_tolerance=.1;
-  auto &s=c.feedback;
-  s.attitude_fresh=s.local_fresh=s.status_fresh=s.land_fresh=s.failsafe_fresh=true;
-  s.z_valid=s.vz_valid=s.exclusive=s.offboard=s.landed=s.at_rest=true;
-  s.stabilized_selectable=true;s.q={1,0,0,0};s.z=1.73;s.vz=.02;
-  s.stationary_seconds=3;s.status_stamp=s.land_stamp=1000;
+static a::BoundaryContext ground_ctx() {
+  auto c = a::BoundaryContext{};
+  c.profile = "attitude_altitude";
+  c.phase = a::Phase::ReleaseOffboard;
+  c.control_fresh = c.reference_ready = c.offboard_observed = true;
+  c.reference_z = 2.;
+  c.config.height_tolerance = .15;
+  c.config.speed_tolerance = .15;
+  c.config.ground_vz_tolerance = .1;
+  auto& s = c.feedback;
+  s.attitude_fresh = s.local_fresh = s.status_fresh = s.land_fresh = s.failsafe_fresh = true;
+  s.z_valid = s.vz_valid = s.exclusive = s.offboard = s.landed = s.at_rest = true;
+  s.stabilized_selectable = true;
+  s.q = {1, 0, 0, 0};
+  s.z = 1.73;
+  s.vz = .02;
+  s.stationary_seconds = 3;
+  s.status_stamp = s.land_stamp = 1000;
   return c;
 }
 // 可信未解锁地面可按原策略释放旧Offboard，零推力和两sink仍须完整。
-static void unarmed_ground_stale_z0_release_allowed(){
-  auto c=ground_ctx();
-  int sends=0;
-  const auto r=a::publish_release_at_boundary(c,[&]{++sends;});
-  assert(r.allowed&&sends==1);
-  a::Output out;out.publish=true;out.q={1,0,0,0};out.thrust={0,0,0};
-  int targets=0,heartbeats=0;
-  const auto d=a::publish_attitude_at_boundary<Mode,Target>(c,out,123,
-    [&](const Target&){++targets;},[&](const Mode&){++heartbeats;});
-  assert(d.allowed&&targets==1&&heartbeats==1);
-  std::cout<<"R62B_UNARMED_GROUND_STALE_Z0_RELEASE PASS\n";
+static void unarmed_ground_stale_z0_release_allowed() {
+  auto c = ground_ctx();
+  int sends = 0;
+  const auto r = a::publish_release_at_boundary(c, [&] {
+    ++sends;
+  });
+  assert(r.allowed && sends == 1);
+  a::Output out;
+  out.publish = true;
+  out.q = {1, 0, 0, 0};
+  out.thrust = {0, 0, 0};
+  int targets = 0, heartbeats = 0;
+  const auto d = a::publish_attitude_at_boundary<Mode, Target>(
+      c, out, 123,
+      [&](const Target&) {
+        ++targets;
+      },
+      [&](const Mode&) {
+        ++heartbeats;
+      });
+  assert(d.allowed && targets == 1 && heartbeats == 1);
+  std::cout << "R62B_UNARMED_GROUND_STALE_Z0_RELEASE PASS\n";
 }
 // 已承担任务、曾确认解锁或任一健康/地面/速度/Kill异常都不能套用未解锁漂移路线。
-static void armed_and_unhealthy_release_still_denied(){
-  const auto base=ground_ctx();
-  auto denied=[](const a::BoundaryContext& c){
-    int count=0;
-    assert(!a::publish_release_at_boundary(c,[&]{++count;}).allowed&&count==0);
+static void armed_and_unhealthy_release_still_denied() {
+  const auto base = ground_ctx();
+  auto denied = [](const a::BoundaryContext& c) {
+    int count = 0;
+    assert(!a::publish_release_at_boundary(c,
+                                           [&] {
+                                             ++count;
+                                           })
+                .allowed &&
+           count == 0);
   };
-  {auto c=base;c.flight_started=true;denied(c);}
-  {auto c=base;c.arm_confirmed=true;denied(c);}
-  {auto c=base;c.feedback.armed=true;denied(c);}
-  {auto c=base;c.feedback.offboard=false;denied(c);}
-  {auto c=base;c.feedback.landed=false;denied(c);}
-  {auto c=base;c.feedback.at_rest=false;denied(c);}
-  {auto c=base;c.feedback.vz=.16;denied(c);}
-  {auto c=base;c.feedback.exclusive=false;denied(c);}
-  {auto c=base;c.feedback.status_fresh=false;denied(c);}
-  {auto c=base;c.feedback.z_valid=false;denied(c);}
-  {auto c=base;c.feedback.kill=true;denied(c);}
-  std::cout<<"R62B_ARMED_AND_UNHEALTHY_RELEASE_DENIED PASS\n";
+  {
+    auto c = base;
+    c.flight_started = true;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.arm_confirmed = true;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.feedback.armed = true;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.feedback.offboard = false;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.feedback.landed = false;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.feedback.at_rest = false;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.feedback.vz = .16;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.feedback.exclusive = false;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.feedback.status_fresh = false;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.feedback.z_valid = false;
+    denied(c);
+  }
+  {
+    auto c = base;
+    c.feedback.kill = true;
+    denied(c);
+  }
+  std::cout << "R62B_ARMED_AND_UNHEALTHY_RELEASE_DENIED PASS\n";
 }
 // PX4已实际退出Offboard且未解锁地面时，只取消旧释放意图；不能额外发送176覆盖新模式。
-static void external_mode_departure_is_cancellation_not_command(){
-  auto c=ground_ctx();c.feedback.offboard=false;
+static void external_mode_departure_is_cancellation_not_command() {
+  auto c = ground_ctx();
+  c.feedback.offboard = false;
   assert(a::external_ground_mode_departure(c));
-  c.feedback.armed=true;assert(!a::external_ground_mode_departure(c));c.feedback.armed=false;
-  c.feedback.landed=false;assert(!a::external_ground_mode_departure(c));c.feedback.landed=true;
-  c.flight_started=true;assert(!a::external_ground_mode_departure(c));c.flight_started=false;
-  c.arm_confirmed=true;assert(!a::external_ground_mode_departure(c));c.arm_confirmed=false;
-  c.feedback.status_fresh=false;assert(!a::external_ground_mode_departure(c));c.feedback.status_fresh=true;
-  c.feedback.offboard=true;assert(!a::external_ground_mode_departure(c));
-  std::cout<<"R62B_FINAL_SINK_EXTERNAL_MODE_CANCELLATION_PREDICATE PASS\n";
+  c.feedback.armed = true;
+  assert(!a::external_ground_mode_departure(c));
+  c.feedback.armed = false;
+  c.feedback.landed = false;
+  assert(!a::external_ground_mode_departure(c));
+  c.feedback.landed = true;
+  c.flight_started = true;
+  assert(!a::external_ground_mode_departure(c));
+  c.flight_started = false;
+  c.arm_confirmed = true;
+  assert(!a::external_ground_mode_departure(c));
+  c.arm_confirmed = false;
+  c.feedback.status_fresh = false;
+  assert(!a::external_ground_mode_departure(c));
+  c.feedback.status_fresh = true;
+  c.feedback.offboard = true;
+  assert(!a::external_ground_mode_departure(c));
+  std::cout << "R62B_FINAL_SINK_EXTERNAL_MODE_CANCELLATION_PREDICATE PASS\n";
 }
 // 在Core下一tick前观测外部Altitude模式，验证无心跳、无额外176且正常退Idle。
-static void core_observed_external_altitude_never_plans_release(){
-  Harness h;h.ready();
-  assert(h.r.request("LAND",{},h.s,h.t).accepted);
-  assert(h.r.attitude_core().phase()==a::Phase::ReleaseOffboard);
-  const auto before=h.mode_commands;
+static void core_observed_external_altitude_never_plans_release() {
+  Harness h;
+  h.ready();
+  assert(h.r.request("LAND", {}, h.s, h.t).accepted);
+  assert(h.r.attitude_core().phase() == a::Phase::ReleaseOffboard);
+  const auto before = h.mode_commands;
   // PX4/RC changes to Altitude before the next Core tick; fresh status.
-  h.s.feedback.offboard=false;h.s.nav_state=1;
-  auto out=h.tick();
-  assert(!out.publish&&out.command==a::Command::None);
-  assert(h.mode_commands==before);
-  assert(h.r.attitude_core().phase()==a::Phase::Idle);
-  assert(h.r.attitude_core().reason()==
-    "EXTERNAL_DISARMED_GROUND_MODE_OBSERVED_NO_RELEASE_176");
-  std::cout<<"R62B_CORE_EXTERNAL_ALTITUDE_DISARMED_NO_EXTRA_176 PASS\n";
+  h.s.feedback.offboard = false;
+  h.s.nav_state = 1;
+  auto out = h.tick();
+  assert(!out.publish && out.command == a::Command::None);
+  assert(h.mode_commands == before);
+  assert(h.r.attitude_core().phase() == a::Phase::Idle);
+  assert(h.r.attitude_core().reason() == "EXTERNAL_DISARMED_GROUND_MODE_OBSERVED_NO_RELEASE_176");
+  std::cout << "R62B_CORE_EXTERNAL_ALTITUDE_DISARMED_NO_EXTRA_176 PASS\n";
 }
-int main(){
+int main() {
   unarmed_ground_stale_z0_release_allowed();
   armed_and_unhealthy_release_still_denied();
   external_mode_departure_is_cancellation_not_command();
   core_observed_external_altitude_never_plans_release();
-  std::cout<<"R62B_GROUND_RELEASE_RACE_TESTS_PASS\n";
+  std::cout << "R62B_GROUND_RELEASE_RACE_TESTS_PASS\n";
 }

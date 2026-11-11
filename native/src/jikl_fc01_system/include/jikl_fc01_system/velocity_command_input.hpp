@@ -19,7 +19,7 @@ inline bool identity_valid(const std::string& value) {
 }
 
 // Disabled 不计算，VelocityPreview 仅允许离线运算；两者都不携带飞机控制权限。
-enum class Mode {Disabled, VelocityPreview};
+enum class Mode { Disabled, VelocityPreview };
 
 // 上层给出的“希望怎么运动”，不是飞机的实际速度反馈。
 struct Target {
@@ -35,8 +35,7 @@ struct Target {
 };
 
 // 只做消息字段映射，不以到达时刻替代原始 stamp，不授予控制权。
-template<class Message>
-Target from_message(const Message& message) {
+template <class Message> Target from_message(const Message& message) {
   Target target;
   target.schema_version = message.schema_version;
   target.sequence = message.sequence;
@@ -51,18 +50,18 @@ Target from_message(const Message& message) {
 
 struct Policy {
   // 默认零值表示尚未配置。离线试验必须显式提供已审查的时间与速度限制。
-  double state_timeout{}; // 实际状态接收超时，s。
-  double command_timeout{}; // 目标指令接收超时，s。
+  double state_timeout{};         // 实际状态接收超时，s。
+  double command_timeout{};       // 目标指令接收超时，s。
   double max_measurement_delay{}; // 源测量时间允许的最大年龄，s。
-  double future_tolerance{}; // 源时间允许领先本机的容差，s，可显式为零。
+  double future_tolerance{};      // 源时间允许领先本机的容差，s，可显式为零。
   double max_command_speed_mps{}; // 机体系三维目标速度的模长上限，m/s。
   double max_attitude_sample_skew_sec{}; // 状态姿态与目标指令的最大时间差，s。
-  double max_attitude_step_rad{}; // 相邻实际姿态允许的最大夹角，rad。
+  double max_attitude_step_rad{};        // 相邻实际姿态允许的最大夹角，rad。
 
   bool configured() const {
-    for (double value : {state_timeout, command_timeout, max_measurement_delay,
-                         max_command_speed_mps, max_attitude_sample_skew_sec,
-                         max_attitude_step_rad}) {
+    for (double value :
+         {state_timeout, command_timeout, max_measurement_delay, max_command_speed_mps,
+          max_attitude_sample_skew_sec, max_attitude_step_rad}) {
       if (!std::isfinite(value) || value <= 0) {
         return false;
       }
@@ -77,10 +76,10 @@ struct Preview {
   bool valid{};
   bool control_authority{false};
   std::string reason;
-  Vec3 body_target{vision::missing_array<3>()}; // FRD 目标速度，m/s。
-  Vec3 world_target{vision::missing_array<3>()}; // NED 目标速度，m/s。
+  Vec3 body_target{vision::missing_array<3>()};             // FRD 目标速度，m/s。
+  Vec3 world_target{vision::missing_array<3>()};            // NED 目标速度，m/s。
   Vec3 measured_world_velocity{vision::missing_array<3>()}; // NED 实测速度，m/s。
-  Vec3 velocity_error{vision::missing_array<3>()}; // 目标减实测，m/s。
+  Vec3 velocity_error{vision::missing_array<3>()};          // 目标减实测，m/s。
   Vec3 horizontal_acceleration{vision::missing_array<3>()}; // NED 水平加速度，m/s²。
   attitude::Quaternion attitude_preview{vision::missing_array<4>()};
   // 垂向目标仅展示，没有传给原高度控制器。
@@ -96,15 +95,17 @@ struct Preview {
 // 使用完整三维旋转：飞机倾斜时，机体“前进”也可能包含世界系垂向速度。
 inline Vec3 rotate_body_to_world(const attitude::Quaternion& q, const Vec3& vector) {
   const double w = q[0], x = q[1], y = q[2], z = q[3];
-  return {
-      (1-2*(y*y+z*z))*vector[0]+2*(x*y-w*z)*vector[1]+2*(x*z+w*y)*vector[2],
-      2*(x*y+w*z)*vector[0]+(1-2*(x*x+z*z))*vector[1]+2*(y*z-w*x)*vector[2],
-      2*(x*z-w*y)*vector[0]+2*(y*z+w*x)*vector[1]+(1-2*(x*x+y*y))*vector[2]};
+  return {(1 - 2 * (y * y + z * z)) * vector[0] + 2 * (x * y - w * z) * vector[1] +
+              2 * (x * z + w * y) * vector[2],
+          2 * (x * y + w * z) * vector[0] + (1 - 2 * (x * x + z * z)) * vector[1] +
+              2 * (y * z - w * x) * vector[2],
+          2 * (x * z - w * y) * vector[0] + 2 * (y * z + w * x) * vector[1] +
+              (1 - 2 * (x * x + y * y)) * vector[2]};
 }
 
 // 一个 Session 对应一次离线尝试；身份/reset/序号变化和时钟/超时错误首次出现后锁存。
 class Session {
- public:
+public:
   // 复制视觉外环配置并校验；另建时间配置以使用本次显式 Policy，不修改原生产配置。
   explicit Session(Policy policy = {}, vision::Config candidate = {})
       : policy_(policy), control_config_(candidate) {
@@ -168,8 +169,7 @@ class Session {
     if (!optional_state_fields_valid(value)) {
       return latch("STATE_OPTIONAL_FIELD_INVALID");
     }
-    if (!time_valid(value.stamp_ns, received_at, ros_now_ns, received_at,
-                    policy_.state_timeout)) {
+    if (!time_valid(value.stamp_ns, received_at, ros_now_ns, received_at, policy_.state_timeout)) {
       return latch("STATE_TIME_INVALID");
     }
 
@@ -214,10 +214,10 @@ class Session {
       double attitude_sum_norm = 0;
       for (std::size_t axis = 0; axis < 4; ++axis) {
         const double aligned_current = attitude_sign * current_attitude[axis];
-        attitude_difference_norm = std::hypot(
-            attitude_difference_norm, aligned_current - previous_attitude[axis]);
-        attitude_sum_norm = std::hypot(
-            attitude_sum_norm, aligned_current + previous_attitude[axis]);
+        attitude_difference_norm =
+            std::hypot(attitude_difference_norm, aligned_current - previous_attitude[axis]);
+        attitude_sum_norm =
+            std::hypot(attitude_sum_norm, aligned_current + previous_attitude[axis]);
       }
       const double attitude_step = 4 * std::atan2(attitude_difference_norm, attitude_sum_norm);
       if (attitude_step > policy_.max_attitude_step_rad) {
@@ -273,9 +273,9 @@ class Session {
         return latch("COMMAND_SEQUENCE_REGRESSION");
       }
       if (value.sequence == target_.sequence) {
-        if (value.stamp_ns != target_.stamp_ns ||
-            value.schema_version != target_.schema_version || value.valid != target_.valid ||
-            value.frame_id != target_.frame_id || value.body_velocity != target_.body_velocity) {
+        if (value.stamp_ns != target_.stamp_ns || value.schema_version != target_.schema_version ||
+            value.valid != target_.valid || value.frame_id != target_.frame_id ||
+            value.body_velocity != target_.body_velocity) {
           return latch("COMMAND_DUPLICATE_CHANGED");
         }
         return false; // 重复目标同样不能续期。
@@ -290,8 +290,7 @@ class Session {
   }
 
   // now 为单调 s、ros_now_ns 为 ROS ns；trusted_yaw_reference 是外部可信航向 rad，消息不自带 yaw。
-  Preview preview(Mode mode, double now, std::uint64_t ros_now_ns,
-                  double trusted_yaw_reference) {
+  Preview preview(Mode mode, double now, std::uint64_t ros_now_ns, double trusted_yaw_reference) {
     Preview result;
     if (mode == Mode::Disabled) {
       result.reason = "VELOCITY_PREVIEW_DISABLED";
@@ -310,26 +309,27 @@ class Session {
       return rejected(first_error_);
     }
     if (!has_state_ || !has_target_) {
-      result.reason = !has_state_ ? "VELOCITY_PREVIEW_AWAIT_STATE"
-                                  : "VELOCITY_PREVIEW_AWAIT_COMMAND";
+      result.reason =
+          !has_state_ ? "VELOCITY_PREVIEW_AWAIT_STATE" : "VELOCITY_PREVIEW_AWAIT_COMMAND";
       return result;
     }
     if (state_publisher_count_ != 1 || command_publisher_count_ != 1) {
       return rejected("VELOCITY_PREVIEW_SOURCE_COUNT");
     }
-    if (!time_valid(actual_state_.stamp_ns, actual_state_.received_at, ros_now_ns,
-                    now, policy_.state_timeout)) {
+    if (!time_valid(actual_state_.stamp_ns, actual_state_.received_at, ros_now_ns, now,
+                    policy_.state_timeout)) {
       return rejected("STATE_TIME_INVALID");
     }
-    if (!time_valid(target_.stamp_ns, target_.received_at, ros_now_ns,
-                    now, policy_.command_timeout)) {
+    if (!time_valid(target_.stamp_ns, target_.received_at, ros_now_ns, now,
+                    policy_.command_timeout)) {
       return rejected("COMMAND_TIME_INVALID");
     }
 
     // 姿态决定 FRD -> NED 旋转，姿态与目标不能来自相隔过远的时刻。
     const long double attitude_command_skew_sec =
         std::abs(static_cast<long double>(actual_state_.stamp_ns) -
-                 static_cast<long double>(target_.stamp_ns)) / 1e9L;
+                 static_cast<long double>(target_.stamp_ns)) /
+        1e9L;
     if (attitude_command_skew_sec > policy_.max_attitude_sample_skew_sec) {
       return rejected("STATE_COMMAND_ATTITUDE_TIME_SKEW");
     }
@@ -339,16 +339,15 @@ class Session {
 
     // 1. 将三维机体目标旋转到世界 NED，再限制水平/垂向目标速度。
     result.body_target = target_.body_velocity;
-    result.world_target = rotate_body_to_world(
-        *attitude::normalized(actual_state_.attitude), result.body_target);
+    result.world_target =
+        rotate_body_to_world(*attitude::normalized(actual_state_.attitude), result.body_target);
     if (!vision::detail::finite(result.world_target) ||
         !std::isfinite(std::hypot(result.world_target[0], result.world_target[1]))) {
       return rejected("VELOCITY_PREVIEW_NONFINITE_WORLD_TARGET");
     }
     vision::detail::bound_xy(result.world_target, control_config_.max_speed);
-    result.world_target[2] = std::clamp(result.world_target[2],
-                                       -control_config_.max_vertical_speed,
-                                       control_config_.max_vertical_speed);
+    result.world_target[2] = std::clamp(result.world_target[2], -control_config_.max_vertical_speed,
+                                        control_config_.max_vertical_speed);
 
     // 2. 用“目标速度 - 实测速度”得到误差，反馈不能由目标值代替。
     result.measured_world_velocity = actual_state_.velocity;
@@ -356,32 +355,30 @@ class Session {
       result.velocity_error[axis] = result.world_target[axis] - actual_state_.velocity[axis];
     }
     if (!vision::detail::finite(result.velocity_error) ||
-        !std::isfinite(std::hypot(std::hypot(result.velocity_error[0],
-                                            result.velocity_error[1]),
-                                 result.velocity_error[2]))) {
+        !std::isfinite(std::hypot(std::hypot(result.velocity_error[0], result.velocity_error[1]),
+                                  result.velocity_error[2]))) {
       return rejected("VELOCITY_PREVIEW_NONFINITE_VELOCITY_ERROR");
     }
 
     // 3. 水平加速度 = 速度误差 × 原有外环增益，再同时遵守加速度和倾角限制。
-    result.horizontal_acceleration = {
-        control_config_.velocity_gain * result.velocity_error[0],
-        control_config_.velocity_gain * result.velocity_error[1], 0};
+    result.horizontal_acceleration = {control_config_.velocity_gain * result.velocity_error[0],
+                                      control_config_.velocity_gain * result.velocity_error[1], 0};
     if (!vision::detail::finite(result.horizontal_acceleration) ||
-        !std::isfinite(std::hypot(result.horizontal_acceleration[0],
-                                  result.horizontal_acceleration[1]))) {
+        !std::isfinite(
+            std::hypot(result.horizontal_acceleration[0], result.horizontal_acceleration[1]))) {
       return rejected("VELOCITY_PREVIEW_NONFINITE_ACCELERATION");
     }
     // 上面每一步先拒绝非有限中间量，避免 inf 被限幅“洗成”有限值或零。
-    const double acceleration_limit = std::min(
-        control_config_.max_acceleration,
-        vision::detail::gravity * std::tan(control_config_.max_tilt_deg *
-                                           vision::detail::pi / 180));
+    const double acceleration_limit =
+        std::min(control_config_.max_acceleration,
+                 vision::detail::gravity *
+                     std::tan(control_config_.max_tilt_deg * vision::detail::pi / 180));
     vision::detail::bound_xy(result.horizontal_acceleration, acceleration_limit);
 
     // 4. 只生成姿态预览；消息没有 yaw 字段，沿用显式传入的可信航向参考。
     result.yaw_reference = vision::detail::wrap(trusted_yaw_reference);
-    result.attitude_preview = vision::detail::attitude_target(
-        result.horizontal_acceleration, result.yaw_reference);
+    result.attitude_preview =
+        vision::detail::attitude_target(result.horizontal_acceleration, result.yaw_reference);
     result.world_vertical_velocity_preview = result.world_target[2];
     if (!vision::detail::finite(result.world_target) ||
         !vision::detail::finite(result.velocity_error) ||
@@ -398,7 +395,7 @@ class Session {
     return result;
   }
 
- private:
+private:
   // 预览至少需要真实速度、姿态和质量；位置可选，与生产位置模式的必需字段不同。
   bool required_state_fields_valid(const vision::State& value) const {
     constexpr auto required_fields = vision::Velocity | vision::Attitude | vision::Quality;
@@ -425,7 +422,8 @@ class Session {
       return false;
     }
     if ((value.valid_fields & vision::AngularVelocity) &&
-        (!vision::detail::finite(value.angular_velocity) || value.angular_velocity_source.empty())) {
+        (!vision::detail::finite(value.angular_velocity) ||
+         value.angular_velocity_source.empty())) {
       return false;
     }
     if ((value.valid_fields & vision::PoseCovariance) &&
@@ -460,18 +458,18 @@ class Session {
     if (!policy_.configured()) {
       return latch("VELOCITY_PREVIEW_POLICY_UNCONFIGURED");
     }
-    if (!std::isfinite(now) || now < 0 || !ros_now_ns ||
-        now < last_observed_at_ || ros_now_ns < last_ros_now_ns_) {
+    if (!std::isfinite(now) || now < 0 || !ros_now_ns || now < last_observed_at_ ||
+        ros_now_ns < last_ros_now_ns_) {
       return latch("RECEIVER_CLOCK_INVALID_OR_REGRESSED");
     }
     // 每次接收/预览先检查旧缓存。即使两个源随后都补来正常包，已观察到的
     // 超时也不能被新包覆盖；只有显式 begin_attempt() 重开离线试验。
-    if (has_state_ && !time_valid(actual_state_.stamp_ns, actual_state_.received_at,
-                                  ros_now_ns, now, policy_.state_timeout)) {
+    if (has_state_ && !time_valid(actual_state_.stamp_ns, actual_state_.received_at, ros_now_ns,
+                                  now, policy_.state_timeout)) {
       return latch("STATE_TIME_INVALID");
     }
-    if (has_target_ && !time_valid(target_.stamp_ns, target_.received_at,
-                                   ros_now_ns, now, policy_.command_timeout)) {
+    if (has_target_ && !time_valid(target_.stamp_ns, target_.received_at, ros_now_ns, now,
+                                   policy_.command_timeout)) {
       return latch("COMMAND_TIME_INVALID");
     }
     last_observed_at_ = now;
@@ -480,10 +478,10 @@ class Session {
   }
 
   // 统一复用 source age、arrival delay 与接收 TTL 检查，不把其中一项当成另一项的替代。
-  bool time_valid(std::uint64_t stamp, double received, std::uint64_t ros_now,
-                  double now, double timeout) const {
-    return vision::detail::clock_valid(
-        stamp, received, ros_now, now, timeout, time_validation_config_);
+  bool time_valid(std::uint64_t stamp, double received, std::uint64_t ros_now, double now,
+                  double timeout) const {
+    return vision::detail::clock_valid(stamp, received, ros_now, now, timeout,
+                                       time_validation_config_);
   }
 
   // policy_ 是本次离线合同；control_config_ 用于计算，time_validation_config_ 只承载相同公式的时间限制。

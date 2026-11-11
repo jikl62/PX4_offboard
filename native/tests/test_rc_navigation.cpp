@@ -9,987 +9,1693 @@
 #include <stdexcept>
 #include <utility>
 using namespace authority_test;
-static void need(bool ok,const char* why){if(!ok)throw std::runtime_error(why);}
+static void need(bool ok, const char* why) {
+  if (!ok)
+    throw std::runtime_error(why);
+}
 static f::Config production_no_vision_rc_config();
-static f::Config rc_config(std::int64_t slot=6){
-  auto c=config();auto& p=c.attitude;
-  p.rc_navigation_enabled=true;p.arm_enabled=false;p.rc_takeover_confirmed=true;
-  p.rc_navigation_mode_slot=slot;p.rc_target_height=.5;
-  p.max_flight_seconds=30;p.max_tilt_deg=10;p.land_sample_max_gap=1.25;
-  p.height_tolerance=.15;p.vertical.max_climb=.3;
-  c.validate();return c;
+static f::Config rc_config(std::int64_t slot = 6) {
+  auto c = config();
+  auto& p = c.attitude;
+  p.rc_navigation_enabled = true;
+  p.arm_enabled = false;
+  p.rc_takeover_confirmed = true;
+  p.rc_navigation_mode_slot = slot;
+  p.rc_target_height = .5;
+  p.max_flight_seconds = 30;
+  p.max_tilt_deg = 10;
+  p.land_sample_max_gap = 1.25;
+  p.height_tolerance = .15;
+  p.vertical.max_climb = .3;
+  c.validate();
+  return c;
 }
 struct RcMode {
   std::uint64_t timestamp{};
-  bool position{},velocity{},acceleration{},attitude{},body_rate{},thrust_and_torque{},direct_actuator{};
+  bool position{}, velocity{}, acceleration{}, attitude{}, body_rate{}, thrust_and_torque{},
+      direct_actuator{};
 };
 struct RcTarget {
-  std::uint64_t timestamp{};float yaw_sp_move_rate{};
-  std::array<float,4> q_d{};std::array<float,3> thrust_body{};
-  bool reset_integral{},fw_control_yaw_wheel{};
+  std::uint64_t timestamp{};
+  float yaw_sp_move_rate{};
+  std::array<float, 4> q_d{};
+  std::array<float, 3> thrust_body{};
+  bool reset_integral{}, fw_control_yaw_wheel{};
 };
 // 持有真实Runtime与独立假sink计数；tick可只做策略判定而不提交，防止“计划次数”等同“预发送提交次数”。
 struct Flight {
-  f::Config c;f::Runtime r;f::Snapshot s{sample()};
-  double t{};f::Output o;unsigned published{},arm_commands{},mode_commands{},target_commits{},heartbeat_commits{};
-  explicit Flight(std::int64_t slot=6):Flight(rc_config(slot)){}
-  explicit Flight(f::Config candidate):c(std::move(candidate)),r(c){
-    s.nav_state=15;s.attitude.source_clock_validated=true;
-    s.attitude.rc_link_ready=s.attitude.rc_switches_ready=true;
-    s.attitude.rc_source_clock_valid=s.attitude.rc_switch_clock_valid=true;
-    s.attitude.rc_source_selected=s.attitude.rc_axes_safe=s.attitude.rc_aux_switches_safe=true;
-    s.attitude.rc_mode_slot=c.attitude.rc_navigation_mode_slot==1?6:1;s.attitude.rc_arm_switch=s.attitude.rc_kill_switch=3;
-    s.attitude.rc_switch_sample_stamp=1000;
-    s.attitude.local_stamp=s.attitude.vertical_sample_stamp=1000;
-    s.attitude.z_deriv=s.attitude.vz=0;
+  f::Config c;
+  f::Runtime r;
+  f::Snapshot s{sample()};
+  double t{};
+  f::Output o;
+  unsigned published{}, arm_commands{}, mode_commands{}, target_commits{}, heartbeat_commits{};
+  explicit Flight(std::int64_t slot = 6) : Flight(rc_config(slot)) {
+  }
+  explicit Flight(f::Config candidate) : c(std::move(candidate)), r(c) {
+    s.nav_state = 15;
+    s.attitude.source_clock_validated = true;
+    s.attitude.rc_link_ready = s.attitude.rc_switches_ready = true;
+    s.attitude.rc_source_clock_valid = s.attitude.rc_switch_clock_valid = true;
+    s.attitude.rc_source_selected = s.attitude.rc_axes_safe = s.attitude.rc_aux_switches_safe =
+        true;
+    s.attitude.rc_mode_slot = c.attitude.rc_navigation_mode_slot == 1 ? 6 : 1;
+    s.attitude.rc_arm_switch = s.attitude.rc_kill_switch = 3;
+    s.attitude.rc_switch_sample_stamp = 1000;
+    s.attitude.local_stamp = s.attitude.vertical_sample_stamp = 1000;
+    s.attitude.z_deriv = s.attitude.vz = 0;
     r.require_attitude_sink_commit();
   }
   // 每轮源戳独立推进，先step计划再过最终sink；只有真提交才confirm_rc_output续预发送证明。
-  void tick(bool commit=true,double dt=.05){
-    t+=dt;s.status_stamp+=50000;s.land_stamp+=50000;
-    s.attitude.local_stamp+=50000;s.attitude.vertical_sample_stamp+=50000;
-    s.attitude.rc_switch_sample_stamp+=50000;
-    s.attitude.source_host_stamp=s.status_stamp;
-    o=r.step(s,t);
-    if(o.attitude.command==a::Command::Arm)++arm_commands;
-    if(o.attitude.command==a::Command::Offboard)++mode_commands;
-    if(o.attitude.publish){
-      const auto context=r.publication_context(s,t,true,true);
-      const auto decision=commit?a::publish_attitude_at_boundary<RcMode,RcTarget>(context,o.attitude,s.status_stamp,
-        [&](const RcTarget&){++target_commits;},[&](const RcMode&){++heartbeat_commits;}):
-        a::attitude_publication_policy(context,o.attitude);
-      need(decision.allowed,a::name(decision.reason));
-      if(commit){++published;r.confirm_rc_output(true,t);}
+  void tick(bool commit = true, double dt = .05) {
+    t += dt;
+    s.status_stamp += 50000;
+    s.land_stamp += 50000;
+    s.attitude.local_stamp += 50000;
+    s.attitude.vertical_sample_stamp += 50000;
+    s.attitude.rc_switch_sample_stamp += 50000;
+    s.attitude.source_host_stamp = s.status_stamp;
+    o = r.step(s, t);
+    if (o.attitude.command == a::Command::Arm)
+      ++arm_commands;
+    if (o.attitude.command == a::Command::Offboard)
+      ++mode_commands;
+    if (o.attitude.publish) {
+      const auto context = r.publication_context(s, t, true, true);
+      const auto decision = commit ? a::publish_attitude_at_boundary<RcMode, RcTarget>(
+                                         context, o.attitude, s.status_stamp,
+                                         [&](const RcTarget&) {
+                                           ++target_commits;
+                                         },
+                                         [&](const RcMode&) {
+                                           ++heartbeat_commits;
+                                         })
+                                   : a::attitude_publication_policy(context, o.attitude);
+      need(decision.allowed, a::name(decision.reason));
+      if (commit) {
+        ++published;
+        r.confirm_rc_output(true, t);
+      }
     }
   }
-  void warm(bool commit=true){for(int i=0;i<75;++i)tick(commit);}
+  void warm(bool commit = true) {
+    for (int i = 0; i < 75; ++i)
+      tick(commit);
+  }
   // 可交换armed状态和物理开关的到达顺序；均保留同一armed_time和RC_SWITCH原因，不发送Arm命令。
-  void manual_arm(bool status_first=false){
-    if(status_first){s.feedback.armed=true;s.armed_time=10;s.latest_arming_reason=2;s.at_rest=false;tick();}
-    s.attitude.rc_arm_switch=1;++s.attitude.operator_switch_generation;tick();
-    s.feedback.armed=true;s.armed_time=10;s.latest_arming_reason=2;s.at_rest=false;tick();
+  void manual_arm(bool status_first = false) {
+    if (status_first) {
+      s.feedback.armed = true;
+      s.armed_time = 10;
+      s.latest_arming_reason = 2;
+      s.at_rest = false;
+      tick();
+    }
+    s.attitude.rc_arm_switch = 1;
+    ++s.attitude.operator_switch_generation;
+    tick();
+    s.feedback.armed = true;
+    s.armed_time = 10;
+    s.latest_arming_reason = 2;
+    s.at_rest = false;
+    tick();
   }
   // 物理导航档变化不是已进入Offboard，actual=true才补独立PX4模式反馈。
-  void navigation(bool actual=true){
-    s.attitude.rc_mode_slot=c.attitude.rc_navigation_mode_slot;++s.attitude.operator_switch_generation;tick();
-    if(actual){s.feedback.offboard=true;s.nav_state=14;tick();}
+  void navigation(bool actual = true) {
+    s.attitude.rc_mode_slot = c.attitude.rc_navigation_mode_slot;
+    ++s.attitude.operator_switch_generation;
+    tick();
+    if (actual) {
+      s.feedback.offboard = true;
+      s.nav_state = 14;
+      tick();
+    }
   }
-  void join(){warm();manual_arm();navigation();need(r.attitude_core().phase()==a::Phase::ArmedGround,"authorized RC path joins ArmedGround");}
+  void join() {
+    warm();
+    manual_arm();
+    navigation();
+    need(r.attitude_core().phase() == a::Phase::ArmedGround,
+         "authorized RC path joins ArmedGround");
+  }
 };
 // 完整人工路线先零预发送、人工Arm证据、导航与模式，再ArmedGround/斜坡；176/400事务都不得凭空出现。
-static void valid_path_without_automatic_commands(){
-  Flight q;q.warm();need(q.r.attitude_core().phase()==a::Phase::RcWaitArm,"prestream becomes ready");
-  need(q.published>=20,"actual prestream commits");
-  need(!q.r.attitude_core().flight_started(),"prestream isn't a flight");
-  q.manual_arm();need(!q.r.attitude_core().flight_started(),"manual arm alone never takes off");
-  q.navigation(false);need(!q.r.attitude_core().flight_started(),"RC navigation alone needs PX4 mode proof");
-  q.s.feedback.offboard=true;q.s.nav_state=14;q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::ArmedGround,"new actual Offboard joins flight");
-  need(!a::nonzero(q.o.attitude.thrust),"join starts with zero thrust");
-  for(int i=0;i<16;++i)q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::ThrustRamp,"existing ground dwell leads to ramp");
-  need(a::nonzero(q.o.attitude.thrust),"authorized route eventually produces ramp");
-  need(q.arm_commands==0&&q.mode_commands==0,"RC route never asks PX4 to arm or enter Offboard");
-  need(!q.r.pending(400).requested&&!q.r.pending(176).requested,"no fabricated command transactions");
+static void valid_path_without_automatic_commands() {
+  Flight q;
+  q.warm();
+  need(q.r.attitude_core().phase() == a::Phase::RcWaitArm, "prestream becomes ready");
+  need(q.published >= 20, "actual prestream commits");
+  need(!q.r.attitude_core().flight_started(), "prestream isn't a flight");
+  q.manual_arm();
+  need(!q.r.attitude_core().flight_started(), "manual arm alone never takes off");
+  q.navigation(false);
+  need(!q.r.attitude_core().flight_started(), "RC navigation alone needs PX4 mode proof");
+  q.s.feedback.offboard = true;
+  q.s.nav_state = 14;
+  q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::ArmedGround, "new actual Offboard joins flight");
+  need(!a::nonzero(q.o.attitude.thrust), "join starts with zero thrust");
+  for (int i = 0; i < 16; ++i)
+    q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::ThrustRamp, "existing ground dwell leads to ramp");
+  need(a::nonzero(q.o.attitude.thrust), "authorized route eventually produces ramp");
+  need(q.arm_commands == 0 && q.mode_commands == 0,
+       "RC route never asks PX4 to arm or enter Offboard");
+  need(!q.r.pending(400).requested && !q.r.pending(176).requested,
+       "no fabricated command transactions");
 }
 // 支持状态先于开关到达，消息传输顺序不应制造永久等待。
-static void status_switch_reordering(){
-  Flight q;q.warm();q.manual_arm(true);q.navigation();
-  need(q.r.attitude_core().phase()==a::Phase::ArmedGround,"status-first RC arm arrival is supported");
+static void status_switch_reordering() {
+  Flight q;
+  q.warm();
+  q.manual_arm(true);
+  q.navigation();
+  need(q.r.attitude_core().phase() == a::Phase::ArmedGround,
+       "status-first RC arm arrival is supported");
 }
 // 500 ms互补证据延迟期间只允许连续严格零流；证据配齐前既不证明人工Arm也不承担飞行任务。
-static void delayed_arm_evidence_keeps_continuous_zero_commits(){
-  for(bool status_first:{false,true}){
-    Flight q;q.warm();const auto before=q.published;
-    const auto targets_before=q.target_commits,heartbeats_before=q.heartbeat_commits;
-    if(status_first){q.s.feedback.armed=true;q.s.armed_time=10;q.s.latest_arming_reason=2;q.s.at_rest=false;}
-    else {q.s.attitude.rc_arm_switch=1;++q.s.attitude.operator_switch_generation;}
-    for(int i=0;i<10;++i){
-      q.tick();
-      need(q.o.attitude.publish,"500ms unmatched arm evidence retains every zero stream tick");
-      need(!a::nonzero(q.o.attitude.thrust),"pending arm evidence cannot produce thrust");
-      need(!q.r.attitude_core().flight_started()&&!q.r.attitude_core().rc_manual_arm_proven(),"independent evidence still required");
+static void delayed_arm_evidence_keeps_continuous_zero_commits() {
+  for (bool status_first : {false, true}) {
+    Flight q;
+    q.warm();
+    const auto before = q.published;
+    const auto targets_before = q.target_commits, heartbeats_before = q.heartbeat_commits;
+    if (status_first) {
+      q.s.feedback.armed = true;
+      q.s.armed_time = 10;
+      q.s.latest_arming_reason = 2;
+      q.s.at_rest = false;
+    } else {
+      q.s.attitude.rc_arm_switch = 1;
+      ++q.s.attitude.operator_switch_generation;
     }
-    need(q.published==before+10,"all 10 delayed evidence ticks commit");
-    need(q.target_commits==targets_before+10&&q.heartbeat_commits==heartbeats_before+10,
-      "both actual boundary sinks remain reachable for every delayed evidence tick");
-    q.s.attitude.rc_arm_switch=1;++q.s.attitude.operator_switch_generation;
-    q.s.feedback.armed=true;q.s.armed_time=10;q.s.latest_arming_reason=2;q.s.at_rest=false;q.tick();
+    for (int i = 0; i < 10; ++i) {
+      q.tick();
+      need(q.o.attitude.publish, "500ms unmatched arm evidence retains every zero stream tick");
+      need(!a::nonzero(q.o.attitude.thrust), "pending arm evidence cannot produce thrust");
+      need(!q.r.attitude_core().flight_started() && !q.r.attitude_core().rc_manual_arm_proven(),
+           "independent evidence still required");
+    }
+    need(q.published == before + 10, "all 10 delayed evidence ticks commit");
+    need(q.target_commits == targets_before + 10 && q.heartbeat_commits == heartbeats_before + 10,
+         "both actual boundary sinks remain reachable for every delayed evidence tick");
+    q.s.attitude.rc_arm_switch = 1;
+    ++q.s.attitude.operator_switch_generation;
+    q.s.feedback.armed = true;
+    q.s.armed_time = 10;
+    q.s.latest_arming_reason = 2;
+    q.s.at_rest = false;
+    q.tick();
     q.navigation();
-    need(q.r.attitude_core().phase()==a::Phase::ArmedGround,"continuous readiness joins without a second prestream dwell");
-    need(q.arm_commands==0&&q.mode_commands==0,"reordering never creates pilot commands");
+    need(q.r.attitude_core().phase() == a::Phase::ArmedGround,
+         "continuous readiness joins without a second prestream dwell");
+    need(q.arm_commands == 0 && q.mode_commands == 0, "reordering never creates pilot commands");
   }
 }
 // 档位1/6均需对应本轮新边沿；错误档位实际进入Offboard仍不能加入，参数只允许1至6。
-static void configured_navigation_slots_require_matching_new_edge(){
-  for(std::int64_t slot:{1,6}){
-    Flight q(slot);q.join();
-    need(!a::nonzero(q.o.attitude.thrust),"configured slot starts ArmedGround at zero");
-    Flight wrong(slot);wrong.warm();wrong.manual_arm();
-    wrong.s.attitude.rc_mode_slot=slot==1?6:1;wrong.tick();
-    wrong.s.feedback.offboard=true;wrong.s.nav_state=14;
+static void configured_navigation_slots_require_matching_new_edge() {
+  for (std::int64_t slot : {1, 6}) {
+    Flight q(slot);
+    q.join();
+    need(!a::nonzero(q.o.attitude.thrust), "configured slot starts ArmedGround at zero");
+    Flight wrong(slot);
+    wrong.warm();
+    wrong.manual_arm();
+    wrong.s.attitude.rc_mode_slot = slot == 1 ? 6 : 1;
     wrong.tick();
-    for(int i=0;i<52;++i)wrong.tick();
-    need(wrong.r.attitude_core().phase()==a::Phase::Safety&&
-      wrong.r.attitude_core().reason()=="RC_NAVIGATION_MODE_SLOT_MISMATCH", "unmatched slot expires with the precise admission mismatch");
-    need(!wrong.r.attitude_core().flight_started(),"actual Offboard with wrong RC slot cannot join");
-    need(!a::nonzero(wrong.o.attitude.thrust),"wrong RC slot cannot generate thrust");
+    wrong.s.feedback.offboard = true;
+    wrong.s.nav_state = 14;
+    wrong.tick();
+    for (int i = 0; i < 52; ++i)
+      wrong.tick();
+    need(wrong.r.attitude_core().phase() == a::Phase::Safety &&
+             wrong.r.attitude_core().reason() == "RC_NAVIGATION_MODE_SLOT_MISMATCH",
+         "unmatched slot expires with the precise admission mismatch");
+    need(!wrong.r.attitude_core().flight_started(),
+         "actual Offboard with wrong RC slot cannot join");
+    need(!a::nonzero(wrong.o.attitude.thrust), "wrong RC slot cannot generate thrust");
   }
-  for(std::int64_t slot:{-1,0,7,255}){
-    bool rejected=false;try{rc_config(slot);}catch(const std::invalid_argument&){rejected=true;}
-    need(rejected,"navigation mode slot outside 1 through 6 is rejected");
+  for (std::int64_t slot : {-1, 0, 7, 255}) {
+    bool rejected = false;
+    try {
+      rc_config(slot);
+    } catch (const std::invalid_argument&) {
+      rejected = true;
+    }
+    need(rejected, "navigation mode slot outside 1 through 6 is rejected");
   }
 }
 // 首个互补证据开启固定配对截止，重复新消息不能续租；最终sink在Core下一tick前也须拒绝过期。
-static void missing_arm_evidence_has_an_unrenewable_deadline(){
-  for(bool status_first:{false,true}){
-    Flight q;q.warm();
-    if(status_first){q.s.feedback.armed=true;q.s.armed_time=10;q.s.latest_arming_reason=2;q.s.at_rest=false;}
-    else {q.s.attitude.rc_arm_switch=1;++q.s.attitude.operator_switch_generation;}
+static void missing_arm_evidence_has_an_unrenewable_deadline() {
+  for (bool status_first : {false, true}) {
+    Flight q;
+    q.warm();
+    if (status_first) {
+      q.s.feedback.armed = true;
+      q.s.armed_time = 10;
+      q.s.latest_arming_reason = 2;
+      q.s.at_rest = false;
+    } else {
+      q.s.attitude.rc_arm_switch = 1;
+      ++q.s.attitude.operator_switch_generation;
+    }
     q.tick();
-    for(int i=0;i<45;++i){q.tick();need(q.o.attitude.publish,"zero stream remains available inside evidence deadline");}
-    auto expired=q.r.publication_context(q.s,q.t+.26,true,true);
-    need(!a::attitude_publication_policy(expired,q.o.attitude).allowed,"sink rejects expired pending evidence before the next core step");
-    for(int i=0;i<10;++i)q.tick();
-    need(q.r.attitude_core().phase()==a::Phase::Safety&&
-      q.r.attitude_core().reason()=="RC_MANUAL_ARM_EVIDENCE_TIMEOUT","missing arm evidence expires despite fresh repeated source samples");
-    need(!q.r.attitude_core().flight_started()&&!q.o.attitude.publish&&
-      q.arm_commands==0&&q.mode_commands==0,"timeout cannot launch or synthesize commands");
+    for (int i = 0; i < 45; ++i) {
+      q.tick();
+      need(q.o.attitude.publish, "zero stream remains available inside evidence deadline");
+    }
+    auto expired = q.r.publication_context(q.s, q.t + .26, true, true);
+    need(!a::attitude_publication_policy(expired, q.o.attitude).allowed,
+         "sink rejects expired pending evidence before the next core step");
+    for (int i = 0; i < 10; ++i)
+      q.tick();
+    need(q.r.attitude_core().phase() == a::Phase::Safety &&
+             q.r.attitude_core().reason() == "RC_MANUAL_ARM_EVIDENCE_TIMEOUT",
+         "missing arm evidence expires despite fresh repeated source samples");
+    need(!q.r.attitude_core().flight_started() && !q.o.attitude.publish && q.arm_commands == 0 &&
+             q.mode_commands == 0,
+         "timeout cannot launch or synthesize commands");
   }
 }
 // 暂时零流许可仍复核当前身份、armed episode、地面、RC、reset和健康；double极小非零也拒绝。
-static void pending_permission_rechecks_current_safety_and_exact_zero(){
-  Flight q;q.warm();q.s.feedback.armed=true;q.s.armed_time=10;q.s.latest_arming_reason=2;q.s.at_rest=false;q.tick();
-  for(int k=0;k<20;++k){
-    auto changed=q.s;
-    if(k==0)changed.latest_arming_reason=4;
-    if(k==1)changed.armed_time=0;
-    if(k==2)changed.armed_time=11;
-    if(k==3)changed.status_stamp=1;
-    if(k==4)changed.attitude.kill=true;
-    if(k==5)changed.attitude.rc_axes_safe=false;
-    if(k==6)changed.attitude.rc_mode_slot=6;
-    if(k==7)changed.feedback.offboard=true;
-    if(k==8)changed.feedback.landed=false;
-    if(k==9)changed.attitude.z+=.16;
-    if(k==10)changed.attitude.vz=.11;
-    if(k==11)changed.attitude.z_reset++;
-    if(k==12)changed.attitude.source_clock_valid=false;
-    if(k==13)changed.attitude.rc_source_selected=false;
-    if(k==14)changed.attitude.rc_arm_switch=2;
-    if(k==15)changed.attitude.q={std::cos(.11),std::sin(.11),0,0};
-    if(k==16)changed.feedback.preflight=false;
-    if(k==17)changed.status_fresh=false;
-    if(k==18)changed.attitude.rc_aux_switches_safe=false;
-    if(k==19)changed.attitude.rc_switch_clock_valid=false;
-    unsigned targets=0,heartbeats=0;
-    const auto decision=a::publish_attitude_at_boundary<RcMode,RcTarget>(
-      q.r.publication_context(changed,q.t+.01,true,true),q.o.attitude,123,
-      [&](const RcTarget&){++targets;},[&](const RcMode&){++heartbeats;});
-    need(!decision.allowed&&targets==0&&heartbeats==0,"changed pending evidence must veto both final sinks");
-  }
-  const auto context=q.r.publication_context(q.s,q.t+.01,true,true);
-  for(unsigned axis=0;axis<3;++axis){
-    auto output=q.o.attitude;output.thrust[axis]=std::numeric_limits<double>::denorm_min();
-    const auto denied=a::attitude_publication_policy(context,output);
-    need(!denied.allowed&&denied.reason==a::BoundaryReason::StageOneNonzero,"pending permit rejects double nonzero even if float would underflow");
-  }
-  auto forged=context;forged.rc_arm_evidence_pending=false;
-  need(!a::attitude_publication_policy(forged,q.o.attitude).allowed,"unproven armed startup needs its explicit pending permission");
-  q.s.latest_arming_reason=4;q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::Safety&&q.r.attitude_core().reason()=="RC_ARM_REASON_NOT_RC_SWITCH",
-    "wrong armed reason latches before producing output");
-}
-// Arm事件在计划和sink之间刚到可维持零流，但目标后Kill变化必须阻断心跳并报告部分发布。
-static void sink_resampling_handles_new_arm_observations_and_vetoes_changes(){
-  for(bool status_first:{false,true}){
-    Flight q;q.warm();
-    if(status_first){q.s.feedback.armed=true;q.s.armed_time=10;q.s.latest_arming_reason=2;q.s.at_rest=false;q.s.status_stamp+=10000;}
-    else {q.s.attitude.rc_arm_switch=1;q.s.attitude.rc_switch_sample_stamp+=10000;}
-    unsigned targets=0,heartbeats=0;
-    const auto context=q.r.publication_context(q.s,q.t+.01,true,true);
-    need(context.phase==a::Phase::RcWaitArm,"race starts after core sampled disarmed ready");
-    const auto decision=a::publish_attitude_at_boundary<RcMode,RcTarget>(context,q.o.attitude,123,
-      [&](const RcTarget& target){++targets;for(float thrust:target.thrust_body)need(thrust==0,"race target has exact zero thrust");},
-      [&](const RcMode&){++heartbeats;});
-    need(decision.allowed&&targets==1&&heartbeats==1,"fresh arm event arriving between core and sink retains zero stream");
-    bool threw=false;targets=heartbeats=0;
-    try{
-      a::publish_attitude_at_boundary<RcMode,RcTarget>(context,q.o.attitude,124,
-        [&](const RcTarget&){
-          ++targets;q.s.attitude.kill=true;
-        },[&](const RcMode&){
-          if(!a::attitude_publication_policy(q.r.publication_context(q.s,q.t+.02,true,true),q.o.attitude).allowed)
-            throw std::runtime_error("HEARTBEAT_FINAL_CONTEXT_CHANGED");
+static void pending_permission_rechecks_current_safety_and_exact_zero() {
+  Flight q;
+  q.warm();
+  q.s.feedback.armed = true;
+  q.s.armed_time = 10;
+  q.s.latest_arming_reason = 2;
+  q.s.at_rest = false;
+  q.tick();
+  for (int k = 0; k < 20; ++k) {
+    auto changed = q.s;
+    if (k == 0)
+      changed.latest_arming_reason = 4;
+    if (k == 1)
+      changed.armed_time = 0;
+    if (k == 2)
+      changed.armed_time = 11;
+    if (k == 3)
+      changed.status_stamp = 1;
+    if (k == 4)
+      changed.attitude.kill = true;
+    if (k == 5)
+      changed.attitude.rc_axes_safe = false;
+    if (k == 6)
+      changed.attitude.rc_mode_slot = 6;
+    if (k == 7)
+      changed.feedback.offboard = true;
+    if (k == 8)
+      changed.feedback.landed = false;
+    if (k == 9)
+      changed.attitude.z += .16;
+    if (k == 10)
+      changed.attitude.vz = .11;
+    if (k == 11)
+      changed.attitude.z_reset++;
+    if (k == 12)
+      changed.attitude.source_clock_valid = false;
+    if (k == 13)
+      changed.attitude.rc_source_selected = false;
+    if (k == 14)
+      changed.attitude.rc_arm_switch = 2;
+    if (k == 15)
+      changed.attitude.q = {std::cos(.11), std::sin(.11), 0, 0};
+    if (k == 16)
+      changed.feedback.preflight = false;
+    if (k == 17)
+      changed.status_fresh = false;
+    if (k == 18)
+      changed.attitude.rc_aux_switches_safe = false;
+    if (k == 19)
+      changed.attitude.rc_switch_clock_valid = false;
+    unsigned targets = 0, heartbeats = 0;
+    const auto decision = a::publish_attitude_at_boundary<RcMode, RcTarget>(
+        q.r.publication_context(changed, q.t + .01, true, true), q.o.attitude, 123,
+        [&](const RcTarget&) {
+          ++targets;
+        },
+        [&](const RcMode&) {
           ++heartbeats;
         });
-    }catch(const std::runtime_error&){threw=true;}
-    need(threw&&targets==1&&heartbeats==0,"changed safety after target commit vetoes heartbeat independently");
+    need(!decision.allowed && targets == 0 && heartbeats == 0,
+         "changed pending evidence must veto both final sinks");
+  }
+  const auto context = q.r.publication_context(q.s, q.t + .01, true, true);
+  for (unsigned axis = 0; axis < 3; ++axis) {
+    auto output = q.o.attitude;
+    output.thrust[axis] = std::numeric_limits<double>::denorm_min();
+    const auto denied = a::attitude_publication_policy(context, output);
+    need(!denied.allowed && denied.reason == a::BoundaryReason::StageOneNonzero,
+         "pending permit rejects double nonzero even if float would underflow");
+  }
+  auto forged = context;
+  forged.rc_arm_evidence_pending = false;
+  need(!a::attitude_publication_policy(forged, q.o.attitude).allowed,
+       "unproven armed startup needs its explicit pending permission");
+  q.s.latest_arming_reason = 4;
+  q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::Safety &&
+           q.r.attitude_core().reason() == "RC_ARM_REASON_NOT_RC_SWITCH",
+       "wrong armed reason latches before producing output");
+}
+// Arm事件在计划和sink之间刚到可维持零流，但目标后Kill变化必须阻断心跳并报告部分发布。
+static void sink_resampling_handles_new_arm_observations_and_vetoes_changes() {
+  for (bool status_first : {false, true}) {
+    Flight q;
+    q.warm();
+    if (status_first) {
+      q.s.feedback.armed = true;
+      q.s.armed_time = 10;
+      q.s.latest_arming_reason = 2;
+      q.s.at_rest = false;
+      q.s.status_stamp += 10000;
+    } else {
+      q.s.attitude.rc_arm_switch = 1;
+      q.s.attitude.rc_switch_sample_stamp += 10000;
+    }
+    unsigned targets = 0, heartbeats = 0;
+    const auto context = q.r.publication_context(q.s, q.t + .01, true, true);
+    need(context.phase == a::Phase::RcWaitArm, "race starts after core sampled disarmed ready");
+    const auto decision = a::publish_attitude_at_boundary<RcMode, RcTarget>(
+        context, q.o.attitude, 123,
+        [&](const RcTarget& target) {
+          ++targets;
+          for (float thrust : target.thrust_body)
+            need(thrust == 0, "race target has exact zero thrust");
+        },
+        [&](const RcMode&) {
+          ++heartbeats;
+        });
+    need(decision.allowed && targets == 1 && heartbeats == 1,
+         "fresh arm event arriving between core and sink retains zero stream");
+    bool threw = false;
+    targets = heartbeats = 0;
+    try {
+      a::publish_attitude_at_boundary<RcMode, RcTarget>(
+          context, q.o.attitude, 124,
+          [&](const RcTarget&) {
+            ++targets;
+            q.s.attitude.kill = true;
+          },
+          [&](const RcMode&) {
+            if (!a::attitude_publication_policy(q.r.publication_context(q.s, q.t + .02, true, true),
+                                                q.o.attitude)
+                     .allowed)
+              throw std::runtime_error("HEARTBEAT_FINAL_CONTEXT_CHANGED");
+            ++heartbeats;
+          });
+    } catch (const std::runtime_error&) {
+      threw = true;
+    }
+    need(threw && targets == 1 && heartbeats == 0,
+         "changed safety after target commit vetoes heartbeat independently");
   }
 }
 // Offboard/导航档位任一先到都可在固定窗口零流等另一项，不能跳过人工Arm证明。
-static void delayed_navigation_evidence_keeps_continuous_zero_commits(){
-  for(bool offboard_first:{false,true}){
-    Flight q;q.warm();q.manual_arm();
-    const auto targets=q.target_commits,heartbeats=q.heartbeat_commits;
-    if(offboard_first){q.s.feedback.offboard=true;q.s.nav_state=14;}
-    else {q.s.attitude.rc_mode_slot=6;++q.s.attitude.operator_switch_generation;}
-    for(int i=0;i<10;++i){
-      q.tick();
-      need(q.o.attitude.publish&&!a::nonzero(q.o.attitude.thrust),"500ms independent navigation evidence retains every zero stream tick");
-      need(!q.r.attitude_core().flight_started()&&q.r.attitude_core().rc_manual_arm_proven(),"navigation pairing never substitutes for manual arm proof");
+static void delayed_navigation_evidence_keeps_continuous_zero_commits() {
+  for (bool offboard_first : {false, true}) {
+    Flight q;
+    q.warm();
+    q.manual_arm();
+    const auto targets = q.target_commits, heartbeats = q.heartbeat_commits;
+    if (offboard_first) {
+      q.s.feedback.offboard = true;
+      q.s.nav_state = 14;
+    } else {
+      q.s.attitude.rc_mode_slot = 6;
+      ++q.s.attitude.operator_switch_generation;
     }
-    need(q.target_commits==targets+10&&q.heartbeat_commits==heartbeats+10,"both navigation arrival orders commit all ten target and heartbeat pairs");
-    q.s.feedback.offboard=true;q.s.nav_state=14;q.s.attitude.rc_mode_slot=6;
-    ++q.s.attitude.operator_switch_generation;q.tick();q.tick();
-    need(q.r.attitude_core().phase()==a::Phase::ArmedGround,"new matching navigation source sequence joins after either transport order");
-    need(!a::nonzero(q.o.attitude.thrust)&&q.arm_commands==0&&q.mode_commands==0,"navigation pairing grants no immediate thrust or automatic pilot commands");
+    for (int i = 0; i < 10; ++i) {
+      q.tick();
+      need(q.o.attitude.publish && !a::nonzero(q.o.attitude.thrust),
+           "500ms independent navigation evidence retains every zero stream tick");
+      need(!q.r.attitude_core().flight_started() && q.r.attitude_core().rc_manual_arm_proven(),
+           "navigation pairing never substitutes for manual arm proof");
+    }
+    need(q.target_commits == targets + 10 && q.heartbeat_commits == heartbeats + 10,
+         "both navigation arrival orders commit all ten target and heartbeat pairs");
+    q.s.feedback.offboard = true;
+    q.s.nav_state = 14;
+    q.s.attitude.rc_mode_slot = 6;
+    ++q.s.attitude.operator_switch_generation;
+    q.tick();
+    q.tick();
+    need(q.r.attitude_core().phase() == a::Phase::ArmedGround,
+         "new matching navigation source sequence joins after either transport order");
+    need(!a::nonzero(q.o.attitude.thrust) && q.arm_commands == 0 && q.mode_commands == 0,
+         "navigation pairing grants no immediate thrust or automatic pilot commands");
   }
 }
 // Arm互补证据超过2.5 s才到不能复活过期任务，先检查截止再授证。
-static void late_complementary_arm_evidence_cannot_revive_expired_attempt(){
-  for(bool status_first:{false,true}){
-    Flight q;q.warm();
-    if(status_first){q.s.feedback.armed=true;q.s.armed_time=10;q.s.latest_arming_reason=2;q.s.at_rest=false;}
-    else {q.s.attitude.rc_arm_switch=1;++q.s.attitude.operator_switch_generation;}
-    q.tick();for(int i=0;i<49;++i)q.tick();
-    q.s.feedback.armed=true;q.s.armed_time=10;q.s.latest_arming_reason=2;q.s.at_rest=false;
-    q.s.attitude.rc_arm_switch=1;++q.s.attitude.operator_switch_generation;q.tick(true,.10);
-    need(q.r.attitude_core().phase()==a::Phase::Safety&&
-      q.r.attitude_core().reason()=="RC_MANUAL_ARM_EVIDENCE_TIMEOUT"&&!q.r.attitude_core().rc_manual_arm_proven(),
-      "complementary arm evidence at 2.55s is rejected before proof is granted");
+static void late_complementary_arm_evidence_cannot_revive_expired_attempt() {
+  for (bool status_first : {false, true}) {
+    Flight q;
+    q.warm();
+    if (status_first) {
+      q.s.feedback.armed = true;
+      q.s.armed_time = 10;
+      q.s.latest_arming_reason = 2;
+      q.s.at_rest = false;
+    } else {
+      q.s.attitude.rc_arm_switch = 1;
+      ++q.s.attitude.operator_switch_generation;
+    }
+    q.tick();
+    for (int i = 0; i < 49; ++i)
+      q.tick();
+    q.s.feedback.armed = true;
+    q.s.armed_time = 10;
+    q.s.latest_arming_reason = 2;
+    q.s.at_rest = false;
+    q.s.attitude.rc_arm_switch = 1;
+    ++q.s.attitude.operator_switch_generation;
+    q.tick(true, .10);
+    need(q.r.attitude_core().phase() == a::Phase::Safety &&
+             q.r.attitude_core().reason() == "RC_MANUAL_ARM_EVIDENCE_TIMEOUT" &&
+             !q.r.attitude_core().rc_manual_arm_proven(),
+         "complementary arm evidence at 2.55s is rejected before proof is granted");
   }
 }
 // 导航配对截止同样不可重复续期；超时分别显示模式档不匹配或确认缺失。
-static void navigation_pairing_deadline_cannot_be_renewed_or_crossed(){
-  for(bool offboard_first:{false,true}){
-    for(bool late_complement:{false,true}){
-      Flight q;q.warm();q.manual_arm();
-      if(offboard_first){q.s.feedback.offboard=true;q.s.nav_state=14;}
-      else {q.s.attitude.rc_mode_slot=6;++q.s.attitude.operator_switch_generation;}
-      q.tick();for(int i=0;i<49;++i)q.tick();
-      if(late_complement){q.s.feedback.offboard=true;q.s.nav_state=14;q.s.attitude.rc_mode_slot=6;++q.s.attitude.operator_switch_generation;}
-      auto expired=q.r.publication_context(q.s,q.t+.10,true,true);
-      need(!a::attitude_publication_policy(expired,q.o.attitude).allowed,"final sink refuses navigation proof after its fixed pairing deadline");
-      q.tick(true,.10);
-      need(q.r.attitude_core().phase()==a::Phase::Safety&&!q.r.attitude_core().flight_started()&&!q.o.attitude.publish,
-        "fresh repeated navigation samples and late complement cannot renew or cross the deadline");
-      need(q.r.attitude_core().reason()==(offboard_first&&!late_complement?"RC_NAVIGATION_MODE_SLOT_MISMATCH":"RC_NAVIGATION_CONFIRMATION_TIMEOUT"),
-        "navigation timeout distinguishes absent slot from missing timely confirmation");
+static void navigation_pairing_deadline_cannot_be_renewed_or_crossed() {
+  for (bool offboard_first : {false, true}) {
+    for (bool late_complement : {false, true}) {
+      Flight q;
+      q.warm();
+      q.manual_arm();
+      if (offboard_first) {
+        q.s.feedback.offboard = true;
+        q.s.nav_state = 14;
+      } else {
+        q.s.attitude.rc_mode_slot = 6;
+        ++q.s.attitude.operator_switch_generation;
+      }
+      q.tick();
+      for (int i = 0; i < 49; ++i)
+        q.tick();
+      if (late_complement) {
+        q.s.feedback.offboard = true;
+        q.s.nav_state = 14;
+        q.s.attitude.rc_mode_slot = 6;
+        ++q.s.attitude.operator_switch_generation;
+      }
+      auto expired = q.r.publication_context(q.s, q.t + .10, true, true);
+      need(!a::attitude_publication_policy(expired, q.o.attitude).allowed,
+           "final sink refuses navigation proof after its fixed pairing deadline");
+      q.tick(true, .10);
+      need(
+          q.r.attitude_core().phase() == a::Phase::Safety &&
+              !q.r.attitude_core().flight_started() && !q.o.attitude.publish,
+          "fresh repeated navigation samples and late complement cannot renew or cross the deadline");
+      need(q.r.attitude_core().reason() == (offboard_first && !late_complement
+                                                ? "RC_NAVIGATION_MODE_SLOT_MISMATCH"
+                                                : "RC_NAVIGATION_CONFIRMATION_TIMEOUT"),
+           "navigation timeout distinguishes absent slot from missing timely confirmation");
     }
   }
 }
 // 撤回已观察导航、源戳旧、跨armed episode、极小非零均撤销暂时许可。
-static void navigation_pending_rejects_withdrawal_stale_sources_and_nonzero(){
-  for(bool offboard_first:{false,true}){
-    Flight q;q.warm();q.manual_arm();
-    if(offboard_first){q.s.feedback.offboard=true;q.s.nav_state=14;}
-    else {q.s.attitude.rc_mode_slot=6;++q.s.attitude.operator_switch_generation;}
-    q.tick();
-    auto nonzero=q.o.attitude;nonzero.thrust[2]=-std::numeric_limits<double>::denorm_min();
-    need(!a::attitude_publication_policy(q.r.publication_context(q.s,q.t+.01,true,true),nonzero).allowed,
-      "neither pending navigation order can publish even a sub-float nonzero thrust");
-    if(offboard_first){q.s.feedback.offboard=false;q.s.nav_state=15;}
-    else {q.s.attitude.rc_mode_slot=1;q.s.attitude.rc_switch_sample_stamp+=10000;}
-    need(!a::attitude_publication_policy(q.r.publication_context(q.s,q.t+.01,true,true),q.o.attitude).allowed,
-      "sink resampling refuses withdrawal of already observed navigation evidence");
-    q.tick();
-    need(q.r.attitude_core().phase()==a::Phase::Safety&&!q.r.attitude_core().flight_started(),"withdrawn navigation attempt latches without joining");
-  }
-  for(bool stale_mode:{false,true}){
-    Flight q;q.warm();q.manual_arm();const auto stabilized_status=q.s.status_stamp;
-    if(stale_mode){
-      q.s.feedback.offboard=true;q.s.nav_state=14;q.s.status_stamp=stabilized_status;
-    }else {
-      q.s.attitude.rc_mode_slot=6;q.s.attitude.rc_switch_sample_stamp=1;
+static void navigation_pending_rejects_withdrawal_stale_sources_and_nonzero() {
+  for (bool offboard_first : {false, true}) {
+    Flight q;
+    q.warm();
+    q.manual_arm();
+    if (offboard_first) {
+      q.s.feedback.offboard = true;
+      q.s.nav_state = 14;
+    } else {
+      q.s.attitude.rc_mode_slot = 6;
+      ++q.s.attitude.operator_switch_generation;
     }
-    need(!a::attitude_publication_policy(q.r.publication_context(q.s,q.t+.01,true,true),q.o.attitude).allowed,
-      "new navigation values carried by old source timestamps cannot use pending permission");
+    q.tick();
+    auto nonzero = q.o.attitude;
+    nonzero.thrust[2] = -std::numeric_limits<double>::denorm_min();
+    need(!a::attitude_publication_policy(q.r.publication_context(q.s, q.t + .01, true, true),
+                                         nonzero)
+              .allowed,
+         "neither pending navigation order can publish even a sub-float nonzero thrust");
+    if (offboard_first) {
+      q.s.feedback.offboard = false;
+      q.s.nav_state = 15;
+    } else {
+      q.s.attitude.rc_mode_slot = 1;
+      q.s.attitude.rc_switch_sample_stamp += 10000;
+    }
+    need(!a::attitude_publication_policy(q.r.publication_context(q.s, q.t + .01, true, true),
+                                         q.o.attitude)
+              .allowed,
+         "sink resampling refuses withdrawal of already observed navigation evidence");
+    q.tick();
+    need(q.r.attitude_core().phase() == a::Phase::Safety && !q.r.attitude_core().flight_started(),
+         "withdrawn navigation attempt latches without joining");
   }
-  Flight q;q.warm();q.manual_arm();q.s.feedback.offboard=true;q.s.nav_state=14;
-  q.s.status_stamp+=10000;
-  auto context=q.r.publication_context(q.s,q.t+.01,true,true);
-  need(a::attitude_publication_policy(context,q.o.attitude).allowed,"new Offboard observation between core and sink is covered by zero-only pending permission");
-  q.s.armed_time=11;
-  need(!a::attitude_publication_policy(q.r.publication_context(q.s,q.t+.02,true,true),q.o.attitude).allowed,
-    "navigation pending permission cannot cross an armed episode");
+  for (bool stale_mode : {false, true}) {
+    Flight q;
+    q.warm();
+    q.manual_arm();
+    const auto stabilized_status = q.s.status_stamp;
+    if (stale_mode) {
+      q.s.feedback.offboard = true;
+      q.s.nav_state = 14;
+      q.s.status_stamp = stabilized_status;
+    } else {
+      q.s.attitude.rc_mode_slot = 6;
+      q.s.attitude.rc_switch_sample_stamp = 1;
+    }
+    need(!a::attitude_publication_policy(q.r.publication_context(q.s, q.t + .01, true, true),
+                                         q.o.attitude)
+              .allowed,
+         "new navigation values carried by old source timestamps cannot use pending permission");
+  }
+  Flight q;
+  q.warm();
+  q.manual_arm();
+  q.s.feedback.offboard = true;
+  q.s.nav_state = 14;
+  q.s.status_stamp += 10000;
+  auto context = q.r.publication_context(q.s, q.t + .01, true, true);
+  need(a::attitude_publication_policy(context, q.o.attitude).allowed,
+       "new Offboard observation between core and sink is covered by zero-only pending permission");
+  q.s.armed_time = 11;
+  need(!a::attitude_publication_policy(q.r.publication_context(q.s, q.t + .02, true, true),
+                                       q.o.attitude)
+            .allowed,
+       "navigation pending permission cannot cross an armed episode");
 }
 // 源事件实际发生在READY之前，即使延迟送达时本机已ready也不可授权；真正post-ready传输延迟仍支持。
-static void delayed_pre_ready_source_events_cannot_authorize(){
+static void delayed_pre_ready_source_events_cannot_authorize() {
   // Extra clock member lets this regression execute against the pre-fix
   // admission implementation, which ignored host time entirely.
-  struct TimedFeedback:a::Feedback{std::uint64_t source_host_stamp{};};
-  Flight fixture;TimedFeedback s;
-  static_cast<a::Feedback&>(s)=fixture.r.publication_context(fixture.s,0,true,true).feedback;
-  a::RcNavigationStart start;double now=0;
-  const auto step=[&]{
-    now+=.05;s.source_host_stamp=100000000+std::uint64_t(now*1e6);
-    s.status_stamp=s.rc_switch_sample_stamp=s.source_host_stamp-500000;
-    s.local_stamp=s.vertical_sample_stamp=s.land_stamp=s.status_stamp;
-    const bool output=start.step(fixture.c.attitude,s,now,"");
-    if(output)start.note_commit(true,now);
+  struct TimedFeedback : a::Feedback {
+    std::uint64_t source_host_stamp{};
   };
-  while(start.phase()!=a::RcStartPhase::WaitArm&&now<5)step();
-  need(start.phase()==a::RcStartPhase::WaitArm,"delayed but healthy ground may prepare");
-  s.rc_arm_switch=1;s.armed=true;s.latest_arming_reason=2;s.armed_time=10;s.at_rest=false;step();
-  need(!start.manual_arm_proven(),"pre-ready arm source event must not authorize after delayed delivery");
-  s.rc_mode_slot=6;s.offboard=true;s.stabilized_selected=false;step();
-  need(start.phase()!=a::RcStartPhase::Joined,"pre-ready sequence cannot join flight");
+  Flight fixture;
+  TimedFeedback s;
+  static_cast<a::Feedback&>(s) = fixture.r.publication_context(fixture.s, 0, true, true).feedback;
+  a::RcNavigationStart start;
+  double now = 0;
+  const auto step = [&] {
+    now += .05;
+    s.source_host_stamp = 100000000 + std::uint64_t(now * 1e6);
+    s.status_stamp = s.rc_switch_sample_stamp = s.source_host_stamp - 500000;
+    s.local_stamp = s.vertical_sample_stamp = s.land_stamp = s.status_stamp;
+    const bool output = start.step(fixture.c.attitude, s, now, "");
+    if (output)
+      start.note_commit(true, now);
+  };
+  while (start.phase() != a::RcStartPhase::WaitArm && now < 5)
+    step();
+  need(start.phase() == a::RcStartPhase::WaitArm, "delayed but healthy ground may prepare");
+  s.rc_arm_switch = 1;
+  s.armed = true;
+  s.latest_arming_reason = 2;
+  s.armed_time = 10;
+  s.at_rest = false;
+  step();
+  need(!start.manual_arm_proven(),
+       "pre-ready arm source event must not authorize after delayed delivery");
+  s.rc_mode_slot = 6;
+  s.offboard = true;
+  s.stabilized_selected = false;
+  step();
+  need(start.phase() != a::RcStartPhase::Joined, "pre-ready sequence cannot join flight");
 
   // Transport delay itself remains supported when the actual events are
   // post-ready, including armed status arriving ahead of its switch sample.
-  a::RcNavigationStart valid;now=0;
-  static_cast<a::Feedback&>(s)=fixture.r.publication_context(fixture.s,0,true,true).feedback;
-  const auto valid_step=[&]{
-    now+=.05;s.source_host_stamp=100000000+std::uint64_t(now*1e6);
-    s.status_stamp=s.rc_switch_sample_stamp=s.source_host_stamp-500000;
-    s.local_stamp=s.vertical_sample_stamp=s.land_stamp=s.status_stamp;
-    if(valid.step(fixture.c.attitude,s,now,""))valid.note_commit(true,now);
+  a::RcNavigationStart valid;
+  now = 0;
+  static_cast<a::Feedback&>(s) = fixture.r.publication_context(fixture.s, 0, true, true).feedback;
+  const auto valid_step = [&] {
+    now += .05;
+    s.source_host_stamp = 100000000 + std::uint64_t(now * 1e6);
+    s.status_stamp = s.rc_switch_sample_stamp = s.source_host_stamp - 500000;
+    s.local_stamp = s.vertical_sample_stamp = s.land_stamp = s.status_stamp;
+    if (valid.step(fixture.c.attitude, s, now, ""))
+      valid.note_commit(true, now);
   };
-  for(int i=0;i<100;++i)valid_step();
-  need(valid.phase()==a::RcStartPhase::WaitArm,"valid delayed stream remains ready");
-  s.armed=true;s.latest_arming_reason=2;s.armed_time=10;s.at_rest=false;valid_step();
-  need(!valid.manual_arm_proven(),"status-first arrival still awaits independent switch");
-  s.rc_arm_switch=1;valid_step();s.rc_mode_slot=6;valid_step();
-  s.offboard=true;s.stabilized_selected=false;valid_step();
-  need(valid.phase()==a::RcStartPhase::Joined,"post-ready delayed reordered events still join");
+  for (int i = 0; i < 100; ++i)
+    valid_step();
+  need(valid.phase() == a::RcStartPhase::WaitArm, "valid delayed stream remains ready");
+  s.armed = true;
+  s.latest_arming_reason = 2;
+  s.armed_time = 10;
+  s.at_rest = false;
+  valid_step();
+  need(!valid.manual_arm_proven(), "status-first arrival still awaits independent switch");
+  s.rc_arm_switch = 1;
+  valid_step();
+  s.rc_mode_slot = 6;
+  valid_step();
+  s.offboard = true;
+  s.stabilized_selected = false;
+  valid_step();
+  need(valid.phase() == a::RcStartPhase::Joined, "post-ready delayed reordered events still join");
 }
 // 十二类开机不合格条件/未实际提交预发送都不能宣称READY、产生推力或合成遥控动作。
-static void unavailable_evidence_never_launches(){
-  for(int k=0;k<12;++k){
+static void unavailable_evidence_never_launches() {
+  for (int k = 0; k < 12; ++k) {
     Flight q;
-    if(k==0){q.s.feedback.armed=true;q.s.armed_time=10;q.s.latest_arming_reason=2;q.s.attitude.rc_arm_switch=1;}
-    if(k==1)q.s.attitude.rc_mode_slot=6;
-    if(k==2)q.s.attitude.rc_arm_switch=1;
-    if(k==3)q.s.attitude.rc_source_clock_valid=false;
-    if(k==4)q.s.attitude.rc_axes_safe=false;
-    if(k==5)q.s.local_fresh=false;
-    if(k==6)q.s.attitude.kill=true;
-    if(k==7)q.s.attitude.rc_aux_switches_safe=false;
-    if(k==8)q.s.attitude.source_clock_valid=false;
-    if(k==9)q.s.attitude.offboard_signal_lost=true;
-    if(k==10)q.s.feedback.exclusive=false;
-    q.warm(k!=11);
-    need(!q.r.attitude_core().flight_started(),"ineligible startup cannot launch");
-    need(!a::nonzero(q.o.attitude.thrust),"ineligible startup has no thrust");
-    need(q.r.attitude_core().phase()!=a::Phase::RcWaitArm,"ineligible startup cannot claim arm readiness");
-    need(q.arm_commands==0&&q.mode_commands==0,"startup never synthesizes pilot actions");
+    if (k == 0) {
+      q.s.feedback.armed = true;
+      q.s.armed_time = 10;
+      q.s.latest_arming_reason = 2;
+      q.s.attitude.rc_arm_switch = 1;
+    }
+    if (k == 1)
+      q.s.attitude.rc_mode_slot = 6;
+    if (k == 2)
+      q.s.attitude.rc_arm_switch = 1;
+    if (k == 3)
+      q.s.attitude.rc_source_clock_valid = false;
+    if (k == 4)
+      q.s.attitude.rc_axes_safe = false;
+    if (k == 5)
+      q.s.local_fresh = false;
+    if (k == 6)
+      q.s.attitude.kill = true;
+    if (k == 7)
+      q.s.attitude.rc_aux_switches_safe = false;
+    if (k == 8)
+      q.s.attitude.source_clock_valid = false;
+    if (k == 9)
+      q.s.attitude.offboard_signal_lost = true;
+    if (k == 10)
+      q.s.feedback.exclusive = false;
+    q.warm(k != 11);
+    need(!q.r.attitude_core().flight_started(), "ineligible startup cannot launch");
+    need(!a::nonzero(q.o.attitude.thrust), "ineligible startup has no thrust");
+    need(q.r.attitude_core().phase() != a::Phase::RcWaitArm,
+         "ineligible startup cannot claim arm readiness");
+    need(q.arm_commands == 0 && q.mode_commands == 0, "startup never synthesizes pilot actions");
   }
 }
 // 提前导航、非RC原因、离地、漂移/reset、摇杆不安全或模式确认超时都锁存为拒绝。
-static void arm_and_navigation_faults_latch(){
-  for(int k=0;k<6;++k){
-    Flight q;q.warm();
-    if(k==0){q.s.attitude.rc_mode_slot=6;++q.s.attitude.operator_switch_generation;q.tick();}
-    else{
+static void arm_and_navigation_faults_latch() {
+  for (int k = 0; k < 6; ++k) {
+    Flight q;
+    q.warm();
+    if (k == 0) {
+      q.s.attitude.rc_mode_slot = 6;
+      ++q.s.attitude.operator_switch_generation;
+      q.tick();
+    } else {
       q.manual_arm();
-      if(k==1)q.s.latest_arming_reason=4;
-      if(k==2)q.s.feedback.landed=false;
-      if(k==3)q.s.attitude.z-=.2;
-      if(k==4)q.s.attitude.z_reset++;
-      if(k==5)q.s.attitude.rc_axes_safe=false;
-      q.tick();q.navigation();
+      if (k == 1)
+        q.s.latest_arming_reason = 4;
+      if (k == 2)
+        q.s.feedback.landed = false;
+      if (k == 3)
+        q.s.attitude.z -= .2;
+      if (k == 4)
+        q.s.attitude.z_reset++;
+      if (k == 5)
+        q.s.attitude.rc_axes_safe = false;
+      q.tick();
+      q.navigation();
     }
-    need(!q.r.attitude_core().flight_started(),"bad admission cannot become a flight");
-    need(q.r.attitude_core().phase()==a::Phase::Safety,"armed or navigation fault latches");
+    need(!q.r.attitude_core().flight_started(), "bad admission cannot become a flight");
+    need(q.r.attitude_core().phase() == a::Phase::Safety, "armed or navigation fault latches");
   }
-  Flight timeout;timeout.warm();timeout.manual_arm();
-  for(int i=0;i<170;++i)timeout.tick();
-  need(timeout.r.attitude_core().phase()==a::Phase::Safety,"manual arm navigation timeout latches");
+  Flight timeout;
+  timeout.warm();
+  timeout.manual_arm();
+  for (int i = 0; i < 170; ++i)
+    timeout.tick();
+  need(timeout.r.attitude_core().phase() == a::Phase::Safety,
+       "manual arm navigation timeout latches");
 }
 // 只有未解锁时可刷新地面z0；人工Arm意图后冻结，后续导航不可重新归零掩盖运动。
-static void reference_is_disarmed_only(){
-  Flight q;q.warm();q.s.attitude.z=2.03;q.tick();
-  const auto before=q.r.attitude_core().reference_z();need(std::abs(before-2.03)<1e-9,"disarmed anchor refreshes");
-  q.manual_arm();q.s.attitude.z=2.04;q.tick();
-  need(q.r.attitude_core().reference_z()==before,"armed anchor never recaptures");
-  q.navigation();need(q.r.attitude_core().reference_z()==before,"navigation keeps pre-arm anchor");
+static void reference_is_disarmed_only() {
+  Flight q;
+  q.warm();
+  q.s.attitude.z = 2.03;
+  q.tick();
+  const auto before = q.r.attitude_core().reference_z();
+  need(std::abs(before - 2.03) < 1e-9, "disarmed anchor refreshes");
+  q.manual_arm();
+  q.s.attitude.z = 2.04;
+  q.tick();
+  need(q.r.attitude_core().reference_z() == before, "armed anchor never recaptures");
+  q.navigation();
+  need(q.r.attitude_core().reference_z() == before, "navigation keeps pre-arm anchor");
 }
 // 小静态EKF偏置和缓慢一致地面漂移可用独立新地面窗建立本轮参考；Arm后漂移保留精确触发证据。
-static void task_ground_reference_uses_fresh_disarmed_evidence(){
+static void task_ground_reference_uses_fresh_disarmed_evidence() {
   // Offsets are diagnostic EKF-frame scenarios, not a larger flight envelope.
-  for(double offset:{.09,.16}){
-    auto c=production_no_vision_rc_config();Flight q(c);
-    q.s.attitude.z=2-offset;q.tick();
-    need(q.r.attitude_core().phase()==a::Phase::RcPrestream&&q.o.attitude.publish&&
-      !a::nonzero(q.o.attitude.thrust)&&!q.r.attitude_core().rc_ground_reference_qualified()&&
-      !q.r.attitude_core().flight_started(),
-      "provisional PRESTREAM zero anchor is not a qualified task reference or flight admission");
+  for (double offset : {.09, .16}) {
+    auto c = production_no_vision_rc_config();
+    Flight q(c);
+    q.s.attitude.z = 2 - offset;
+    q.tick();
+    need(q.r.attitude_core().phase() == a::Phase::RcPrestream && q.o.attitude.publish &&
+             !a::nonzero(q.o.attitude.thrust) &&
+             !q.r.attitude_core().rc_ground_reference_qualified() &&
+             !q.r.attitude_core().flight_started(),
+         "provisional PRESTREAM zero anchor is not a qualified task reference or flight admission");
     q.warm();
-    need(q.r.attitude_core().rc_ground_reference_qualified()&&
-      q.r.attitude_core().phase()==a::Phase::RcWaitArm&&
-      std::abs(q.r.attitude_core().reference_z()-(2-offset))<1e-9,
-      "new task certifies current disarmed ground rather than an old EKF zero");
-    q.manual_arm();const double frozen=q.r.attitude_core().reference_z();q.navigation();
-    need(q.r.attitude_core().phase()==a::Phase::ArmedGround&&
-      q.r.attitude_core().reference_z()==frozen&&std::abs(q.o.attitude.height)<1e-9,
-      "static 0.09/0.16 frame offset joins only after its own complete ground proof");
+    need(q.r.attitude_core().rc_ground_reference_qualified() &&
+             q.r.attitude_core().phase() == a::Phase::RcWaitArm &&
+             std::abs(q.r.attitude_core().reference_z() - (2 - offset)) < 1e-9,
+         "new task certifies current disarmed ground rather than an old EKF zero");
+    q.manual_arm();
+    const double frozen = q.r.attitude_core().reference_z();
+    q.navigation();
+    need(q.r.attitude_core().phase() == a::Phase::ArmedGround &&
+             q.r.attitude_core().reference_z() == frozen && std::abs(q.o.attitude.height) < 1e-9,
+         "static 0.09/0.16 frame offset joins only after its own complete ground proof");
   }
   Flight low_rate(production_no_vision_rc_config());
-  for(int i=1;i<=80;++i){
+  for (int i = 1; i <= 80; ++i) {
     // PX4 local/raw samples at20Hz, independent status/detector at1Hz.
     // This is within the deployed1.25s land sample gap, not repeated data.
-    if(i%20&&i>1){low_rate.s.status_stamp-=50000;low_rate.s.land_stamp-=50000;}
-    else if(i%20==0)low_rate.s.status_stamp=low_rate.s.land_stamp=1000+std::uint64_t(i-1)*50000;
+    if (i % 20 && i > 1) {
+      low_rate.s.status_stamp -= 50000;
+      low_rate.s.land_stamp -= 50000;
+    } else if (i % 20 == 0)
+      low_rate.s.status_stamp = low_rate.s.land_stamp = 1000 + std::uint64_t(i - 1) * 50000;
     low_rate.tick();
   }
-  need(low_rate.r.attitude_core().phase()==a::Phase::RcWaitArm&&
-    low_rate.r.attitude_core().rc_ground_reference_qualified(),
-    "healthy1Hz status/land and20Hz local streams qualify without one-to-one callback pairing");
-  auto c=rc_config();c.attitude.feedback_guard.enabled=true;Flight drift(c);drift.warm();
-  for(int i=0;i<400;++i){drift.s.attitude.z-=.001;drift.s.attitude.z_deriv=-.02;drift.tick();}
-  need(drift.r.attitude_core().phase()==a::Phase::RcWaitArm&&
-    drift.r.attitude_core().rc_ground_reference_qualified()&&
-    std::abs(drift.r.attitude_core().reference_z()-drift.s.attitude.z)<1e-9,
-    "slow consistent ground drift refreshes a bounded current disarmed reference");
-  drift.s.attitude.z_deriv=0;drift.manual_arm();const double frozen=drift.r.attitude_core().reference_z();
-  drift.s.attitude.z-=.16;drift.tick();
-  need(drift.r.attitude_core().phase()==a::Phase::Safety&&
-    drift.r.attitude_core().reason()=="RC_ARMED_GROUND_REFERENCE_NOT_STABLE"&&
-    drift.r.attitude_core().reference_z()==frozen&&!drift.o.attitude.publish,
-    "arm intent freezes z0 even with a landed detector; later drift cannot be hidden by rebase");
-  const auto evidence=drift.r.attitude_core().armed_ground_fault_evidence();
-  need(evidence.valid&&evidence.failed_mask==8&&std::abs(evidence.height-.16)<1e-9&&
-    evidence.local_stamp==drift.s.attitude.local_stamp,
-    "RC admission captures the precise triggering height/source sample");
-  drift.s.attitude.z=frozen-.09;drift.tick();
-  need(drift.r.attitude_core().armed_ground_fault_evidence().local_stamp==evidence.local_stamp&&
-    std::abs(drift.r.attitude_core().armed_ground_fault_evidence().height-.16)<1e-9,
-    "fault display changes cannot replace the actual 0.16 trigger with a later 0.09 snapshot");
-  drift.s.feedback.armed=false;drift.s.feedback.offboard=false;drift.s.nav_state=15;
-  drift.s.at_rest=true;drift.s.attitude.rc_arm_switch=3;drift.s.attitude.rc_mode_slot=1;
-  ++drift.s.attitude.operator_switch_generation;
-  for(int i=0;i<25;++i){drift.tick();need(!drift.r.reprepare_rc(drift.s,drift.t),
-    "ended reference fault still requires a complete NEW healthy ground window");}
-  for(int i=0;i<30;++i)drift.tick();
-  need(drift.r.reprepare_rc(drift.s,drift.t),"ended RC ground-reference fault may safely reprepare");
-  need(!drift.r.attitude_core().reference_ready(),"old faulted task reference is discarded");
+  need(low_rate.r.attitude_core().phase() == a::Phase::RcWaitArm &&
+           low_rate.r.attitude_core().rc_ground_reference_qualified(),
+       "healthy1Hz status/land and20Hz local streams qualify without one-to-one callback pairing");
+  auto c = rc_config();
+  c.attitude.feedback_guard.enabled = true;
+  Flight drift(c);
   drift.warm();
-  need(drift.r.attitude_core().phase()==a::Phase::RcWaitArm&&
-    std::abs(drift.r.attitude_core().reference_z()-(frozen-.09))<1e-9,
-    "recovery builds next task's current reference without auto-arm or auto-launch");
-  std::cout<<"RC_GROUND_REFERENCE_OFFSETS_DRIFT_RECOVERY_PASS\n";
+  for (int i = 0; i < 400; ++i) {
+    drift.s.attitude.z -= .001;
+    drift.s.attitude.z_deriv = -.02;
+    drift.tick();
+  }
+  need(drift.r.attitude_core().phase() == a::Phase::RcWaitArm &&
+           drift.r.attitude_core().rc_ground_reference_qualified() &&
+           std::abs(drift.r.attitude_core().reference_z() - drift.s.attitude.z) < 1e-9,
+       "slow consistent ground drift refreshes a bounded current disarmed reference");
+  drift.s.attitude.z_deriv = 0;
+  drift.manual_arm();
+  const double frozen = drift.r.attitude_core().reference_z();
+  drift.s.attitude.z -= .16;
+  drift.tick();
+  need(drift.r.attitude_core().phase() == a::Phase::Safety &&
+           drift.r.attitude_core().reason() == "RC_ARMED_GROUND_REFERENCE_NOT_STABLE" &&
+           drift.r.attitude_core().reference_z() == frozen && !drift.o.attitude.publish,
+       "arm intent freezes z0 even with a landed detector; later drift cannot be hidden by rebase");
+  const auto evidence = drift.r.attitude_core().armed_ground_fault_evidence();
+  need(evidence.valid && evidence.failed_mask == 8 && std::abs(evidence.height - .16) < 1e-9 &&
+           evidence.local_stamp == drift.s.attitude.local_stamp,
+       "RC admission captures the precise triggering height/source sample");
+  drift.s.attitude.z = frozen - .09;
+  drift.tick();
+  need(drift.r.attitude_core().armed_ground_fault_evidence().local_stamp == evidence.local_stamp &&
+           std::abs(drift.r.attitude_core().armed_ground_fault_evidence().height - .16) < 1e-9,
+       "fault display changes cannot replace the actual 0.16 trigger with a later 0.09 snapshot");
+  drift.s.feedback.armed = false;
+  drift.s.feedback.offboard = false;
+  drift.s.nav_state = 15;
+  drift.s.at_rest = true;
+  drift.s.attitude.rc_arm_switch = 3;
+  drift.s.attitude.rc_mode_slot = 1;
+  ++drift.s.attitude.operator_switch_generation;
+  for (int i = 0; i < 25; ++i) {
+    drift.tick();
+    need(!drift.r.reprepare_rc(drift.s, drift.t),
+         "ended reference fault still requires a complete NEW healthy ground window");
+  }
+  for (int i = 0; i < 30; ++i)
+    drift.tick();
+  need(drift.r.reprepare_rc(drift.s, drift.t),
+       "ended RC ground-reference fault may safely reprepare");
+  need(!drift.r.attitude_core().reference_ready(), "old faulted task reference is discarded");
+  drift.warm();
+  need(drift.r.attitude_core().phase() == a::Phase::RcWaitArm &&
+           std::abs(drift.r.attitude_core().reference_z() - (frozen - .09)) < 1e-9,
+       "recovery builds next task's current reference without auto-arm or auto-launch");
+  std::cout << "RC_GROUND_REFERENCE_OFFSETS_DRIFT_RECOVERY_PASS\n";
 }
 // 未解锁reset/时间不连续废弃READY重建；已解锁reset仍致命，重复缓存不能靠fresh布尔制造dwell。
-static void ground_reference_resets_and_timestamps_need_a_new_window(){
-  for(int kind=0;kind<8;++kind){
-    auto c=rc_config();c.attitude.feedback_guard.enabled=true;Flight q(c);q.warm();
-    if(kind==0){q.s.attitude.z_reset++;q.s.attitude.z+=.3;}
-    if(kind==1)q.s.attitude.vz_reset++;
-    if(kind==2)q.s.attitude.quat_reset++;
-    if(kind==3)q.s.attitude.vertical_sample_stamp=100;
-    if(kind==4)q.s.attitude.local_stamp=100;
-    if(kind==5){q.s.attitude.local_stamp-=50000;q.s.attitude.z+=.09;}
-    if(kind==6){q.s.attitude.vertical_sample_stamp-=50000;q.s.attitude.z+=.09;}
-    if(kind==7){q.s.attitude.local_stamp+=1000000;q.s.attitude.vertical_sample_stamp+=1000000;}
+static void ground_reference_resets_and_timestamps_need_a_new_window() {
+  for (int kind = 0; kind < 8; ++kind) {
+    auto c = rc_config();
+    c.attitude.feedback_guard.enabled = true;
+    Flight q(c);
+    q.warm();
+    if (kind == 0) {
+      q.s.attitude.z_reset++;
+      q.s.attitude.z += .3;
+    }
+    if (kind == 1)
+      q.s.attitude.vz_reset++;
+    if (kind == 2)
+      q.s.attitude.quat_reset++;
+    if (kind == 3)
+      q.s.attitude.vertical_sample_stamp = 100;
+    if (kind == 4)
+      q.s.attitude.local_stamp = 100;
+    if (kind == 5) {
+      q.s.attitude.local_stamp -= 50000;
+      q.s.attitude.z += .09;
+    }
+    if (kind == 6) {
+      q.s.attitude.vertical_sample_stamp -= 50000;
+      q.s.attitude.z += .09;
+    }
+    if (kind == 7) {
+      q.s.attitude.local_stamp += 1000000;
+      q.s.attitude.vertical_sample_stamp += 1000000;
+    }
     q.tick();
-    need(q.r.attitude_core().phase()==a::Phase::RcPrestream&&
-      !q.r.attitude_core().rc_ground_reference_qualified()&&!q.r.attitude_core().flight_started(),
-      "disarmed reset or timestamp discontinuity invalidates READY and starts a new proof");
-    for(int i=0;i<20;++i){q.tick();need(q.r.attitude_core().phase()!=a::Phase::RcWaitArm,
-      "a reset cannot inherit the preceding task/window's rest evidence");}
-    q.warm();need(q.r.attitude_core().phase()==a::Phase::RcWaitArm&&
-      q.r.attitude_core().reference_z()==q.s.attitude.z,
-      "stable new frame can certify its own disarmed reference");
-    q.manual_arm();const double frozen=q.r.attitude_core().reference_z();
-    q.s.attitude.z_reset++;q.s.attitude.z+=.3;q.tick();
-    need(q.r.attitude_core().phase()==a::Phase::Safety&&
-      q.r.attitude_core().reason()=="RC_ARMED_ESTIMATOR_RESET"&&q.r.attitude_core().reference_z()==frozen,
-      "armed frame reset is an explicit fault and never an in-flight rebase");
+    need(q.r.attitude_core().phase() == a::Phase::RcPrestream &&
+             !q.r.attitude_core().rc_ground_reference_qualified() &&
+             !q.r.attitude_core().flight_started(),
+         "disarmed reset or timestamp discontinuity invalidates READY and starts a new proof");
+    for (int i = 0; i < 20; ++i) {
+      q.tick();
+      need(q.r.attitude_core().phase() != a::Phase::RcWaitArm,
+           "a reset cannot inherit the preceding task/window's rest evidence");
+    }
+    q.warm();
+    need(q.r.attitude_core().phase() == a::Phase::RcWaitArm &&
+             q.r.attitude_core().reference_z() == q.s.attitude.z,
+         "stable new frame can certify its own disarmed reference");
+    q.manual_arm();
+    const double frozen = q.r.attitude_core().reference_z();
+    q.s.attitude.z_reset++;
+    q.s.attitude.z += .3;
+    q.tick();
+    need(q.r.attitude_core().phase() == a::Phase::Safety &&
+             q.r.attitude_core().reason() == "RC_ARMED_ESTIMATOR_RESET" &&
+             q.r.attitude_core().reference_z() == frozen,
+         "armed frame reset is an explicit fault and never an in-flight rebase");
   }
-  for(int kind=0;kind<8;++kind){
+  for (int kind = 0; kind < 8; ++kind) {
     Flight q;
-    if(kind==0)q.s.feedback.landed=false;
-    if(kind==1)q.s.at_rest=false;
-    if(kind==2)q.s.feedback.armed=true;
-    if(kind==3)q.s.attitude.vz=.11;
-    if(kind==4)q.s.attitude.kill=true;
-    if(kind==5)q.s.local_fresh=false;
-    if(kind==6)q.s.attitude.z_valid=false;
-    if(kind==7)q.s.feedback.exclusive=false;
-    q.warm();need(!q.r.attitude_core().rc_ground_reference_qualified()&&
-      q.r.attitude_core().phase()!=a::Phase::RcWaitArm&&!q.r.attitude_core().flight_started(),
-      "airborne/unknown ground, stale/invalid estimate, Kill or authority conflict cannot certify z0");
+    if (kind == 0)
+      q.s.feedback.landed = false;
+    if (kind == 1)
+      q.s.at_rest = false;
+    if (kind == 2)
+      q.s.feedback.armed = true;
+    if (kind == 3)
+      q.s.attitude.vz = .11;
+    if (kind == 4)
+      q.s.attitude.kill = true;
+    if (kind == 5)
+      q.s.local_fresh = false;
+    if (kind == 6)
+      q.s.attitude.z_valid = false;
+    if (kind == 7)
+      q.s.feedback.exclusive = false;
+    q.warm();
+    need(
+        !q.r.attitude_core().rc_ground_reference_qualified() &&
+            q.r.attitude_core().phase() != a::Phase::RcWaitArm &&
+            !q.r.attitude_core().flight_started(),
+        "airborne/unknown ground, stale/invalid estimate, Kill or authority conflict cannot certify z0");
   }
   // A recent receipt flag does not turn repeated source frames into dwell.
-  Flight cached;for(int i=0;i<100;++i){
-    cached.t+=.05;cached.s.attitude.source_host_stamp+=50000;
-    cached.o=cached.r.step(cached.s,cached.t);
-    if(cached.o.attitude.publish)cached.r.confirm_rc_output(true,cached.t);
+  Flight cached;
+  for (int i = 0; i < 100; ++i) {
+    cached.t += .05;
+    cached.s.attitude.source_host_stamp += 50000;
+    cached.o = cached.r.step(cached.s, cached.t);
+    if (cached.o.attitude.publish)
+      cached.r.confirm_rc_output(true, cached.t);
   }
-  need(!cached.r.attitude_core().rc_ground_reference_qualified()&&
-    cached.r.attitude_core().phase()!=a::Phase::RcWaitArm,
-    "cached source timestamps cannot manufacture a reference proof even with fresh flags");
-  std::cout<<"RC_GROUND_REFERENCE_RESET_TIMESTAMP_GUARDS_PASS\n";
+  need(!cached.r.attitude_core().rc_ground_reference_qualified() &&
+           cached.r.attitude_core().phase() != a::Phase::RcWaitArm,
+       "cached source timestamps cannot manufacture a reference proof even with fresh flags");
+  std::cout << "RC_GROUND_REFERENCE_RESET_TIMESTAMP_GUARDS_PASS\n";
 }
 // 控制台TAKEOFF/ARM_ONLY/权限选择和伪造phase不能绕过人工RC路线，配置也禁止混开自动Arm。
-static void final_boundary_and_interface_reject_bypasses(){
+static void final_boundary_and_interface_reject_bypasses() {
   Flight boot;
-  need(!boot.r.request("MODE",{},boot.s,boot.t).accepted,"RC role cannot invoke legacy ground Offboard test at boot");
-  auto wrong_profile=rc_config();wrong_profile.profile="ground";bool mixed=false;
-  try{wrong_profile.validate();}catch(const std::invalid_argument&){mixed=true;}
-  need(mixed,"RC role requires actual attitude profile");
-  Flight q;q.warm();
-  for(const char* op:{"INTERACTIVE","PING","ATTITUDE_READY","TAKEOFF","ARM_ONLY","AUTHORITY_RC"})
-    need(!q.r.request(op,std::string(op)=="TAKEOFF"?std::vector<double>{.5}:std::vector<double>{},q.s,q.t).accepted,"RC role rejects synthetic console flight path");
-  auto c=q.r.publication_context(q.s,q.t,true,true);
-  a::Output invalid=q.o.attitude;invalid.thrust[2]=-.1;
-  need(!a::attitude_publication_policy(c,invalid).allowed,"startup nonzero final sink denied");
-  c.phase=a::Phase::RequestArm;c.flight_started=true;
-  need(!a::arm_publication_policy(c).allowed,"final ARM sink denied independent of upstream phase");
-  auto p=q.c.attitude;p.arm_enabled=true;bool rejected=false;
-  try{p.validate();}catch(const std::invalid_argument&){rejected=true;}
-  need(rejected,"manual RC profile rejects automatic arm flag");
-  q.manual_arm();q.navigation();
-  c=q.r.publication_context(q.s,q.t,true,true);invalid=q.o.attitude;
-  c.feedback.rc_axes_safe=false;
-  need(!a::attitude_publication_policy(c,invalid).allowed,"resampled unsafe axes veto join output");
+  need(!boot.r.request("MODE", {}, boot.s, boot.t).accepted,
+       "RC role cannot invoke legacy ground Offboard test at boot");
+  auto wrong_profile = rc_config();
+  wrong_profile.profile = "ground";
+  bool mixed = false;
+  try {
+    wrong_profile.validate();
+  } catch (const std::invalid_argument&) {
+    mixed = true;
+  }
+  need(mixed, "RC role requires actual attitude profile");
+  Flight q;
+  q.warm();
+  for (const char* op :
+       {"INTERACTIVE", "PING", "ATTITUDE_READY", "TAKEOFF", "ARM_ONLY", "AUTHORITY_RC"})
+    need(!q.r.request(
+                 op, std::string(op) == "TAKEOFF" ? std::vector<double>{.5} : std::vector<double>{},
+                 q.s, q.t)
+              .accepted,
+         "RC role rejects synthetic console flight path");
+  auto c = q.r.publication_context(q.s, q.t, true, true);
+  a::Output invalid = q.o.attitude;
+  invalid.thrust[2] = -.1;
+  need(!a::attitude_publication_policy(c, invalid).allowed, "startup nonzero final sink denied");
+  c.phase = a::Phase::RequestArm;
+  c.flight_started = true;
+  need(!a::arm_publication_policy(c).allowed,
+       "final ARM sink denied independent of upstream phase");
+  auto p = q.c.attitude;
+  p.arm_enabled = true;
+  bool rejected = false;
+  try {
+    p.validate();
+  } catch (const std::invalid_argument&) {
+    rejected = true;
+  }
+  need(rejected, "manual RC profile rejects automatic arm flag");
+  q.manual_arm();
+  q.navigation();
+  c = q.r.publication_context(q.s, q.t, true, true);
+  invalid = q.o.attitude;
+  c.feedback.rc_axes_safe = false;
+  need(!a::attitude_publication_policy(c, invalid).allowed,
+       "resampled unsafe axes veto join output");
 }
 // RC请求离开模式期间保留原受控恢复，实际新模式离开才停本机输出；shutdown和估计器故障保持原策略。
-static void exits_and_faults_preserve_existing_policy(){
-  Flight q;q.join();for(int i=0;i<16;++i)q.tick();
-  q.s.attitude.rc_mode_slot=1;++q.s.attitude.operator_switch_generation;q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::PoweredGround||q.r.attitude_core().phase()==a::Phase::Descent,"mode request retains guarded recovery until confirmed");
-  q.s.feedback.offboard=false;q.s.nav_state=15;q.tick();
-  need(!q.o.attitude.publish&&q.r.attitude_core().phase()==a::Phase::Safety,"actual mode-out transfers ownership");
-  need(q.mode_commands==0,"no mode re-entry after pilot exit");
-  Flight stop;stop.join();for(int i=0;i<16;++i)stop.tick();
-  stop.r.begin_shutdown(stop.s,stop.t);stop.tick();
-  need(stop.o.attitude.publish,"shutdown keeps native recovery stream");
-  Flight bad;bad.join();bad.s.attitude.z_reset++;bad.tick();
-  need(bad.r.attitude_core().phase()==a::Phase::Safety&&!bad.o.attitude.publish,"flight estimator guard unchanged");
+static void exits_and_faults_preserve_existing_policy() {
+  Flight q;
+  q.join();
+  for (int i = 0; i < 16; ++i)
+    q.tick();
+  q.s.attitude.rc_mode_slot = 1;
+  ++q.s.attitude.operator_switch_generation;
+  q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::PoweredGround ||
+           q.r.attitude_core().phase() == a::Phase::Descent,
+       "mode request retains guarded recovery until confirmed");
+  q.s.feedback.offboard = false;
+  q.s.nav_state = 15;
+  q.tick();
+  need(!q.o.attitude.publish && q.r.attitude_core().phase() == a::Phase::Safety,
+       "actual mode-out transfers ownership");
+  need(q.mode_commands == 0, "no mode re-entry after pilot exit");
+  Flight stop;
+  stop.join();
+  for (int i = 0; i < 16; ++i)
+    stop.tick();
+  stop.r.begin_shutdown(stop.s, stop.t);
+  stop.tick();
+  need(stop.o.attitude.publish, "shutdown keeps native recovery stream");
+  Flight bad;
+  bad.join();
+  bad.s.attitude.z_reset++;
+  bad.tick();
+  need(bad.r.attitude_core().phase() == a::Phase::Safety && !bad.o.attitude.publish,
+       "flight estimator guard unchanged");
 }
 // 完整起飞保持降落两轮，落地后新人工授权才能重来；重准备只清任务，保留400历史与复用ACK歧义。
-static void full_height_hold_land_and_safe_reset(){
-  Flight q;q.join();for(int i=0;i<16;++i)q.tick();
-  double height=0;
-  while(height<.5-1e-9){height=std::min(.5,height+.01);
-    q.s.attitude.z=2-height;q.s.attitude.vz=q.s.attitude.z_deriv=-.2;
-    q.s.feedback.landed=q.s.at_rest=false;q.tick();}
-  q.s.attitude.vz=q.s.attitude.z_deriv=0;
-  for(int i=0;i<60;++i)q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::HeightHold,"RC flight reaches height hold using existing vertical loop");
-  need(q.r.request("LAND",{},q.s,q.t).accepted,"land available without interactive lease");
-  while(height>1e-9){height=std::max(0.,height-.005);
-    q.s.attitude.z=2-height;q.s.attitude.vz=q.s.attitude.z_deriv=.1;q.tick();}
-  q.s.attitude.vz=q.s.attitude.z_deriv=0;q.s.feedback.landed=q.s.at_rest=true;
-  bool disarm=false;
-  for(int i=0;i<100&&!disarm;++i){q.tick();
-    if(q.o.attitude.command==a::Command::Disarm){
-      need(a::disarm_publication_policy(q.r.publication_context(q.s,q.t,true,true)).allowed,"fresh proven landing authorizes ground Disarm");
-      q.r.confirm_attitude_command_publication(a::Command::Disarm,true,q.s.status_stamp+1,q.s,q.t);
-      q.r.ack({q.r.pending(400).baseline+1,400,0,1,191,false},q.t+.001);disarm=true;
+static void full_height_hold_land_and_safe_reset() {
+  Flight q;
+  q.join();
+  for (int i = 0; i < 16; ++i)
+    q.tick();
+  double height = 0;
+  while (height < .5 - 1e-9) {
+    height = std::min(.5, height + .01);
+    q.s.attitude.z = 2 - height;
+    q.s.attitude.vz = q.s.attitude.z_deriv = -.2;
+    q.s.feedback.landed = q.s.at_rest = false;
+    q.tick();
+  }
+  q.s.attitude.vz = q.s.attitude.z_deriv = 0;
+  for (int i = 0; i < 60; ++i)
+    q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::HeightHold,
+       "RC flight reaches height hold using existing vertical loop");
+  need(q.r.request("LAND", {}, q.s, q.t).accepted, "land available without interactive lease");
+  while (height > 1e-9) {
+    height = std::max(0., height - .005);
+    q.s.attitude.z = 2 - height;
+    q.s.attitude.vz = q.s.attitude.z_deriv = .1;
+    q.tick();
+  }
+  q.s.attitude.vz = q.s.attitude.z_deriv = 0;
+  q.s.feedback.landed = q.s.at_rest = true;
+  bool disarm = false;
+  for (int i = 0; i < 100 && !disarm; ++i) {
+    q.tick();
+    if (q.o.attitude.command == a::Command::Disarm) {
+      need(a::disarm_publication_policy(q.r.publication_context(q.s, q.t, true, true)).allowed,
+           "fresh proven landing authorizes ground Disarm");
+      q.r.confirm_attitude_command_publication(a::Command::Disarm, true, q.s.status_stamp + 1, q.s,
+                                               q.t);
+      q.r.ack({q.r.pending(400).baseline + 1, 400, 0, 1, 191, false}, q.t + .001);
+      disarm = true;
     }
   }
-  need(disarm,"landing reaches first actual Disarm transaction");
-  q.s.feedback.armed=false;q.s.latest_arming_reason=4;
+  need(disarm, "landing reaches first actual Disarm transaction");
+  q.s.feedback.armed = false;
+  q.s.latest_arming_reason = 4;
   // Retain the original 100 ms source-clock causal floor after a real sink.
-  for(int i=0;i<10&&q.r.attitude_core().phase()!=a::Phase::SafeDisarmed;++i)q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::SafeDisarmed,"new disarmed status completes physical landing proof");
-  need(!q.r.rc_restart_allowed(q.s),"held navigation/arm cannot restart mission");
-  q.s.feedback.offboard=false;q.s.nav_state=15;q.s.attitude.rc_mode_slot=1;q.s.attitude.rc_arm_switch=3;
-  q.s.stationary_seconds=3;q.tick();
-  need(q.r.rc_restart_allowed(q.s),"new safe disarmed ground plus reset controls permits a fresh RC attempt");
-  const auto completed_disarm=q.r.pending(400);const auto history=q.r.command400_history().size();
-  for(int failure=0;failure<7;++failure){auto bad=q.s;
-    if(failure==0)bad.attitude_output_active=true;
-    if(failure==1)bad.offboard_heartbeat_active=true;
-    if(failure==2)bad.publication_fault_latched=true;
-    if(failure==3)bad.time_regressed=true;
-    if(failure==4)bad.status_fresh=false;
-    if(failure==5)bad.feedback.armed=true;
-    if(failure==6)bad.attitude.source_clock_validated=false;
-    need(!q.r.reprepare_rc(bad,q.t),"unsafe current evidence cannot rebuild the RC core");
+  for (int i = 0; i < 10 && q.r.attitude_core().phase() != a::Phase::SafeDisarmed; ++i)
+    q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::SafeDisarmed,
+       "new disarmed status completes physical landing proof");
+  need(!q.r.rc_restart_allowed(q.s), "held navigation/arm cannot restart mission");
+  q.s.feedback.offboard = false;
+  q.s.nav_state = 15;
+  q.s.attitude.rc_mode_slot = 1;
+  q.s.attitude.rc_arm_switch = 3;
+  q.s.stationary_seconds = 3;
+  q.tick();
+  need(q.r.rc_restart_allowed(q.s),
+       "new safe disarmed ground plus reset controls permits a fresh RC attempt");
+  const auto completed_disarm = q.r.pending(400);
+  const auto history = q.r.command400_history().size();
+  for (int failure = 0; failure < 7; ++failure) {
+    auto bad = q.s;
+    if (failure == 0)
+      bad.attitude_output_active = true;
+    if (failure == 1)
+      bad.offboard_heartbeat_active = true;
+    if (failure == 2)
+      bad.publication_fault_latched = true;
+    if (failure == 3)
+      bad.time_regressed = true;
+    if (failure == 4)
+      bad.status_fresh = false;
+    if (failure == 5)
+      bad.feedback.armed = true;
+    if (failure == 6)
+      bad.attitude.source_clock_validated = false;
+    need(!q.r.reprepare_rc(bad, q.t), "unsafe current evidence cannot rebuild the RC core");
   }
-  need(q.r.reprepare_rc(q.s,q.t),"safe completed RC mission must reprepare in the same Runtime");
-  need(q.r.attitude_core().phase()==a::Phase::Idle&&!q.r.attitude_core().reference_ready(),
-    "reprepare captures a fresh ground reference rather than retaining the old attempt");
-  need(q.r.pending(400).generation==completed_disarm.generation&&q.r.pending(400).wire_stamp==completed_disarm.wire_stamp&&
-    q.r.pending(400).state_verified==completed_disarm.state_verified&&q.r.command400_history().size()==history,
-    "reprepare must preserve command400 wire history and its local generation");
-  need(!q.r.reprepare_rc(q.s,q.t),"idle new attempt cannot repeatedly rebuild itself");
-  q.s.attitude.z=2.02;q.warm();
-  need(q.r.attitude_core().phase()==a::Phase::RcWaitArm&&q.r.attitude_core().reference_z()==2.02,
-    "same process reaches second readiness using the current ground reference");
-  q.s.attitude.rc_arm_switch=1;++q.s.attitude.operator_switch_generation;q.tick();
-  q.s.feedback.armed=true;q.s.armed_time=20;q.s.latest_arming_reason=2;q.s.at_rest=false;q.tick();
-  q.navigation();need(q.r.attitude_core().phase()==a::Phase::ArmedGround,
-    "fresh manual arm and navigation edges start the second mission");
-  need(q.r.pending(400).generation==completed_disarm.generation,
-    "second manual arm never fabricates a new command400 transaction");
-  q.s.at_rest=true;
-  need(q.r.request("LAND",{},q.s,q.t).accepted,"second mission can request guarded landing");
-  bool second_disarm=false;
-  for(int i=0;i<100&&!second_disarm;++i){q.tick();
-    if(q.o.attitude.command==a::Command::Disarm){
-      q.r.confirm_attitude_command_publication(a::Command::Disarm,true,q.s.status_stamp+1,q.s,q.t);
-      second_disarm=true;
+  need(q.r.reprepare_rc(q.s, q.t), "safe completed RC mission must reprepare in the same Runtime");
+  need(q.r.attitude_core().phase() == a::Phase::Idle && !q.r.attitude_core().reference_ready(),
+       "reprepare captures a fresh ground reference rather than retaining the old attempt");
+  need(q.r.pending(400).generation == completed_disarm.generation &&
+           q.r.pending(400).wire_stamp == completed_disarm.wire_stamp &&
+           q.r.pending(400).state_verified == completed_disarm.state_verified &&
+           q.r.command400_history().size() == history,
+       "reprepare must preserve command400 wire history and its local generation");
+  need(!q.r.reprepare_rc(q.s, q.t), "idle new attempt cannot repeatedly rebuild itself");
+  q.s.attitude.z = 2.02;
+  q.warm();
+  need(q.r.attitude_core().phase() == a::Phase::RcWaitArm &&
+           q.r.attitude_core().reference_z() == 2.02,
+       "same process reaches second readiness using the current ground reference");
+  q.s.attitude.rc_arm_switch = 1;
+  ++q.s.attitude.operator_switch_generation;
+  q.tick();
+  q.s.feedback.armed = true;
+  q.s.armed_time = 20;
+  q.s.latest_arming_reason = 2;
+  q.s.at_rest = false;
+  q.tick();
+  q.navigation();
+  need(q.r.attitude_core().phase() == a::Phase::ArmedGround,
+       "fresh manual arm and navigation edges start the second mission");
+  need(q.r.pending(400).generation == completed_disarm.generation,
+       "second manual arm never fabricates a new command400 transaction");
+  q.s.at_rest = true;
+  need(q.r.request("LAND", {}, q.s, q.t).accepted, "second mission can request guarded landing");
+  bool second_disarm = false;
+  for (int i = 0; i < 100 && !second_disarm; ++i) {
+    q.tick();
+    if (q.o.attitude.command == a::Command::Disarm) {
+      q.r.confirm_attitude_command_publication(a::Command::Disarm, true, q.s.status_stamp + 1, q.s,
+                                               q.t);
+      second_disarm = true;
     }
   }
-  need(second_disarm&&q.r.pending(400).generation==2&&q.r.pending(400).ack_ambiguous&&
-    q.r.command400_history().size()==history+1,"second Disarm preserves reuse ambiguity and archives the first transaction");
-  q.r.ack({q.s.status_stamp+200001,400,0,1,191,false},q.t+.201);
-  need(!q.r.pending(400).accepted&&!q.r.pending(400).state_verified,
-    "a delayed first-mission ACK cannot complete the reused second Disarm");
-  q.s.feedback.armed=false;
-  for(int i=0;i<10&&q.r.attitude_core().phase()!=a::Phase::SafeDisarmed;++i)q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::SafeDisarmed&&q.r.pending(400).state_verified,
-    "independent new disarmed ground evidence completes the second physical landing");
-  q.s.feedback.offboard=false;q.s.nav_state=15;q.s.attitude.rc_mode_slot=1;
-  q.s.attitude.rc_arm_switch=3;q.s.at_rest=true;q.s.stationary_seconds=3;q.tick();
-  need(q.r.reprepare_rc(q.s,q.t)&&q.r.rc_attempts_completed()==2,
-    "two completed tasks independently reprepare in the same service without reset commands");
-  q.s.attitude.z=1.84;q.warm();
-  need(q.r.attitude_core().phase()==a::Phase::RcWaitArm&&
-    std::abs(q.r.attitude_core().reference_z()-1.84)<1e-9,
-    "third readiness builds a new reference and never inherits either preceding task origin");
-  need(q.arm_commands==0&&q.mode_commands==0,"full flight never emits automatic Arm or Offboard entry");
+  need(second_disarm && q.r.pending(400).generation == 2 && q.r.pending(400).ack_ambiguous &&
+           q.r.command400_history().size() == history + 1,
+       "second Disarm preserves reuse ambiguity and archives the first transaction");
+  q.r.ack({q.s.status_stamp + 200001, 400, 0, 1, 191, false}, q.t + .201);
+  need(!q.r.pending(400).accepted && !q.r.pending(400).state_verified,
+       "a delayed first-mission ACK cannot complete the reused second Disarm");
+  q.s.feedback.armed = false;
+  for (int i = 0; i < 10 && q.r.attitude_core().phase() != a::Phase::SafeDisarmed; ++i)
+    q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::SafeDisarmed && q.r.pending(400).state_verified,
+       "independent new disarmed ground evidence completes the second physical landing");
+  q.s.feedback.offboard = false;
+  q.s.nav_state = 15;
+  q.s.attitude.rc_mode_slot = 1;
+  q.s.attitude.rc_arm_switch = 3;
+  q.s.at_rest = true;
+  q.s.stationary_seconds = 3;
+  q.tick();
+  need(q.r.reprepare_rc(q.s, q.t) && q.r.rc_attempts_completed() == 2,
+       "two completed tasks independently reprepare in the same service without reset commands");
+  q.s.attitude.z = 1.84;
+  q.warm();
+  need(q.r.attitude_core().phase() == a::Phase::RcWaitArm &&
+           std::abs(q.r.attitude_core().reference_z() - 1.84) < 1e-9,
+       "third readiness builds a new reference and never inherits either preceding task origin");
+  need(q.arm_commands == 0 && q.mode_commands == 0,
+       "full flight never emits automatic Arm or Offboard entry");
 }
 // Values in the selected Flight Test runtime profile. Unlike the historical
 // .5 m fixtures above, this keeps the deployed ramp, PID, limits and guards.
 // 以下为原实际1.5 m无视觉配置副本：目标、推力/PID/slew/安全门用作回归比较，不能随本轮注释改动。
-static f::Config production_no_vision_rc_config(){
-  auto c=config();c.runtime_mode="flight-test";c.flight_enabled=false;
-  auto& p=c.attitude;
-  p.flight_actions_enabled=true;p.arm_enabled=false;p.takeoff_enabled=true;
-  p.parameters_confirmed=true;p.rc_navigation_enabled=true;
-  p.rc_takeover_confirmed=true;p.autonomous_failsafe_confirmed=false;
-  p.rc_navigation_mode_slot=1;p.rc_target_height=1.5;p.max_flight_seconds=30;
-  p.max_tilt_deg=10;p.land_sample_max_gap=1.25;
-  p.vertical={.50,.12,.80,.40,.50,.15,.03,.08,5.,.30,.20,.25};
-  p.takeoff_reserve_thrust=.04;
-  p.ramp_seconds=2.;p.settle_seconds=2.;p.landing_seconds=3.;
-  p.height_tolerance=.15;p.speed_tolerance=.15;p.ascent_timeout=10.;p.descent_timeout=10.;
-  p.saturation_seconds=1.5;p.armed_dwell_seconds=1.;p.liftoff_dwell_seconds=.20;
-  p.liftoff_height_m=.12;p.liftoff_speed_mps=.08;p.touchdown_dwell_seconds=.30;
-  p.height_lower_margin_m=.25;p.z_jump_limit_m=.45;p.vz_jump_limit_mps=1.5;
-  p.feedback_guard.enabled=true;p.feedback_guard.rate_tolerance_mps=.20;p.feedback_guard.dwell_seconds=.50;
-  c.validate();return c;
+static f::Config production_no_vision_rc_config() {
+  auto c = config();
+  c.runtime_mode = "flight-test";
+  c.flight_enabled = false;
+  auto& p = c.attitude;
+  p.flight_actions_enabled = true;
+  p.arm_enabled = false;
+  p.takeoff_enabled = true;
+  p.parameters_confirmed = true;
+  p.rc_navigation_enabled = true;
+  p.rc_takeover_confirmed = true;
+  p.autonomous_failsafe_confirmed = false;
+  p.rc_navigation_mode_slot = 1;
+  p.rc_target_height = 1.5;
+  p.max_flight_seconds = 30;
+  p.max_tilt_deg = 10;
+  p.land_sample_max_gap = 1.25;
+  p.vertical = {.50, .12, .80, .40, .50, .15, .03, .08, 5., .30, .20, .25};
+  p.takeoff_reserve_thrust = .04;
+  p.ramp_seconds = 2.;
+  p.settle_seconds = 2.;
+  p.landing_seconds = 3.;
+  p.height_tolerance = .15;
+  p.speed_tolerance = .15;
+  p.ascent_timeout = 10.;
+  p.descent_timeout = 10.;
+  p.saturation_seconds = 1.5;
+  p.armed_dwell_seconds = 1.;
+  p.liftoff_dwell_seconds = .20;
+  p.liftoff_height_m = .12;
+  p.liftoff_speed_mps = .08;
+  p.touchdown_dwell_seconds = .30;
+  p.height_lower_margin_m = .25;
+  p.z_jump_limit_m = .45;
+  p.vz_jump_limit_mps = 1.5;
+  p.feedback_guard.enabled = true;
+  p.feedback_guard.rate_tolerance_mps = .20;
+  p.feedback_guard.dwell_seconds = .50;
+  c.validate();
+  return c;
 }
 
 // 故意令XY/VXY/heading不可用，仅垂向与姿态有效；仍需完成真实离地、1.5 m稳定、下降触地与新未解锁证据。
-static void production_no_vision_rc_1p5m_lifecycle_uses_vertical_only(){
-  auto c=production_no_vision_rc_config();
-  bool rejected=false;auto invalid=c;invalid.flight_enabled=true;
-  try{invalid.validate();}catch(const std::invalid_argument&){rejected=true;}
-  need(rejected,"attitude altitude rejects the unrelated legacy flight gate");
-  for(int gate=0;gate<4;++gate){
-    auto disabled=c;auto& p=disabled.attitude;
-    if(gate==0)p.flight_actions_enabled=false;
-    if(gate==1)p.takeoff_enabled=false;
-    if(gate==2)p.parameters_confirmed=false;
-    if(gate==3)p.rc_takeover_confirmed=false;
-    rejected=false;try{disabled.validate();}catch(const std::invalid_argument&){rejected=true;}
-    need(rejected,"each independent RC flight permission remains mandatory");
+static void production_no_vision_rc_1p5m_lifecycle_uses_vertical_only() {
+  auto c = production_no_vision_rc_config();
+  bool rejected = false;
+  auto invalid = c;
+  invalid.flight_enabled = true;
+  try {
+    invalid.validate();
+  } catch (const std::invalid_argument&) {
+    rejected = true;
+  }
+  need(rejected, "attitude altitude rejects the unrelated legacy flight gate");
+  for (int gate = 0; gate < 4; ++gate) {
+    auto disabled = c;
+    auto& p = disabled.attitude;
+    if (gate == 0)
+      p.flight_actions_enabled = false;
+    if (gate == 1)
+      p.takeoff_enabled = false;
+    if (gate == 2)
+      p.parameters_confirmed = false;
+    if (gate == 3)
+      p.rc_takeover_confirmed = false;
+    rejected = false;
+    try {
+      disabled.validate();
+    } catch (const std::invalid_argument&) {
+      rejected = true;
+    }
+    need(rejected, "each independent RC flight permission remains mandatory");
   }
 
   Flight q(c);
   // Observed diagnostic condition: horizontal position and heading are
   // unavailable, while the independent attitude and vertical estimates work.
-  q.s.feedback.valid=false;q.s.feedback.heading_ok=false;
-  q.s.attitude.xy_valid=q.s.attitude.vxy_valid=false;
-  q.s.attitude.z_valid=q.s.attitude.vz_valid=true;
+  q.s.feedback.valid = false;
+  q.s.feedback.heading_ok = false;
+  q.s.attitude.xy_valid = q.s.attitude.vxy_valid = false;
+  q.s.attitude.z_valid = q.s.attitude.vz_valid = true;
   q.join();
-  const double reference=q.r.attitude_core().reference_z();
-  for(int i=0;i<25;++i)q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::ThrustRamp,
-    "production RC route reaches thrust ramp without XY or heading validity");
-  need(!q.r.pending(400).requested&&!q.r.pending(176).requested&&
-       q.arm_commands==0&&q.mode_commands==0,"RC route retains manual Arm and Offboard ownership");
+  const double reference = q.r.attitude_core().reference_z();
+  for (int i = 0; i < 25; ++i)
+    q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::ThrustRamp,
+       "production RC route reaches thrust ramp without XY or heading validity");
+  need(!q.r.pending(400).requested && !q.r.pending(176).requested && q.arm_commands == 0 &&
+           q.mode_commands == 0,
+       "RC route retains manual Arm and Offboard ownership");
 
   // Time and requested thrust alone must not certify liftoff. Holding the
   // ground sample also verifies that the bounded reserve can reach .54.
-  for(int i=0;i<85;++i)q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::ThrustRamp&&
-       std::abs(q.o.attitude.thrust[2]+.54)<1e-9&&!q.r.attitude_core().liftoff_confirmed(),
-    "production ramp reaches hover plus reserve without inventing liftoff");
-  q.s.feedback.landed=false;q.s.at_rest=false;
-  double height=0.;
-  for(int i=0;i<50&&q.r.attitude_core().phase()==a::Phase::ThrustRamp;++i){
-    height+=.005;q.s.attitude.z=reference-height;
-    q.s.attitude.vz=q.s.attitude.z_deriv=-.10;q.tick();
+  for (int i = 0; i < 85; ++i)
+    q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::ThrustRamp &&
+           std::abs(q.o.attitude.thrust[2] + .54) < 1e-9 &&
+           !q.r.attitude_core().liftoff_confirmed(),
+       "production ramp reaches hover plus reserve without inventing liftoff");
+  q.s.feedback.landed = false;
+  q.s.at_rest = false;
+  double height = 0.;
+  for (int i = 0; i < 50 && q.r.attitude_core().phase() == a::Phase::ThrustRamp; ++i) {
+    height += .005;
+    q.s.attitude.z = reference - height;
+    q.s.attitude.vz = q.s.attitude.z_deriv = -.10;
+    q.tick();
   }
-  need(q.r.attitude_core().liftoff_confirmed()&&q.r.attitude_core().phase()==a::Phase::Ascend,
-    (std::string("independent land detector and z/vz evidence confirm liftoff: ")+q.r.attitude_core().reason()).c_str());
+  need(q.r.attitude_core().liftoff_confirmed() && q.r.attitude_core().phase() == a::Phase::Ascend,
+       (std::string("independent land detector and z/vz evidence confirm liftoff: ") +
+        q.r.attitude_core().reason())
+           .c_str());
 
   // Simulated measured NED climb, not a physical flight simulation: all
   // source stamps advance and z_deriv stays consistent with vertical motion.
-  for(int i=0;i<190&&q.r.attitude_core().phase()!=a::Phase::HeightHold;++i){
-    height=std::min(1.5,height+.015);q.s.attitude.z=reference-height;
-    q.s.attitude.vz=height<1.5?-.30:0.;q.s.attitude.z_deriv=q.s.attitude.vz;q.tick();
+  for (int i = 0; i < 190 && q.r.attitude_core().phase() != a::Phase::HeightHold; ++i) {
+    height = std::min(1.5, height + .015);
+    q.s.attitude.z = reference - height;
+    q.s.attitude.vz = height < 1.5 ? -.30 : 0.;
+    q.s.attitude.z_deriv = q.s.attitude.vz;
+    q.tick();
   }
-  need(q.r.attitude_core().phase()==a::Phase::HeightHold&&
-       q.r.attitude_core().target_height_settled()&&q.r.attitude_core().reference_z()==reference&&
-       std::abs(q.o.attitude.target_height-1.5)<1e-9,
-    "vertical-only feedback settles at the original reference plus 1.5 m");
-  need(q.o.attitude.vertical_closed_loop&&q.o.attitude.thrust_ceiling==.80&&
-       !q.o.attitude.visual_motion,"height hold uses the global thrust envelope and no vision");
-  for(int event=0;event<5;++event){
-    auto context=q.r.publication_context(q.s,q.t,true,true);
-    if(event==0)context.feedback.kill=true;
-    if(event==1)context.feedback.rc_link_ready=false;
-    if(event==2)context.feedback.z_valid=false;
-    if(event==3)context.feedback.q={0,0,0,0};
-    if(event==4)context.feedback.offboard_signal_lost=true;
-    need(!a::attitude_publication_policy(context,q.o.attitude).allowed,
-      "Kill RC loss invalid vertical attitude and Offboard loss veto the final sink");
+  need(q.r.attitude_core().phase() == a::Phase::HeightHold &&
+           q.r.attitude_core().target_height_settled() &&
+           q.r.attitude_core().reference_z() == reference &&
+           std::abs(q.o.attitude.target_height - 1.5) < 1e-9,
+       "vertical-only feedback settles at the original reference plus 1.5 m");
+  need(q.o.attitude.vertical_closed_loop && q.o.attitude.thrust_ceiling == .80 &&
+           !q.o.attitude.visual_motion,
+       "height hold uses the global thrust envelope and no vision");
+  for (int event = 0; event < 5; ++event) {
+    auto context = q.r.publication_context(q.s, q.t, true, true);
+    if (event == 0)
+      context.feedback.kill = true;
+    if (event == 1)
+      context.feedback.rc_link_ready = false;
+    if (event == 2)
+      context.feedback.z_valid = false;
+    if (event == 3)
+      context.feedback.q = {0, 0, 0, 0};
+    if (event == 4)
+      context.feedback.offboard_signal_lost = true;
+    need(!a::attitude_publication_policy(context, q.o.attitude).allowed,
+         "Kill RC loss invalid vertical attitude and Offboard loss veto the final sink");
   }
 
-  need(q.r.request("LAND",{},q.s,q.t).accepted,"manual landing remains available");
-  bool descent_seen=false,disarm_seen=false;
-  for(int i=0;i<260&&q.r.attitude_core().phase()!=a::Phase::SafeDisarmed;++i){
-    height=std::max(0.,height-.01);q.s.attitude.z=reference-height;
-    q.s.attitude.vz=q.s.attitude.z_deriv=height>0?.20:0.;
-    if(height<=0.){q.s.feedback.landed=true;q.s.at_rest=true;}
-    q.tick();descent_seen=descent_seen||q.r.attitude_core().phase()==a::Phase::Descent;
-    if(q.o.attitude.command==a::Command::Disarm){
-      need(a::disarm_publication_policy(q.r.publication_context(q.s,q.t,true,true)).allowed,
-        "new touchdown evidence authorizes guarded disarm");
-      q.r.confirm_attitude_command_publication(a::Command::Disarm,true,q.s.status_stamp+1,q.s,q.t);
-      q.r.ack({q.r.pending(400).baseline+1,400,0,1,191,false},q.t+.001);
-      q.s.feedback.armed=false;disarm_seen=true;
+  need(q.r.request("LAND", {}, q.s, q.t).accepted, "manual landing remains available");
+  bool descent_seen = false, disarm_seen = false;
+  for (int i = 0; i < 260 && q.r.attitude_core().phase() != a::Phase::SafeDisarmed; ++i) {
+    height = std::max(0., height - .01);
+    q.s.attitude.z = reference - height;
+    q.s.attitude.vz = q.s.attitude.z_deriv = height > 0 ? .20 : 0.;
+    if (height <= 0.) {
+      q.s.feedback.landed = true;
+      q.s.at_rest = true;
+    }
+    q.tick();
+    descent_seen = descent_seen || q.r.attitude_core().phase() == a::Phase::Descent;
+    if (q.o.attitude.command == a::Command::Disarm) {
+      need(a::disarm_publication_policy(q.r.publication_context(q.s, q.t, true, true)).allowed,
+           "new touchdown evidence authorizes guarded disarm");
+      q.r.confirm_attitude_command_publication(a::Command::Disarm, true, q.s.status_stamp + 1, q.s,
+                                               q.t);
+      q.r.ack({q.r.pending(400).baseline + 1, 400, 0, 1, 191, false}, q.t + .001);
+      q.s.feedback.armed = false;
+      disarm_seen = true;
     }
   }
-  need(descent_seen&&disarm_seen&&q.r.attitude_core().phase()==a::Phase::SafeDisarmed,
-    "production 1.5 m mission confirms descent touchdown and actual disarmed status");
+  need(descent_seen && disarm_seen && q.r.attitude_core().phase() == a::Phase::SafeDisarmed,
+       "production 1.5 m mission confirms descent touchdown and actual disarmed status");
   // The operator now confirms the PX4 mode release on the ground.  Feeding
   // that fresh Stabilized status before the first SafeDisarmed follow-up tick
   // exercises the normal external-release path and must leave the core in
   // Idle without issuing a redundant 176 transaction.
-  q.s.feedback.offboard=false;q.s.nav_state=15;q.s.attitude.rc_mode_slot=6;
-  q.s.attitude.rc_arm_switch=3;q.s.stationary_seconds=3;q.tick();
-  need(q.r.attitude_core().phase()==a::Phase::Idle&&
-       !q.o.attitude.publish&&!a::nonzero(q.o.attitude.thrust),
-    "fresh disarmed Stabilized status completes the release to Idle");
-  need(q.arm_commands==0&&q.mode_commands==0&&q.target_commits==q.heartbeat_commits,
-    "full no-vision lifecycle retains paired sinks and no automatic Arm or Offboard entry");
-  std::cout<<"RC_PRODUCTION_NO_VISION_1P5M_VERTICAL_ONLY_FLIGHT_ENABLED_FALSE_PASS\n";
+  q.s.feedback.offboard = false;
+  q.s.nav_state = 15;
+  q.s.attitude.rc_mode_slot = 6;
+  q.s.attitude.rc_arm_switch = 3;
+  q.s.stationary_seconds = 3;
+  q.tick();
+  need(q.r.attitude_core().phase() == a::Phase::Idle && !q.o.attitude.publish &&
+           !a::nonzero(q.o.attitude.thrust),
+       "fresh disarmed Stabilized status completes the release to Idle");
+  need(q.arm_commands == 0 && q.mode_commands == 0 && q.target_commits == q.heartbeat_commits,
+       "full no-vision lifecycle retains paired sinks and no automatic Arm or Offboard entry");
+  std::cout << "RC_PRODUCTION_NO_VISION_1P5M_VERTICAL_ONLY_FLIGHT_ENABLED_FALSE_PASS\n";
 }
 
 // 位移与导数矛盾仍是真故障；任务结束后须新安全地面窗且同周期坏事件可撤销ready，恢复只到等人工Arm。
-static void ended_fault_needs_new_safe_ground_cycle(){
-  auto c=rc_config();c.attitude.feedback_guard.enabled=true;c.validate();Flight q(c);
-  q.join();for(int i=0;i<16;++i)q.tick();
+static void ended_fault_needs_new_safe_ground_cycle() {
+  auto c = rc_config();
+  c.attitude.feedback_guard.enabled = true;
+  c.validate();
+  Flight q(c);
+  q.join();
+  for (int i = 0; i < 16; ++i)
+    q.tick();
   // Position moves while its derivative remains zero. This is a real
   // displacement inconsistency, independent of the diagnostic vz difference.
-  q.s.attitude.z_deriv=0;
-  for(int i=0;i<16&&q.r.attitude_core().phase()!=a::Phase::Safety;++i){
-    q.s.attitude.z-=.03;q.tick();
+  q.s.attitude.z_deriv = 0;
+  for (int i = 0; i < 16 && q.r.attitude_core().phase() != a::Phase::Safety; ++i) {
+    q.s.attitude.z -= .03;
+    q.tick();
   }
-  need(q.r.attitude_core().phase()==a::Phase::Safety&&
-    q.r.attitude_core().reason()=="VERTICAL_POSITION_RATE_INCONSISTENT",
-    "inconsistent position displacement still faults the active RC task");
-  const auto generation=q.r.pending(400).generation;
-  const auto observe=[&]{
+  need(q.r.attitude_core().phase() == a::Phase::Safety &&
+           q.r.attitude_core().reason() == "VERTICAL_POSITION_RATE_INCONSISTENT",
+       "inconsistent position displacement still faults the active RC task");
+  const auto generation = q.r.pending(400).generation;
+  const auto observe = [&] {
     q.r.begin_attitude_safety_observation();
-    const auto fb=q.r.publication_context(q.s,q.t,true,true).feedback;
-    q.r.observe_attitude_safety_event(fb,a::Core::SafetyEvent::Vertical,q.t);
-    q.r.observe_attitude_safety_event(fb,a::Core::SafetyEvent::Authority,q.t);
-    q.tick();need(!q.o.attitude.publish&&!a::nonzero(q.o.attitude.thrust),
-      "fault recovery observation is output-silent");
+    const auto fb = q.r.publication_context(q.s, q.t, true, true).feedback;
+    q.r.observe_attitude_safety_event(fb, a::Core::SafetyEvent::Vertical, q.t);
+    q.r.observe_attitude_safety_event(fb, a::Core::SafetyEvent::Authority, q.t);
+    q.tick();
+    need(!q.o.attitude.publish && !a::nonzero(q.o.attitude.thrust),
+         "fault recovery observation is output-silent");
   };
-  q.s.attitude.z_deriv=0;q.s.attitude.z=2;
-  for(int i=0;i<50;++i){observe();need(!q.r.reprepare_rc(q.s,q.t),"still-armed fault cannot restart");}
-  q.s.feedback.armed=false;q.s.feedback.offboard=false;q.s.nav_state=15;
-  q.s.feedback.landed=q.s.at_rest=true;q.s.stationary_seconds=3;
-  q.s.attitude.rc_arm_switch=3;q.s.attitude.rc_mode_slot=1;
-  observe();need(!q.r.reprepare_rc(q.s,q.t),"one healthy ground sample cannot clear the old fault");
-  for(int i=0;i<45;++i){q.s.attitude.z-=.015;observe();
-    need(!q.r.reprepare_rc(q.s,q.t),"continuing inconsistent position movement still blocks recovery");}
-  q.s.attitude.z=2;q.s.attitude.kill=true;
-  for(int i=0;i<45;++i){observe();need(!q.r.reprepare_rc(q.s,q.t),"held Kill forbids a new cycle");}
-  q.s.attitude.kill=false;
-  for(int i=0;i<43;++i)observe();
-  need(q.r.rc_restart_allowed(q.s),"new healthy multi-frame ground dwell admits ended fault recovery");
+  q.s.attitude.z_deriv = 0;
+  q.s.attitude.z = 2;
+  for (int i = 0; i < 50; ++i) {
+    observe();
+    need(!q.r.reprepare_rc(q.s, q.t), "still-armed fault cannot restart");
+  }
+  q.s.feedback.armed = false;
+  q.s.feedback.offboard = false;
+  q.s.nav_state = 15;
+  q.s.feedback.landed = q.s.at_rest = true;
+  q.s.stationary_seconds = 3;
+  q.s.attitude.rc_arm_switch = 3;
+  q.s.attitude.rc_mode_slot = 1;
+  observe();
+  need(!q.r.reprepare_rc(q.s, q.t), "one healthy ground sample cannot clear the old fault");
+  for (int i = 0; i < 45; ++i) {
+    q.s.attitude.z -= .015;
+    observe();
+    need(!q.r.reprepare_rc(q.s, q.t),
+         "continuing inconsistent position movement still blocks recovery");
+  }
+  q.s.attitude.z = 2;
+  q.s.attitude.kill = true;
+  for (int i = 0; i < 45; ++i) {
+    observe();
+    need(!q.r.reprepare_rc(q.s, q.t), "held Kill forbids a new cycle");
+  }
+  q.s.attitude.kill = false;
+  for (int i = 0; i < 43; ++i)
+    observe();
+  need(q.r.rc_restart_allowed(q.s),
+       "new healthy multi-frame ground dwell admits ended fault recovery");
   // A bad event followed by a healthy latest snapshot must invalidate the
   // completed dwell before Runtime can reconstruct task state in this tick.
-  q.r.begin_attitude_safety_observation();auto bad=q.r.publication_context(q.s,q.t,true,true).feedback;
-  bad.q={0,0,0,0};q.r.observe_attitude_safety_event(bad,a::Core::SafetyEvent::Attitude,q.t);
-  const auto good=q.r.publication_context(q.s,q.t,true,true).feedback;
-  q.r.observe_attitude_safety_event(good,a::Core::SafetyEvent::Attitude,q.t);q.tick();
-  need(!q.r.reprepare_rc(q.s,q.t),"same-round healthy attitude cannot erase bad recovery evidence");
-  for(int i=0;i<43;++i)observe();
-  for(int invalid=0;invalid<9;++invalid){auto changed=q.s;
-    if(invalid==0)changed.arming_state_known=false;
-    if(invalid==1)changed.feedback.landed=false;
-    if(invalid==2)changed.attitude.kill=true;
-    if(invalid==3)changed.attitude.rc_switch_sample_stamp=1;
-    if(invalid==4)changed.attitude.z_deriv=std::numeric_limits<double>::quiet_NaN();
-    if(invalid==5)changed.attitude.rc_axes_safe=false;
-    if(invalid==6)changed.attitude.rc_sticks_moving=true;
-    if(invalid==7)changed.attitude.rc_arm_switch=1;
-    if(invalid==8)changed.attitude.rc_mode_slot=6;
-    need(!q.r.reprepare_rc(changed,q.t),"current unsafe or old RC evidence cannot consume an earlier recovery dwell");
+  q.r.begin_attitude_safety_observation();
+  auto bad = q.r.publication_context(q.s, q.t, true, true).feedback;
+  bad.q = {0, 0, 0, 0};
+  q.r.observe_attitude_safety_event(bad, a::Core::SafetyEvent::Attitude, q.t);
+  const auto good = q.r.publication_context(q.s, q.t, true, true).feedback;
+  q.r.observe_attitude_safety_event(good, a::Core::SafetyEvent::Attitude, q.t);
+  q.tick();
+  need(!q.r.reprepare_rc(q.s, q.t),
+       "same-round healthy attitude cannot erase bad recovery evidence");
+  for (int i = 0; i < 43; ++i)
+    observe();
+  for (int invalid = 0; invalid < 9; ++invalid) {
+    auto changed = q.s;
+    if (invalid == 0)
+      changed.arming_state_known = false;
+    if (invalid == 1)
+      changed.feedback.landed = false;
+    if (invalid == 2)
+      changed.attitude.kill = true;
+    if (invalid == 3)
+      changed.attitude.rc_switch_sample_stamp = 1;
+    if (invalid == 4)
+      changed.attitude.z_deriv = std::numeric_limits<double>::quiet_NaN();
+    if (invalid == 5)
+      changed.attitude.rc_axes_safe = false;
+    if (invalid == 6)
+      changed.attitude.rc_sticks_moving = true;
+    if (invalid == 7)
+      changed.attitude.rc_arm_switch = 1;
+    if (invalid == 8)
+      changed.attitude.rc_mode_slot = 6;
+    need(!q.r.reprepare_rc(changed, q.t),
+         "current unsafe or old RC evidence cannot consume an earlier recovery dwell");
   }
-  need(q.r.reprepare_rc(q.s,q.t),"ended measurement fault safely resets task state in the same process");
-  need(q.r.last_rc_attempt_reason()=="VERTICAL_POSITION_RATE_INCONSISTENT"&&q.r.rc_attempts_completed()==1,
-    "reprepare preserves historical reason and attempt sequence");
-  need(q.r.pending(400).generation==generation,"safe reprepare preserves command wire history");
-  q.warm();need(q.r.attitude_core().phase()==a::Phase::RcWaitArm,
-    "recovered service returns to the ordinary next-manual-arm readiness");
-  need(!q.r.attitude_core().flight_started()&&q.arm_commands==0&&q.mode_commands==0,
-    "recovery cannot automatically arm or start the next task");
-  q.s.attitude.rc_arm_switch=1;++q.s.attitude.operator_switch_generation;q.tick();
-  q.s.feedback.armed=true;q.s.armed_time=20;q.s.latest_arming_reason=2;q.s.at_rest=false;q.tick();
-  q.navigation();need(q.r.attitude_core().phase()==a::Phase::ArmedGround,
-    "new manual arm and new Offboard evidence can join a subsequent task");
+  need(q.r.reprepare_rc(q.s, q.t),
+       "ended measurement fault safely resets task state in the same process");
+  need(q.r.last_rc_attempt_reason() == "VERTICAL_POSITION_RATE_INCONSISTENT" &&
+           q.r.rc_attempts_completed() == 1,
+       "reprepare preserves historical reason and attempt sequence");
+  need(q.r.pending(400).generation == generation, "safe reprepare preserves command wire history");
+  q.warm();
+  need(q.r.attitude_core().phase() == a::Phase::RcWaitArm,
+       "recovered service returns to the ordinary next-manual-arm readiness");
+  need(!q.r.attitude_core().flight_started() && q.arm_commands == 0 && q.mode_commands == 0,
+       "recovery cannot automatically arm or start the next task");
+  q.s.attitude.rc_arm_switch = 1;
+  ++q.s.attitude.operator_switch_generation;
+  q.tick();
+  q.s.feedback.armed = true;
+  q.s.armed_time = 20;
+  q.s.latest_arming_reason = 2;
+  q.s.at_rest = false;
+  q.tick();
+  q.navigation();
+  need(q.r.attitude_core().phase() == a::Phase::ArmedGround,
+       "new manual arm and new Offboard evidence can join a subsequent task");
 }
 // Vz与z_deriv速度差只诊断，不反复清本来健康地面窗；位置变化、数据无效和地面不安全仍各自拒绝。
-static void diagnostic_velocity_difference_allows_safe_ground_and_recovery(){
-  auto c=rc_config();c.attitude.feedback_guard.enabled=true;
-  c.attitude.feedback_guard.rate_tolerance_mps=.05;c.validate();
+static void diagnostic_velocity_difference_allows_safe_ground_and_recovery() {
+  auto c = rc_config();
+  c.attitude.feedback_guard.enabled = true;
+  c.attitude.feedback_guard.rate_tolerance_mps = .05;
+  c.validate();
   // The stationary position and its derivative agree. The small vz remains
   // within the independent ground-speed envelope while exceeding the warning.
-  Flight ground(c);ground.s.attitude.vz=.09;ground.warm();
-  need(ground.r.attitude_core().rc_ground_reference_qualified()&&
-    ground.r.attitude_core().phase()==a::Phase::RcWaitArm&&
-    !ground.r.attitude_core().flight_started()&&!a::nonzero(ground.o.attitude.thrust),
-    "persistent diagnostic velocity difference cannot prevent safe ground qualification");
-  for(int invalid=0;invalid<10;++invalid){
-    Flight q(c);q.s.attitude.vz=.09;
-    if(invalid==0)q.s.attitude.z_valid=false;
-    if(invalid==1)q.s.attitude.vz_valid=false;
-    if(invalid==2)q.s.attitude.z=std::numeric_limits<double>::quiet_NaN();
-    if(invalid==3)q.s.attitude.z_deriv=std::numeric_limits<double>::quiet_NaN();
-    if(invalid==6)q.s.feedback.landed=false;
-    if(invalid==7)q.s.at_rest=false;
-    if(invalid==9)q.s.local_fresh=false;
-    for(int i=0;i<75;++i){
-      if(invalid==4)q.s.attitude.vertical_sample_stamp-=50000;
-      if(invalid==5)q.s.attitude.local_stamp-=50000;
-      if(invalid==8)q.s.attitude.z-=.01;
+  Flight ground(c);
+  ground.s.attitude.vz = .09;
+  ground.warm();
+  need(ground.r.attitude_core().rc_ground_reference_qualified() &&
+           ground.r.attitude_core().phase() == a::Phase::RcWaitArm &&
+           !ground.r.attitude_core().flight_started() && !a::nonzero(ground.o.attitude.thrust),
+       "persistent diagnostic velocity difference cannot prevent safe ground qualification");
+  for (int invalid = 0; invalid < 10; ++invalid) {
+    Flight q(c);
+    q.s.attitude.vz = .09;
+    if (invalid == 0)
+      q.s.attitude.z_valid = false;
+    if (invalid == 1)
+      q.s.attitude.vz_valid = false;
+    if (invalid == 2)
+      q.s.attitude.z = std::numeric_limits<double>::quiet_NaN();
+    if (invalid == 3)
+      q.s.attitude.z_deriv = std::numeric_limits<double>::quiet_NaN();
+    if (invalid == 6)
+      q.s.feedback.landed = false;
+    if (invalid == 7)
+      q.s.at_rest = false;
+    if (invalid == 9)
+      q.s.local_fresh = false;
+    for (int i = 0; i < 75; ++i) {
+      if (invalid == 4)
+        q.s.attitude.vertical_sample_stamp -= 50000;
+      if (invalid == 5)
+        q.s.attitude.local_stamp -= 50000;
+      if (invalid == 8)
+        q.s.attitude.z -= .01;
       q.tick();
-      need(!q.r.attitude_core().rc_ground_reference_qualified()&&
-        q.r.attitude_core().phase()!=a::Phase::RcWaitArm&&
-        !q.r.attitude_core().flight_started()&&!a::nonzero(q.o.attitude.thrust),
-        "diagnostic rate difference cannot bypass position, input, sample or ground safety");
+      need(!q.r.attitude_core().rc_ground_reference_qualified() &&
+               q.r.attitude_core().phase() != a::Phase::RcWaitArm &&
+               !q.r.attitude_core().flight_started() && !a::nonzero(q.o.attitude.thrust),
+           "diagnostic rate difference cannot bypass position, input, sample or ground safety");
     }
   }
-  Flight recovery(c);recovery.join();for(int i=0;i<16;++i)recovery.tick();
-  recovery.s.attitude.vz=.09;
-  for(int i=0;i<16&&recovery.r.attitude_core().phase()!=a::Phase::Safety;++i){
-    recovery.s.attitude.z-=.02;recovery.tick();
-  }
-  need(recovery.r.attitude_core().phase()==a::Phase::Safety&&
-    recovery.r.attitude_core().reason()=="VERTICAL_POSITION_RATE_INCONSISTENT",
-    "the recovery fixture starts from a retained production position fault");
-  recovery.s.attitude.z=2;recovery.s.feedback.armed=false;recovery.s.feedback.offboard=false;
-  recovery.s.nav_state=15;recovery.s.feedback.landed=recovery.s.at_rest=true;
-  recovery.s.attitude.rc_arm_switch=3;recovery.s.attitude.rc_mode_slot=1;
-  ++recovery.s.attitude.operator_switch_generation;
-  for(int i=0;i<60;++i){
-    recovery.r.begin_attitude_safety_observation();
-    const auto fb=recovery.r.publication_context(recovery.s,recovery.t,true,true).feedback;
-    recovery.r.observe_attitude_safety_event(fb,a::Core::SafetyEvent::Vertical,recovery.t);
-    recovery.r.observe_attitude_safety_event(fb,a::Core::SafetyEvent::Authority,recovery.t);
+  Flight recovery(c);
+  recovery.join();
+  for (int i = 0; i < 16; ++i)
     recovery.tick();
-    need(!recovery.o.attitude.publish&&!a::nonzero(recovery.o.attitude.thrust),
-      "diagnostic disagreement during ended-fault recovery never authorizes an output");
-    if(i<20)need(!recovery.r.rc_restart_allowed(recovery.s),
-      "a rate warning cannot bypass the complete new ground dwell");
+  recovery.s.attitude.vz = .09;
+  for (int i = 0; i < 16 && recovery.r.attitude_core().phase() != a::Phase::Safety; ++i) {
+    recovery.s.attitude.z -= .02;
+    recovery.tick();
   }
-  need(recovery.r.rc_restart_allowed(recovery.s)&&recovery.r.reprepare_rc(recovery.s,recovery.t),
-    "persistent velocity diagnostics cannot invalidate an otherwise complete safe recovery window");
-  need(recovery.r.last_rc_attempt_reason()=="VERTICAL_POSITION_RATE_INCONSISTENT"&&
-    recovery.r.rc_attempts_completed()==1,
-    "safe diagnostic-only recovery preserves the original position fault history");
+  need(recovery.r.attitude_core().phase() == a::Phase::Safety &&
+           recovery.r.attitude_core().reason() == "VERTICAL_POSITION_RATE_INCONSISTENT",
+       "the recovery fixture starts from a retained production position fault");
+  recovery.s.attitude.z = 2;
+  recovery.s.feedback.armed = false;
+  recovery.s.feedback.offboard = false;
+  recovery.s.nav_state = 15;
+  recovery.s.feedback.landed = recovery.s.at_rest = true;
+  recovery.s.attitude.rc_arm_switch = 3;
+  recovery.s.attitude.rc_mode_slot = 1;
+  ++recovery.s.attitude.operator_switch_generation;
+  for (int i = 0; i < 60; ++i) {
+    recovery.r.begin_attitude_safety_observation();
+    const auto fb = recovery.r.publication_context(recovery.s, recovery.t, true, true).feedback;
+    recovery.r.observe_attitude_safety_event(fb, a::Core::SafetyEvent::Vertical, recovery.t);
+    recovery.r.observe_attitude_safety_event(fb, a::Core::SafetyEvent::Authority, recovery.t);
+    recovery.tick();
+    need(!recovery.o.attitude.publish && !a::nonzero(recovery.o.attitude.thrust),
+         "diagnostic disagreement during ended-fault recovery never authorizes an output");
+    if (i < 20)
+      need(!recovery.r.rc_restart_allowed(recovery.s),
+           "a rate warning cannot bypass the complete new ground dwell");
+  }
+  need(
+      recovery.r.rc_restart_allowed(recovery.s) && recovery.r.reprepare_rc(recovery.s, recovery.t),
+      "persistent velocity diagnostics cannot invalidate an otherwise complete safe recovery window");
+  need(recovery.r.last_rc_attempt_reason() == "VERTICAL_POSITION_RATE_INCONSISTENT" &&
+           recovery.r.rc_attempts_completed() == 1,
+       "safe diagnostic-only recovery preserves the original position fault history");
   recovery.warm();
-  need(recovery.r.attitude_core().rc_ground_reference_qualified()&&
-    recovery.r.attitude_core().phase()==a::Phase::RcWaitArm&&
-    !recovery.r.attitude_core().flight_started()&&recovery.arm_commands==0&&recovery.mode_commands==0,
-    "recovery with a persistent velocity warning returns only to fresh manual-arm readiness");
-  std::cout<<"RC_DIAGNOSTIC_VELOCITY_GROUND_RECOVERY_PASS\n";
+  need(recovery.r.attitude_core().rc_ground_reference_qualified() &&
+           recovery.r.attitude_core().phase() == a::Phase::RcWaitArm &&
+           !recovery.r.attitude_core().flight_started() && recovery.arm_commands == 0 &&
+           recovery.mode_commands == 0,
+       "recovery with a persistent velocity warning returns only to fresh manual-arm readiness");
+  std::cout << "RC_DIAGNOSTIC_VELOCITY_GROUND_RECOVERY_PASS\n";
 }
 // 进程冷启动不续接已armed/Offboard或未知飞机状态，避免把重启当成重新获得飞行权。
-static void cold_start_never_resumes_armed_or_unknown_flight(){
-  for(int condition=0;condition<4;++condition){Flight q;
-    if(condition==0){q.s.feedback.armed=true;q.s.feedback.offboard=true;q.s.nav_state=14;
-      q.s.attitude.rc_arm_switch=1;q.s.attitude.rc_mode_slot=6;}
-    if(condition==1)q.s.status_fresh=false;
-    if(condition==2)q.s.land_fresh=false;
-    if(condition==3)q.s.arming_state_known=false;
-    for(int i=0;i<60;++i){q.tick();need(!q.o.attitude.publish&&!a::nonzero(q.o.attitude.thrust)&&
-      !q.r.attitude_core().flight_started(),"cold start cannot continue armed or unknown custody");}
-    need(q.arm_commands==0&&q.mode_commands==0,"process restart creates no arm or Offboard command");
+static void cold_start_never_resumes_armed_or_unknown_flight() {
+  for (int condition = 0; condition < 4; ++condition) {
+    Flight q;
+    if (condition == 0) {
+      q.s.feedback.armed = true;
+      q.s.feedback.offboard = true;
+      q.s.nav_state = 14;
+      q.s.attitude.rc_arm_switch = 1;
+      q.s.attitude.rc_mode_slot = 6;
+    }
+    if (condition == 1)
+      q.s.status_fresh = false;
+    if (condition == 2)
+      q.s.land_fresh = false;
+    if (condition == 3)
+      q.s.arming_state_known = false;
+    for (int i = 0; i < 60; ++i) {
+      q.tick();
+      need(!q.o.attitude.publish && !a::nonzero(q.o.attitude.thrust) &&
+               !q.r.attitude_core().flight_started(),
+           "cold start cannot continue armed or unknown custody");
+    }
+    need(q.arm_commands == 0 && q.mode_commands == 0,
+         "process restart creates no arm or Offboard command");
   }
 }
 // 时钟回退、执行stall、部分发布、意图冲突及来源冲突不可由正常地面或后发轻原因洗掉。
-static void integrity_faults_stay_latched_after_safe_ground(){
-  for(const char* reason:{"TELEMETRY_TIME_REGRESSION","ROS_ADAPTER_CONTROL_LOOP_STALL",
-      "ATTITUDE_PUBLICATION_PARTIAL_PAIR","COMMAND_400_INTENT_MISMATCH",
-      "PUBLISHER_OR_TELEMETRY_CONFLICT"}){
-    Flight q;q.join();q.r.abort_attitude(reason);q.s.feedback.armed=false;
-    q.s.feedback.offboard=false;q.s.nav_state=15;q.s.at_rest=true;
-    q.s.attitude.rc_arm_switch=3;q.s.attitude.rc_mode_slot=1;
-    for(int i=0;i<60;++i){q.tick();need(!q.r.reprepare_rc(q.s,q.t),
-      "safe switches cannot clear unresolved execution integrity faults");}
+static void integrity_faults_stay_latched_after_safe_ground() {
+  for (const char* reason : {"TELEMETRY_TIME_REGRESSION", "ROS_ADAPTER_CONTROL_LOOP_STALL",
+                             "ATTITUDE_PUBLICATION_PARTIAL_PAIR", "COMMAND_400_INTENT_MISMATCH",
+                             "PUBLISHER_OR_TELEMETRY_CONFLICT"}) {
+    Flight q;
+    q.join();
+    q.r.abort_attitude(reason);
+    q.s.feedback.armed = false;
+    q.s.feedback.offboard = false;
+    q.s.nav_state = 15;
+    q.s.at_rest = true;
+    q.s.attitude.rc_arm_switch = 3;
+    q.s.attitude.rc_mode_slot = 1;
+    for (int i = 0; i < 60; ++i) {
+      q.tick();
+      need(!q.r.reprepare_rc(q.s, q.t),
+           "safe switches cannot clear unresolved execution integrity faults");
+    }
     q.r.abort_attitude("RC_MANUAL_ARM_EVIDENCE_TIMEOUT");
-    need(q.r.attitude_core().reason()==reason&&!q.r.reprepare_rc(q.s,q.t),
-      "a recoverable-looking later reason cannot replace the original fault");
+    need(q.r.attitude_core().reason() == reason && !q.r.reprepare_rc(q.s, q.t),
+         "a recoverable-looking later reason cannot replace the original fault");
   }
 }
 // 独立地面终态只能解决真正提交过的Disarm，不能抹去尚未提交计划；wire戳与generation原样保留。
-static void fault_after_disarm_preserves_and_resolves_only_committed_history(){
-  for(bool committed:{false,true}){Flight q;q.join();q.s.at_rest=true;
-    need(q.r.request("LAND",{},q.s,q.t).accepted,"ground task can request its existing guarded finish");
-    bool planned=false;
-    for(int i=0;i<100&&!planned;++i){q.tick();planned=q.o.attitude.command==a::Command::Disarm;}
-    need(planned,"test reaches actual planned disarm");
-    if(committed)q.r.confirm_attitude_command_publication(a::Command::Disarm,true,
-      q.s.status_stamp+1,q.s,q.t);
-    const auto pending=q.r.pending(400);
+static void fault_after_disarm_preserves_and_resolves_only_committed_history() {
+  for (bool committed : {false, true}) {
+    Flight q;
+    q.join();
+    q.s.at_rest = true;
+    need(q.r.request("LAND", {}, q.s, q.t).accepted,
+         "ground task can request its existing guarded finish");
+    bool planned = false;
+    for (int i = 0; i < 100 && !planned; ++i) {
+      q.tick();
+      planned = q.o.attitude.command == a::Command::Disarm;
+    }
+    need(planned, "test reaches actual planned disarm");
+    if (committed)
+      q.r.confirm_attitude_command_publication(a::Command::Disarm, true, q.s.status_stamp + 1, q.s,
+                                               q.t);
+    const auto pending = q.r.pending(400);
     q.r.abort_attitude("ATTITUDE_STALE_OR_INVALID");
-    q.s.feedback.armed=false;q.s.feedback.offboard=false;q.s.nav_state=15;
-    q.s.feedback.landed=q.s.at_rest=true;q.s.attitude.rc_arm_switch=3;q.s.attitude.rc_mode_slot=1;
-    for(int i=0;i<45;++i)q.tick();
-    need(q.r.rc_restart_allowed(q.s),"fresh safe ground qualifies ended task only");
-    need(q.r.reprepare_rc(q.s,q.t)==committed,
-      "independent ground proof settles committed Disarm but cannot erase an uncommitted plan");
-    need(q.r.pending(400).wire_stamp==pending.wire_stamp&&q.r.pending(400).generation==pending.generation,
-      "physical terminal observation preserves original wire stamp and generation");
-    if(committed)need(q.r.pending(400).state_verified&&!q.r.pending(400).accepted&&
-      q.r.pending(400).stage==f::CommandStage::StateOnlyTerminal,
-      "safe ground resolves physical outcome without inventing an accepted ACK");
+    q.s.feedback.armed = false;
+    q.s.feedback.offboard = false;
+    q.s.nav_state = 15;
+    q.s.feedback.landed = q.s.at_rest = true;
+    q.s.attitude.rc_arm_switch = 3;
+    q.s.attitude.rc_mode_slot = 1;
+    for (int i = 0; i < 45; ++i)
+      q.tick();
+    need(q.r.rc_restart_allowed(q.s), "fresh safe ground qualifies ended task only");
+    need(q.r.reprepare_rc(q.s, q.t) == committed,
+         "independent ground proof settles committed Disarm but cannot erase an uncommitted plan");
+    need(q.r.pending(400).wire_stamp == pending.wire_stamp &&
+             q.r.pending(400).generation == pending.generation,
+         "physical terminal observation preserves original wire stamp and generation");
+    if (committed)
+      need(q.r.pending(400).state_verified && !q.r.pending(400).accepted &&
+               q.r.pending(400).stage == f::CommandStage::StateOnlyTerminal,
+           "safe ground resolves physical outcome without inventing an accepted ACK");
   }
 }
-int main(int argc,char** argv){
-  if(argc==2){
-    if(std::string(argv[1])=="delay")delayed_arm_evidence_keeps_continuous_zero_commits();
-    else if(std::string(argv[1])=="slot")configured_navigation_slots_require_matching_new_edge();
-    else if(std::string(argv[1])=="timeout")missing_arm_evidence_has_an_unrenewable_deadline();
-    else if(std::string(argv[1])=="navigation")delayed_navigation_evidence_keeps_continuous_zero_commits();
-    else if(std::string(argv[1])=="late_arm")late_complementary_arm_evidence_cannot_revive_expired_attempt();
-    else if(std::string(argv[1])=="production_1p5m")production_no_vision_rc_1p5m_lifecycle_uses_vertical_only();
-    else if(std::string(argv[1])=="ground_reference"){
+int main(int argc, char** argv) {
+  if (argc == 2) {
+    if (std::string(argv[1]) == "delay")
+      delayed_arm_evidence_keeps_continuous_zero_commits();
+    else if (std::string(argv[1]) == "slot")
+      configured_navigation_slots_require_matching_new_edge();
+    else if (std::string(argv[1]) == "timeout")
+      missing_arm_evidence_has_an_unrenewable_deadline();
+    else if (std::string(argv[1]) == "navigation")
+      delayed_navigation_evidence_keeps_continuous_zero_commits();
+    else if (std::string(argv[1]) == "late_arm")
+      late_complementary_arm_evidence_cannot_revive_expired_attempt();
+    else if (std::string(argv[1]) == "production_1p5m")
+      production_no_vision_rc_1p5m_lifecycle_uses_vertical_only();
+    else if (std::string(argv[1]) == "ground_reference") {
       task_ground_reference_uses_fresh_disarmed_evidence();
       ground_reference_resets_and_timestamps_need_a_new_window();
       diagnostic_velocity_difference_allows_safe_ground_and_recovery();
-    }
-    else if(std::string(argv[1])=="lifecycle"){
-      ended_fault_needs_new_safe_ground_cycle();cold_start_never_resumes_armed_or_unknown_flight();
+    } else if (std::string(argv[1]) == "lifecycle") {
+      ended_fault_needs_new_safe_ground_cycle();
+      cold_start_never_resumes_armed_or_unknown_flight();
       integrity_faults_stay_latched_after_safe_ground();
       fault_after_disarm_preserves_and_resolves_only_committed_history();
-      std::cout<<"RC_SAFE_LIFECYCLE_PASS\n";
-    }
-    else throw std::runtime_error("unknown regression selector");
+      std::cout << "RC_SAFE_LIFECYCLE_PASS\n";
+    } else
+      throw std::runtime_error("unknown regression selector");
     return 0;
   }
-  delayed_arm_evidence_keeps_continuous_zero_commits();configured_navigation_slots_require_matching_new_edge();
-  missing_arm_evidence_has_an_unrenewable_deadline();pending_permission_rechecks_current_safety_and_exact_zero();
+  delayed_arm_evidence_keeps_continuous_zero_commits();
+  configured_navigation_slots_require_matching_new_edge();
+  missing_arm_evidence_has_an_unrenewable_deadline();
+  pending_permission_rechecks_current_safety_and_exact_zero();
   sink_resampling_handles_new_arm_observations_and_vetoes_changes();
-  delayed_navigation_evidence_keeps_continuous_zero_commits();late_complementary_arm_evidence_cannot_revive_expired_attempt();
-  navigation_pairing_deadline_cannot_be_renewed_or_crossed();navigation_pending_rejects_withdrawal_stale_sources_and_nonzero();
+  delayed_navigation_evidence_keeps_continuous_zero_commits();
+  late_complementary_arm_evidence_cannot_revive_expired_attempt();
+  navigation_pairing_deadline_cannot_be_renewed_or_crossed();
+  navigation_pending_rejects_withdrawal_stale_sources_and_nonzero();
   delayed_pre_ready_source_events_cannot_authorize();
-  valid_path_without_automatic_commands();status_switch_reordering();unavailable_evidence_never_launches();
-  arm_and_navigation_faults_latch();reference_is_disarmed_only();final_boundary_and_interface_reject_bypasses();
-  task_ground_reference_uses_fresh_disarmed_evidence();ground_reference_resets_and_timestamps_need_a_new_window();
+  valid_path_without_automatic_commands();
+  status_switch_reordering();
+  unavailable_evidence_never_launches();
+  arm_and_navigation_faults_latch();
+  reference_is_disarmed_only();
+  final_boundary_and_interface_reject_bypasses();
+  task_ground_reference_uses_fresh_disarmed_evidence();
+  ground_reference_resets_and_timestamps_need_a_new_window();
   diagnostic_velocity_difference_allows_safe_ground_and_recovery();
   exits_and_faults_preserve_existing_policy();
   full_height_hold_land_and_safe_reset();
-  ended_fault_needs_new_safe_ground_cycle();cold_start_never_resumes_armed_or_unknown_flight();
+  ended_fault_needs_new_safe_ground_cycle();
+  cold_start_never_resumes_armed_or_unknown_flight();
   integrity_faults_stay_latched_after_safe_ground();
   fault_after_disarm_preserves_and_resolves_only_committed_history();
   production_no_vision_rc_1p5m_lifecycle_uses_vertical_only();
-  std::cout<<"RC_NAVIGATION_CONTRACT_PASS\n";
+  std::cout << "RC_NAVIGATION_CONTRACT_PASS\n";
   return 0;
 }

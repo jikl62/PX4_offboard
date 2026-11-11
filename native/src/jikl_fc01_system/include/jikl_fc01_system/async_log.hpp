@@ -22,7 +22,7 @@ namespace fc01 {
 inline std::atomic<unsigned long long> native_log_dropped{0};
 // Bounded producer queue. SD/pipe/terminal backpressure is never a flight lease.
 class AsyncLog final : private std::streambuf {
- public:
+public:
   // 忽略 SIGPIPE 并将 stdout 置为非阻塞；终端消失不能通过信号直接杀死控制进程。
   AsyncLog() {
     struct sigaction ignore {};
@@ -33,7 +33,9 @@ class AsyncLog final : private std::streambuf {
     flags_ = fcntl(STDOUT_FILENO, F_GETFL);
     if (flags_ < 0 || fcntl(STDOUT_FILENO, F_SETFL, flags_ | O_NONBLOCK) < 0)
       throw std::runtime_error("cannot configure nonblocking native log sink");
-    worker_ = std::thread([this] { consume(); });
+    worker_ = std::thread([this] {
+      consume();
+    });
     cout_ = std::cout.rdbuf(this);
     cerr_ = std::cerr.rdbuf(this);
   }
@@ -55,7 +57,7 @@ class AsyncLog final : private std::streambuf {
     sigaction(SIGPIPE, &pipe_signal_, nullptr);
   }
 
- private:
+private:
   static long long clock_ns() {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
                std::chrono::steady_clock::now().time_since_epoch())
@@ -102,7 +104,9 @@ class AsyncLog final : private std::streambuf {
       std::string record;
       {
         std::unique_lock<std::mutex> lock(mutex_);
-        ready_.wait(lock, [this] { return !queue_.empty() || deadline_.load() != 0; });
+        ready_.wait(lock, [this] {
+          return !queue_.empty() || deadline_.load() != 0;
+        });
         if (queue_.empty())
           return;
         record = std::move(queue_.front());
@@ -144,4 +148,4 @@ class AsyncLog final : private std::streambuf {
   std::atomic<long long> deadline_{0};
   std::thread worker_;
 };
-}  // namespace fc01
+} // namespace fc01
