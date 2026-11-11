@@ -246,27 +246,33 @@ class StampPairBuffer:
         return (message, metadata)
 
     def odometry(self, message, now):
+        # 先处理已经超时的等待项；晚到的另一半不能绕过配对窗口恢复旧样本。
+        result = self.expire(now)
         key = stamp_ns(message.header.stamp)
         if key <= self._last_emitted or key in self._odometry:
-            return []
+            return result
         self._odometry[key] = (message, now)
         if key in self._health:
-            return [self._finish(key, self._health[key][0])]
-        result = []
+            # 之前的超时撤销必须排在新配对前，不能被本轮健康消息覆盖。
+            result.append(self._finish(key, self._health[key][0]))
+            return result
         if len(self._odometry) > self.max_pending:
             result.append(self._finish(next(iter(self._odometry)), None))
         return result
 
     def health(self, message, now):
+        # 回调同样承担超时观察，不能假设定时器一定先于新消息执行。
+        result = self.expire(now)
         key = stamp_ns(message.stamp)
         if key <= self._last_emitted or key in self._health:
-            return []
+            return result
         self._health[key] = (message, now)
         if key in self._odometry:
-            return [self._finish(key, message)]
+            result.append(self._finish(key, message))
+            return result
         while len(self._health) > self.max_pending:
             self._health.popitem(last=False)
-        return []
+        return result
 
     def expire(self, now):
         result = []
@@ -352,7 +358,9 @@ def main(args=None):
     # ROS is a runtime-only dependency: conversion unit tests never need a graph.
     import rclpy
     from rclpy.node import Node
+    from rclpy.executors import ExternalShutdownException
     from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+    from rcl_interfaces.msg import ParameterDescriptor, ParameterType
     from nav_msgs.msg import Odometry
     from jikl_fc01_system.msg import VisionHealth, VisionState
 
@@ -360,9 +368,15 @@ def main(args=None):
         def __init__(self):
             super().__init__('fc01_vision_odometry_adapter')
             def parameter(name, default):
-                return self.declare_parameter(name, default).value
+                # 配置只在启动时应用；运行期明确拒绝修改，避免显示值与实际转换不同。
+                return self.declare_parameter(name, default, descriptor=ParameterDescriptor(
+                    read_only=True, description='Startup-only adapter configuration; restart to change.')).value
             if self.get_parameter('use_sim_time').value:
                 raise ValueError('V1 adapter requires agreed ROS/system measurement stamps')
+            # use_sim_time 已由 ROS 声明；固定其描述符，避免运行中切换测量时钟域。
+            self.set_descriptor('use_sim_time', ParameterDescriptor(
+                type=ParameterType.PARAMETER_BOOL, read_only=True,
+                description='V1 adapter requires the agreed ROS/system time domain.'))
             values = {name: parameter(name, '') for name in
                       ('source_id', 'input_frame_id', 'input_body_frame_id', 'world_convention',
                        'body_convention', 'extrinsics_id', 'alignment_id')}
@@ -426,10 +440,15 @@ def main(args=None):
     try:
         node = OdometryAdapterNode()
         rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        # SIGINT 或外部关闭属于正常停止；上下文可能已被 ROS 的信号处理器关闭。
+        pass
     finally:
         if node is not None:
             node.destroy_node()
-        rclpy.shutdown()
+        # 只关闭仍存活的上下文，避免正常退出被第二次 shutdown 的异常覆盖。
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

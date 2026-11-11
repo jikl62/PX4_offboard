@@ -214,6 +214,57 @@ class OdometryAdapterTests(unittest.TestCase):
                         'raw source graph authority must guard the exact-stamp adapter')
         return self.a.GuardedOdometryAdapter(self.config, pair_timeout=.05, max_pending=4)
 
+    def test_late_health_cannot_rescue_odometry_at_or_after_pair_timeout(self):
+        for delay in (.05, .20):
+            with self.subTest(delay=delay):
+                pairs = self.a.StampPairBuffer(timeout=.05, max_pending=4)
+                self.assertEqual(pairs.odometry(odometry(), 0.), [])
+                # 达到窗口边界即先撤销旧测量，不能被同时间戳的晚到健康声明恢复。
+                expired = pairs.health(health(), delay)
+                self.assertEqual(len(expired), 1)
+                self.assertIsNone(expired[0][1])
+                self.assertEqual(pairs.health(health(), delay + .01), [])
+                self.assertEqual(pairs.odometry(odometry(), delay + .02), [])
+
+    def test_late_odometry_cannot_borrow_health_at_or_after_pair_timeout(self):
+        for delay in (.05, .20):
+            with self.subTest(delay=delay):
+                pairs = self.a.StampPairBuffer(timeout=.05, max_pending=4)
+                self.assertEqual(pairs.health(health(), 0.), [])
+                # 先到的声明已经过期；新到的原始测量应重新等待自己的健康配对。
+                self.assertEqual(pairs.odometry(odometry(), delay), [])
+                expired = pairs.expire(delay + .06)
+                self.assertEqual(len(expired), 1)
+                self.assertIsNone(expired[0][1])
+
+    def test_timely_pair_remains_accepted_in_either_callback_order(self):
+        for health_first in (True, False):
+            with self.subTest(health_first=health_first):
+                pairs = self.a.StampPairBuffer(timeout=.05, max_pending=4)
+                first = pairs.health if health_first else pairs.odometry
+                second = pairs.odometry if health_first else pairs.health
+                self.assertEqual(first(health() if health_first else odometry(), 0.), [])
+                ready = second(odometry() if health_first else health(), .049)
+                self.assertEqual(len(ready), 1)
+                self.assertIsNotNone(ready[0][1])
+
+    def test_callback_expiry_precedes_fresh_pair_without_hiding_revocation(self):
+        adapter = self.guarded()
+        self.assertEqual(adapter.odometry(odometry(), 1., 10_000_000_050, 1, 1), [])
+        later = odometry()
+        later.header.stamp = stamp(10, 400)
+        later_health = health(stamp=stamp(10, 400), sequence=8)
+        self.assertEqual(adapter.health(later_health, 1.04, 10_000_000_450, 1, 1), [])
+
+        # 定时器尚未执行：这次回调必须同时保留旧样本撤销和新样本转换，按此顺序返回。
+        states = adapter.odometry(later, 1.06, 10_000_000_500, 1, 1)
+        self.assertEqual(len(states), 2)
+        self.assertEqual(states[0].valid_fields, 0)
+        self.assertEqual(states[0].reason, 'MISSING_HEALTH')
+        self.assertEqual(states[1].reason, 'OK')
+        self.assertGreater(states[1].sequence, states[0].sequence)
+        self.assertEqual(states[1].raw_health_sequence, 8)
+
     def test_raw_topics_each_require_exactly_one_publisher_before_conversion(self):
         for counts in ((0, 1), (1, 0), (2, 1), (1, 2), (2, 2)):
             with self.subTest(counts=counts):

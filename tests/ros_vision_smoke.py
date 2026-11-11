@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Opt-in real ROS adapter check. Creates only /fc01_demo/** data endpoints."""
 from pathlib import Path
+import argparse
+import json
 import math
+import os
 import signal
 import subprocess
 import sys
@@ -10,11 +13,21 @@ import time
 
 
 def main():
+    parser = argparse.ArgumentParser(description='只在隔离 ROS 域验证视觉适配器，不启动控制器。')
+    parser.add_argument('--adapter', type=Path)
+    parser.add_argument('--report', type=Path)
+    options = parser.parse_args()
+    # 合成来源不能与真实控制服务混用 ROS 域；要求操作者明确选用本机测试域。
+    domain = int(os.environ.get('ROS_DOMAIN_ID', '0'))
+    if os.environ.get('ROS_LOCALHOST_ONLY') != '1' or not 0 < domain < 233:
+        raise RuntimeError('set ROS_LOCALHOST_ONLY=1 and a nonzero isolated ROS_DOMAIN_ID')
     import rclpy
     from rclpy.node import Node
     from rclpy.qos import QoSProfile, ReliabilityPolicy
     from nav_msgs.msg import Odometry
     from jikl_fc01_system.msg import VisionHealth, VisionState
+    from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
+    from rcl_interfaces.srv import DescribeParameters, GetParameters, SetParameters
 
     root=Path(__file__).resolve().parents[1]
     params=dict(input_topic='/fc01_demo/odom',health_topic='/fc01_demo/health',
@@ -24,7 +37,8 @@ def main():
                 extrinsics_id='synthetic-identity',alignment_id='synthetic-identity',
                 body_from_sensor_wxyz='[1.0,0.0,0.0,0.0]',sensor_position_body_frd='[0.0,0.0,0.0]',
                 world_alignment_wxyz='[1.0,0.0,0.0,0.0]',world_translation_ned='[0.0,0.0,0.0]')
-    argv=[sys.executable,str(root/'native/tools/vision_odometry_adapter.py'),'--ros-args']
+    adapter_path = options.adapter or root/'native/tools/vision_odometry_adapter.py'
+    argv=[sys.executable,str(adapter_path),'--ros-args']
     for name,value in params.items():argv+=['-p',name+':='+value]
     with tempfile.TemporaryFile(mode='w+') as logs:
         process=subprocess.Popen(argv,stdin=subprocess.DEVNULL,stdout=logs,stderr=subprocess.STDOUT)
@@ -38,6 +52,46 @@ def main():
             received=[]
             subscription=node.create_subscription(VisionState,params['output_topic'],received.append,sensor)
             sequence=0
+
+            def parameter_call(service_type, suffix, request):
+                # 参数必须经真实 ROS 服务验证，不能只检查源码中的只读声明。
+                client = node.create_client(service_type, '/fc01_vision_odometry_adapter/' + suffix)
+                try:
+                    if not client.wait_for_service(timeout_sec=5.):
+                        raise RuntimeError('adapter parameter service unavailable: ' + suffix)
+                    future = client.call_async(request)
+                    rclpy.spin_until_future_complete(node, future, timeout_sec=5.)
+                    if not future.done():
+                        raise RuntimeError('adapter parameter service timed out: ' + suffix)
+                    return future.result()
+                finally:
+                    node.destroy_client(client)
+
+            names = list(params) + ['qos_depth', 'output_reliable', 'odometry_reliable',
+                                    'health_reliable', 'pair_timeout', 'max_pending', 'use_sim_time']
+            descriptors = parameter_call(DescribeParameters, 'describe_parameters',
+                                        DescribeParameters.Request(names=names)).descriptors
+            if len(descriptors) != len(names) or not all(item.read_only for item in descriptors):
+                raise RuntimeError('startup adapter parameters must advertise read_only')
+            # 检查来源、外参和时钟域：运行期拒绝修改，不能显示成功但继续使用旧配置。
+            changes = [
+                Parameter(name='source_id', value=ParameterValue(
+                    type=ParameterType.PARAMETER_STRING, string_value='rejected-runtime-source')),
+                Parameter(name='world_translation_ned', value=ParameterValue(
+                    type=ParameterType.PARAMETER_DOUBLE_ARRAY, double_array_value=[100., 0., 0.])),
+                Parameter(name='use_sim_time', value=ParameterValue(
+                    type=ParameterType.PARAMETER_BOOL, bool_value=True)),
+            ]
+            updates = parameter_call(SetParameters, 'set_parameters',
+                                     SetParameters.Request(parameters=changes)).results
+            if len(updates) != 3 or any(item.successful for item in updates):
+                raise RuntimeError('startup-only adapter parameter update silently succeeded')
+            visible = parameter_call(GetParameters, 'get_parameters',
+                                     GetParameters.Request(names=[item.name for item in changes])).values
+            if (visible[0].string_value != params['source_id']
+                    or list(visible[1].double_array_value) != [0., 0., 0.]
+                    or visible[2].bool_value):
+                raise RuntimeError('rejected adapter parameter update changed visible configuration')
 
             def publish():
                 nonlocal sequence
@@ -81,12 +135,26 @@ def main():
             endpoints=node.get_publisher_names_and_types_by_node('fc01_vision_odometry_adapter','/')
             if any(name.startswith('/fmu/in/') for name,_ in endpoints):raise RuntimeError('unexpected hardware endpoint')
             if subscription is None:raise RuntimeError('subscription was not retained')
-            print('REAL_ROS_VISION_ADAPTER_PASS valid_conversion=1 raw_conflict_revoked=1 fmu_publishers=0')
+            # 正常 SIGINT 必须以零状态退出，不能被重复关闭上下文的异常覆盖。
+            process.send_signal(signal.SIGINT)
+            process.wait(timeout=5.)
+            logs.seek(0)
+            final_log = logs.read()
+            if process.returncode != 0 or 'Traceback (most recent call last)' in final_log:
+                raise RuntimeError('adapter failed clean SIGINT shutdown: ' + final_log[-2000:])
+            report = dict(passed=True, domain_id=domain, localhost_only=True,
+                          adapter_path=str(adapter_path),
+                          checks=['read_only_startup_parameters', 'valid_conversion',
+                                  'raw_conflict_revoked', 'no_fmu_publishers', 'sigint_clean_exit'],
+                          publisher_endpoints=endpoints, shutdown_exit_code=process.returncode)
+            if options.report is not None:
+                options.report.write_text(json.dumps(report, indent=2) + '\n')
+            print('REAL_ROS_VISION_ADAPTER_PASS valid_conversion=1 raw_conflict_revoked=1 fmu_publishers=0 read_only_parameters=1 sigint_clean_exit=1')
         except Exception:
             logs.seek(0);print(logs.read()[-5000:],file=sys.stderr);raise
         finally:
             if node is not None:node.destroy_node()
-            rclpy.shutdown()
+            if rclpy.ok():rclpy.shutdown()
             if process.poll() is None:
                 process.send_signal(signal.SIGINT)
                 try:process.wait(timeout=5)
