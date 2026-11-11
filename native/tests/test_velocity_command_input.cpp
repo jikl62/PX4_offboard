@@ -201,6 +201,52 @@ static void bad_states_and_graph_events_are_sticky(){
     session.observe_publishers(1,1);need(!preview(session).valid,"temporary missing/conflicting source survives healthy graph tail");
   }
 }
+static void attitude_step_remains_accurate_for_small_rotations() {
+  auto precise_policy = policy();
+  precise_policy.max_attitude_step_rad = 1e-10;
+
+  // 这个四元数归一化后的自点积会略小于 1；完全相同姿态应仍然表示零转角。
+  auto measured = state();
+  measured.attitude = {
+      .43301498687850332, .38595587278205279, .60808732941602328, .54200173911837457};
+  for (double equivalent_sign : {1., -1.}) {
+    vi::Session session(precise_policy);
+    feed(session, measured);
+    auto unchanged = measured;
+    unchanged.sequence = 2;
+    unchanged.stamp_ns += 1000000;
+    for (double& component : unchanged.attitude) {
+      component *= equivalent_sign;
+    }
+    need(session.state(unchanged, 10.001, epoch + 1000000),
+         "identical attitudes and their sign equivalents have zero angular step");
+    need(session.first_error().empty() && preview(session, 10.001, epoch + 1000000).valid,
+         "rounding of a quaternion self-dot product cannot latch a false discontinuity");
+  }
+
+  // 在 1e-10 rad 门限两侧放置真实转角，避免用固定容差把小跳变全部放行。
+  // 同时验证整体变号不会改变几何角度，明显的大跳变仍须拒绝。
+  for (double angle : {0.5e-10, 1.5e-10, .7}) {
+    for (double equivalent_sign : {1., -1.}) {
+      vi::Session session(precise_policy);
+      feed(session);
+      auto rotated = state();
+      rotated.sequence = 2;
+      rotated.stamp_ns += 1000000;
+      rotated.attitude = {equivalent_sign * std::cos(angle / 2),
+                          equivalent_sign * std::sin(angle / 2), 0, 0};
+      const bool expected = angle < precise_policy.max_attitude_step_rad;
+      need(session.state(rotated, 10.001, epoch + 1000000) == expected,
+           "small true rotations preserve both sides of the configured angular gate");
+      if (!expected) {
+        need(session.first_error() == "STATE_ATTITUDE_DISCONTINUITY_REQUIRES_NEW_ATTEMPT",
+             "true angular jumps retain the existing discontinuity latch");
+        need(!preview(session, 10.001, epoch + 1000000).valid,
+             "a rejected angular jump cannot produce a valid offline preview");
+      }
+    }
+  }
+}
 static void clocks_sequences_and_duplicate_leases(){
   for(bool measured:{false,true}){
     vi::Session session(policy());feed(session);
@@ -244,6 +290,8 @@ int main(){
   wire_contract_and_unconfigured_policy();actual_target_separation_and_modes();
   full_three_dimensional_body_rotation_and_limits();bad_command_never_recovers_through_good_tail();
   intermediate_overflow_is_not_hidden_by_limits();
-  bad_states_and_graph_events_are_sticky();clocks_sequences_and_duplicate_leases();
+  bad_states_and_graph_events_are_sticky();
+  attitude_step_remains_accurate_for_small_rotations();
+  clocks_sequences_and_duplicate_leases();
   std::cout<<"VELOCITY_COMMAND_INPUT_PREVIEW_ONLY_PASS checks="<<checks<<" control_authority=false\n";
 }

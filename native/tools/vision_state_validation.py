@@ -7,7 +7,7 @@
 """
 from collections import Counter, deque
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import importlib.util
 import math
 from pathlib import Path
@@ -52,6 +52,18 @@ def _stamp(value):
     return sec*1000000000+ns or None
 
 
+def _attitude_step_rad(current, previous):
+    """计算两个四元数之间的转角，保留接近零的真实变化。"""
+    # q 和 -q 表示同一姿态，先选择与基线同号的表示。
+    dot = sum(a*b for a, b in zip(current, previous))
+    aligned = tuple(-value for value in current) if dot < 0 else current
+    # acos(dot) 在 dot 接近 1 时会放大舍入误差，甚至将相同姿态判成跳变。
+    # 用差、和向量的长度求半角关系，相同输入的差严格为零。
+    difference = math.dist(aligned, previous)
+    total = math.hypot(*(a+b for a, b in zip(aligned, previous)))
+    return 4.*math.atan2(difference, total)
+
+
 @dataclass(frozen=True)
 class ClockPolicy:
     """显式时间对应：本机 ROS 时间 = 视觉测量时间 + offset_ns。"""
@@ -89,32 +101,71 @@ class ValidationConfig:
 
     def __post_init__(self):
         self.adapter.validate()
-        for name in ('source_id', 'input_frame_id', 'input_body_frame_id', 'extrinsics_id', 'alignment_id'):
+        # frozen 只能阻止字段重新赋值，不能阻止调用方原地修改传入的列表。
+        # 将四组外参和对齐数据保存为独立数值元组，使可信周期的转换保持不变。
+        transform_fields = (
+            'body_from_sensor_wxyz', 'sensor_position_body_frd',
+            'world_alignment_wxyz', 'world_translation_ned',
+        )
+        transforms = {
+            name: tuple(float(value) for value in getattr(self.adapter, name))
+            for name in transform_fields
+        }
+        object.__setattr__(self, 'adapter', replace(self.adapter, **transforms))
+        identity_fields = (
+            'source_id', 'input_frame_id', 'input_body_frame_id',
+            'extrinsics_id', 'alignment_id',
+        )
+        for name in identity_fields:
             if len(getattr(self.adapter, name)) > 256:
                 raise ValueError('adapter identity strings must be at most 256 characters')
         if not isinstance(self.clock, ClockPolicy):
             raise ValueError('explicit ClockPolicy required')
-        if not _integer(self.epoch_history_capacity, 4096) or self.epoch_history_capacity < 1:
+        if (
+            not _integer(self.epoch_history_capacity, 4096)
+            or self.epoch_history_capacity < 1
+        ):
             raise ValueError('epoch_history_capacity must be an integer in [1,4096]')
-        for name in ('receive_timeout_sec', 'max_source_age_sec', 'future_tolerance_sec',
-                     'max_position_step_m', 'max_velocity_step_mps', 'max_attitude_step_rad'):
+
+        positive_limits = (
+            'receive_timeout_sec', 'max_source_age_sec', 'future_tolerance_sec',
+            'max_position_step_m', 'max_velocity_step_mps', 'max_attitude_step_rad',
+        )
+        for name in positive_limits:
             value = getattr(self, name)
-            if value is not None and (not _number(value) or value < 0 or
-                                      (value == 0 and name != 'future_tolerance_sec')):
-                raise ValueError(name+' must be finite and positive (future tolerance may be zero), or None')
+            if value is None:
+                continue
+            if (
+                not _number(value)
+                or value < 0
+                or (value == 0 and name != 'future_tolerance_sec')
+            ):
+                raise ValueError(
+                    name + ' must be finite and positive '
+                    '(future tolerance may be zero), or None'
+                )
         for name in ('min_quality', 'nominal_quality_min'):
             value = getattr(self, name)
             if value is not None and (not _number(value) or not 0 <= value <= 1):
-                raise ValueError(name+' must be in [0,1] or None')
-        if (self.min_quality is not None and self.nominal_quality_min is not None
-                and self.nominal_quality_min < self.min_quality):
+                raise ValueError(name + ' must be in [0,1] or None')
+        if (
+            self.min_quality is not None
+            and self.nominal_quality_min is not None
+            and self.nominal_quality_min < self.min_quality
+        ):
             raise ValueError('nominal quality must not be below minimum quality')
+
         for name in ('max_pose_variance', 'max_twist_variance'):
             value = getattr(self, name)
-            if value is not None:
-                if not isinstance(value, (tuple, list)) or len(value) != 6 or not all(_number(x) and x >= 0 for x in value):
-                    raise ValueError(name+' must contain six finite nonnegative raw variances')
-                object.__setattr__(self, name, tuple(value))
+            if value is None:
+                continue
+            if (
+                not isinstance(value, (tuple, list))
+                or len(value) != 6
+                or not all(_number(x) and x >= 0 for x in value)
+            ):
+                raise ValueError(name + ' must contain six finite nonnegative raw variances')
+            object.__setattr__(self, name, tuple(value))
 
 
 @dataclass(frozen=True)
@@ -455,12 +506,13 @@ class Validator:
             return []
         if converted.valid_fields & adapter.REQUIRED != adapter.REQUIRED:
             return []
-        # 四元数 q 和 -q 表示同一姿态，所以点积取绝对值后再计算转角。
-        attitude_dot = sum(a*b for a, b in zip(converted.attitude, self._baseline.attitude))
         changes = (
-            ('POSITION', math.dist(converted.position, self._baseline.position), self.config.max_position_step_m),
-            ('VELOCITY', math.dist(converted.velocity, self._baseline.velocity), self.config.max_velocity_step_mps),
-            ('ATTITUDE', 2*math.acos(min(1., abs(attitude_dot))), self.config.max_attitude_step_rad),
+            ('POSITION', math.dist(converted.position, self._baseline.position),
+             self.config.max_position_step_m),
+            ('VELOCITY', math.dist(converted.velocity, self._baseline.velocity),
+             self.config.max_velocity_step_mps),
+            ('ATTITUDE', _attitude_step_rad(converted.attitude, self._baseline.attitude),
+             self.config.max_attitude_step_rad),
         )
         return [name+'_CONTINUITY_LIMIT_EXCEEDED' for name, distance, limit in changes
                 if limit is not None and distance > limit]

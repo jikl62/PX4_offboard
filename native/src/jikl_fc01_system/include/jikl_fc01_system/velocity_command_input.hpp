@@ -200,9 +200,20 @@ class Session {
       for (std::size_t axis = 0; axis < 4; ++axis) {
         attitude_dot_product += previous_attitude[axis] * current_attitude[axis];
       }
-      // q 和 -q 表示同一姿态，因此先取点积绝对值，再计算真实夹角。
-      if (2*std::acos(std::clamp(std::abs(attitude_dot_product), 0., 1.)) >
-          policy_.max_attitude_step_rad) {
+      // q 和 -q 表示同一姿态，先对齐符号；差/和的模长比为姿态夹角四分之一的正切。
+      // atan2 在微小转角处仍可分辨变化，也不会把完全相同姿态的点积舍入误差当成跳变。
+      const double attitude_sign = attitude_dot_product < 0 ? -1. : 1.;
+      double attitude_difference_norm = 0;
+      double attitude_sum_norm = 0;
+      for (std::size_t axis = 0; axis < 4; ++axis) {
+        const double aligned_current = attitude_sign * current_attitude[axis];
+        attitude_difference_norm = std::hypot(
+            attitude_difference_norm, aligned_current - previous_attitude[axis]);
+        attitude_sum_norm = std::hypot(
+            attitude_sum_norm, aligned_current + previous_attitude[axis]);
+      }
+      const double attitude_step = 4 * std::atan2(attitude_difference_norm, attitude_sum_norm);
+      if (attitude_step > policy_.max_attitude_step_rad) {
         return latch("STATE_ATTITUDE_DISCONTINUITY_REQUIRES_NEW_ATTEMPT");
       }
     }

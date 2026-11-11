@@ -24,7 +24,13 @@ LIMIT_NAMES = ('timeout_sec', 'max_speed_mps', 'max_source_age_sec', 'future_tol
 
 
 def _finite(value):
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+    """只接受可表示为有限浮点数的数值；超大整数也按无效输入处理。"""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
 
 
 def _integer(value, maximum):
@@ -101,8 +107,12 @@ class Receiver:
         if (self._last_observation_ros is not None and ros_now_ns
                 and ros_now_ns < self._last_observation_ros):
             errors.append('ROS_CLOCK_REGRESSION')
-        self._last_observation_steady = now
-        if ros_now_ns:
+        # 保留已经观察到的最大时刻。回退不能降低基准，否则连续的旧时间
+        # 会在第二帧就重新通过；时钟追上基准后，正常新消息仍可恢复候选。
+        if self._last_observation_steady is None or now > self._last_observation_steady:
+            self._last_observation_steady = now
+        if ros_now_ns and (self._last_observation_ros is None
+                           or ros_now_ns > self._last_observation_ros):
             self._last_observation_ros = ros_now_ns
         if errors:
             self._candidate = None
@@ -164,10 +174,12 @@ class Receiver:
         if len(self._events) == self._events.maxlen:
             self.counters['events_dropped'] += 1
         self._events.append(event)
-        return event
+        # 调用方可自由整理返回值，不能因此改写内部保留的异常证据。
+        return _json_safe(event)
 
     def drain_events(self):
-        result = list(self._events)
+        """取出独立事件副本；last_event / last_anomaly 继续保留原始证据。"""
+        result = _json_safe(list(self._events))
         self._events.clear()
         return result
 
@@ -441,7 +453,8 @@ class DiagnosticWriter:
             self.suppressed += 1
             if event.get('reasons'):
                 if self._pending_anomaly is None:
-                    self._pending_anomaly = dict(event, coalesced_anomalies=1)
+                    # 等待落盘期间也要隔离嵌套字段，调用方整理事件不能抹掉原因。
+                    self._pending_anomaly = _json_safe(dict(event, coalesced_anomalies=1))
                 else:
                     self._pending_anomaly['coalesced_anomalies'] += 1
                     reasons = self._pending_anomaly.setdefault('coalesced_reasons', [])

@@ -486,6 +486,31 @@ class StateValidationTests(unittest.TestCase):
         feed(validator)
         self.assertTrue(feed(validator, 2, attitude=(-1., 0., 0., 0.)).accepted)
 
+    def test_identical_attitude_and_its_opposite_sign_pass_tiny_step_limit(self):
+        attitude = (
+            -.5137551155216827, .5646433853044953,
+            .5302328846745061, -.36889919587460945,
+        )
+        for sign in (1., -1.):
+            with self.subTest(sign=sign):
+                validator = m.Validator(config(max_attitude_step_rad=1.e-12))
+                self.assertTrue(feed(validator, attitude=attitude).accepted)
+                equivalent = tuple(sign*value for value in attitude)
+                second = feed(validator, 2, attitude=equivalent)
+                self.assertTrue(second.accepted, second.diagnostics['reasons'])
+
+    def test_tiny_real_attitude_steps_obey_explicit_limit(self):
+        for angle, expected in ((.5e-9, True), (2.e-9, False)):
+            with self.subTest(angle=angle):
+                validator = m.Validator(config(max_attitude_step_rad=1.e-9))
+                self.assertTrue(feed(validator).accepted)
+                attitude = (math.cos(angle/2), 0., 0., math.sin(angle/2))
+                changed = feed(validator, 2, attitude=attitude)
+                self.assertEqual(changed.accepted, expected)
+                if not expected:
+                    self.assertIn('ATTITUDE_CONTINUITY_LIMIT_EXCEEDED',
+                                  changed.diagnostics['reasons'])
+
     def test_covariance_unknown_and_declared_zero_never_become_transformed_valid(self):
         validator = m.Validator(config())
         raw, health = pair()
@@ -605,6 +630,34 @@ class StateValidationTests(unittest.TestCase):
             m.ClockPolicy(offset_ns=True)
         with self.assertRaises(ValueError):
             m.SampleMetadata(pose_covariance_valid='true')
+
+    def test_config_copies_transform_lists_before_caller_can_change_them(self):
+        transforms = (
+            ('body_from_sensor_wxyz', [1, 0, 0, 0], [0., 0., 0., 1.]),
+            ('sensor_position_body_frd', [0, 0, 0], [1., 2., 3.]),
+            ('world_alignment_wxyz', [1, 0, 0, 0], [0., 0., 0., 1.]),
+            ('world_translation_ned', [0, 0, 0], [100., 200., 300.]),
+        )
+        motion = dict(position=(1., 2., 3.), velocity=(.4, .5, .6),
+                      omega=(.1, .2, .3))
+        for field, original, changed in transforms:
+            with self.subTest(field=field):
+                supplied = list(original)
+                configured = config(adapter=adapter_config(**{field: supplied}))
+                captured = getattr(configured.adapter, field)
+                self.assertIsInstance(captured, tuple)
+                self.assertTrue(all(type(value) is float for value in captured))
+                validator = m.Validator(configured)
+                first = feed(validator, **motion)
+                self.assertTrue(first.accepted)
+
+                # 创建配置后修改来源列表，不得悄悄更换可信周期内使用的变换。
+                supplied[:] = changed
+                second = feed(validator, 2, **motion)
+                self.assertTrue(second.accepted, second.diagnostics['reasons'])
+                self.assertEqual(getattr(configured.adapter, field), captured)
+                for name in ('position', 'velocity', 'attitude', 'angular_velocity'):
+                    self.assertEqual(getattr(second.state, name), getattr(first.state, name))
 
 
 if __name__ == '__main__':

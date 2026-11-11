@@ -174,9 +174,66 @@ class ReceiverTests(unittest.TestCase):
         self.assertGreater(receiver.counters['events_dropped'], 0)
 
     def test_invalid_configuration_rejected_without_implicit_defaults(self):
-        for value in (-1., math.nan, math.inf, True):
+        for value in (-1., math.nan, math.inf, True, 10**400):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 diagnostic.DiagnosticConfig(timeout_sec=value)
+
+    def test_oversized_integer_clocks_raise_explicit_validation_error(self):
+        receiver = self.receiver()
+        for action in (lambda: receiver.receive(message(), 10**400, 100001000000, 1),
+                       lambda: receiver.snapshot(10**400, 100001000000)):
+            with self.subTest(action=action), self.assertRaises(ValueError):
+                action()
+        self.assertEqual(receiver.counters['received'], 0)
+
+    def test_oversized_integer_velocity_is_rejected_without_interrupting_receiver(self):
+        receiver = self.qualified()
+        event = receiver.receive(message(vx=10**400), 10., 100001000000, 1)
+        self.assertFalse(event['accepted'])
+        self.assertIn('VELOCITY_NONFINITE_OR_MISSING', event['reasons'])
+        state = receiver.snapshot(10.01, 100011000000)
+        self.assertFalse(state['cache_usable'])
+        json.dumps(state, allow_nan=False)
+        recovered = receiver.receive(message(), 10.02, 100021000000, 1)
+        self.assertTrue(recovered['accepted'])
+        self.assertTrue(receiver.snapshot(10.03, 100031000000)['cache_usable'])
+
+    def test_returned_event_cannot_modify_retained_anomaly(self):
+        receiver = self.receiver()
+        event = receiver.receive(message(valid=False), 10., 100001000000, 1)
+        event_id = event['event_id']
+        event['reasons'].clear()
+        event['sample']['vx'] = 99.
+        event['sample']['stamp']['sec'] = 999
+
+        state = receiver.snapshot(10., 100001000000)
+        for key in ('last_event', 'last_anomaly'):
+            self.assertEqual(state[key]['event_id'], event_id)
+            self.assertEqual(state[key]['reasons'], ['COMMAND_INVALID'])
+            self.assertEqual(state[key]['sample']['vx'], .2)
+            self.assertEqual(state[key]['sample']['stamp']['sec'], 100)
+        queued = receiver.drain_events()[-1]
+        self.assertEqual(queued, state['last_anomaly'])
+
+    def test_drained_events_cannot_modify_retained_anomaly(self):
+        receiver = self.receiver()
+        receiver.receive(message(valid=False), 10., 100001000000, 1)
+        events = receiver.drain_events()
+        self.assertEqual([event['kind'] for event in events], ['publisher_count', 'message'])
+        event = events[-1]
+        event_id = event['event_id']
+        event['reasons'].clear()
+        event['sample']['vx'] = 99.
+        event['sample']['stamp']['sec'] = 999
+
+        state = receiver.snapshot(10., 100001000000)
+        for key in ('last_event', 'last_anomaly'):
+            self.assertEqual(state[key]['event_id'], event_id)
+            self.assertEqual(state[key]['reasons'], ['COMMAND_INVALID'])
+            self.assertEqual(state[key]['sample']['vx'], .2)
+            self.assertEqual(state[key]['sample']['stamp']['sec'], 100)
+        self.assertEqual(receiver.drain_events(), [])
+        self.assertEqual(state['counters']['anomalies'], 1)
 
     def qualified(self):
         return self.receiver(timeout_sec=.3, max_speed_mps=.5, max_source_age_sec=.2,
@@ -222,19 +279,42 @@ class ReceiverTests(unittest.TestCase):
                          10.22, 100221000000, 1)
         self.assertTrue(receiver.snapshot(10.23, 100231000000)['cache_usable'])
 
-    def test_clock_regression_revokes_cache_and_fresh_ordered_input_can_recover(self):
+    def test_receive_clock_regression_recovers_only_after_previous_high_watermark(self):
         receiver = self.qualified()
         receiver.receive(message(), 10., 100001000000, 1)
         state = receiver.snapshot(9.9, 100002000000)
         self.assertFalse(state['cache_usable'])
         self.assertIn('RECEIVE_CLOCK_REGRESSION', state['last_anomaly']['reasons'])
-        receiver.receive(message(2), 9.91, 100003000000, 1)
-        self.assertTrue(receiver.snapshot(9.92, 100004000000)['cache_usable'])
-        state = receiver.snapshot(9.93, 100002000000)
+        rejected = receiver.receive(message(2), 9.91, 100003000000, 1)
+        self.assertFalse(rejected['accepted'])
+        self.assertIn('RECEIVE_CLOCK_REGRESSION', rejected['reasons'])
+        state = receiver.snapshot(9.92, 100004000000)
+        self.assertFalse(state['cache_usable'])
+        self.assertEqual(state['historical_last_accepted_message']['sequence'], 1)
+
+        # 回到原时间后允许新消息恢复；刚才被拒绝的序号没有污染可信记录。
+        recovered = receiver.receive(message(2), 10., 100005000000, 1)
+        self.assertTrue(recovered['accepted'])
+        self.assertTrue(receiver.snapshot(10.01, 100006000000)['cache_usable'])
+
+    def test_ros_clock_regression_recovers_only_after_previous_high_watermark(self):
+        receiver = self.qualified()
+        receiver.receive(message(), 10., 100100000000, 1)
+        state = receiver.snapshot(10.01, 100000000000)
         self.assertFalse(state['cache_usable'])
         self.assertIn('ROS_CLOCK_REGRESSION', state['last_anomaly']['reasons'])
-        receiver.receive(message(3), 9.94, 100004000000, 1)
-        self.assertTrue(receiver.snapshot(9.95, 100005000000)['cache_usable'])
+        rejected = receiver.receive(message(2), 10.02, 100002000000, 1)
+        self.assertFalse(rejected['accepted'])
+        self.assertIn('ROS_CLOCK_REGRESSION', rejected['reasons'])
+        state = receiver.snapshot(10.03, 100003000000)
+        self.assertFalse(state['cache_usable'])
+        self.assertEqual(state['historical_last_accepted_message']['sequence'], 1)
+        self.assertEqual(receiver.last_observed_ros_ns, 100100000000)
+
+        recovered = receiver.receive(message(2, stamp=NS(sec=100, nanosec=100000000)),
+                                     10.04, 100100000000, 1)
+        self.assertTrue(recovered['accepted'])
+        self.assertTrue(receiver.snapshot(10.05, 100101000000)['cache_usable'])
 
     def test_source_stamp_regression_is_explicit_and_cannot_renew_cache(self):
         receiver = self.qualified()
@@ -464,6 +544,28 @@ class WriterTests(unittest.TestCase):
             self.assertEqual(len(lines), 2)
             self.assertEqual(lines[-1]['reasons'], ['COMMAND_INVALID'])
             self.assertEqual(lines[-1]['log_events_suppressed'], 2)
+
+    def test_pending_anomaly_is_independent_from_callers_nested_event(self):
+        with tempfile.TemporaryDirectory(prefix='fc01_velocity_diag_pending_copy_') as directory:
+            writer = diagnostic.DiagnosticWriter(directory, log_min_interval_sec=60.)
+            writer.record(dict(kind='message', event_id=1, reasons=[]), 10.)
+            event = dict(kind='message', event_id=2, reasons=['COMMAND_INVALID'],
+                         sample=dict(vx=.2, stamp=dict(sec=100, nanosec=1000000)))
+            self.assertFalse(writer.record(event, 10.1))
+            event['reasons'].clear()
+            event['sample']['vx'] = 99.
+            event['sample']['stamp']['sec'] = 999
+
+            self.assertTrue(writer.flush(10.2, force=True))
+            path = Path(directory) / 'velocity_command_diagnostic.log'
+            saved = json.loads(path.read_text().splitlines()[-1])
+            self.assertEqual(saved['event_id'], 2)
+            self.assertEqual(saved['reasons'], ['COMMAND_INVALID'])
+            self.assertEqual(saved['sample']['vx'], .2)
+            self.assertEqual(saved['sample']['stamp']['sec'], 100)
+            self.assertEqual(saved['coalesced_anomalies'], 1)
+            self.assertEqual(saved['log_events_suppressed'], 1)
+            self.assertFalse(writer.flush(10.2, force=True))
 
     def test_forced_flush_writes_pending_anomaly_once_before_interval(self):
         with tempfile.TemporaryDirectory(prefix='fc01_velocity_diag_force_') as directory:
