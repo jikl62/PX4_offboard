@@ -9,7 +9,7 @@ uint16 TWIST_COVARIANCE=32 # valid_fields 的速度/角速度协方差有效位�
 uint16 QUALITY=64 # valid_fields 的质量有效位；缺失质量不能填成满分。
 uint64 sequence # 本发送会话内推进的非零序号；重复帧不能延长有效期。
 builtin_interfaces/Time stamp # 双方明确约定时钟域中的测量时间，不能用回调接收时间替代。
-uint32 reset_counter # 估计或任务周期标识；变化必须按对应通道的重置规则处理。
+uint32 reset_counter # 估计器周期标识；变化需撤销旧估计周期的运动计划。
 string frame_id # 内部世界系 fc01_vision_ned；x 北向参考、y 东向参考、z 向下。
 string body_frame_id # 机体坐标系标识；内部使用 base_link_frd（前、右、下）。
 string source_id # 明确的发送会话来源；话题有数据不代表来源已获授权。

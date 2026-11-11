@@ -5,7 +5,7 @@ uint64 sequence # 本发送会话内推进的非零序号；重复帧不能延�
 string source_id # 明确的发送会话来源；话题有数据不代表来源已获授权。
 string frame_id # 必须与这条原始 Odometry 的 header.frame_id 完全一致。
 string body_frame_id # 必须与这条原始 Odometry 的 child_frame_id 完全一致。
-uint32 reset_counter # 估计或任务周期标识；变化必须按对应通道的重置规则处理。
+uint32 reset_counter # 原始估计器周期标识；只有 reset_valid=true 时才算已明确提供。
 bool reset_valid # 发送方明确保证 reset_counter 有效；不能把默认零当成已知周期。
 bool initialized # 估计器已完成初始化；默认 false，不从消息到达推断。
 bool tracking # 估计器当前跟踪正常；不等同于 ROS 链路仍连通。
