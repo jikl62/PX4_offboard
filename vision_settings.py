@@ -74,7 +74,12 @@ def apply_settings(config, selected):
         raise ControlError('视觉控制参数含未知字段')
     for key, default in DEFAULTS.items():
         value = values.get(key, default)
-        if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
+        try:
+            invalid = type(value) not in (int, float) or not math.isfinite(value) or value <= 0
+        except OverflowError as exc:
+            # JSON 整数没有 double 的范围限制；保持配置错误合同，同时保留原转换异常供定位。
+            raise ControlError('视觉参数必须为有限正数：' + key) from exc
+        if invalid:
             raise ControlError('视觉参数必须为有限正数：' + key)
         p['visual_' + key] = float(value)
     if p['visual_min_quality'] > 1:
