@@ -407,15 +407,18 @@ def build_lock(entry):
 # 独占临时文件写完flush/fsync后原子替换，finally只清自己的tmp，避免半写成功记录。
 def atomic_json(path, value):
     temporary = Path(str(path) + '.tmp-' + str(os.getpid()))
+    created = False
     try:
         with temporary.open('x') as stream:
+            created = True
             json.dump(value, stream, ensure_ascii=False, indent=2)
             stream.write('\n')
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
     finally:
-        temporary.unlink(missing_ok=True)
+        if created:
+            temporary.unlink(missing_ok=True)
 
 
 # 先尝试严格复用，失败保留原prefix并新建独立stage；编译前后再比输入，最终发布链接与证据。
@@ -494,11 +497,14 @@ def build_release(entry, sdk):
             cmake=cmake_evidence(build, inputs['dependencies']),
         )
         temporary = entry / ('.install-new-' + str(os.getpid()))
+        created = False
         try:
             temporary.symlink_to(prefix.relative_to(entry), target_is_directory=True)
+            created = True
             os.replace(temporary, install)
         finally:
-            temporary.unlink(missing_ok=True)
+            if created:
+                temporary.unlink(missing_ok=True)
         atomic_json(entry / 'ARM64_BUILD_EVIDENCE.json', evidence)
         print(
             'FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=' + evidence['source_commit'], flush=True
