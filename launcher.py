@@ -303,7 +303,13 @@ def make_socket_path(root):
     folder = Path(tempfile.mkdtemp(prefix='s_', dir=root))
     path = folder / 'control.sock'
     if len(os.fsencode(path)) > 103:
-        raise ControlError('Unix socket 路径过长: ' + str(path))
+        error = ControlError('Unix socket 路径过长: ' + str(path))
+        try:
+            # 尚未把路径交给调用者，只删除本次创建的空目录，不清理共享root或旧会话。
+            folder.rmdir()
+        except OSError as cleanup_error:
+            raise error from cleanup_error
+        raise error
     return path
 
 
