@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# 视觉候选配置导出器：只读现有基础 YAML/导航与视觉设置，写入明确指定的新 YAML。
+# 视觉候选配置导出器：只读现有基础 YAML/导航与视觉设置，写入明确指定的候选 YAML。
 # 它不运行 ROS、检查硬件或激活服务；--enable-vision 仅作用于导出的候选，不回写原设置。
+# 成功时write_text会覆盖已有输出，并非独占创建或原子替换；调用者应指定独立候选路径。
 """Export a candidate YAML without ROS, hardware checks, or service operations."""
 import argparse
 import json

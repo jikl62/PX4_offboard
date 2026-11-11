@@ -9,6 +9,8 @@ namespace fc01::vision {
 // 模板只要求输入对象具备用到的同名字段，因此真实ROS消息和离线小夹具可以复用同一转换。
 // 字段映射不是坐标变换：本层假定上游已经提供内部NED/FRD，绝不把任意Odometry直接改名后使用。
 // 回调接收时间只由本机Inbox填，不能相信发布者传来的“我刚被接收”时间。
+// 仅轴约定的算例：世界ENU的[东1,北2,上3]对应NED[2,1,-3]；机体FLU[1,2,3]对应FRD[1,-2,-3]。
+// 算例不含世界对齐、安装外参或杆臂；真实Odometry还须按父/子坐标语义转换，不能在这里交换数组冒充。
 template <class Stamp>
 // ROS sec/nanosec 转无符号 ns；负秒或超范围纳秒返回 0，让后续时间验证拒绝。
 std::uint64_t message_stamp_ns(const Stamp& stamp) {
@@ -21,6 +23,7 @@ std::uint64_t message_stamp_ns(const Stamp& stamp) {
 template <class Message>
 // 实际状态与目标命令分开：保留身份/序号/reset 证据，版本或掩码错误时不复制有效测量。
 // 返回State按值持有数值和字符串；文本复制可能抛分配异常，交给调用者处理。
+// 例如位置[0,0,-1.5]表示相对视觉原点上方1.5m，不等于本轮PX4离地高度，也不是要求起飞1.5m。
 State state_from_message(const Message& message) {
   // State默认的数值是NaN、有效位为0；提前返回的是可撤销旧资格的无效载荷，并非“没有回调”。
   State out;

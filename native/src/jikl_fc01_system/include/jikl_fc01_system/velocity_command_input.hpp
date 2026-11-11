@@ -105,6 +105,7 @@ struct Preview {
 
 // q 表示机体 FRD 相对世界 NED 的姿态，必须由调用方先归一化。
 // 使用完整三维旋转：飞机倾斜时，机体“前进”也可能包含世界系垂向速度。
+// 这是同一速度向量的换基，不改变速度大小；preview后续的包络限幅则会改变目标大小，两步须区分。
 inline Vec3 rotate_body_to_world(const attitude::Quaternion& q, const Vec3& vector) {
   // Quaternion按Hamilton[w,x,y,z]存储；下面每一行是旋转矩阵的一行与目标向量的点积。
   // 如水平且yaw=+90度，FRD的前向目标会转到NED的东向；有roll/pitch时必须保留全部三维项。

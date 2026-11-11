@@ -8,6 +8,8 @@ GuardedOdometryAdapter 检查两个原始话题的来源数量；main() 才连�
 导入本文件不会启动节点、访问硬件或发布。输出是实际测量状态，不是目标指令；
 协方差完成坐标与原点变换前保持不可用，不能把未实现的结果写成零方差。
 """
+# 实际 ROS 接线只运行本文件的 GuardedOdometryAdapter；不会自动调用相邻文件中的
+# 离线 Validator。离线的时钟偏移、连续性和协方差诊断不能算作 ROS 路径已执行的检查。
 from collections import OrderedDict
 from dataclasses import dataclass, field
 import importlib.util
@@ -274,6 +276,8 @@ def _check_health_contract(odometry, health, config, out):
             # 位置、速度、姿态必须属于同一来源及标定；不接受自动猜测或混合坐标。
             out.reason = 'SOURCE_FRAME_OR_CALIBRATION_ID_MISMATCH'
             return False
+    # time_sync_valid 是上游对测量时钟的显式声明，不是这里测出的同步误差。
+    # 本转换器不估算/修正时钟偏移；严格配对成功也不能替代消费者的源年龄和接收 TTL 检查。
     for name in (
         'reset_valid',
         'initialized',

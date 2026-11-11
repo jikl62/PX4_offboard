@@ -16,6 +16,7 @@
   <depend>builtin_interfaces</depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
   <!-- 独立 Python 视觉适配/诊断所需：ROS 运行时、参数事件与原始 Odometry 类型。 -->
+  <!-- exec_depend 供运行环境/rosdep 解析；nav_msgs 没有被加入 C++ 消息生成的构建依赖。 -->
   <exec_depend>rclpy</exec_depend>
   <exec_depend>rcl_interfaces</exec_depend>
   <exec_depend>nav_msgs</exec_depend>

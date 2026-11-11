@@ -29,7 +29,7 @@ DEFAULTS = dict(
 )
 
 
-# 仅接受明确的绝对 ROS 话题；拒绝 /fmu，避免把视觉输入误接到 PX4 控制入口。
+# 仅接受明确的绝对 ROS 话题；拒绝 /fmu/ 下的子话题，避免误接到 PX4 控制/反馈入口。
 def topic(value):
     if not isinstance(value, str) or not re.fullmatch(
         r'/(?:[A-Za-z_][A-Za-z0-9_]*)(?:/[A-Za-z_][A-Za-z0-9_]*)*', value
@@ -41,6 +41,8 @@ def topic(value):
 
 
 # 原地更新目标配置并返回同一对象；字段白名单、精确类型与有限正数检查共同定义输入合同。
+# 这不是事务：后项失败时，前项可能已经写入config；调用者必须丢弃失败候选，不把它继续交给节点。
+# 导出器先由navigation_profile复制基础配置，再调用本函数；本函数自身不启动ROS，也不写源YAML。
 def apply_settings(config, selected):
     if not isinstance(selected, dict) or set(selected) - {
         'enabled',

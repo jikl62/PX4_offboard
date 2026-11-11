@@ -922,6 +922,8 @@ def main(args=None):
             # 返回（单调秒、非负 ROS 纳秒、当前发布者数），每次重新查询而不跨时钟比较。
             #
             # 调用 ROS 时钟/图接口可能因外部关闭或其他运行错误失败，交由 main 保留原错并清理。
+            # count_publishers 是 ROS 图中的端点数量，不证明 QoS 已匹配或消息来源可信；
+            # 仍须由 Receiver 检查每帧来源、顺序和时间，数量恢复也不能让旧候选自动复活。
             return (
                 time.monotonic(),
                 max(0, self.get_clock().now().nanoseconds),

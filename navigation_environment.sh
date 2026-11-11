@@ -45,6 +45,8 @@ fc01_load_environment() {
   set +u
   source /opt/ros/humble/setup.bash || fc01_env_result=$?
   if [[ "$fc01_env_result" == 0 ]]; then
+    # 此处加载所选 SDK 的依赖环境；它本身不证明当前源码生成的 FC01 消息或适配器已安装。
+    # 独立验证新视觉接口时，应另行加载对应构建的 overlay 并核对模块实际路径。
     source "$FC01_PROJECT_ROOT/install_r632/local_setup.bash" || fc01_env_result=$?
   fi
   if [[ "$fc01_env_nounset" == 1 ]]; then set -u; fi

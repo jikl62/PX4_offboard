@@ -1,5 +1,6 @@
 # 本消息为nav_msgs/Odometry补齐“数值存在也无法推断”的质量与标定承诺，本身不提供运动目标。
 # 发布者必须针对同一条Odometry测量使用完全相同stamp，并明确source_id和原始父/子坐标名。
+# 例如100s+20ns不能与100s+21ns配成同一测量；接收先后顺序相邻也不代表同一帧。
 # position_valid等为本次测量确认；frame/time/extrinsics/metric等则确认转换前提，各自不可互代。
 # 例如tracking=true不能证明米制尺度或外参正确，time_sync_valid=true也不能让旧数据重新变新。
 # reset_valid明确声明周期已知；默认reset_counter=0不自动等于“估计器从未重置”。

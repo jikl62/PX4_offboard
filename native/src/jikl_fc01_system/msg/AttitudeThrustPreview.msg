@@ -3,6 +3,7 @@
 # active或accepted为true仅说明对应预览结果；不能替代RC控制权、飞行动作门和真正发布证据。
 # attitude/thrust_body是目标，不能当实测姿态/实际推力；推力为归一化比例，-0.5不等于-0.5N。
 # velocity_target/acceleration_target在世界NED，target_height却是相对地面向上为正，注意符号区别。
+# 例如velocity_target.z=-0.1表示向上速度目标0.1m/s；target_height=1.5表示地面参考上方1.5m。
 # state_sequence和command_sequence来自两个独立序列，数字相等不代表同步；stamp也不证明执行。
 # 两个sink_allowed只保留相应检查/提交的观察结果，不能单凭本消息证明PX4采用或飞机已离地。
 # 离线观测消息；不是执行器命令，也不是 PX4 输入。

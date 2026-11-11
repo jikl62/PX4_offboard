@@ -7,6 +7,8 @@
 目标速度不经过这里。本模块复用原坐标转换，不创建 ROS 节点或飞控发布者，
 也不估算时钟偏移、变换协方差。accepted 只表示通过本次离线检查，不授予飞行权限。
 """
+# 使用本模块必须显式创建 Validator 并调用 receive/current；只启动 Odometry 适配节点
+# 不会把这里的离线策略接入控制器。ClockPolicy.offset_ns 也不会写回上游或 ROS 系统时钟。
 from collections import Counter, deque
 from copy import deepcopy
 from dataclasses import dataclass, field, replace

@@ -76,6 +76,7 @@ struct State {
   Quaternion attitude{missing_array<4>()};
   std::array<double, 36> pose_covariance{missing_array<36>()},
       twist_covariance{missing_array<36>()};
+  // quality是上游约定的[0,1]评分，不是协方差、误差米数或已校准的正确概率，不能相互换算。
   double quality{missing()};
 };
 // 既有上层模式目标；reset_counter 必须属于实际估计 epoch，与新独立速度消息的生产方 reset 合同不同。
@@ -192,6 +193,8 @@ inline bool clock_valid(std::uint64_t stamp, double received, std::uint64_t ros_
          arrival_age <= static_cast<long double>(c.max_measurement_delay);
 }
 // 这里只校验所有项有限及对角线非负，不证明矩阵对称/PSD；上游必须另提供协方差语义及转换。
+// 6×6行主序的(row,col)下标为row*6+col，对角线为0/7/14/21/28/35；数值0不能证明真实误差为0。
+// 如位置方差0.04m²对应标准差0.2m；本函数不按该数值给反馈加权，也不实现估计器融合。
 inline bool covariance_valid(const std::array<double, 36>& covariance) {
   if (!finite(covariance))
     return false;
@@ -341,6 +344,8 @@ public:
       yaw_goal_ = yaw_target_;
     } else {
       // 先保留三轴位置误差乘增益的原始结果；垂向限幅不能掩盖计算溢出。
+      // 以北轴为例：目标0.5m、实测0.2m、增益0.8/s，先得到目标速度0.24m/s；
+      // 后面仍需减去实际速度并乘速度增益，不能直接把位置误差或目标速度当作姿态角。
       const Vec3 raw_velocity_target{
           c_.position_gain * (position_target_[0] - in.state.position[0]),
           c_.position_gain * (position_target_[1] - in.state.position[1]),
@@ -685,6 +690,8 @@ public:
 
 private:
   // 判断载荷是否撤回实际测量合同；不是完整控制批准，完整质量/时间门仍在 Controller。
+  // 本层没有Config：这里只识别质量越出[0,1]，不记录低于min_quality的所有中间样本。
+  // 因此撤销代数不是“保存每一种Controller拒绝”的通用事件日志，不能据此宣称任意坏包都锁存。
   static bool state_retracted(const State& value) {
     constexpr std::uint16_t required = Position | Velocity | Attitude | Quality;
     if (!value.initialized || !value.tracking || !value.calibration_valid ||

@@ -164,10 +164,11 @@ class OdometryAdapterTests(unittest.TestCase):
         self.assertTrue(all(math.isnan(x) for x in state.angular_velocity))
         self.assertNotEqual(state.reason, 'OK')
 
-    # 同时加入机体安装旋转和世界对齐，核对完整变换组合。
+    # 同时加入安装旋转、世界对齐和非零杆臂，核对位置与速度使用同一套几何关系。
     def test_rotated_mount_and_world_alignment_are_applied(self):
         h = math.sqrt(0.5)
         state = self.convert(
+            odometry(velocity=(2.0, 3.0, 4.0), omega=(0.0, 0.0, 2.0)),
             body_from_sensor_wxyz=(h, 0.0, 0.0, h),
             sensor_position_body_frd=(1.0, 0.0, 0.0),
             world_alignment_wxyz=(h, 0.0, 0.0, h),
@@ -175,6 +176,10 @@ class OdometryAdapterTests(unittest.TestCase):
         )
         self.assertVector(state.position, (-6.0, 7.0, 10.0))
         self.assertVector(state.attitude, (1.0, 0.0, 0.0, 0.0))
+        # 世界旋转使传感器速度 (2,3,4) 变成 (-3,2,4)；机体姿态恰为单位旋转，
+        # 再减 omega×r=(0,2,0)，所以机体原点实际速度是 (-3,0,4)，不是原始 twist。
+        self.assertVector(state.velocity, (-3.0, 0.0, 4.0))
+        self.assertVector(state.angular_velocity, (0.0, 0.0, 2.0))
 
     # 零数值不是健康证据，Health 缺失或 stamp/来源不匹配须撤销。
     def test_missing_or_mismatched_health_never_makes_zero_values_valid(self):

@@ -3,9 +3,11 @@
 import copy
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 
 import yaml
@@ -134,6 +136,61 @@ class VisionCandidateTopicTests(unittest.TestCase):
             self.assertIn('不能相同', result.stderr)
             self.assertNotIn('Traceback', result.stderr)
             self.assertEqual(output.read_bytes(), before)
+
+
+class VisionSettingsBehaviorEquivalenceTests(unittest.TestCase):
+    """新错误边界以外的配置变换，应与不可变阶段基线保持一致。"""
+
+    def test_normal_settings_and_existing_rejections_match_baseline(self):
+        baseline = '68b3221ac297699e1dfed8fd773358bb26789207'
+        if shutil.which('git') is None:
+            self.skipTest('配置差分需要不可变 Git 对象')
+        result = subprocess.run(
+            ['git', '-C', str(ROOT), 'show', baseline + ':vision_settings.py'],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode:
+            self.skipTest('导出树或浅克隆缺少阶段基线，不冒称配置差分通过')
+        original = types.ModuleType('fc01_stage5_original_vision_settings')
+        exec(compile(result.stdout, 'baseline/vision_settings.py', 'exec'), original.__dict__)
+        cases = (
+            {},
+            {'enabled': False},
+            {'enabled': True},
+            {
+                'enabled': True,
+                'state_topic': '/lab/actual',
+                'command_topic': '/lab/goal',
+                'qos_depth': 20,
+                'state_reliable': True,
+                'command_reliable': False,
+                'parameters': {'min_quality': 0.75, 'max_speed': 0.2},
+            },
+            {'enabled': False, 'state_topic': '/lab/unused', 'command_topic': '/lab/unused'},
+            {'enabled': 'false'},
+            {'qos_depth': 0},
+            {'state_topic': '/fmu/in/vehicle_attitude_setpoint'},
+            {'parameters': {'min_quality': 2.0}},
+        )
+        for selected in cases:
+            with self.subTest(selected=selected):
+                traces = []
+                for module in (original, vision_settings):
+                    config = base_configuration()
+                    values = copy.deepcopy(selected)
+                    try:
+                        output = module.apply_settings(config, values)
+                    except navigation_service.ControlError as error:
+                        outcome = ['ControlError', str(error)]
+                    else:
+                        outcome = ['returned_same_config', output is config]
+                    # 比较规范JSON原字节；不使用 True==1 等宽松数值相等掩盖类型差异。
+                    traces.append(
+                        json.dumps([outcome, config, values], sort_keys=True, allow_nan=False)
+                    )
+                self.assertEqual(traces[0], traces[1])
 
 
 if __name__ == '__main__':
