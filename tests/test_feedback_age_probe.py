@@ -12,6 +12,7 @@ from feedback_age_probe import (
     TopicObservation,
     age_seconds,
     duration_arg,
+    number,
     read_controller_status,
     slope,
 )
@@ -19,6 +20,44 @@ from feedback_age_probe import (
 
 # 验证时间缺失、未来值、冻结样本、时钟跳变及趋势窗口的显示证据。
 class FeedbackAgeProbeTests(unittest.TestCase):
+    # 合法 JSON 允许较大的整数；float 检查溢出应与 NaN/Inf 一样保持未知，而非终止探针。
+    def test_number_rejects_both_signs_of_integer_overflow(self):
+        for value in (10**400, -(10**400)):
+            with self.subTest(positive=value > 0):
+                self.assertIsNone(number(value))
+
+    # 保留原标量与类型，不以新容差或零替代合法值和未知值。
+    def test_number_keeps_finite_values_and_original_type(self):
+        for value in (0, -2, 2**64 - 1, 1.25, -0.0):
+            with self.subTest(value=value):
+                self.assertEqual(number(value), value)
+                self.assertIs(type(number(value)), type(value))
+        for value in (True, None, '12', float('nan'), float('inf'), -float('inf')):
+            self.assertIsNone(number(value))
+
+    # 文件只读且 JSON 语法完全有效；异常大数只让对应诊断值未知，不篡改原文件。
+    def test_status_snapshot_large_numeric_diagnostics_remain_available(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'status.json'
+            fixture = dict(
+                updated_unix=10**400,
+                state_age_seconds=-(10**400),
+                state=dict(diagnostic_host_us=10**400, diagnostic_monotonic_s=10**400),
+            )
+            path.write_text(json.dumps(fixture))
+            before = path.read_bytes()
+            row = read_controller_status(path, 1_000_000, {})
+            self.assertTrue(row['available'])
+            for name in (
+                'updated_unix',
+                'state_age_seconds',
+                'diagnostic_host_us',
+                'diagnostic_monotonic_s',
+                'status_wall_age_s',
+            ):
+                self.assertIsNone(row[name])
+            self.assertEqual(path.read_bytes(), before)
+
     # 0/缺失时间必须保持未知，不能自动换成主机当前时刻。
     def test_missing_timestamp_and_rmw_zero_are_unavailable(self):
         observed = TopicObservation()

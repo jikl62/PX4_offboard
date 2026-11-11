@@ -36,11 +36,13 @@ def age_seconds(host_us, source_us):
 
 # 拒绝bool与非有限值后用于JSON诊断，不用零填补未知状态。
 def number(value):
-    return (
-        value
-        if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
-        else None
-    )
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return None
+    try:
+        return value if math.isfinite(value) else None
+    except OverflowError:
+        # JSON 的任意精度整数可能超出 float 检查范围；只记为未知，不让被动诊断因此退出。
+        return None
 
 
 # 以单调秒中心化做OLS，输出年龄漂移斜率s/s与R²；统计趋势不能自行修正源时钟。
