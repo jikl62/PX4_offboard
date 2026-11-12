@@ -32,7 +32,7 @@ class DeploymentTests(unittest.TestCase):
             (root / name).write_bytes((repo / name).read_bytes())
         files = {name: deploy.sha256(root / name) for name in paths}
         (root / 'FC01_RELEASE.json').write_text(
-            json.dumps(dict(release_name='candidate', version='20261110.7', payload_sha256=files))
+            json.dumps(dict(release_name='candidate', version='20261112.1', payload_sha256=files))
         )
 
     # 离线只允许 ARM64_BUILD 与 OFFLINE_CONFIG_CHECK，保持现场 runtime 不变和程序解锁关闭。
@@ -71,7 +71,7 @@ class DeploymentTests(unittest.TestCase):
             ]['ros__parameters']
             self.assertIs(local['arm_enabled'], False)
             self.assertEqual(local['rc_target_height'], 1.5)
-            self.assertEqual(local['fc01_entry_version'], '20261110.7')
+            self.assertEqual(local['fc01_entry_version'], '20261112.1')
             ready = json.loads((root / 'OFFLINE_DEPLOYMENT.json').read_text())
             self.assertFalse(
                 ready['online_probe_executed']

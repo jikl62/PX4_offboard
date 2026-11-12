@@ -1181,6 +1181,7 @@ def main():
     parser.add_argument('folder', type=Path)
     parser.add_argument('scenario')
     parser.add_argument('--probe-cleanup-fixed', action='store_true')
+    parser.add_argument('--release-entry-fixed', action='store_true')
     args = parser.parse_args()
     root = args.root.resolve()
     sys.path.insert(0, str(root))
@@ -1200,7 +1201,22 @@ def main():
     kwargs = (
         {'expect_cleanup_gap': not args.probe_cleanup_fixed} if args.scenario == 'probe' else {}
     )
-    trace = globals()[args.scenario + '_trace'](root, args.folder, **kwargs)
+    if args.release_entry_fixed and args.scenario not in ('service', 'activation'):
+        parser.error('固定发行元数据只允许 service/activation 历史对照')
+    with contextlib.ExitStack() as metadata:
+        if args.scenario in ('service', 'activation'):
+            # 重新发行的唯一运行常量变动。先核验两个具体身份，再仅在第三份对照中固定此常量。
+            # 不替换路径、JSON字段或哈希；激活备份的SHA仍由实际文件内容计算，并全量参与比较。
+            import navigation_service
+
+            expected = '20261112.1' if args.release_entry_fixed else None
+            if expected is not None and navigation_service.ENTRY_VERSION != expected:
+                raise AssertionError('metadata comparison expected current release 20261112.1')
+            if args.release_entry_fixed:
+                metadata.enter_context(
+                    patch.object(navigation_service, 'ENTRY_VERSION', '20261110.7')
+                )
+        trace = globals()[args.scenario + '_trace'](root, args.folder, **kwargs)
 
     def canonical(value):
         if isinstance(value, float) and not math.isfinite(value):

@@ -708,7 +708,12 @@ class BundleTests(unittest.TestCase):
             folder = Path(d)
             script = b.build(folder / 'navigation.sh', ROOT)
             dest = folder / 'installed'
-            env = {**os.environ, 'FC01_NAVIGATION_INSTALL_DIR': str(dest)}
+            # 解包器始终记录日志；HOME 也隔离，不能让主机回归向真实用户目录写部署日志。
+            env = {
+                **os.environ,
+                'HOME': str(folder),
+                'FC01_NAVIGATION_INSTALL_DIR': str(dest),
+            }
             for _ in range(2):
                 r = subprocess.run(
                     ['bash', str(script), '--install-only'], env=env, capture_output=True, text=True

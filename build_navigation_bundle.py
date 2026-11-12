@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # 正式导航源码包构建器：把当前磁盘载荷与发布清单绑定；生成的默认动作是离线构建，非在线激活。
-# 内嵌HEADER字节保持原合同，本轮不重新生成dist、不执行安装器。
+# 运行发行只收明确的依赖闭包；历史审查、主机测试与大型证据继续保存在 Git 仓库。
 """Build the current source tree into an integrity-checked offline installer."""
 import argparse
 import base64
@@ -11,10 +11,10 @@ from pathlib import Path
 import subprocess
 import zipfile
 
-# 沿用既有包/控制器版本标记；不能只靠版本字符串认定源/二进制相同，仍校验逐文件SHA。
-RELEASE_NAME = 'FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v5'
+# 新发行使用独立名称；控制器能力标记保持原值，实际源码/二进制身份仍靠逐文件 SHA 校验。
+RELEASE_NAME = 'FC01_OrangePi_Navigation_20261112_release'
 DEFAULT_DIRECTORY = RELEASE_NAME
-RELEASE_VERSION = '20261110.7'
+RELEASE_VERSION = '20261112.1'
 CONTROLLER_BUILD = 'FC01_RECOVERY_DIAGNOSTIC_V5_20261110'
 MANIFEST = 'FC01_RELEASE.json'
 MAX_FILES = 512
@@ -29,6 +29,53 @@ RUNTIME_FILES = {
     'deployment-config.json',
 }
 CACHE_PARTS = {'__pycache__', '.build', 'build', 'install', '.pytest_cache'}
+# 这些根入口构成正式导航的 Python/Shell 依赖闭包。新增开发脚本不会自动成为发行内容。
+# autostart.py 提供旧服务身份与 systemd 转义函数，navigation_install/restore 会导入它。
+RUNTIME_ROOT_FILES = (
+    'autostart.py',
+    'build_navigation_bundle.py',
+    'fc01_control.py',
+    'feedback_age_probe.py',
+    'launcher.py',
+    'navigation.py',
+    'navigation.sh',
+    'navigation_boot.sh',
+    'navigation_build_evidence.py',
+    'navigation_build_fresh.sh',
+    'navigation_collect.py',
+    'navigation_deploy.py',
+    'navigation_deploy.sh',
+    'navigation_environment.sh',
+    'navigation_install.py',
+    'navigation_probe.py',
+    'navigation_report.py',
+    'navigation_restore.py',
+    'navigation_restore.sh',
+    'navigation_service.py',
+    'navigation_settings.json',
+    'navigation_status.py',
+    'standby.py',
+    'standby.sh',
+    'uart_preflight.py',
+    'vision_config.py',
+    'vision_settings.py',
+    'vision_settings.json',
+)
+# CMake 安装的四个相邻视觉模块必须一起交付；CLI 的 socket 安全模块也显式保留。
+# 依赖开发测试夹具或旧 native/scripts 的历史工具，不属于本运行包的支持入口。
+RUNTIME_TOOL_FILES = (
+    'fcctl.py',
+    'socket_safety.py',
+    'velocity_command_diagnostic.py',
+    'vision_odometry_adapter.py',
+    'vision_resource_budget.py',
+    'vision_state_validation.py',
+)
+RUNTIME_DOCUMENTS = (
+    'docs/FC01_ORANGEPI_RELEASE_20261112_zh.md',
+    'docs/VELOCITY_COMMAND_INTERFACE.md',
+    'docs/VISION_NAVIGATION.md',
+)
 
 # Keep this navigation entry independent of the control/autostart installers.
 # 解包载荷先验相邻整包SHA、归档SHA、CRC与512文件/8MiB/每项1MiB限制，再核对全部manifest。
@@ -189,31 +236,38 @@ __FC01_PAYLOAD_BASE64__
 '''
 
 
-# 按明确后缀与native/tests/docs递归收当前文件，排除缓存/运行态和独立receive A/B；大小/链接不符即拒绝。
+# 从当前磁盘收集正式运行文件；不是从旧 dist 或 Git 旧对象复制，不丢失已选择源码的本地修改。
 def names(root):
-    """Curated source paths from disk, including uncommitted and new files."""
+    """Select the runtime/build closure; retain safety bounds and reject selected symlinks."""
     root = Path(root)
-    roots = [
-        p
-        for p in root.iterdir()
-        if p.is_file()
-        and p.suffix in ('.py', '.sh', '.md', '.json')
-        and p.name not in RUNTIME_FILES
-    ]
-    roots.extend(
-        p
-        for directory in ('native', 'tests', 'docs')
-        for p in (root / directory).rglob('*')
-        if p.is_file()
-        and not (set(p.relative_to(root).parts) & CACHE_PARTS)
-        and not p.is_relative_to(root / 'native/tests/ros_receive_ab')
-    )
-    result = sorted(str(p.relative_to(root)) for p in roots)
+    selected = set()
+
+    def include(path):
+        # 先拒绝链接，再判断文件存在，避免把断链当作不存在而跳过。
+        relative = path.relative_to(root)
+        if set(relative.parts) & CACHE_PARTS:
+            return
+        if any(parent.is_symlink() for parent in (path, *path.parents) if parent != root):
+            raise ValueError('Source payload cannot contain a symlink: ' + str(relative))
+        if path.is_file():
+            selected.add(relative.as_posix())
+
+    for name in (*RUNTIME_ROOT_FILES, *RUNTIME_DOCUMENTS, 'native/VERSION'):
+        include(root / name)
+    # 原生包当前完整源码（含消息/CMake/package.xml）是编译的唯一输入。
+    for path in (root / 'native/src').rglob('*'):
+        include(path)
+    # 正式模板均保留，历史 .bak/.before_* 不参与构建，也不进入不可变配置树。
+    for path in (root / 'native/config').rglob('*.yaml'):
+        include(path)
+    for name in RUNTIME_TOOL_FILES:
+        include(root / 'native/tools' / name)
+    result = sorted(selected)
+    for name in result:
+        if len((root / name).read_bytes()) > 1048576:
+            raise RuntimeError('Curated source member exceeds extractor bounds: ' + name)
     if len(result) + 1 > MAX_FILES or sum((root / p).stat().st_size for p in result) > MAX_BYTES:
         raise RuntimeError('Curated source payload exceeds extractor bounds')
-    for name in result:
-        if (root / name).is_symlink():
-            raise ValueError('Source payload cannot contain a symlink: ' + name)
     return result
 
 
@@ -234,6 +288,7 @@ def make_manifest(root):
         'controller_build': CONTROLLER_BUILD,
         'source_commit': git('rev-parse', 'HEAD'),
         'working_tree_dirty': bool(git('status', '--porcelain')),
+        'payload_profile': 'navigation-runtime-v1',
         'source_sha256': dict(hashes),
         'payload_sha256': hashes,
     }
@@ -293,7 +348,7 @@ def build(output, source=None, *, directory_name=DEFAULT_DIRECTORY):
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, 'w', zipfile.ZIP_DEFLATED) as archive:
         for name, data in sorted(files.items()):
-            info = zipfile.ZipInfo(name, date_time=(2026, 11, 10, 0, 0, 0))
+            info = zipfile.ZipInfo(name, date_time=(2026, 11, 12, 0, 0, 0))
             info.create_system = 3
             info.external_attr = 0o100600 << 16
             info.compress_type = zipfile.ZIP_DEFLATED

@@ -57,15 +57,13 @@ class NavigationServiceTests(unittest.TestCase):
                 binary.write_bytes(markers + m.LIFECYCLE_MARKER)
                 self.assertEqual(m.check_controller(root), binary)
 
-    # 源包版本、目录名、入口版本和 C++ 内嵌标识必须一致，避免源码新而二进制旧。
+    # 源包/入口使用本次发行身份；C++ 生命周期标识仍沿用 V5，不因重新发行而伪造新能力。
     def test_release_entry_and_native_controller_share_the_current_identity(self):
         m = self.api()
         bundle = importlib.import_module('build_navigation_bundle')
-        self.assertEqual(m.ENTRY_VERSION, '20261110.7')
+        self.assertEqual(m.ENTRY_VERSION, '20261112.1')
         self.assertEqual(bundle.RELEASE_VERSION, m.ENTRY_VERSION)
-        self.assertEqual(
-            bundle.RELEASE_NAME, 'FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v5'
-        )
+        self.assertEqual(bundle.RELEASE_NAME, 'FC01_OrangePi_Navigation_20261112_release')
         self.assertEqual(bundle.DEFAULT_DIRECTORY, bundle.RELEASE_NAME)
         self.assertEqual(m.LIFECYCLE_MARKER, b'FC01_RECOVERY_DIAGNOSTIC_V5_20261110')
         self.assertEqual(bundle.CONTROLLER_BUILD, m.LIFECYCLE_MARKER.decode())

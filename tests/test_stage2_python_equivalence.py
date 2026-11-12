@@ -1,4 +1,4 @@
-"""历史服务动态对照；第三阶段仅明确允许 disk-full 的已修复清理差异，其余字节严格比较。"""
+"""历史服务动态对照；精确隔离已确认的探针清理修复与本次发行常量，其余字节严格比较。"""
 
 from __future__ import annotations
 import json
@@ -76,7 +76,7 @@ class PythonServiceEquivalenceTests(unittest.TestCase):
         cls.temp.cleanup()
 
     def compare(self, scenario):
-        """隔离进程使用同一路径/输入；只允许明确列出的 probe 清理修复，其余 JSON 字节一致。"""
+        """隔离进程使用同一路径/输入；保存原始轨迹，明确允许的修复/发行常量另作严格对照。"""
         values = []
         streams = []
         for root in [self.baseline, ROOT]:
@@ -99,6 +99,26 @@ class PythonServiceEquivalenceTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             values.append(json.loads(result.stdout))
             streams.append(result.stdout)
+        # 旧版/新版原始轨迹都保留。新发行元数据会使备份文件SHA变化，不能丢掉SHA字段去求相等。
+        # 额外跑一次当前实现，只在进程内固定已审核的ENTRY_VERSION；其余文件/输出仍逐字节比较。
+        fixed_release_stream = None
+        if scenario in ('service', 'activation'):
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / 'tests/stage2_python_trace.py'),
+                    str(ROOT),
+                    str(self.base / 'fixture'),
+                    scenario,
+                    '--release-entry-fixed',
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                timeout=25,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            fixed_release_stream = result.stdout
         evidence = os.environ.get('FC01_STAGE2_TRACE_DIR')
         if evidence:
             target = Path(evidence)
@@ -106,6 +126,10 @@ class PythonServiceEquivalenceTests(unittest.TestCase):
             for label, value in zip(['baseline', 'current'], values):
                 (target / (scenario + '-' + label + '.json')).write_text(
                     json.dumps(value, ensure_ascii=False, indent=2) + '\n'
+                )
+            if fixed_release_stream is not None:
+                (target / (scenario + '-current-release-entry-fixed.json')).write_text(
+                    fixed_release_stream
                 )
         # 比较规范JSON原字节，不能用Python的True==1或1==1.0弱相等掩盖类型差异。
         if scenario == 'probe':
@@ -124,6 +148,26 @@ class PythonServiceEquivalenceTests(unittest.TestCase):
                 json.dumps(expected, ensure_ascii=False, sort_keys=True, allow_nan=False) + '\n'
             )
             self.assertEqual(expected_stream, streams[1], 'unexplained probe trace difference')
+        elif fixed_release_stream is not None:
+            # 基线身份必须仍为已知旧版；不接受任意旧基线或未来任意新版本绕过这项检查。
+            baseline_service = subprocess.check_output(
+                ['git', '-C', str(ROOT), 'show', BASELINE + ':navigation_service.py'], text=True
+            )
+            import ast
+
+            versions = [
+                node.value.value
+                for node in ast.parse(baseline_service).body
+                if isinstance(node, ast.Assign)
+                and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == 'ENTRY_VERSION'
+                and isinstance(node.value, ast.Constant)
+            ]
+            self.assertEqual(versions, ['20261110.7'])
+            self.assertEqual(
+                streams[0], fixed_release_stream, scenario + ' has non-release trace differences'
+            )
         else:
             self.assertEqual(streams[0], streams[1], scenario + ' baseline/current trace differs')
 

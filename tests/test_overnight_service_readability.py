@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import contextlib
+from copy import deepcopy
 import io
 from pathlib import Path
 import shutil
@@ -141,7 +142,20 @@ class ServiceFactoryEquivalenceTests(unittest.TestCase):
     def assert_replay_equal(self, **scenario):
         before = self.replay(self.original_source, **scenario)
         after = self.replay(self.current_source, **scenario)
-        self.assertEqual(before, after)
+        # 本次重新发行只允许这两个展示位置发生固定版本变化，控制工厂/权限/调用顺序仍全量比较。
+        # 不全局替换任意字符串，不丢弃整个 metadata，也不忽略启动说明中的其他字段。
+        compared = deepcopy(after)
+        for old_event, new_event in zip(before['trace'], compared['trace']):
+            if old_event[0] == new_event[0] == 'metadata':
+                self.assertEqual(old_event[1]['entry_version'], '20261110.7')
+                self.assertEqual(new_event[1]['entry_version'], '20261112.1')
+                new_event[1]['entry_version'] = '20261110.7'
+        old_prefix = 'FC01 导航启动 version=20261110.7 mode='
+        new_prefix = 'FC01 导航启动 version=20261112.1 mode='
+        self.assertEqual(before['stdout'].count(old_prefix), compared['stdout'].count(new_prefix))
+        self.assertLessEqual(compared['stdout'].count(new_prefix), 1)
+        compared['stdout'] = compared['stdout'].replace(new_prefix, old_prefix, 1)
+        self.assertEqual(before, compared)
         return after
 
     def test_repeated_factory_keeps_order_identity_and_live_closure(self):
@@ -192,9 +206,23 @@ class ServiceFactoryEquivalenceTests(unittest.TestCase):
         )
 
     def test_ast_change_is_only_named_factory(self):
-        # 把新函数机械还原成原lambda后，整份AST应相同；其他两份文件则直接AST相同。
+        # 只还原具名工厂和明确审核过的发行版本；其他 AST 仍应相同，不放宽任何业务表达式。
         original = ast.parse(self.original_source)
         current = ast.parse(self.current_source)
+        versions = []
+        for tree, expected in ((original, '20261110.7'), (current, '20261112.1')):
+            assignments = [
+                item
+                for item in tree.body
+                if isinstance(item, ast.Assign)
+                and len(item.targets) == 1
+                and isinstance(item.targets[0], ast.Name)
+                and item.targets[0].id == 'ENTRY_VERSION'
+            ]
+            self.assertEqual(len(assignments), 1)
+            self.assertEqual(ast.literal_eval(assignments[0].value), expected)
+            versions.append(assignments[0])
+        versions[1].value = ast.Constant(value='20261110.7')
         before_run = next(
             item
             for item in original.body

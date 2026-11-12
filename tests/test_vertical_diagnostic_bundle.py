@@ -1,5 +1,5 @@
 # 源码安装器完整性/幂等回归：用临时合成工程验证manifest、双哈希、解包复用与拒绝覆盖。
-# 部署脚本只是记录参数的无害替身，不会实际激活服务；源码中的本地未提交改动也须精确保留。
+# 部署脚本只是记录参数的无害替身，不会激活服务；已选择的运行源码须保留当前未提交字节。
 """Source installer integrity/idempotence; deploy actions use a harmless stub."""
 import base64
 import hashlib
@@ -21,7 +21,7 @@ MARKER = b'\n__FC01_PAYLOAD_BASE64__\n'
 
 # 每例隔离HOME、源树和安装目标，检查安装器副作用发生在校验之后。
 class VerticalDiagnosticBundleTests(unittest.TestCase):
-    # 建立含当前源码、未跟踪文件、旧构建/激活证据的假工程；部署替身仅向临时actions.log写参数。
+    # 建立含当前源码、开发旁支、旧构建/激活证据的假工程；部署替身只写临时 actions.log。
     def fixture(self, folder):
         source = folder / 'source'
         source.mkdir()
@@ -42,6 +42,8 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
             '#!/bin/bash\nprintf "%s\\n" "$*" >> "${FC01_BUNDLE_TEST_ACTIONS:?}"\n'
         )
         (source / 'new_untracked_helper.py').write_text('NEW_SOURCE=True\n')
+        # 运行入口采用白名单，但白名单文件仍须读取当前磁盘字节，不能打包 Git 中的旧版本。
+        (source / 'navigation_service.py').write_text('LOCAL_UNCOMMITTED_SERVICE_EDIT=True\n')
         (source / 'native/config').mkdir()
         (source / 'native/config/flight_test.yaml').write_text('target: 1.5\n')
         (source / 'ARM64_BUILD_EVIDENCE.json').write_text('{"old":true}')
@@ -89,7 +91,8 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
                 manifest['source_sha256'][name],
                 hashlib.sha256((ROOT / name).read_bytes()).hexdigest(),
             )
-        self.assertEqual(manifest['version'], '20261110.7')
+        self.assertEqual(manifest['release_name'], 'FC01_OrangePi_Navigation_20261112_release')
+        self.assertEqual(manifest['version'], '20261112.1')
         self.assertEqual(manifest['controller_build'], 'FC01_RECOVERY_DIAGNOSTIC_V5_20261110')
         self.assertNotIn(bundle.MANIFEST, manifest['payload_sha256'])
         self.assertNotIn('ARM64_BUILD_EVIDENCE.json', manifest['payload_sha256'])
@@ -142,9 +145,13 @@ class VerticalDiagnosticBundleTests(unittest.TestCase):
             release = json.loads((target / bundle.MANIFEST).read_text())
             for name, expected in release['payload_sha256'].items():
                 self.assertEqual(hashlib.sha256((target / name).read_bytes()).hexdigest(), expected)
-            self.assertIn('new_untracked_helper.py', release['payload_sha256'])
-            self.assertIn('HOST_VERIFICATION.json', release['payload_sha256'])
+            self.assertEqual(
+                (target / 'navigation_service.py').read_bytes(),
+                b'LOCAL_UNCOMMITTED_SERVICE_EDIT=True\n',
+            )
             for excluded in (
+                'new_untracked_helper.py',
+                'HOST_VERIFICATION.json',
                 'ARM64_BUILD_EVIDENCE.json',
                 'build-complete.json',
                 'OFFLINE_DEPLOYMENT.json',
