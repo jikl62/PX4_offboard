@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "actual_package": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+  "cmake_home_directory": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/native/src/jikl_fc01_system",
+  "build_testing": false,
+  "installed_source_files": [
+    {
+      "source": "native/tools/vision_odometry_adapter.py",
+      "source_sha256": "89dd21c97be568889313b0d59d1c9e1a8bf6400d82d0e3b0d77ca4bfa709c9c0",
+      "installed": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/lib/jikl_fc01_system/vision_odometry_adapter.py",
+      "installed_sha256": "89dd21c97be568889313b0d59d1c9e1a8bf6400d82d0e3b0d77ca4bfa709c9c0",
+      "byte_identical": true
+    },
+    {
+      "source": "native/tools/velocity_command_diagnostic.py",
+      "source_sha256": "d5b7f470d37e2a89870283dde9f48c35406a05bcd9e16b665efbf5ea257cdb68",
+      "installed": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/lib/jikl_fc01_system/velocity_command_diagnostic.py",
+      "installed_sha256": "d5b7f470d37e2a89870283dde9f48c35406a05bcd9e16b665efbf5ea257cdb68",
+      "byte_identical": true
+    },
+    {
+      "source": "native/tools/vision_state_validation.py",
+      "source_sha256": "743b72147559d214e0e6d2c0fefd8d32a8e7096c4ad98eb4c1d370992bcf22be",
+      "installed": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/lib/jikl_fc01_system/vision_state_validation.py",
+      "installed_sha256": "743b72147559d214e0e6d2c0fefd8d32a8e7096c4ad98eb4c1d370992bcf22be",
+      "byte_identical": true
+    },
+    {
+      "source": "native/tools/vision_resource_budget.py",
+      "source_sha256": "c479c97b6b84686fba0ff3443592c757d9a2c35425b7e0db7a521f06d9c28927",
+      "installed": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/lib/jikl_fc01_system/vision_resource_budget.py",
+      "installed_sha256": "c479c97b6b84686fba0ff3443592c757d9a2c35425b7e0db7a521f06d9c28927",
+      "byte_identical": true
+    },
+    {
+      "source": "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+      "source_sha256": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf",
+      "installed": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+      "installed_sha256": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf",
+      "byte_identical": true
+    },
+    {
+      "source": "native/src/jikl_fc01_system/msg/NavigationCommand.msg",
+      "source_sha256": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117",
+      "installed": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/NavigationCommand.msg",
+      "installed_sha256": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117",
+      "byte_identical": true
+    },
+    {
+      "source": "native/src/jikl_fc01_system/msg/VelocityCommand.msg",
+      "source_sha256": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46",
+      "installed": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/VelocityCommand.msg",
+      "installed_sha256": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46",
+      "byte_identical": true
+    },
+    {
+      "source": "native/src/jikl_fc01_system/msg/VisionHealth.msg",
+      "source_sha256": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb",
+      "installed": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/VisionHealth.msg",
+      "installed_sha256": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb",
+      "byte_identical": true
+    },
+    {
+      "source": "native/src/jikl_fc01_system/msg/VisionState.msg",
+      "source_sha256": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05",
+      "installed": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/VisionState.msg",
+      "installed_sha256": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05",
+      "byte_identical": true
+    }
+  ],
+  "elfs": [
+    {
+      "name": "fc01_system_node",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node",
+      "sha256": "e57f2983314bf56f0fa705d5502047f6082b938de4a5dc652132e3a6f9962acc",
+      "bytes": 4271408,
+      "elf_machine": 62,
+      "architecture": "x86_64",
+      "executed": false,
+      "readelf_returncode": 0,
+      "manifest_marker_present": "FC01_RECOVERY_DIAGNOSTIC_V5_20261110"
+    },
+    {
+      "name": "fc01_config_check",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/lib/jikl_fc01_system/fc01_config_check",
+      "sha256": "67fdc70f49442f67bc9e02c39642319ab0854e503282fa873ee54ccfb7366941",
+      "bytes": 73416,
+      "elf_machine": 62,
+      "architecture": "x86_64",
+      "executed": false,
+      "readelf_returncode": 0
+    }
+  ],
+  "scope": "readelf inspected bytes, neither binary was executed."
+}

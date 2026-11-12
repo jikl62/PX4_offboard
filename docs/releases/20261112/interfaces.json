@@ -1,0 +1,1173 @@
+{
+  "passed": true,
+  "requested_prefix": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system",
+  "script_sha256": "d520e78938f1310945542df9d923064bf896301dc4d754701b187c33a973c9cf",
+  "ros_init_called": false,
+  "nodes_or_publishers_created": false,
+  "scope": "Generated identity and local CDR only; not a ROS graph, protocol design or flight test.",
+  "messages": [
+    {
+      "name": "VisionState",
+      "type": "jikl_fc01_system/msg/VisionState",
+      "passed": true,
+      "source_msg_sha256": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05",
+      "installed_msg": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/VisionState.msg",
+        "sha256": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05"
+      },
+      "python_module": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_vision_state.py",
+        "sha256": "510c230969022a12c97f185eec3bb8544ae89feda574421f0be2973d19e07096"
+      },
+      "fields": [
+        [
+          "schema_version",
+          "uint16"
+        ],
+        [
+          "sequence",
+          "uint64"
+        ],
+        [
+          "stamp",
+          "builtin_interfaces/Time"
+        ],
+        [
+          "reset_counter",
+          "uint32"
+        ],
+        [
+          "frame_id",
+          "string"
+        ],
+        [
+          "body_frame_id",
+          "string"
+        ],
+        [
+          "source_id",
+          "string"
+        ],
+        [
+          "angular_velocity_source",
+          "string"
+        ],
+        [
+          "initialized",
+          "boolean"
+        ],
+        [
+          "tracking",
+          "boolean"
+        ],
+        [
+          "calibration_valid",
+          "boolean"
+        ],
+        [
+          "valid_fields",
+          "uint16"
+        ],
+        [
+          "position",
+          "double[3]"
+        ],
+        [
+          "velocity",
+          "double[3]"
+        ],
+        [
+          "attitude",
+          "double[4]"
+        ],
+        [
+          "angular_velocity",
+          "double[3]"
+        ],
+        [
+          "pose_covariance",
+          "double[36]"
+        ],
+        [
+          "twist_covariance",
+          "double[36]"
+        ],
+        [
+          "quality",
+          "double"
+        ]
+      ],
+      "constants": {
+        "POSITION": 1,
+        "VELOCITY": 2,
+        "ATTITUDE": 4,
+        "ANGULAR_VELOCITY": 8,
+        "POSE_COVARIANCE": 16,
+        "TWIST_COVARIANCE": 32,
+        "QUALITY": 64
+      },
+      "defaults": {
+        "schema_version": 1,
+        "sequence": 0,
+        "stamp": {
+          "sec": 0,
+          "nanosec": 0
+        },
+        "reset_counter": 0,
+        "frame_id": "",
+        "body_frame_id": "",
+        "source_id": "",
+        "angular_velocity_source": "",
+        "initialized": false,
+        "tracking": false,
+        "calibration_valid": false,
+        "valid_fields": 0,
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "attitude": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angular_velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pose_covariance": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "twist_covariance": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quality": 0.0
+      },
+      "fixture": {
+        "schema_version": 1,
+        "sequence": 1152921504606846978,
+        "stamp": {
+          "sec": 123,
+          "nanosec": 456789123
+        },
+        "reset_counter": 11,
+        "frame_id": "fixture_frame_id_相机",
+        "body_frame_id": "fixture_body_frame_id_相机",
+        "source_id": "fixture_source_id_相机",
+        "angular_velocity_source": "fixture_angular_velocity_source_相机",
+        "initialized": true,
+        "tracking": true,
+        "calibration_valid": true,
+        "valid_fields": 19,
+        "position": [
+          1.75,
+          -1.875,
+          2.0
+        ],
+        "velocity": [
+          1.875,
+          -2.0,
+          2.125
+        ],
+        "attitude": [
+          2.0,
+          -2.125,
+          2.25,
+          -2.375
+        ],
+        "angular_velocity": [
+          2.125,
+          -2.25,
+          2.375
+        ],
+        "pose_covariance": [
+          2.25,
+          -2.375,
+          2.5,
+          -2.625,
+          2.75,
+          -2.875,
+          3.0,
+          -3.125,
+          3.25,
+          -3.375,
+          3.5,
+          -3.625,
+          3.75,
+          -3.875,
+          4.0,
+          -4.125,
+          4.25,
+          -4.375,
+          4.5,
+          -4.625,
+          4.75,
+          -4.875,
+          5.0,
+          -5.125,
+          5.25,
+          -5.375,
+          5.5,
+          -5.625,
+          5.75,
+          -5.875,
+          6.0,
+          -6.125,
+          6.25,
+          -6.375,
+          6.5,
+          -6.625
+        ],
+        "twist_covariance": [
+          2.375,
+          -2.5,
+          2.625,
+          -2.75,
+          2.875,
+          -3.0,
+          3.125,
+          -3.25,
+          3.375,
+          -3.5,
+          3.625,
+          -3.75,
+          3.875,
+          -4.0,
+          4.125,
+          -4.25,
+          4.375,
+          -4.5,
+          4.625,
+          -4.75,
+          4.875,
+          -5.0,
+          5.125,
+          -5.25,
+          5.375,
+          -5.5,
+          5.625,
+          -5.75,
+          5.875,
+          -6.0,
+          6.125,
+          -6.25,
+          6.375,
+          -6.5,
+          6.625,
+          -6.75
+        ],
+        "quality": -2.375
+      },
+      "nondefault_fields": [
+        "sequence",
+        "stamp",
+        "reset_counter",
+        "frame_id",
+        "body_frame_id",
+        "source_id",
+        "angular_velocity_source",
+        "initialized",
+        "tracking",
+        "calibration_valid",
+        "valid_fields",
+        "position",
+        "velocity",
+        "attitude",
+        "angular_velocity",
+        "pose_covariance",
+        "twist_covariance",
+        "quality"
+      ],
+      "cdr_bytes": 868,
+      "cdr_sha256": "a435d6456d84b4ef1f86d3232b48d52edee3095fe84291b4024e4010346ff32b",
+      "cdr_padding": [
+        {
+          "before_field": "sequence",
+          "offset": 6,
+          "bytes": 6
+        },
+        {
+          "before_field": "source_id",
+          "offset": 93,
+          "bytes": 3
+        },
+        {
+          "before_field": "angular_velocity_source",
+          "offset": 125,
+          "bytes": 3
+        },
+        {
+          "before_field": "position",
+          "offset": 176,
+          "bytes": 4
+        }
+      ],
+      "cdr_reencoded_sha256": "a435d6456d84b4ef1f86d3232b48d52edee3095fe84291b4024e4010346ff32b",
+      "cdr_reencoded_bytes_equal": true,
+      "cdr_reencoded_differing_offsets": [],
+      "cdr_twice_decoded_fields_exact": true,
+      "type_support_loaded": true
+    },
+    {
+      "name": "NavigationCommand",
+      "type": "jikl_fc01_system/msg/NavigationCommand",
+      "passed": true,
+      "source_msg_sha256": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117",
+      "installed_msg": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/NavigationCommand.msg",
+        "sha256": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117"
+      },
+      "python_module": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_navigation_command.py",
+        "sha256": "3ed5677a7966c69823d3f4812de422ffe44ff6bb50ff20994fe6e5e95df084ae"
+      },
+      "fields": [
+        [
+          "schema_version",
+          "uint16"
+        ],
+        [
+          "sequence",
+          "uint64"
+        ],
+        [
+          "stamp",
+          "builtin_interfaces/Time"
+        ],
+        [
+          "reset_counter",
+          "uint32"
+        ],
+        [
+          "source_id",
+          "string"
+        ],
+        [
+          "frame_id",
+          "string"
+        ],
+        [
+          "mode",
+          "uint8"
+        ],
+        [
+          "valid",
+          "boolean"
+        ],
+        [
+          "position_valid",
+          "boolean"
+        ],
+        [
+          "yaw_valid",
+          "boolean"
+        ],
+        [
+          "sticks_valid",
+          "boolean"
+        ],
+        [
+          "position",
+          "double[3]"
+        ],
+        [
+          "yaw",
+          "double"
+        ],
+        [
+          "sticks",
+          "double[4]"
+        ]
+      ],
+      "constants": {
+        "DISABLED": 0,
+        "HOLD": 1,
+        "CRUISE": 2,
+        "FOLLOW": 3,
+        "LAND": 4
+      },
+      "defaults": {
+        "schema_version": 1,
+        "sequence": 0,
+        "stamp": {
+          "sec": 0,
+          "nanosec": 0
+        },
+        "reset_counter": 0,
+        "source_id": "",
+        "frame_id": "",
+        "mode": 0,
+        "valid": false,
+        "position_valid": false,
+        "yaw_valid": false,
+        "sticks_valid": false,
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "yaw": 0.0,
+        "sticks": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "fixture": {
+        "schema_version": 1,
+        "sequence": 1152921504606846978,
+        "stamp": {
+          "sec": 123,
+          "nanosec": 456789123
+        },
+        "reset_counter": 11,
+        "source_id": "fixture_source_id_相机",
+        "frame_id": "fixture_frame_id_相机",
+        "mode": 14,
+        "valid": true,
+        "position_valid": true,
+        "yaw_valid": true,
+        "sticks_valid": true,
+        "position": [
+          1.625,
+          -1.75,
+          1.875
+        ],
+        "yaw": -1.625,
+        "sticks": [
+          1.875,
+          -2.0,
+          2.125,
+          -2.25
+        ]
+      },
+      "nondefault_fields": [
+        "sequence",
+        "stamp",
+        "reset_counter",
+        "source_id",
+        "frame_id",
+        "mode",
+        "valid",
+        "position_valid",
+        "yaw_valid",
+        "sticks_valid",
+        "position",
+        "yaw",
+        "sticks"
+      ],
+      "cdr_bytes": 164,
+      "cdr_sha256": "013b0ee3ef54e91ead45a8160f180abadc92b61af161429f9ec2bfbce9397a39",
+      "cdr_padding": [
+        {
+          "before_field": "sequence",
+          "offset": 6,
+          "bytes": 6
+        },
+        {
+          "before_field": "frame_id",
+          "offset": 61,
+          "bytes": 3
+        },
+        {
+          "before_field": "position",
+          "offset": 97,
+          "bytes": 3
+        }
+      ],
+      "cdr_reencoded_sha256": "013b0ee3ef54e91ead45a8160f180abadc92b61af161429f9ec2bfbce9397a39",
+      "cdr_reencoded_bytes_equal": true,
+      "cdr_reencoded_differing_offsets": [],
+      "cdr_twice_decoded_fields_exact": true,
+      "type_support_loaded": true
+    },
+    {
+      "name": "VelocityCommand",
+      "type": "jikl_fc01_system/msg/VelocityCommand",
+      "passed": true,
+      "source_msg_sha256": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46",
+      "installed_msg": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/VelocityCommand.msg",
+        "sha256": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46"
+      },
+      "python_module": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_velocity_command.py",
+        "sha256": "e7f9ba351ab44cfee8d50257cec3ce56ac582a74acc3be68e4a76aa541a76859"
+      },
+      "fields": [
+        [
+          "schema_version",
+          "uint16"
+        ],
+        [
+          "sequence",
+          "uint64"
+        ],
+        [
+          "stamp",
+          "builtin_interfaces/Time"
+        ],
+        [
+          "reset_counter",
+          "uint32"
+        ],
+        [
+          "source_id",
+          "string"
+        ],
+        [
+          "frame_id",
+          "string"
+        ],
+        [
+          "valid",
+          "boolean"
+        ],
+        [
+          "vx",
+          "double"
+        ],
+        [
+          "vy",
+          "double"
+        ],
+        [
+          "vz",
+          "double"
+        ]
+      ],
+      "constants": {},
+      "defaults": {
+        "schema_version": 1,
+        "sequence": 0,
+        "stamp": {
+          "sec": 0,
+          "nanosec": 0
+        },
+        "reset_counter": 0,
+        "source_id": "",
+        "frame_id": "",
+        "valid": false,
+        "vx": 0.0,
+        "vy": 0.0,
+        "vz": 0.0
+      },
+      "fixture": {
+        "schema_version": 1,
+        "sequence": 1152921504606846978,
+        "stamp": {
+          "sec": 123,
+          "nanosec": 456789123
+        },
+        "reset_counter": 11,
+        "source_id": "fixture_source_id_相机",
+        "frame_id": "fixture_frame_id_相机",
+        "valid": true,
+        "vx": -1.0,
+        "vy": -1.125,
+        "vz": -1.25
+      },
+      "nondefault_fields": [
+        "sequence",
+        "stamp",
+        "reset_counter",
+        "source_id",
+        "frame_id",
+        "valid",
+        "vx",
+        "vy",
+        "vz"
+      ],
+      "cdr_bytes": 124,
+      "cdr_sha256": "f5fc686dfd72829dc2ced206d74bf2f85fc3e1ee9ba7ee9b4536c1b08537aac0",
+      "cdr_padding": [
+        {
+          "before_field": "sequence",
+          "offset": 6,
+          "bytes": 6
+        },
+        {
+          "before_field": "frame_id",
+          "offset": 61,
+          "bytes": 3
+        },
+        {
+          "before_field": "vx",
+          "offset": 93,
+          "bytes": 7
+        }
+      ],
+      "cdr_reencoded_sha256": "3485b6265c4f8a9a302c33de5fd6c8ad063e151c679a68bad8ec3cb9a6b096cb",
+      "cdr_reencoded_bytes_equal": false,
+      "cdr_reencoded_differing_offsets": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "cdr_twice_decoded_fields_exact": true,
+      "type_support_loaded": true
+    },
+    {
+      "name": "VisionHealth",
+      "type": "jikl_fc01_system/msg/VisionHealth",
+      "passed": true,
+      "source_msg_sha256": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb",
+      "installed_msg": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/VisionHealth.msg",
+        "sha256": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb"
+      },
+      "python_module": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_vision_health.py",
+        "sha256": "6ad71bf875e145667c9819009807d1a9043c5e2b6b70bf20a11e986c5f0a7444"
+      },
+      "fields": [
+        [
+          "schema_version",
+          "uint16"
+        ],
+        [
+          "stamp",
+          "builtin_interfaces/Time"
+        ],
+        [
+          "sequence",
+          "uint64"
+        ],
+        [
+          "source_id",
+          "string"
+        ],
+        [
+          "frame_id",
+          "string"
+        ],
+        [
+          "body_frame_id",
+          "string"
+        ],
+        [
+          "reset_counter",
+          "uint32"
+        ],
+        [
+          "reset_valid",
+          "boolean"
+        ],
+        [
+          "initialized",
+          "boolean"
+        ],
+        [
+          "tracking",
+          "boolean"
+        ],
+        [
+          "calibration_valid",
+          "boolean"
+        ],
+        [
+          "frame_alignment_valid",
+          "boolean"
+        ],
+        [
+          "time_sync_valid",
+          "boolean"
+        ],
+        [
+          "extrinsics_valid",
+          "boolean"
+        ],
+        [
+          "metric_scale_valid",
+          "boolean"
+        ],
+        [
+          "position_valid",
+          "boolean"
+        ],
+        [
+          "velocity_valid",
+          "boolean"
+        ],
+        [
+          "attitude_valid",
+          "boolean"
+        ],
+        [
+          "angular_velocity_valid",
+          "boolean"
+        ],
+        [
+          "angular_velocity_source",
+          "string"
+        ],
+        [
+          "quality_valid",
+          "boolean"
+        ],
+        [
+          "quality",
+          "double"
+        ],
+        [
+          "extrinsics_id",
+          "string"
+        ],
+        [
+          "alignment_id",
+          "string"
+        ]
+      ],
+      "constants": {},
+      "defaults": {
+        "schema_version": 1,
+        "stamp": {
+          "sec": 0,
+          "nanosec": 0
+        },
+        "sequence": 0,
+        "source_id": "",
+        "frame_id": "",
+        "body_frame_id": "",
+        "reset_counter": 0,
+        "reset_valid": false,
+        "initialized": false,
+        "tracking": false,
+        "calibration_valid": false,
+        "frame_alignment_valid": false,
+        "time_sync_valid": false,
+        "extrinsics_valid": false,
+        "metric_scale_valid": false,
+        "position_valid": false,
+        "velocity_valid": false,
+        "attitude_valid": false,
+        "angular_velocity_valid": false,
+        "angular_velocity_source": "",
+        "quality_valid": false,
+        "quality": 0.0,
+        "extrinsics_id": "",
+        "alignment_id": ""
+      },
+      "fixture": {
+        "schema_version": 1,
+        "stamp": {
+          "sec": 123,
+          "nanosec": 456789123
+        },
+        "sequence": 1152921504606846979,
+        "source_id": "fixture_source_id_相机",
+        "frame_id": "fixture_frame_id_相机",
+        "body_frame_id": "fixture_body_frame_id_相机",
+        "reset_counter": 14,
+        "reset_valid": true,
+        "initialized": true,
+        "tracking": true,
+        "calibration_valid": true,
+        "frame_alignment_valid": true,
+        "time_sync_valid": true,
+        "extrinsics_valid": true,
+        "metric_scale_valid": true,
+        "position_valid": true,
+        "velocity_valid": true,
+        "attitude_valid": true,
+        "angular_velocity_valid": true,
+        "angular_velocity_source": "fixture_angular_velocity_source_相机",
+        "quality_valid": true,
+        "quality": -2.75,
+        "extrinsics_id": "fixture_extrinsics_id_相机",
+        "alignment_id": "fixture_alignment_id_相机"
+      },
+      "nondefault_fields": [
+        "stamp",
+        "sequence",
+        "source_id",
+        "frame_id",
+        "body_frame_id",
+        "reset_counter",
+        "reset_valid",
+        "initialized",
+        "tracking",
+        "calibration_valid",
+        "frame_alignment_valid",
+        "time_sync_valid",
+        "extrinsics_valid",
+        "metric_scale_valid",
+        "position_valid",
+        "velocity_valid",
+        "attitude_valid",
+        "angular_velocity_valid",
+        "angular_velocity_source",
+        "quality_valid",
+        "quality",
+        "extrinsics_id",
+        "alignment_id"
+      ],
+      "cdr_bytes": 264,
+      "cdr_sha256": "94b3114301e4b705caf694dce8763b4d2345be4b4023948a69e4a0b21257fbbb",
+      "cdr_padding": [
+        {
+          "before_field": "stamp",
+          "offset": 6,
+          "bytes": 2
+        },
+        {
+          "before_field": "sequence",
+          "offset": 16,
+          "bytes": 4
+        },
+        {
+          "before_field": "frame_id",
+          "offset": 57,
+          "bytes": 3
+        },
+        {
+          "before_field": "reset_counter",
+          "offset": 121,
+          "bytes": 3
+        },
+        {
+          "before_field": "quality",
+          "offset": 184,
+          "bytes": 4
+        },
+        {
+          "before_field": "alignment_id",
+          "offset": 229,
+          "bytes": 3
+        }
+      ],
+      "cdr_reencoded_sha256": "94b3114301e4b705caf694dce8763b4d2345be4b4023948a69e4a0b21257fbbb",
+      "cdr_reencoded_bytes_equal": true,
+      "cdr_reencoded_differing_offsets": [],
+      "cdr_twice_decoded_fields_exact": true,
+      "type_support_loaded": true
+    },
+    {
+      "name": "AttitudeThrustPreview",
+      "type": "jikl_fc01_system/msg/AttitudeThrustPreview",
+      "passed": true,
+      "source_msg_sha256": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf",
+      "installed_msg": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+        "sha256": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf"
+      },
+      "python_module": {
+        "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/_attitude_thrust_preview.py",
+        "sha256": "565f554900c965353fcb765079d21609910ceaf9accec17db654b2cb670cae88"
+      },
+      "fields": [
+        [
+          "schema_version",
+          "uint16"
+        ],
+        [
+          "stamp",
+          "builtin_interfaces/Time"
+        ],
+        [
+          "accepted",
+          "boolean"
+        ],
+        [
+          "active",
+          "boolean"
+        ],
+        [
+          "request_land",
+          "boolean"
+        ],
+        [
+          "reason",
+          "string"
+        ],
+        [
+          "mode",
+          "uint8"
+        ],
+        [
+          "state_sequence",
+          "uint64"
+        ],
+        [
+          "command_sequence",
+          "uint64"
+        ],
+        [
+          "reset_counter",
+          "uint32"
+        ],
+        [
+          "frame_id",
+          "string"
+        ],
+        [
+          "body_frame_id",
+          "string"
+        ],
+        [
+          "attitude",
+          "double[4]"
+        ],
+        [
+          "thrust_body",
+          "double[3]"
+        ],
+        [
+          "target_height",
+          "double"
+        ],
+        [
+          "yaw",
+          "double"
+        ],
+        [
+          "velocity_target",
+          "double[3]"
+        ],
+        [
+          "acceleration_target",
+          "double[3]"
+        ],
+        [
+          "attitude_sink_allowed",
+          "boolean"
+        ],
+        [
+          "thrust_sink_allowed",
+          "boolean"
+        ]
+      ],
+      "constants": {},
+      "defaults": {
+        "schema_version": 1,
+        "stamp": {
+          "sec": 0,
+          "nanosec": 0
+        },
+        "accepted": false,
+        "active": false,
+        "request_land": false,
+        "reason": "",
+        "mode": 0,
+        "state_sequence": 0,
+        "command_sequence": 0,
+        "reset_counter": 0,
+        "frame_id": "",
+        "body_frame_id": "",
+        "attitude": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "thrust_body": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "target_height": 0.0,
+        "yaw": 0.0,
+        "velocity_target": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "acceleration_target": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "attitude_sink_allowed": false,
+        "thrust_sink_allowed": false
+      },
+      "fixture": {
+        "schema_version": 1,
+        "stamp": {
+          "sec": 123,
+          "nanosec": 456789123
+        },
+        "accepted": true,
+        "active": true,
+        "request_land": true,
+        "reason": "fixture_reason_相机",
+        "mode": 14,
+        "state_sequence": 1152921504606846984,
+        "command_sequence": 1152921504606846985,
+        "reset_counter": 17,
+        "frame_id": "fixture_frame_id_相机",
+        "body_frame_id": "fixture_body_frame_id_相机",
+        "attitude": [
+          1.75,
+          -1.875,
+          2.0,
+          -2.125
+        ],
+        "thrust_body": [
+          1.875,
+          -2.0,
+          2.125
+        ],
+        "target_height": -1.875,
+        "yaw": -2.0,
+        "velocity_target": [
+          2.25,
+          -2.375,
+          2.5
+        ],
+        "acceleration_target": [
+          2.375,
+          -2.5,
+          2.625
+        ],
+        "attitude_sink_allowed": true,
+        "thrust_sink_allowed": true
+      },
+      "nondefault_fields": [
+        "stamp",
+        "accepted",
+        "active",
+        "request_land",
+        "reason",
+        "mode",
+        "state_sequence",
+        "command_sequence",
+        "reset_counter",
+        "frame_id",
+        "body_frame_id",
+        "attitude",
+        "thrust_body",
+        "target_height",
+        "yaw",
+        "velocity_target",
+        "acceleration_target",
+        "attitude_sink_allowed",
+        "thrust_sink_allowed"
+      ],
+      "cdr_bytes": 262,
+      "cdr_sha256": "d0fb8cacf51448a067966f2fc1f23c29c7dd432b455b510cd00053d960cae900",
+      "cdr_padding": [
+        {
+          "before_field": "stamp",
+          "offset": 6,
+          "bytes": 2
+        },
+        {
+          "before_field": "reason",
+          "offset": 19,
+          "bytes": 1
+        },
+        {
+          "before_field": "state_sequence",
+          "offset": 47,
+          "bytes": 5
+        },
+        {
+          "before_field": "attitude",
+          "offset": 133,
+          "bytes": 7
+        }
+      ],
+      "cdr_reencoded_sha256": "d0fb8cacf51448a067966f2fc1f23c29c7dd432b455b510cd00053d960cae900",
+      "cdr_reencoded_bytes_equal": true,
+      "cdr_reencoded_differing_offsets": [],
+      "cdr_twice_decoded_fields_exact": true,
+      "type_support_loaded": true
+    }
+  ],
+  "ament": {
+    "prefix": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system",
+    "share": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/share/jikl_fc01_system"
+  },
+  "python_package": {
+    "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "python_msg_package": {
+    "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/__init__.py",
+    "sha256": "acf8841bfffaadd5539ee81393f17986c96a59f5c5190a349831f6554e60a8f3"
+  },
+  "type_support_module": {
+    "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/local/lib/python3.10/dist-packages/jikl_fc01_system/jikl_fc01_system_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so",
+    "sha256": "7578c600be44294647b16457bf69fb2490b8bed4dbf24635e927991da7a48a35"
+  }
+}

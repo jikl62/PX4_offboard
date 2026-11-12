@@ -1,0 +1,14 @@
+test_activation_transaction_and_rollback_order (test_stage2_python_equivalence.PythonServiceEquivalenceTests) ... ok
+test_console_command_and_exit_order (test_stage2_python_equivalence.PythonServiceEquivalenceTests) ... ok
+test_fcctl_ack_and_bench_confirmation (test_stage2_python_equivalence.PythonServiceEquivalenceTests) ... ok
+test_launcher_entry_configuration_and_resources (test_stage2_python_equivalence.PythonServiceEquivalenceTests) ... ok
+test_probe_subscriptions_and_cleanup_order (test_stage2_python_equivalence.PythonServiceEquivalenceTests) ... ok
+test_report_members_and_readonly_calls (test_stage2_python_equivalence.PythonServiceEquivalenceTests) ... ok
+test_service_dispatch_and_configuration (test_stage2_python_equivalence.PythonServiceEquivalenceTests) ... ok
+test_status_output_bytes (test_stage2_python_equivalence.PythonServiceEquivalenceTests) ... ok
+test_supervisor_lifetimes_and_retry_order (test_stage2_python_equivalence.PythonServiceEquivalenceTests) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.594s
+
+OK

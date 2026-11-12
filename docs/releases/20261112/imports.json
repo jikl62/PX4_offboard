@@ -1,0 +1,176 @@
+{
+  "passed": true,
+  "entry": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+  "imported": [
+    {
+      "module": "autostart",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/autostart.py",
+      "sha256": "5c8d49ccb938b1b9e4b1955ebdaaab71e9c474c748486f7644e68afaca0d7528"
+    },
+    {
+      "module": "build_navigation_bundle",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/build_navigation_bundle.py",
+      "sha256": "c4efcfad504cf9f29bbd10a987481919c1189b66da32fe4d9dbe4a30657277fb"
+    },
+    {
+      "module": "fc01_control",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/fc01_control.py",
+      "sha256": "29f269d0bf12d102f9c8b4e20db4cb833ec5147612cb608eeea054ae04059357"
+    },
+    {
+      "module": "feedback_age_probe",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/feedback_age_probe.py",
+      "sha256": "d8dbb09dca98a851b98f961e805b31b8565b98246209cf11fc1604f347b00539"
+    },
+    {
+      "module": "launcher",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/launcher.py",
+      "sha256": "9089f43f4346643f968dbb9ca1f53bf8302e63f3e4b963df35f20d175b8374ce"
+    },
+    {
+      "module": "navigation",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation.py",
+      "sha256": "3b112dd67ca3759a67ec4283b8d24124f94300e8b3757c91f8f652b5354f36d2"
+    },
+    {
+      "module": "navigation_build_evidence",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_build_evidence.py",
+      "sha256": "95d5bb59dde4da51f3b886aeb9e6c8a76ee79eff58fb7d33a22d184ad959f5a8"
+    },
+    {
+      "module": "navigation_collect",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_collect.py",
+      "sha256": "489879af68ba34ed20a29cf16f419dbfc9245c13666977c79f1bb85400a3aa55"
+    },
+    {
+      "module": "navigation_deploy",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_deploy.py",
+      "sha256": "fdc11f8bae767a17ec8c3f17e53a9839714df472aa760b2b5303da82bad23a95"
+    },
+    {
+      "module": "navigation_install",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_install.py",
+      "sha256": "ef6b80d0d8fcf83f440ef7026b9e60f9bcaed01718fa6b1be372169c09dfda7b"
+    },
+    {
+      "module": "navigation_probe",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_probe.py",
+      "sha256": "d5e853669bf2d8e8fbc8744d99e79851c765d4205bc4be2e05c339ce5f645994"
+    },
+    {
+      "module": "navigation_report",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_report.py",
+      "sha256": "7ccf3b01fe9b536bfdc5e701457bc703bd7d4bc1a8853cae3a920b8401e8ce68"
+    },
+    {
+      "module": "navigation_restore",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_restore.py",
+      "sha256": "bc97282e0b5b42a8049975202f81ab1a9bd54adcfa73dd58e935de0a3ca9bc4a"
+    },
+    {
+      "module": "navigation_service",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_service.py",
+      "sha256": "e6337790480c09c08c25988d001bb9627b92573b17a0d1269017bf20169e063a"
+    },
+    {
+      "module": "navigation_status",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_status.py",
+      "sha256": "082ba9aa602e98c637a1af755397a7321cd80c7cd0b1d1a7dc6ccc6bfae40612"
+    },
+    {
+      "module": "standby",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/standby.py",
+      "sha256": "51d8d6e761e21f10ec01398de274ebbadeb4a44e87b0a40713ab4ea144ee4614"
+    },
+    {
+      "module": "uart_preflight",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/uart_preflight.py",
+      "sha256": "71a1d16d74ca1b77bb0dab80ea8235c55de2de86ab7a5e6ed66a373a9342d88c"
+    },
+    {
+      "module": "vision_config",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/vision_config.py",
+      "sha256": "8fc727992055774f1fa699fcc279a407e448e3ee6b4790830709937cbf88a5b5"
+    },
+    {
+      "module": "vision_settings",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/vision_settings.py",
+      "sha256": "25f77a5c09ba3f68b335d7278b14a567bd64bc9288f2403ca9520168483a5877"
+    },
+    {
+      "module": "release_pure_fcctl",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/native/tools/fcctl.py",
+      "sha256": "6cd697ba3046bff32cb1bef792265d8721ca2e5925a9f2b3216cb9c0652cbbf6"
+    },
+    {
+      "module": "release_pure_socket_safety",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/native/tools/socket_safety.py",
+      "sha256": "92e000bfb7e449e9a85dd36e1f8b79f1307ee970af2b25a1c8ffd0ce2eca95a2"
+    },
+    {
+      "module": "release_pure_vision_resource_budget",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/native/tools/vision_resource_budget.py",
+      "sha256": "c479c97b6b84686fba0ff3443592c757d9a2c35425b7e0db7a521f06d9c28927"
+    },
+    {
+      "module": "release_pure_vision_odometry_adapter",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/native/tools/vision_odometry_adapter.py",
+      "sha256": "89dd21c97be568889313b0d59d1c9e1a8bf6400d82d0e3b0d77ca4bfa709c9c0"
+    },
+    {
+      "module": "release_pure_vision_state_validation",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/native/tools/vision_state_validation.py",
+      "sha256": "743b72147559d214e0e6d2c0fefd8d32a8e7096c4ad98eb4c1d370992bcf22be"
+    },
+    {
+      "module": "release_pure_velocity_command_diagnostic",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/native/tools/velocity_command_diagnostic.py",
+      "sha256": "d5b7f470d37e2a89870283dde9f48c35406a05bcd9e16b665efbf5ea257cdb68"
+    }
+  ],
+  "python_syntax_files": [
+    "autostart.py",
+    "build_navigation_bundle.py",
+    "fc01_control.py",
+    "feedback_age_probe.py",
+    "launcher.py",
+    "native/tools/fcctl.py",
+    "native/tools/socket_safety.py",
+    "native/tools/velocity_command_diagnostic.py",
+    "native/tools/vision_odometry_adapter.py",
+    "native/tools/vision_resource_budget.py",
+    "native/tools/vision_state_validation.py",
+    "navigation.py",
+    "navigation_build_evidence.py",
+    "navigation_collect.py",
+    "navigation_deploy.py",
+    "navigation_install.py",
+    "navigation_probe.py",
+    "navigation_report.py",
+    "navigation_restore.py",
+    "navigation_service.py",
+    "navigation_status.py",
+    "standby.py",
+    "uart_preflight.py",
+    "vision_config.py",
+    "vision_settings.py"
+  ],
+  "source_identity": {
+    "source_commit": "32990e599a68fde377daadbb89710b77fda1fb82",
+    "controller_build": "FC01_RECOVERY_DIAGNOSTIC_V5_20261110",
+    "release_manifest_sha256": "2b6eeb197e0b5c49696c1d23bf7ce19bc0b62ac928e22696b2834c63e4231c9e",
+    "source_sha256": "893219db3eae08d93afb6f10296109bcbee5b444ee89dffc720c322d150772a1"
+  },
+  "selected_navigation_settings": {
+    "target_height_m": 1.5,
+    "navigation_mode_slot": 1
+  },
+  "pure_profile": {
+    "visual_navigation_enabled": false,
+    "arm_enabled": false,
+    "rc_target_height": 1.5,
+    "rc_navigation_mode_slot": 1
+  },
+  "vision_settings_enabled": false,
+  "scope": "Imports and pure profile/source-manifest checks only; no main entrypoints, ROS init, hardware, Agent, systemd, build/deploy commands or flight output."
+}

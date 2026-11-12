@@ -1,0 +1,115 @@
+Agent transport CONNECTED: UART /dev/ttyS2 115200; PID=151531
+WAITING: 控制器已启动，等待飞控反馈
+HEIGHT_HOLD: native recovery
+STOPPING: 等待原生退出
+STOPPING: 原生控制器退出，code=0
+STOPPED: 后台待命已停止
+or_ground_evidence (test_navigation_install.InstallTests) ... ok
+test_build_is_offline_single_job_and_staged (test_navigation_install.InstallTests) ... ok
+test_compiler_access_time_does_not_force_a_new_live_binary (test_navigation_install.InstallTests) ... ok
+test_completion_covers_tools_typesupport_and_generated_messages (test_navigation_install.InstallTests) ... ok
+test_configuration_only_change_restarts_then_identical_config_does_not (test_navigation_install.InstallTests) ... 导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+ok
+test_foreign_unit_dropin_or_foreign_desktop_refuses_before_mutation (test_navigation_install.InstallTests) ... ok
+test_ground_evidence_expiry_reprobes_before_next_service_mutation (test_navigation_install.InstallTests) ... ok
+test_ground_failure_happens_after_build_validation_before_service_mutation (test_navigation_install.InstallTests) ... 正在离线编译 ARM64 原生控制器；单任务构建，首次需要等待。
+编译和实际 YAML 检查通过；正在被动确认未解锁、接地、静止。
+ok
+test_installed_tool_source_changes_select_a_new_build_key (test_navigation_install.InstallTests) ... ok
+test_legacy_binary_only_completion_record_is_not_reused (test_navigation_install.InstallTests) ... ok
+test_live_unknown_controller_and_unmanaged_install_link_are_preserved (test_navigation_install.InstallTests) ... ok
+test_managed_upgrade_and_repeat_preserve_existing_candidate (test_navigation_install.InstallTests) ... 导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+ok
+test_partial_install_prefix_is_retained_and_retry_selects_a_new_stage (test_navigation_install.InstallTests) ... ok
+test_pending_link_conflict_is_detected_before_disabling_old_service (test_navigation_install.InstallTests) ... ok
+test_rollback_authenticates_then_observes_and_uses_noninteractive_mutations (test_navigation_install.InstallTests) ... ok
+test_rollback_checks_ground_before_stop_and_restores_only_managed_standby (test_navigation_install.InstallTests) ... 已回到原关闭动作门待命服务；导航自动起飞已停用。
+ok
+test_service_defaults_to_diagnostic_and_flight_test_is_explicit (test_navigation_install.InstallTests) ... ok
+test_units_and_desktop_paths_support_space_dollar_percent_without_shell (test_navigation_install.InstallTests) ... ok
+test_armed_observation_latches_even_with_invalid_clock (test_navigation_install.ProbeTests) ... ok
+test_duplicates_unsynchronized_and_unrest_are_not_ground_proof (test_navigation_install.ProbeTests) ... ok
+test_live_probe_is_subscription_only_and_retains_matching_agent (test_navigation_install.ProbeTests) ... 已观察到新鲜、单一来源的未解锁接地静止反馈
+ok
+test_probe_requires_advancing_clock_and_exclusive_fresh_ground (test_navigation_install.ProbeTests) ... ok
+test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_default_offline_repeat_skips_unpack_and_preserves_generated_outputs (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_existing_different_or_incomplete_directory_is_never_overwritten (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_extract_only_compatibility_and_action_forwarding (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_manifest_checks_actual_disk_and_rejects_stale_content (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_new_default_directory_preserves_previous_unpacked_release (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_no_sidecar_uses_embedded_hash_and_rebuild_is_reproducible (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_unsafe_archive_paths_are_rejected_before_creating_target (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_whole_package_sidecar_and_archive_hash_fail_before_extract (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_actual_runtime_import_dependencies_vision_and_messages_are_complete (test_release_payload_policy.ReleasePayloadPolicyTests)
+运行树必须自带本项目导入依赖，不能为了容量仅保留控制器而遗漏视觉消息/工具。 ... ok
+test_builder_keeps_file_count_total_and_member_size_limits (test_release_payload_policy.ReleasePayloadPolicyTests)
+分别构造超过真实安全上限的运行内容；不修改 MAX_*、不把拒绝改为通过。 ... ok
+test_development_history_archives_caches_and_experiments_stay_outside_runtime (test_release_payload_policy.ReleasePayloadPolicyTests)
+大历史 ZIP 不应挤占运行预算，排除只影响载荷，不删除源树任何文件。 ... ok
+test_extractor_independently_keeps_all_three_capacity_limits (test_release_payload_policy.ReleasePayloadPolicyTests)
+直接造归档绕开 builder，仍须在创建安装目标前因原容量限制失败。 ... ok
+test_manifest_cannot_omit_current_native_source_hash (test_release_payload_policy.ReleasePayloadPolicyTests)
+payload 摘要正确也不能省掉原生源码身份，过期清单不会自动刷新为成功。 ... ok
+test_old_release_manifest_is_preserved_and_not_silently_refreshed (test_release_payload_policy.ReleasePayloadPolicyTests)
+旧身份即使所有内容 SHA 都匹配，也不能被静默解释成本次正式发行清单。 ... ok
+test_release_manifest_itself_still_obeys_per_member_budget (test_release_payload_policy.ReleasePayloadPolicyTests)
+运行源码再小，附加的发布元数据也必须计入每项预算，不能绕过解包器上限。 ... ok
+test_selected_source_symlink_is_rejected_without_reading_as_regular_source (test_release_payload_policy.ReleasePayloadPolicyTests)
+运行白名单中的链接不能伪装源码；外部文件仍由原所有者保留。 ... ok
+test_actual_generated_rc_configuration_is_valid (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_actual_native_rejects_automatic_arm_in_manual_route (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_all_valid_mode_slots_are_accepted_by_actual_native_config (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_check_session_is_accepted_by_actual_native_config (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_flight_session_is_accepted_by_actual_native_config (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_native_validator_rejects_legacy_flight_flag_in_attitude_mode (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_closed_read_only_view_does_not_stop_or_manage_service (test_navigation_service.NavigationServiceTests) ... ok
+test_current_native_fault_survives_expired_aircraft_feedback (test_navigation_service.NavigationServiceTests) ... ok
+test_current_service_instance_controls_snapshot_validity (test_navigation_service.NavigationServiceTests) ... ok
+test_diagnostic_mode_closes_every_action_authority_and_visual_gate (test_navigation_service.NavigationServiceTests) ... ok
+test_flight_test_requires_explicit_confirmation (test_navigation_service.NavigationServiceTests) ... usage: python3 -m unittest [-h] [--mode {diagnostic,flight-test}]
+                           [--flight-test] [--confirm-flight-test]
+                           [--file FILE] [--prefix PREFIX]
+                           [--build-dir BUILD_DIR] [--require-existing-agent]
+                           [--require-rc-safe]
+                           [{run,prepare-config,validate-env,check-config,probe,build}]
+python3 -m unittest: error: Flight Test 必须同时提供 --confirm-flight-test；不会隐式开启动作门
+ok
+test_historical_phase_cannot_override_retry_or_channel_failure (test_navigation_service.NavigationServiceTests) ... ok
+test_load_profile_uses_bundle_candidate_and_writes_mode_metadata (test_navigation_service.NavigationServiceTests) ... ok
+test_load_profile_uses_settings_slot_and_preserves_base_when_omitted (test_navigation_service.NavigationServiceTests) ... ok
+test_mode_slot_is_configurable_and_rejects_invalid_values (test_navigation_service.NavigationServiceTests) ... ok
+test_native_fault_overrides_connected_and_ready_is_distinct (test_navigation_service.NavigationServiceTests) ... ok
+test_navigation_profile_keeps_program_arm_disabled_and_numeric_limits (test_navigation_service.NavigationServiceTests) ... ok
+test_old_binary_without_lifecycle_marker_is_not_accepted (test_navigation_service.NavigationServiceTests) ... ok
+test_old_or_disconnected_safety_cannot_override_transport_status (test_navigation_service.NavigationServiceTests) ... ok
+test_private_controller_does_not_require_the_sdk_controller_binary (test_navigation_service.NavigationServiceTests) ... ok
+test_release_entry_and_native_controller_share_the_current_identity (test_navigation_service.NavigationServiceTests) ... ok
+test_role_metadata_does_not_override_actual_native_gate_values (test_navigation_service.NavigationServiceTests) ... ok
+test_service_runs_private_native_with_status_only_and_graceful_recovery (test_navigation_service.NavigationServiceTests) ... ok
+test_shipped_mode_candidates_start_with_closed_gates (test_navigation_service.NavigationServiceTests) ... ok
+test_unknown_aircraft_feedback_cannot_become_ready (test_navigation_service.NavigationServiceTests) ... ok
+test_view_rejects_previous_boot_and_malformed_time (test_navigation_service.NavigationServiceTests) ... ok
+test_activation_keeps_boot_policy_and_rollback_uses_saved_backup (test_navigation_deploy.DeploymentTests) ... FC01_ROLLBACK_PATH=/tmp/tmprp3hzenj/backup
+FC01_ROLLBACK_PATH=/tmp/tmprp3hzenj/backup
+FC01_ROLLBACK_PATH=/tmp/tmprp3hzenj/backup
+ok
+test_activation_needs_confirmation_and_current_offline_evidence (test_navigation_deploy.DeploymentTests) ... ok
+test_build_failure_never_reaches_config_or_ready (test_navigation_deploy.DeploymentTests) ... ok
+test_mutated_source_is_refused_before_any_action (test_navigation_deploy.DeploymentTests) ... ok
+test_offline_only_builds_and_checks_release_local_config (test_navigation_deploy.DeploymentTests) ... FC01_OFFLINE_READY evidence=/tmp/tmpn3t7ko1u/release/ARM64_BUILD_EVIDENCE.json
+离线部署完成；尚未正式启用。原服务配置和 Agent 未变更。
+ok
+test_ast_change_is_only_named_factory (test_overnight_service_readability.ServiceFactoryEquivalenceTests) ... ok
+test_check_failure_stops_before_attempt_config_load (test_overnight_service_readability.ServiceFactoryEquivalenceTests) ... ok
+test_load_failure_preserves_original_exception (test_overnight_service_readability.ServiceFactoryEquivalenceTests) ... ok
+test_repeated_factory_keeps_order_identity_and_live_closure (test_overnight_service_readability.ServiceFactoryEquivalenceTests) ... ok
+test_signal_callbacks_only_request_stop (test_overnight_service_readability.ServiceFactoryEquivalenceTests) ... ok
+
+----------------------------------------------------------------------
+Ran 77 tests in 3.640s
+
+OK

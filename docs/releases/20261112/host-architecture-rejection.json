@@ -1,0 +1,12 @@
+{
+  "command": [
+    "bash",
+    "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/navigation_build_fresh.sh"
+  ],
+  "sdk": "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE",
+  "returncode": 1,
+  "stdout": "FC01_OFFLINE_BUILD_LOG=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/host-build-rejection-home/FC01_navigation/offline-build-20261112T025851Z-wIWrbQ.log\nFC01_OFFLINE_BUILD_FAILED: native ARM64 host required; no cross-built or host binary accepted\nFC01_OFFLINE_BUILD_FAILED stage=build exit=1 log=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/host-build-rejection-home/FC01_navigation/offline-build-20261112T025851Z-wIWrbQ.log\n",
+  "stderr": "",
+  "expected": "x86 host rejected before lock/build/service",
+  "arm64_tested": false
+}

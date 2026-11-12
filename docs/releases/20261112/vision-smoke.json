@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "domain_id": 223,
+  "localhost_only": true,
+  "adapter_path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/lib/jikl_fc01_system/vision_odometry_adapter.py",
+  "checks": [
+    "read_only_startup_parameters",
+    "valid_conversion",
+    "raw_conflict_revoked",
+    "no_fmu_publishers",
+    "sigint_clean_exit",
+    "utf8_identity_budget_revoked",
+    "fresh_pair_after_resource_rejection"
+  ],
+  "publisher_endpoints": [
+    [
+      "/fc01_demo/state",
+      [
+        "jikl_fc01_system/msg/VisionState"
+      ]
+    ],
+    [
+      "/parameter_events",
+      [
+        "rcl_interfaces/msg/ParameterEvent"
+      ]
+    ],
+    [
+      "/rosout",
+      [
+        "rcl_interfaces/msg/Log"
+      ]
+    ]
+  ],
+  "shutdown_exit_code": 0
+}

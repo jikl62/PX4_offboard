@@ -1,0 +1,26 @@
+test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ERROR
+test_default_offline_repeat_skips_unpack_and_preserves_generated_outputs (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_existing_different_or_incomplete_directory_is_never_overwritten (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_extract_only_compatibility_and_action_forwarding (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_manifest_checks_actual_disk_and_rejects_stale_content (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_new_default_directory_preserves_previous_unpacked_release (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_no_sidecar_uses_embedded_hash_and_rebuild_is_reproducible (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_unsafe_archive_paths_are_rejected_before_creating_target (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_whole_package_sidecar_and_archive_hash_fail_before_extract (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+
+======================================================================
+ERROR: test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/test_vertical_diagnostic_bundle.py", line 79, in test_current_checkout_sources_and_local_edit_are_exact
+    manifest = bundle.make_manifest(ROOT)
+  File "/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py", line 224, in make_manifest
+    hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names(root)}
+  File "/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py", line 213, in names
+    raise RuntimeError('Curated source payload exceeds extractor bounds')
+RuntimeError: Curated source payload exceeds extractor bounds
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.746s
+
+FAILED (errors=1)
