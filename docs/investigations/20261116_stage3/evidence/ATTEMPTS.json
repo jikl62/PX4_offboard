@@ -1,0 +1,234 @@
+[
+  {
+    "directory": "accept-normal-replay",
+    "result": "FAIL",
+    "error": "RuntimeError('unexpected/unsafe VehicleCommand: px4_msgs.msg.VehicleCommand(timestamp=1794830597668188, param1=1.0, param2=7.0, param3=0.0, param4=0.0, param5=0.0, param6=0.0, param7=0.0, command=176, target_system=1, target_component=1, source_system=1, source_component=191, confirmation=0, from_external=True)')",
+    "harness_sha256": "20244364851af7d934363991404c93f74f6176e3bb0474ec93175cc22fbcab1d",
+    "result_sha256": "5269c0668b2b39ee9a23749af3c064b9d8c619a07ce482d12f57ecfde659df7c",
+    "final_acceptance": false
+  },
+  {
+    "directory": "accept2-feedback_stale-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "f99c5143f9ca7c9d0ac2f27e66a694f4a799ca83f64b105b340241380001119b",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-kill-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "24b0b95e00c3edbede2d1020a42a03cd7a71eeae658c2b7c38de6a5e3dc967e9",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-normal-plant",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "fe7cca61560a4b5b034544e074210b1dbf357b26ed6fe57b2a69a0d5fc334304",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-normal-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "a3f54d4906cb7f5c8f71b1bbd94ebee3629973416561fd6f808b17c182bfddbd",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-offboard_flag-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "16cd90115932314a1d15c9bb501eaaf5d07c535d00709923c32f91f72bd4afe1",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-offboard_loss-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "68ebc189c04a56703849def946b58c6ba5744dec620fcaf65ce5d2abbb79f81e",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-quat_reset-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "25e331070bec371cf402ab516799ab23455e2fbb9d3e21c30fc23deb147c136f",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-range_unavailable-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "44c148db89d2509d9d1b619af1babf706ccb9119eeeed643e720c906d79444da",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-rc_takeover-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "c1ac54b5b40c8319017a7e9e40319462437c31e131d69fd73ca078f7767e4d10",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-velocity_warning-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "4747d61ad3ae83c93674acb47324b9a94a8aaed3103dde6f5b981beb8cb82e93",
+    "final_acceptance": true
+  },
+  {
+    "directory": "accept2-vertical_reset-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "result_sha256": "d2fa791b7b08a4773ee04147cd4e3974bae095c0b7bb2f17dde5cb795ebd6362",
+    "final_acceptance": true
+  },
+  {
+    "directory": "final-feedback-stale",
+    "result": "FAIL",
+    "error": " native_exit=-9",
+    "harness_sha256": "6797edb854c873fe68a3e69112be6689938043c84e3c92e0aa873d9f64de147e",
+    "result_sha256": "7e215240680c2949c6ac871df1db48a8cf86e6b388907d5ba6cf2c14ce5863e9",
+    "final_acceptance": false
+  },
+  {
+    "directory": "final-normal-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "6797edb854c873fe68a3e69112be6689938043c84e3c92e0aa873d9f64de147e",
+    "result_sha256": "788b395093af24aaa25dcc39427161dfd303c2835032c15119628cd4cd70fe8e",
+    "final_acceptance": false
+  },
+  {
+    "directory": "normal-plant-1",
+    "result": "FAIL",
+    "error": "RuntimeError('ground proof/READY timed out; state={\"kind\": \"reply\", \"seq\": 234, \"accepted\": true, \"message\": \"STATUS\", \"phase\": \"IDLE\", \"active\": false, \"profile\": \"attitude_altitude\", \"flight_enabled\": false, \"flight_actions_enabled\": true, \"arm_enabled\": false, \"takeoff_enabled\": true, \"flight_parameters_confirmed\": true, \"bench_arm_only_enabled\": false, \"authority_mode\": \"UNSET\", \"authority_attempt_mode\": \"UNSET\", \"authority_locked\": false, \"authority_ready\": false, \"authority_reason\": \"AUTHORITY_MODE_UNSET\", \"rc_link_ready\": false, \"rc_source_seen\": true, \"rc_source_valid\": true, \"rc_source_selected\": true, \"rc_data_source\": 1, \"rc_sticks_moving\": false, \"rc_switches_seen\": true, \"rc_switches_fresh\": false, \"rc_switches_ready\": false, \"rc_mode_slot\": 6, \"rc_arm_switch\": 3, \"rc_kill_switch\": 3, \"rc_kill_latched\": false, \"rc_takeover_ready\": false, \"rc_takeover_confirmed\": true, \"autonomous_failsafe_ready\": false, \"autonomous_failsafe_confirmed\": false, \"operator_takeover_latched\": false, \"takeover_reason\": \"\", \"bench_disarm_ground_proven\": false, \"bench_disarm_status_baseline\": 0, \"bench_disarm_local_baseline\": 0, \"bench_ground_down_tolerance_m\": 0.5, \"bench_ground_vz_tolerance_mps\": 0.25, \"bench_ground_dwell_s\": 0.0, \"stationary_seconds\": 11.779582, \"required_ground_seconds\": 2.0, \"ground_vz_tolerance\": 0.1, \"ground_vz_ned\": 0.0, \"authority_ground_failed_mask\": 0, \"last_authority_ground_evidence_valid\": false, \"last_authority_ground_failed_mask\": 0, \"last_authority_ground_stationary_seconds\": 0.0, \"last_authority_ground_vz_ned\": 0.0, \"last_authority_ground_status_stamp\": 0, \"last_authority_ground_land_stamp\": 0, \"last_authority_ground_local_stamp\": 0, \"rc_navigation_enabled\": true, \"visual_navigation_enabled\": false, \"visual_motion\": false, \"visual_reason\": \"\", \"visual_mode\": 0, \"visual_state_sequence\": 0, \"visual_command_sequence\": 0, \"visual_state_valid_fields\": 0, \"visual_reset_counter\": 0, \"visual_state_age_s\": null, \"visual_command_age_s\": null, \"rc_target_height\": 1.5, \"takeoff_stage\": \"NOT_STARTED\", \"takeoff_request_accepted\": false, \"liftoff_confirmed\": false, \"target_height_settled\": false, \"navigation_allowed\": false, \"liftoff_unconfirmed_reason\": \"WAIT_NEW_AIRBORNE_DETECTOR_SAMPLES\", \"liftoff_detector_samples\": 0, \"liftoff_local_samples\": 0, \"liftoff_detector_confirmed\": false, \"liftoff_rise_confirmed\": false, \"liftoff_first_land_stamp\": 0, \"liftoff_last_land_stamp\": 0, \"liftoff_first_local_sample_stamp\": 0, \"liftoff_last_local_sample_stamp\": 0, \"rc_queued_safety_recorded\": false, \"rc_queued_safety_mask\": 0, \"rc_queued_safety_source\": 2, \"rc_queued_safety_observed_at\": null, \"rc_queued_safety_status_stamp\": 0, \"rc_queued_safety_land_stamp\": 0, \"rc_queued_safety_local_stamp\": 0, \"rc_queued_safety_switch_stamp\": 0, \"rc_first_fault_reason\": \"\", \"rc_latest_fault_reason\": \"\", \"rc_fault_recoverable\": false, \"rc_restart_required\": false, \"rc_recovery_ready\": false, \"rc_recovery_event_blocked\": false, \"rc_recovery_window_active\": false, \"rc_recovery_elapsed_s\": 0, \"rc_recovery_required_s\": 2, \"rc_recovery_status_samples\": 0, \"rc_recovery_land_samples\": 0, \"rc_recovery_local_samples\": 0, \"rc_recovery_status_stamp\": 0, \"rc_recovery_land_stamp\": 0, \"rc_recovery_local_stamp\": 0, \"rc_recovery_block_reason\": \"RC_RECOVERY_NO_ENDED_FAULT\", \"rc_reprepare_block_reason\": \"RC_CORE_RESTART_CONDITIONS_NOT_MET\", \"height_reference_z0\": null, \"height_reference_z_reset\": 0, \"height_reference_vz_reset\": 0, \"height_reference_quat_reset\": 0, \"height_sample_z\": 2, \"height_sample_z_reset\": 0, \"height_sample_vz_reset\": 0, \"height_sample_quat_reset\": 0, \"height_local_sample_stamp\": 1794829308070529, \"rc_ground_reference_qualified\": false, \"rc_ground_reference_samples\": 0, \"rc_ground_reference_seconds\": 0, \"land_age_s\": 1.51300001e-05, \"flags_age_s\": 8.44199985e-06, \"battery_age_s\": 1.1612e-05, \"status_source_age_s\": 0.027243, \"land_source_age_s\": 0.027243, \"local_source_age_s\": 0.027243, \"local_sample_age_s\": 0.029243, \"attitude_source_age_s\": 0.027243, \"attitude_sample_age_s\": 0.029243, \"flags_source_age_s\": 0.027243, \"battery_source_age_s\": 0.027243, \"last_cycle_callbacks_s\": 0.000103056, \"last_cycle_control_s\": 0.000151761, \"last_cycle_period_s\": 0.050180958, \"max_cycle_period_s\": 0.050274245, \"cycle_stall_count\": 0, \"controller_pid\": 20756, \"diagnostic_host_us\": 1794829308099772, \"diagnostic_monotonic_s\": 7158.13389, \"host_clock_anchor_error_s\": 3.89994437e-08, \"host_clock_last_increment_error_s\": 7.89994879e-08, \"receive_policy\": \"BOUNDED_SINGLE_THREAD_PASSES_V1\", \"receive_budget_s\": 0.005, \"receive_stop_reason\": \"IDLE\", \"receive_callbacks_total\": 1856, \"receive_events_total\": 8, \"receive_timing_block_source\": \"\", \"receive_timing_block_reason\": \"\", \"host_clock_event_count\": 0, \"host_clock_last_event\": \"UNAVAILABLE\", \"host_clock_last_event_us\": 0, \"host_clock_last_event_delta_error_s\": null, \"source_timing\": {\"status\": {\"envelope_us\": 1794829308072529, \"sample_us\": 0, \"timeout_s\": 2.5, \"callbacks_total\": 232, \"accepted_total\": 232, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.027243, \"sample_age_s\": null, \"receipt_age_s\": 4.75730003e-05, \"envelope_sample_gap_s\": null, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829308072529, \"last_callback_monotonic_s\": 7158.13385, \"callback_envelope_age_s\": 0.027195, \"callback_sample_age_s\": null, \"rmw_to_callback_s\": 0.026852473}, \"land\": {\"envelope_us\": 1794829308072529, \"sample_us\": 0, \"timeout_s\": 2.5, \"callbacks_total\": 232, \"accepted_total\": 232, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.027243, \"sample_age_s\": null, \"receipt_age_s\": 4.46120002e-05, \"envelope_sample_gap_s\": null, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829308072529, \"last_callback_monotonic_s\": 7158.13385, \"callback_envelope_age_s\": 0.027198, \"callback_sample_age_s\": null, \"rmw_to_callback_s\": 0.026848615}, \"local\": {\"envelope_us\": 1794829308072529, \"sample_us\": 1794829308070529, \"timeout_s\": 0.5, \"callbacks_total\": 232, \"accepted_total\": 232, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.027243, \"sample_age_s\": 0.029243, \"receipt_age_s\": 5.10300006e-05, \"envelope_sample_gap_s\": 0.002, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829308072529, \"last_callback_monotonic_s\": 7158.13384, \"callback_envelope_age_s\": 0.027192, \"callback_sample_age_s\": 0.029192, \"rmw_to_callback_s\": 0.026836563, \"sample_progress_age_s\": 5.10300006e-05, \"sample_regressed\": false}, \"attitude\": {\"envelope_us\": 1794829308072529, \"sample_us\": 1794829308070529, \"timeout_s\": 0.5, \"callbacks_total\": 232, \"accepted_total\": 232, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.027243, \"sample_age_s\": 0.029243, \"receipt_age_s\": 6.69650008e-05, \"envelope_sample_gap_s\": 0.002, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829308072529, \"last_callback_monotonic_s\": 7158.13383, \"callback_envelope_age_s\": 0.027177, \"callback_sample_age_s\": 0.029177, \"rmw_to_callback_s\": 0.026818918, \"sample_progress_age_s\": 6.69650008e-05, \"sample_regressed\": false}, \"flags\": {\"envelope_us\": 1794829308072529, \"sample_us\": 0, \"timeout_s\": 2.5, \"callbacks_total\": 232, \"accepted_total\": 232, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.027243, \"sample_age_s\": null, \"receipt_age_s\": 3.7924e-05, \"envelope_sample_gap_s\": null, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829308072529, \"last_callback_monotonic_s\": 7158.13386, \"callback_envelope_age_s\": 0.027205, \"callback_sample_age_s\": null, \"rmw_to_callback_s\": 0.026844843}, \"battery\": {\"envelope_us\": 1794829308072529, \"sample_us\": 0, \"timeout_s\": 1, \"callbacks_total\": 232, \"accepted_total\": 232, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.027243, \"sample_age_s\": null, \"receipt_age_s\": 4.10940002e-05, \"envelope_sample_gap_s\": null, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829308072529, \"last_callback_monotonic_s\": 7158.13385, \"callback_envelope_age_s\": 0.027202, \"callback_sample_age_s\": null, \"rmw_to_callback_s\": 0.026839913}}, \"control_cycle_id\": 238, \"graph_snapshot_cycle\": 238, \"graph_snapshot_generation\": 238, \"graph_snapshot_invalidated\": false, \"publication_stage\": \"NOT_ATTEMPTED\", \"publication_decision\": \"INVALID_WIRE_OUTPUT\", \"publication_target_committed\": false, \"publication_heartbeat_committed\": false, \"publication_sink_exception\": false, \"pair_context_calls\": 0, \"pair_context_seconds\": [null, null, null], \"pair_context_snapshots\": [], \"last_completed_cycle_work\": {\"callbacks_s\": 0.000103056, \"ipc_s\": 0.000109841, \"runtime_s\": 2.02000047e-06, \"snapshot_s\": 3.47780006e-05, \"graph_s\": 3.26859999e-05, \"receive_passes\": 2, \"snapshot_calls\": 2, \"graph_queries\": 21, \"boundary_s\": 0, \"boundary_calls\": 0, \"reporting_s\": 2.16000444e-07}, \"rc_navigation_mode_slot\": 1, \"rc_prestream_commits\": 0, \"rc_manual_arm_proven\": false, \"rc_axes_safe\": true, \"rc_throttle\": -1, \"native_log_dropped\": 0, \"target_local_commits\": 0, \"heartbeat_local_commits\": 0, \"last_target_local_thrust_z\": null, \"last_target_local_commit_monotonic_s\": null, \"last_heartbeat_local_commit_monotonic_s\": null, \"px4_thrust_adoption\": \"UNOBSERVED\", \"physical_liftoff\": \"EXTERNAL_OBSERVATION_REQUIRED\", \"heartbeat_enabled\": false, \"attitude_output_enabled\": false, \"publication_block_reason\": \"\", \"publication_fault_latched\": false, \"attitude_fresh\": true, \"attitude_healthy_output\": false, \"yaw_reference_rad\": null, \"attitude_reset_counter\": 0, \"attitude_age_s\": 3.74830006e-05, \"attitude_q\": [1, 0, 0, 0], \"attitude_event\": \"\", \"m1_fault_class\": \"NONE\", \"armed_ground_evidence_valid\": false, \"armed_ground_failed_mask\": 0, \"m1_recovery_budget_exhausted\": false, \"bench_operator_required\": false, \"m1_recovery_responsibility\": \"DISARMED_OR_PREPARATION_NO_FLIGHT\", \"m1_operator_release_requested\": false, \"m1_400_requested\": false, \"m1_400_intent\": \"NONE\", \"m1_400_transaction_stage\": \"NONE\", \"m1_400_wire_stamp\": 0, \"m1_400_causal_floor\": 0, \"m1_400_clock_unattributed_acks\": 0, \"m1_400_status_at_wire\": 0, \"m1_400_ack_stamp\": 0, \"m1_400_ack_accepted\": false, \"m1_400_ack_rejected\": false, \"m1_400_ack_ambiguous\": false, \"m1_400_previous_unresolved\": false, \"m1_400_local_generation\": 0, \"m1_400_ack_observations\": 0, \"m1_400_observed_result\": -1, \"m1_400_observed_result_name\": \"NOT_OBSERVED\", \"m1_400_retained_history_count\": 0, \"m1_400_external_review_required\": false, \"m1_400_state_verified\": false, \"m1_400_verified_status_stamp\": 0, \"m1_400_published\": false, \"m1_400_sink_denied\": false, \"m1_176_requested\": false, \"m1_176_published\": false, \"m1_176_ack_policy\": \"R632_ACK176_STATE_CANDIDATE_V1\", \"m1_176_ack_candidate\": false, \"m1_176_ack_accepted\": false, \"m1_176_ack_confirmed_by_state\": false, \"m1_176_ack_disposition\": \"NOT_OBSERVED\", \"m1_176_transaction_stage\": \"NONE\", \"m1_176_local_generation\": 0, \"m1_176_wire_stamp\": 0, \"m1_176_causal_floor\": 0, \"m1_176_ack_stamp\": 0, \"m1_176_clock_unattributed_acks\": 0, \"m1_176_verified_status_stamp\": 0, \"attitude_setpoint_q\": [1, 0, 0, 0], \"thrust_body\": [0, 0, 0], \"nav_state\": 15, \"armed\": false, \"landed\": true, \"at_rest\": true, \"status_fresh\": true, \"local_fresh\": true, \"land_fresh\": true, \"failsafe_fresh\": true, \"battery_fresh\": true, \"source_clock_valid\": true, \"source_clock_validated\": true, \"local_timestamp_sample\": 1794829308070529, \"attitude_timestamp_sample\": 1794829308070529, \"local_sample_fresh\": true, \"attitude_sample_fresh\": true, \"rc_source_clock_valid\": true, \"rc_switch_clock_valid\": true, \"estimate_valid\": true, \"arming_state_known\": true, \"arming_state_raw\": 1, \"local_payload_z_valid\": true, \"local_payload_vz_valid\": true, \"px4_user_takeover_reported\": false, \"xy_valid\": true, \"z_valid\": true, \"vxy_valid\": true, \"vz_valid\": true, \"heading_good\": true, \"dead_reckoning\": false, \"preflight\": true, \"manual_signal\": true, \"battery_connected\": true, \"voltage_v\": 7.5999999, \"status_age_s\": 1.80910001e-05, \"local_age_s\": 2.15480004e-05, \"position_ned\": [0, 0, 2], \"velocity_ned\": [0, 0, 0], \"acceleration_ned_estimate\": [0, 0, 0], \"relative_height_m\": null, \"height_reference_ready\": false, \"height_unavailable_reason\": \"REFERENCE_NOT_READY\", \"vertical_feedback_guard_enabled\": true, \"z_deriv_ned\": 0, \"vertical_feedback_checked\": false, \"vertical_feedback_healthy\": true, \"vertical_feedback_suspect\": false, \"vertical_feedback_velocity_policy\": \"diagnostic_only\", \"vertical_feedback_rate_warning\": false, \"vertical_feedback_rate_error_mps\": null, \"vertical_feedback_position_rate_error_mps\": null, \"vertical_feedback_disagreement_s\": null, \"vertical_feedback_disagreement_samples\": 0, \"vertical_feedback_sample_stamp\": 0, \"vertical_feedback_reason\": \"\", \"range_policy\": \"diagnostic_only_px4_dist_bottom\", \"range_available\": true, \"range_compared\": true, \"range_distance_m\": 0.100000001, \"range_variance_m2\": 0.00249999994, \"range_fused_rise_m\": 0, \"range_rise_m\": 0, \"range_interval_s\": 0.202757, \"range_same_direction\": true, \"range_sample_stamp\": 1794829308070529, \"vertical_closed_loop\": false, \"takeoff_thrust_limited\": false, \"vertical_proportional_thrust\": null, \"vertical_integral_thrust\": null, \"vertical_raw_thrust\": null, \"vertical_thrust_ceiling\": null, \"ground_test\": \"NOT_RUN\", \"ground_reason\": \"NOT_RUN\", \"reason\": \"PUBLISHER_OR_TELEMETRY_CONFLICT\", \"source_counts\": [0, 0, 0], \"offboard_ack\": -1, \"arm_ack\": -1, \"land_ack\": -1, \"_received\": 7158.184795825}')",
+    "harness_sha256": null,
+    "result_sha256": "ce424202c2b9b50694246694ee946fc15cd40bd7a7cd80564960df5c6bda4e66",
+    "final_acceptance": false
+  },
+  {
+    "directory": "normal-plant-2",
+    "result": "FAIL",
+    "error": "TypeError('Object of type float32 is not JSON serializable') native_exit=-9",
+    "harness_sha256": null,
+    "result_sha256": "a511d8fd99531a45dfdc9f413e6fb6e3b081a3ca11713ac9dcb570597e7fe44f",
+    "final_acceptance": false
+  },
+  {
+    "directory": "normal-plant-3",
+    "result": "FAIL",
+    "error": "RuntimeError('normal descent/touchdown/Disarm timed out; state={\"kind\": \"reply\", \"seq\": 671, \"accepted\": true, \"message\": \"STATUS\", \"phase\": \"LANDED\", \"active\": true, \"profile\": \"attitude_altitude\", \"flight_enabled\": false, \"flight_actions_enabled\": true, \"arm_enabled\": false, \"takeoff_enabled\": true, \"flight_parameters_confirmed\": true, \"bench_arm_only_enabled\": false, \"authority_mode\": \"RC_TAKEOVER\", \"authority_attempt_mode\": \"RC_TAKEOVER\", \"authority_locked\": true, \"authority_ready\": true, \"authority_reason\": \"AUTHORITY_READY\", \"rc_link_ready\": true, \"rc_source_seen\": true, \"rc_source_valid\": true, \"rc_source_selected\": true, \"rc_data_source\": 1, \"rc_sticks_moving\": false, \"rc_switches_seen\": true, \"rc_switches_fresh\": true, \"rc_switches_ready\": true, \"rc_mode_slot\": 1, \"rc_arm_switch\": 1, \"rc_kill_switch\": 3, \"rc_kill_latched\": false, \"rc_takeover_ready\": true, \"rc_takeover_confirmed\": true, \"autonomous_failsafe_ready\": false, \"autonomous_failsafe_confirmed\": false, \"operator_takeover_latched\": false, \"takeover_reason\": \"\", \"bench_disarm_ground_proven\": false, \"bench_disarm_status_baseline\": 0, \"bench_disarm_local_baseline\": 0, \"bench_ground_down_tolerance_m\": 0.5, \"bench_ground_vz_tolerance_mps\": 0.25, \"bench_ground_dwell_s\": 0.0, \"stationary_seconds\": 0.0, \"required_ground_seconds\": 2.0, \"ground_vz_tolerance\": 0.1, \"ground_vz_ned\": 0.0, \"authority_ground_failed_mask\": 13, \"last_authority_ground_evidence_valid\": false, \"last_authority_ground_failed_mask\": 0, \"last_authority_ground_stationary_seconds\": 0.0, \"last_authority_ground_vz_ned\": 0.0, \"last_authority_ground_status_stamp\": 0, \"last_authority_ground_land_stamp\": 0, \"last_authority_ground_local_stamp\": 0, \"rc_navigation_enabled\": true, \"visual_navigation_enabled\": false, \"visual_motion\": false, \"visual_reason\": \"\", \"visual_mode\": 0, \"visual_state_sequence\": 0, \"visual_command_sequence\": 0, \"visual_state_valid_fields\": 0, \"visual_reset_counter\": 0, \"visual_state_age_s\": null, \"visual_command_age_s\": null, \"rc_target_height\": 1.5, \"takeoff_stage\": \"LANDING\", \"takeoff_request_accepted\": true, \"liftoff_confirmed\": true, \"target_height_settled\": false, \"navigation_allowed\": false, \"liftoff_unconfirmed_reason\": \"\", \"liftoff_detector_samples\": 20, \"liftoff_local_samples\": 5, \"liftoff_detector_confirmed\": true, \"liftoff_rise_confirmed\": true, \"liftoff_first_land_stamp\": 1794829398527437, \"liftoff_last_land_stamp\": 1794829399492864, \"liftoff_first_local_sample_stamp\": 1794829399288355, \"liftoff_last_local_sample_stamp\": 1794829399490864, \"rc_queued_safety_recorded\": false, \"rc_queued_safety_mask\": 0, \"rc_queued_safety_source\": 2, \"rc_queued_safety_observed_at\": null, \"rc_queued_safety_status_stamp\": 0, \"rc_queued_safety_land_stamp\": 0, \"rc_queued_safety_local_stamp\": 0, \"rc_queued_safety_switch_stamp\": 0, \"rc_first_fault_reason\": \"\", \"rc_latest_fault_reason\": \"\", \"rc_fault_recoverable\": false, \"rc_restart_required\": false, \"rc_recovery_ready\": false, \"rc_recovery_event_blocked\": false, \"rc_recovery_window_active\": false, \"rc_recovery_elapsed_s\": 0, \"rc_recovery_required_s\": 2, \"rc_recovery_status_samples\": 0, \"rc_recovery_land_samples\": 0, \"rc_recovery_local_samples\": 0, \"rc_recovery_status_stamp\": 0, \"rc_recovery_land_stamp\": 0, \"rc_recovery_local_stamp\": 0, \"rc_recovery_block_reason\": \"RC_RECOVERY_NO_ENDED_FAULT\", \"rc_reprepare_block_reason\": \"RC_OUTPUT_STILL_ACTIVE\", \"height_reference_z0\": 2, \"height_reference_z_reset\": 0, \"height_reference_vz_reset\": 0, \"height_reference_quat_reset\": 0, \"height_sample_z\": 2, \"height_sample_z_reset\": 0, \"height_sample_vz_reset\": 0, \"height_sample_quat_reset\": 0, \"height_local_sample_stamp\": 1794829423897506, \"rc_ground_reference_qualified\": true, \"rc_ground_reference_samples\": 45, \"rc_ground_reference_seconds\": 2.20645537, \"land_age_s\": 2.45600004e-05, \"flags_age_s\": 1.26200002e-05, \"battery_age_s\": 1.84009996e-05, \"status_source_age_s\": 0.04804, \"land_source_age_s\": 0.04804, \"local_source_age_s\": 0.04804, \"local_sample_age_s\": 0.05004, \"attitude_source_age_s\": 0.04804, \"attitude_sample_age_s\": 0.05004, \"flags_source_age_s\": 0.04804, \"battery_source_age_s\": 0.04804, \"last_cycle_callbacks_s\": 0.00013171, \"last_cycle_control_s\": 0.000254261, \"last_cycle_period_s\": 0.050199364, \"max_cycle_period_s\": 0.050250126, \"cycle_stall_count\": 0, \"controller_pid\": 20967, \"diagnostic_host_us\": 1794829423947546, \"diagnostic_monotonic_s\": 7273.98167, \"host_clock_anchor_error_s\": -2.74999664e-07, \"host_clock_last_increment_error_s\": -1.31999923e-07, \"receive_policy\": \"BOUNDED_SINGLE_THREAD_PASSES_V1\", \"receive_budget_s\": 0.005, \"receive_stop_reason\": \"IDLE\", \"receive_callbacks_total\": 5344, \"receive_events_total\": 20, \"receive_timing_block_source\": \"\", \"receive_timing_block_reason\": \"\", \"host_clock_event_count\": 0, \"host_clock_last_event\": \"UNAVAILABLE\", \"host_clock_last_event_us\": 0, \"host_clock_last_event_delta_error_s\": null, \"source_timing\": {\"status\": {\"envelope_us\": 1794829423899506, \"sample_us\": 0, \"timeout_s\": 2.5, \"callbacks_total\": 668, \"accepted_total\": 668, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.04804, \"sample_age_s\": null, \"receipt_age_s\": 8.07209999e-05, \"envelope_sample_gap_s\": null, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829423899506, \"last_callback_monotonic_s\": 7273.98159, \"callback_envelope_age_s\": 0.04796, \"callback_sample_age_s\": null, \"rmw_to_callback_s\": 0.047701715}, \"land\": {\"envelope_us\": 1794829423899506, \"sample_us\": 0, \"timeout_s\": 2.5, \"callbacks_total\": 668, \"accepted_total\": 668, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.04804, \"sample_age_s\": null, \"receipt_age_s\": 7.49890005e-05, \"envelope_sample_gap_s\": null, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829423899506, \"last_callback_monotonic_s\": 7273.98159, \"callback_envelope_age_s\": 0.047965, \"callback_sample_age_s\": null, \"rmw_to_callback_s\": 0.047699292}, \"local\": {\"envelope_us\": 1794829423899506, \"sample_us\": 1794829423897506, \"timeout_s\": 0.5, \"callbacks_total\": 668, \"accepted_total\": 668, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.04804, \"sample_age_s\": 0.05004, \"receipt_age_s\": 8.79870004e-05, \"envelope_sample_gap_s\": 0.002, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829423899506, \"last_callback_monotonic_s\": 7273.98158, \"callback_envelope_age_s\": 0.047952, \"callback_sample_age_s\": 0.049952, \"rmw_to_callback_s\": 0.047684173, \"sample_progress_age_s\": 8.79870004e-05, \"sample_regressed\": false}, \"attitude\": {\"envelope_us\": 1794829423899506, \"sample_us\": 1794829423897506, \"timeout_s\": 0.5, \"callbacks_total\": 668, \"accepted_total\": 668, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.04804, \"sample_age_s\": 0.05004, \"receipt_age_s\": 0.000114632, \"envelope_sample_gap_s\": 0.002, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829423899506, \"last_callback_monotonic_s\": 7273.98155, \"callback_envelope_age_s\": 0.047927, \"callback_sample_age_s\": 0.049927, \"rmw_to_callback_s\": 0.047656721, \"sample_progress_age_s\": 0.000114632, \"sample_regressed\": false}, \"flags\": {\"envelope_us\": 1794829423899506, \"sample_us\": 0, \"timeout_s\": 2.5, \"callbacks_total\": 668, \"accepted_total\": 668, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.04804, \"sample_age_s\": null, \"receipt_age_s\": 6.30490003e-05, \"envelope_sample_gap_s\": null, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829423899506, \"last_callback_monotonic_s\": 7273.98161, \"callback_envelope_age_s\": 0.047977, \"callback_sample_age_s\": null, \"rmw_to_callback_s\": 0.04770497}, \"battery\": {\"envelope_us\": 1794829423899506, \"sample_us\": 0, \"timeout_s\": 1, \"callbacks_total\": 668, \"accepted_total\": 668, \"callbacks_this_cycle\": 1, \"envelope_age_s\": 0.04804, \"sample_age_s\": null, \"receipt_age_s\": 6.88299997e-05, \"envelope_sample_gap_s\": null, \"source_reason\": \"VALID\", \"receipt_reason\": \"VALID\", \"stamp_regressed\": false, \"last_callback_accepted\": true, \"last_callback_envelope_us\": 1794829423899506, \"last_callback_monotonic_s\": 7273.9816, \"callback_envelope_age_s\": 0.047971, \"callback_sample_age_s\": null, \"rmw_to_callback_s\": 0.047681847}}, \"control_cycle_id\": 678, \"graph_snapshot_cycle\": 678, \"graph_snapshot_generation\": 678, \"graph_snapshot_invalidated\": false, \"publication_stage\": \"NOT_ATTEMPTED\", \"publication_decision\": \"INVALID_WIRE_OUTPUT\", \"publication_target_committed\": false, \"publication_heartbeat_committed\": false, \"publication_sink_exception\": false, \"pair_context_calls\": 0, \"pair_context_seconds\": [null, null, null], \"pair_context_snapshots\": [], \"last_completed_cycle_work\": {\"callbacks_s\": 0.00013171, \"ipc_s\": 0.000131797, \"runtime_s\": 4.00599947e-06, \"snapshot_s\": 5.94739986e-05, \"graph_s\": 5.42550006e-05, \"receive_passes\": 2, \"snapshot_calls\": 5, \"graph_queries\": 21, \"boundary_s\": 3.7080008e-06, \"boundary_calls\": 3, \"reporting_s\": 2.39999281e-07}, \"rc_navigation_mode_slot\": 1, \"rc_prestream_commits\": 54, \"rc_manual_arm_proven\": true, \"rc_axes_safe\": true, \"rc_throttle\": -1, \"native_log_dropped\": 0, \"target_local_commits\": 636, \"heartbeat_local_commits\": 636, \"last_target_local_thrust_z\": 0, \"last_target_local_commit_monotonic_s\": 7273.9318, \"last_heartbeat_local_commit_monotonic_s\": 7273.93181, \"px4_thrust_adoption\": \"UNOBSERVED\", \"physical_liftoff\": \"EXTERNAL_OBSERVATION_REQUIRED\", \"heartbeat_enabled\": true, \"attitude_output_enabled\": true, \"publication_block_reason\": \"\", \"publication_fault_latched\": false, \"attitude_fresh\": true, \"attitude_healthy_output\": true, \"yaw_reference_rad\": 0, \"attitude_reset_counter\": 0, \"attitude_age_s\": 6.4203e-05, \"attitude_q\": [1, 0, 0, 0], \"attitude_event\": \"RAMP_HEIGHT_GUARD_FEEDBACK_ENGAGED\", \"m1_fault_class\": \"CONTROLLED_DESCENT\", \"armed_ground_evidence_valid\": false, \"armed_ground_failed_mask\": 0, \"m1_recovery_budget_exhausted\": false, \"bench_operator_required\": false, \"m1_recovery_responsibility\": \"COMPANION_SLEW_LIMITED_POWER_REMOVAL_AND_NEW_GROUND_PROOF\", \"m1_operator_release_requested\": false, \"m1_400_requested\": false, \"m1_400_intent\": \"NONE\", \"m1_400_transaction_stage\": \"NONE\", \"m1_400_wire_stamp\": 0, \"m1_400_causal_floor\": 0, \"m1_400_clock_unattributed_acks\": 0, \"m1_400_status_at_wire\": 0, \"m1_400_ack_stamp\": 0, \"m1_400_ack_accepted\": false, \"m1_400_ack_rejected\": false, \"m1_400_ack_ambiguous\": false, \"m1_400_previous_unresolved\": false, \"m1_400_local_generation\": 0, \"m1_400_ack_observations\": 0, \"m1_400_observed_result\": -1, \"m1_400_observed_result_name\": \"NOT_OBSERVED\", \"m1_400_retained_history_count\": 0, \"m1_400_external_review_required\": false, \"m1_400_state_verified\": false, \"m1_400_verified_status_stamp\": 0, \"m1_400_published\": false, \"m1_400_sink_denied\": false, \"m1_176_requested\": false, \"m1_176_published\": false, \"m1_176_ack_policy\": \"R632_ACK176_STATE_CANDIDATE_V1\", \"m1_176_ack_candidate\": false, \"m1_176_ack_accepted\": false, \"m1_176_ack_confirmed_by_state\": false, \"m1_176_ack_disposition\": \"NOT_OBSERVED\", \"m1_176_transaction_stage\": \"NONE\", \"m1_176_local_generation\": 0, \"m1_176_wire_stamp\": 0, \"m1_176_causal_floor\": 0, \"m1_176_ack_stamp\": 0, \"m1_176_clock_unattributed_acks\": 0, \"m1_176_verified_status_stamp\": 0, \"attitude_setpoint_q\": [1, 0, 0, 0], \"thrust_body\": [0, 0, 0], \"nav_state\": 14, \"armed\": true, \"landed\": true, \"at_rest\": false, \"status_fresh\": true, \"local_fresh\": true, \"land_fresh\": true, \"failsafe_fresh\": true, \"battery_fresh\": true, \"source_clock_valid\": true, \"source_clock_validated\": true, \"local_timestamp_sample\": 1794829423897506, \"attitude_timestamp_sample\": 1794829423897506, \"local_sample_fresh\": true, \"attitude_sample_fresh\": true, \"rc_source_clock_valid\": true, \"rc_switch_clock_valid\": true, \"estimate_valid\": true, \"arming_state_known\": true, \"arming_state_raw\": 2, \"local_payload_z_valid\": true, \"local_payload_vz_valid\": true, \"px4_user_takeover_reported\": false, \"xy_valid\": true, \"z_valid\": true, \"vxy_valid\": true, \"vz_valid\": true, \"heading_good\": true, \"dead_reckoning\": false, \"preflight\": true, \"manual_signal\": true, \"battery_connected\": true, \"voltage_v\": 7.5999999, \"status_age_s\": 3.02919998e-05, \"local_age_s\": 3.75580003e-05, \"position_ned\": [0, 0, 2], \"velocity_ned\": [0, 0, 0], \"acceleration_ned_estimate\": [0, 0, 0], \"relative_height_m\": 0, \"height_reference_ready\": true, \"height_unavailable_reason\": \"\", \"vertical_feedback_guard_enabled\": true, \"z_deriv_ned\": 0, \"vertical_feedback_checked\": true, \"vertical_feedback_healthy\": true, \"vertical_feedback_suspect\": false, \"vertical_feedback_velocity_policy\": \"diagnostic_only\", \"vertical_feedback_rate_warning\": false, \"vertical_feedback_rate_error_mps\": 0, \"vertical_feedback_position_rate_error_mps\": 0, \"vertical_feedback_disagreement_s\": 0, \"vertical_feedback_disagreement_samples\": 0, \"vertical_feedback_sample_stamp\": 1794829423847128, \"vertical_feedback_reason\": \"\", \"range_policy\": \"diagnostic_only_px4_dist_bottom\", \"range_available\": true, \"range_compared\": true, \"range_distance_m\": 0.100000001, \"range_variance_m2\": 0.00249999994, \"range_fused_rise_m\": 0, \"range_rise_m\": 0, \"range_interval_s\": 0.200619, \"range_same_direction\": true, \"range_sample_stamp\": 1794829423897506, \"vertical_closed_loop\": false, \"takeoff_thrust_limited\": false, \"vertical_proportional_thrust\": null, \"vertical_integral_thrust\": null, \"vertical_raw_thrust\": null, \"vertical_thrust_ceiling\": null, \"ground_test\": \"NOT_RUN\", \"ground_reason\": \"NOT_RUN\", \"reason\": \"LANDED\", \"source_counts\": [1, 1, 1], \"offboard_ack\": -1, \"arm_ack\": -1, \"land_ack\": -1, \"_received\": 7274.032376647}')",
+    "harness_sha256": null,
+    "result_sha256": "aae9cb60cd4306de859676a39a706bf45131de23088e036019c02bdfe207afd7",
+    "final_acceptance": false
+  },
+  {
+    "directory": "normal-plant-4",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": null,
+    "result_sha256": "89506c43ead511a767270b8e94234dd331a06e2f187d84ee7d031ee80ef633f3",
+    "final_acceptance": false
+  },
+  {
+    "directory": "normal-replay-1",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": null,
+    "result_sha256": "cd47caa7028e7ba63a9ef1ef00be77c765799b4d252a3102838d761eeb6d1517",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-feedback_stale-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "5857c5f052e10ee7d0c4800fec8b6d9a1c0b6250fa0eddb0a738b385ddb86750",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-kill-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "352f7546df12b4c8c2085ca252cd1729f40c641d359c27768ee1643b8b401fae",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-normal-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "f0e7cb8ff12b9de0b188450b356b6c52225a549c77df89fcc3fbe32615279c16",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-offboard_flag-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "76bf3e53f0f0f94f16e19e5ecba58e6e26ce72082054593667ae04f957967070",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-offboard_loss-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "32c448a5d8e5a87941a64c27109e5cd6728f35632a68f12b7bd7a26b94901d28",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-quat_reset-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "e311bd96e6e2a411ae56284ad997486aaee74481df8e7e345407b983271f9cf8",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-range_unavailable-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "454a99d7be78e867904250b11ef20b3a2b51a65befda25868818613a8231ff6d",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-rc_takeover-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "9d3224c52bfd4f1aa8700c4f9eed00b214c6c9f130520662763211f14f829448",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-velocity_warning-replay",
+    "result": "FAIL",
+    "error": " cleanup_error=RuntimeError('nonzero target while synthetic PX4 disarmed') native_exit=-9",
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "019914d0e095d9ab70e96af4b90ac358c31fe225403915852af47095ec4e0e5e",
+    "final_acceptance": false
+  },
+  {
+    "directory": "verified-vertical_reset-replay",
+    "result": "PASS",
+    "error": null,
+    "harness_sha256": "ae8c31f77bb86c514206130f7898dd72a3d7972bdfccff59db2c094fd67eeae5",
+    "result_sha256": "fbbc2e6c1db35d549f0942055f8f72ec6d77eefc1d3bcb563889e9e6136a9d12",
+    "final_acceptance": false
+  }
+]

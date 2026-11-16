@@ -1,0 +1,1681 @@
+[
+  {
+    "name": "accept2-feedback_stale-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.542019889000585,
+      "height_hold_from_ramp_s": 9.670145985999625,
+      "hold_observation_s": 2.001646194999921,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.05104716399910103,
+      "max_heartbeat_wire_gap_s": 0.050386,
+      "max_heartbeat_gap_including_window_edges_s": 0.05104716399910103,
+      "max_target_gap_including_window_edges_s": 0.05130349799946998,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8598.491828759,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8598.491830537
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8598.641974497
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8598.792582045
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8598.942615196
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8600.145249536
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8609.815395443
+      },
+      {
+        "event": "inject_feedback_stale",
+        "monotonic": 8611.817047103
+      },
+      {
+        "event": "safety_observed",
+        "monotonic": 8612.419853001,
+        "reason": "DDS_SOURCE_CLOCK_UNSYNCHRONIZED_OR_STALE",
+        "takeover_reason": "",
+        "delay_from_injection_s": 0.6028112660005718
+      },
+      {
+        "event": "latch_preserved_no_more_wire",
+        "monotonic": 8613.220835563
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8594.282902939,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8596.385763484,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8598.390812562,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8598.641235847,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8599.092207065,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8600.144538941,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8603.401528269,
+        "height": 0.22666166340004565
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8609.81430506,
+        "height": 1.5
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "DDS_SOURCE_CLOCK_UNSYNCHRONIZED_OR_STALE",
+        "received": 8612.419093775,
+        "height": 1.5
+      }
+    ]
+  },
+  {
+    "name": "accept2-kill-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.526447369999005,
+      "height_hold_from_ramp_s": 9.619938890999038,
+      "hold_observation_s": 2.0006583829999727,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.05114121900078317,
+      "max_heartbeat_wire_gap_s": 0.050273,
+      "max_heartbeat_gap_including_window_edges_s": 0.05114121900078317,
+      "max_target_gap_including_window_edges_s": 0.051399780000792816,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8719.474567921,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8719.474569509
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8719.624918331
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8719.775641769
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8719.926237962
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8721.177935746
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8730.797874161
+      },
+      {
+        "event": "inject_kill",
+        "monotonic": 8732.798530748
+      },
+      {
+        "event": "safety_observed",
+        "monotonic": 8732.903866382,
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "takeover_reason": "KILL_OR_TERMINATION",
+        "delay_from_injection_s": 0.10533608799960348
+      },
+      {
+        "event": "latch_preserved_no_more_wire",
+        "monotonic": 8733.703980275
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8715.26545601,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8717.368843641,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8719.373744268,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8719.624187039,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8720.125295001,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8721.177206504,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8724.433397771,
+        "height": 0.22654093079963786
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8730.797152112,
+        "height": 1.5
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "received": 8732.903108072,
+        "height": 1.5
+      }
+    ]
+  },
+  {
+    "name": "accept2-normal-plant",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.13894397224030208,
+      "settling_entry_from_ramp_s": 7.930717729001117,
+      "height_hold_from_ramp_s": 10.123315259001174,
+      "hold_observation_s": 2.0014176450004015,
+      "hold_max_abs_error_m": 0.13894397224030208,
+      "hold_rms_error_m": 0.1265746102041856,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.0519152299984853,
+      "max_heartbeat_wire_gap_s": 0.05033,
+      "max_heartbeat_gap_including_window_edges_s": 0.0519152299984853,
+      "max_target_gap_including_window_edges_s": 0.052125326999885147,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8761.124357311,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8761.124359139
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8761.274357585
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8761.424751802
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8761.575365452
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8762.777411967
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8772.900723709
+      },
+      {
+        "event": "land_request",
+        "monotonic": 8774.902141231
+      },
+      {
+        "event": "disarm_ack_only_still_armed",
+        "monotonic": 8791.744549901
+      },
+      {
+        "event": "ack_did_not_replace_disarmed_status",
+        "monotonic": 8792.342932939
+      },
+      {
+        "event": "independent_new_disarmed_status",
+        "monotonic": 8792.342934181
+      },
+      {
+        "event": "post_disarm_stabilized_release_command",
+        "monotonic": 8792.444234173
+      },
+      {
+        "event": "native_safe_disarmed_confirmed",
+        "monotonic": 8792.493483395,
+        "reason": "RELEASE_OFFBOARD"
+      },
+      {
+        "event": "release_ack_still_offboard",
+        "monotonic": 8792.595869642
+      },
+      {
+        "event": "manual_ground_mode_release",
+        "monotonic": 8792.59758236
+      },
+      {
+        "event": "second_ready",
+        "monotonic": 8798.507272744
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8756.916748894,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8759.020013233,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8761.023195792,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8761.27362079,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8761.724437503,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8762.776673436,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8766.43496767,
+        "height": 0.20447148878824573
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8772.899978008,
+        "height": 1.5994538785414532
+      },
+      {
+        "phase": "DESCENT",
+        "reason": "LAND_ACCEPTED",
+        "received": 8774.956071484,
+        "height": 1.638697536507636
+      },
+      {
+        "phase": "RECOVERY_DESCENT",
+        "reason": "DESCENT_TIMEOUT_CONTROLLED_RECOVERY_ACTIVE_HANDOFF_UNVERIFIED",
+        "received": 8784.975464434,
+        "height": 0.25886171308267336
+      },
+      {
+        "phase": "LANDED",
+        "reason": "LANDED",
+        "received": 8788.632922892,
+        "height": 0.0
+      },
+      {
+        "phase": "REQUEST_DISARM",
+        "reason": "REQUEST_DISARM",
+        "received": 8791.691153182,
+        "height": 0.0
+      },
+      {
+        "phase": "SAFE_DISARMED",
+        "reason": "DISARM_ACK_AND_NEW_DISARMED_LANDED_STATUS",
+        "received": 8792.492456035,
+        "height": 0.0
+      },
+      {
+        "phase": "RELEASE_OFFBOARD",
+        "reason": "RELEASE_OFFBOARD",
+        "received": 8792.492677731,
+        "height": 0.0
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "received": 8792.692989063,
+        "height": 0.0
+      },
+      {
+        "phase": "IDLE",
+        "reason": "RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET",
+        "received": 8796.501520538,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8796.501765683,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8798.506545648,
+        "height": 0.0
+      }
+    ]
+  },
+  {
+    "name": "accept2-normal-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.527139953999722,
+      "height_hold_from_ramp_s": 9.672552367999742,
+      "hold_observation_s": 2.0016758309993747,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.05101782999918214,
+      "max_heartbeat_wire_gap_s": 0.050305,
+      "max_heartbeat_gap_including_window_edges_s": 0.05101782999918214,
+      "max_target_gap_including_window_edges_s": 0.05122879199916497,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8521.726921127,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8521.72692347
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8521.877793876
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8522.028123219
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8522.178462303
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8523.380664495
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8533.053216681
+      },
+      {
+        "event": "land_request",
+        "monotonic": 8535.054892813
+      },
+      {
+        "event": "disarm_ack_only_still_armed",
+        "monotonic": 8546.736574243
+      },
+      {
+        "event": "ack_did_not_replace_disarmed_status",
+        "monotonic": 8547.334781248
+      },
+      {
+        "event": "independent_new_disarmed_status",
+        "monotonic": 8547.334782892
+      },
+      {
+        "event": "post_disarm_stabilized_release_command",
+        "monotonic": 8547.435912626
+      },
+      {
+        "event": "native_safe_disarmed_confirmed",
+        "monotonic": 8547.48545448,
+        "reason": "DISARM_ACK_AND_NEW_DISARMED_LANDED_STATUS"
+      },
+      {
+        "event": "release_ack_still_offboard",
+        "monotonic": 8547.586225348
+      },
+      {
+        "event": "manual_ground_mode_release",
+        "monotonic": 8547.587944149
+      },
+      {
+        "event": "second_ready",
+        "monotonic": 8553.549335634
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8517.517317594,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8519.621903251,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8521.626403613,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8521.876998573,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8522.327647488,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8523.379892025,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8526.638825285,
+        "height": 0.22735074690008333
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8533.052342757,
+        "height": 1.5
+      },
+      {
+        "phase": "DESCENT",
+        "reason": "LAND_ACCEPTED",
+        "received": 8535.106471169,
+        "height": 1.4997488366297
+      },
+      {
+        "phase": "LANDED",
+        "reason": "LANDED",
+        "received": 8543.576289477,
+        "height": 0.0
+      },
+      {
+        "phase": "REQUEST_DISARM",
+        "reason": "REQUEST_DISARM",
+        "received": 8546.682752615,
+        "height": 0.0
+      },
+      {
+        "phase": "SAFE_DISARMED",
+        "reason": "DISARM_ACK_AND_NEW_DISARMED_LANDED_STATUS",
+        "received": 8547.484654104,
+        "height": 0.0
+      },
+      {
+        "phase": "RELEASE_OFFBOARD",
+        "reason": "RELEASE_OFFBOARD",
+        "received": 8547.534398452,
+        "height": 0.0
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "received": 8547.684986108,
+        "height": 0.0
+      },
+      {
+        "phase": "IDLE",
+        "reason": "RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET",
+        "received": 8551.494473309,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8551.544610902,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8553.548606621,
+        "height": 0.0
+      }
+    ]
+  },
+  {
+    "name": "accept2-offboard_flag-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.522859890999825,
+      "height_hold_from_ramp_s": 9.673336768000809,
+      "hold_observation_s": 2.0004282829995645,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.05114420700010669,
+      "max_heartbeat_wire_gap_s": 0.050271,
+      "max_heartbeat_gap_including_window_edges_s": 0.05114420700010669,
+      "max_target_gap_including_window_edges_s": 0.05151115300031961,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8678.884250918,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8678.884252695
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8679.033924069
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8679.184577198
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8679.334981047
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8680.536975985
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8690.210312579
+      },
+      {
+        "event": "inject_offboard_flag",
+        "monotonic": 8692.210746326
+      },
+      {
+        "event": "safety_observed",
+        "monotonic": 8692.314465072,
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "takeover_reason": "OFFBOARD_HEARTBEAT_LOST",
+        "delay_from_injection_s": 0.10372409599949606
+      },
+      {
+        "event": "latch_preserved_no_more_wire",
+        "monotonic": 8693.11642406
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8674.675240356,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8676.779228618,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8678.783267756,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8679.033192485,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8679.484317015,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8680.536239865,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8683.793640528,
+        "height": 0.22672091699987504
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8690.20920517,
+        "height": 1.5
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "received": 8692.313728457,
+        "height": 1.5
+      }
+    ]
+  },
+  {
+    "name": "accept2-offboard_loss-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.52366663200155,
+      "height_hold_from_ramp_s": 9.670916742001282,
+      "hold_observation_s": 2.000539810000191,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.05113937900023302,
+      "max_heartbeat_wire_gap_s": 0.050317,
+      "max_heartbeat_gap_including_window_edges_s": 0.05113937900023302,
+      "max_target_gap_including_window_edges_s": 0.05142638200049987,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8658.913942639,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8658.913944346
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8659.064003066
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8659.214638071
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8659.364716348
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8660.568060043
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8670.238974102
+      },
+      {
+        "event": "inject_offboard_loss",
+        "monotonic": 8672.239513997
+      },
+      {
+        "event": "safety_observed",
+        "monotonic": 8672.343306502,
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "takeover_reason": "PX4_LEFT_OFFBOARD",
+        "delay_from_injection_s": 0.10379256199848896
+      },
+      {
+        "event": "latch_preserved_no_more_wire",
+        "monotonic": 8673.145009888
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8654.704003012,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8656.808038586,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8658.812479874,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8659.063274046,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8659.514393895,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8660.567346554,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8663.823804166,
+        "height": 0.22651904130016193
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8670.237903542,
+        "height": 1.5
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "received": 8672.342599267,
+        "height": 1.5
+      }
+    ]
+  },
+  {
+    "name": "accept2-quat_reset-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.531552921000184,
+      "height_hold_from_ramp_s": 9.672322795999207,
+      "hold_observation_s": 2.0012937000010425,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.05105922899929283,
+      "max_heartbeat_wire_gap_s": 0.050259,
+      "max_heartbeat_gap_including_window_edges_s": 0.05105922899929283,
+      "max_target_gap_including_window_edges_s": 0.051358241000343696,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8618.930622538,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8618.930624092
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8619.080776687
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8619.231074487
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8619.381214852
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8620.584099535
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8630.256422637
+      },
+      {
+        "event": "inject_quat_reset",
+        "monotonic": 8632.257717696
+      },
+      {
+        "event": "safety_observed",
+        "monotonic": 8632.362334281,
+        "reason": "ACTIVE_QUATERNION_RESET",
+        "takeover_reason": "",
+        "delay_from_injection_s": 0.10461775299881992
+      },
+      {
+        "event": "latch_preserved_no_more_wire",
+        "monotonic": 8633.162734746
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8614.721333113,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8616.824993094,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8618.829392131,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8619.08002553,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8619.530750729,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8620.583399381,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8623.841265908,
+        "height": 0.22696854480018375
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8630.25548046,
+        "height": 1.5
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "ACTIVE_QUATERNION_RESET",
+        "received": 8632.361584075,
+        "height": 1.5
+      }
+    ]
+  },
+  {
+    "name": "accept2-range_unavailable-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.519285749000119,
+      "height_hold_from_ramp_s": 9.670038852000289,
+      "hold_observation_s": 2.0012352100002317,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.05116824000106135,
+      "max_heartbeat_wire_gap_s": 0.050365,
+      "max_heartbeat_gap_including_window_edges_s": 0.05116824000106135,
+      "max_target_gap_including_window_edges_s": 0.051146751999112894,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8560.131230569,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8560.131232786
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8560.281180253
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8560.432186298
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8560.582395105
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8561.78378575
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8571.453823364
+      },
+      {
+        "event": "ground_range_unavailable_without_blocking_takeoff",
+        "monotonic": 8573.455052573
+      },
+      {
+        "event": "land_request",
+        "monotonic": 8573.455058037
+      },
+      {
+        "event": "disarm_ack_only_still_armed",
+        "monotonic": 8585.135698135
+      },
+      {
+        "event": "ack_did_not_replace_disarmed_status",
+        "monotonic": 8585.734493929
+      },
+      {
+        "event": "independent_new_disarmed_status",
+        "monotonic": 8585.734495429
+      },
+      {
+        "event": "post_disarm_stabilized_release_command",
+        "monotonic": 8585.836002963
+      },
+      {
+        "event": "native_safe_disarmed_confirmed",
+        "monotonic": 8585.884986138,
+        "reason": "DISARM_ACK_AND_NEW_DISARMED_LANDED_STATUS"
+      },
+      {
+        "event": "release_ack_still_offboard",
+        "monotonic": 8585.986181334
+      },
+      {
+        "event": "manual_ground_mode_release",
+        "monotonic": 8585.987879426
+      },
+      {
+        "event": "second_ready",
+        "monotonic": 8591.948090343
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8555.919273994,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8558.025997431,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8560.030205825,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8560.280489932,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8560.731339145,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8561.783047545,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8565.039414695,
+        "height": 0.22637987909984075
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8571.452867289,
+        "height": 1.5
+      },
+      {
+        "phase": "DESCENT",
+        "reason": "LAND_ACCEPTED",
+        "received": 8573.507609662,
+        "height": 1.4997396235575873
+      },
+      {
+        "phase": "LANDED",
+        "reason": "LANDED",
+        "received": 8581.976160465,
+        "height": 0.0
+      },
+      {
+        "phase": "REQUEST_DISARM",
+        "reason": "REQUEST_DISARM",
+        "received": 8585.082010397,
+        "height": 0.0
+      },
+      {
+        "phase": "SAFE_DISARMED",
+        "reason": "DISARM_ACK_AND_NEW_DISARMED_LANDED_STATUS",
+        "received": 8585.884156499,
+        "height": 0.0
+      },
+      {
+        "phase": "RELEASE_OFFBOARD",
+        "reason": "RELEASE_OFFBOARD",
+        "received": 8585.934379343,
+        "height": 0.0
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "received": 8586.085346903,
+        "height": 0.0
+      },
+      {
+        "phase": "IDLE",
+        "reason": "RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET",
+        "received": 8589.893163866,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8589.9433223,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8591.947378458,
+        "height": 0.0
+      }
+    ]
+  },
+  {
+    "name": "accept2-rc_takeover-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.524780251000266,
+      "height_hold_from_ramp_s": 9.67510933000085,
+      "hold_observation_s": 2.0008630199990876,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.05097496999951545,
+      "max_heartbeat_wire_gap_s": 0.05023,
+      "max_heartbeat_gap_including_window_edges_s": 0.05097496999951545,
+      "max_target_gap_including_window_edges_s": 0.05120821000127762,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8698.866663699,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8698.86666543
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8699.016759579
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8699.16733646
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8699.317777224
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8700.519480724
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8710.19459085
+      },
+      {
+        "event": "inject_rc_takeover",
+        "monotonic": 8712.195454464
+      },
+      {
+        "event": "controlled_takeover_descent",
+        "monotonic": 8712.249179617
+      },
+      {
+        "event": "controlled_handover_wire_continued",
+        "monotonic": 8712.850989129
+      },
+      {
+        "event": "safety_observed",
+        "monotonic": 8712.95205708,
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "takeover_reason": "PX4_LEFT_OFFBOARD",
+        "delay_from_injection_s": 0.7566032350005116
+      },
+      {
+        "event": "latch_preserved_no_more_wire",
+        "monotonic": 8713.753406577
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8694.656083293,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8696.761155879,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8698.765425644,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8699.016016079,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8699.466745099,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8700.518751372,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8703.776947828,
+        "height": 0.2270535201001621
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8710.193648137,
+        "height": 1.5
+      },
+      {
+        "phase": "DESCENT",
+        "reason": "TAKEOVER_REQUEST_PENDING_CONTROLLED_GROUND_RECOVERY",
+        "received": 8712.248465648,
+        "height": 1.5
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "OPERATOR_TAKEOVER_LATCHED",
+        "received": 8712.951290103,
+        "height": 1.5
+      }
+    ]
+  },
+  {
+    "name": "accept2-velocity_warning-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.545704506999755,
+      "height_hold_from_ramp_s": 9.672237344999303,
+      "hold_observation_s": 2.0009642010008974,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.051140121000571526,
+      "max_heartbeat_wire_gap_s": 0.050311,
+      "max_heartbeat_gap_including_window_edges_s": 0.051140121000571526,
+      "max_target_gap_including_window_edges_s": 0.05132558799959952,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8739.473916972,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8739.473918434
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8739.623842595
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8739.774470655
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8739.924762976
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8741.128260777
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8750.800504451
+      },
+      {
+        "event": "inject_velocity_warning",
+        "monotonic": 8752.80146668
+      },
+      {
+        "event": "warning_without_control_stop",
+        "monotonic": 8755.407678914
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8735.263659112,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8737.367282898,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8739.372794014,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8739.623114287,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8740.074292904,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8741.12756744,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8744.385159037,
+        "height": 0.22672312109989434
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8750.799557917,
+        "height": 1.5
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "UNEXPLAINED_Z_VZ_ESTIMATOR_JUMP",
+        "received": 8755.510724882,
+        "height": 0.0
+      }
+    ]
+  },
+  {
+    "name": "accept2-vertical_reset-replay",
+    "result": "PASS",
+    "metrics": {
+      "target_m": 1.5,
+      "overshoot_m": 0.0,
+      "settling_entry_from_ramp_s": 7.52076087399837,
+      "height_hold_from_ramp_s": 9.674445586999354,
+      "hold_observation_s": 2.000074367000707,
+      "hold_max_abs_error_m": 0.0,
+      "hold_rms_error_m": 0.0,
+      "horizontal_drift_m": 0.0,
+      "horizontal_drift_interpretation": "fixed XY input, not measured capability",
+      "max_heartbeat_receive_gap_s": 0.051138093000190565,
+      "max_heartbeat_wire_gap_s": 0.05026,
+      "max_heartbeat_gap_including_window_edges_s": 0.051138093000190565,
+      "max_target_gap_including_window_edges_s": 0.05131974200048717,
+      "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"
+    },
+    "gates": {
+      "ordered_phases": true,
+      "converged_2s": true,
+      "hold_error_within_config": true,
+      "heartbeat_below_stall_budget": true,
+      "target_and_heartbeat_window_covered": true,
+      "monotonic_wire": true,
+      "target_heartbeat_pairs": true,
+      "inputs_unchanged_during_run": true
+    },
+    "events": [
+      {
+        "event": "console_takeoff_refused",
+        "monotonic": 8638.98609104,
+        "message": "RC_NAVIGATION_CONSOLE_READ_ONLY_USE_PHYSICAL_SWITCHES"
+      },
+      {
+        "event": "manual_arm_switch",
+        "monotonic": 8638.986092359
+      },
+      {
+        "event": "simulated_manual_armed_status",
+        "monotonic": 8639.136055644
+      },
+      {
+        "event": "navigation_switch",
+        "monotonic": 8639.236695244
+      },
+      {
+        "event": "simulated_offboard_status",
+        "monotonic": 8639.386765682
+      },
+      {
+        "event": "ramp",
+        "monotonic": 8640.589272636
+      },
+      {
+        "event": "height_hold",
+        "monotonic": 8650.263722443
+      },
+      {
+        "event": "inject_vertical_reset",
+        "monotonic": 8652.26379881
+      },
+      {
+        "event": "safety_observed",
+        "monotonic": 8652.367438802,
+        "reason": "ACTIVE_VERTICAL_ESTIMATOR_RESET",
+        "takeover_reason": "",
+        "delay_from_injection_s": 0.10364534299878869
+      },
+      {
+        "event": "latch_preserved_no_more_wire",
+        "monotonic": 8653.168319327
+      }
+    ],
+    "phases": [
+      {
+        "phase": "IDLE",
+        "reason": "IDLE_NO_AUTOMATIC_ARM",
+        "received": 8634.725273847,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_PRESTREAM",
+        "reason": "RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE",
+        "received": 8636.880844845,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_READY_WAIT_ARM",
+        "reason": "RC_READY_WAIT_CH5_MANUAL_ARM",
+        "received": 8638.884804656,
+        "height": 0.0
+      },
+      {
+        "phase": "RC_ARMED_WAIT_NAVIGATION",
+        "reason": "RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS",
+        "received": 8639.135341488,
+        "height": 0.0
+      },
+      {
+        "phase": "ARMED_GROUND",
+        "reason": "RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED",
+        "received": 8639.536231033,
+        "height": 0.0
+      },
+      {
+        "phase": "THRUST_RAMP",
+        "reason": "THRUST_RAMP",
+        "received": 8640.588594525,
+        "height": 0.0
+      },
+      {
+        "phase": "ASCEND",
+        "reason": "ASCEND",
+        "received": 8643.847685961,
+        "height": 0.22740460079985497
+      },
+      {
+        "phase": "HEIGHT_HOLD",
+        "reason": "HEIGHT_HOLD",
+        "received": 8650.262803067,
+        "height": 1.5
+      },
+      {
+        "phase": "SAFETY",
+        "reason": "ACTIVE_VERTICAL_ESTIMATOR_RESET",
+        "received": 8652.366678863,
+        "height": 1.5
+      }
+    ]
+  }
+]

@@ -1,0 +1,10 @@
+velocity_warning IDLE IDLE_NO_AUTOMATIC_ARM h= 0.0
+velocity_warning RC_PRESTREAM RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE h= 0.0
+velocity_warning RC_READY_WAIT_ARM RC_READY_WAIT_CH5_MANUAL_ARM h= 0.0
+velocity_warning RC_ARMED_WAIT_NAVIGATION RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS h= 0.0
+velocity_warning ARMED_GROUND RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED h= 0.0
+velocity_warning THRUST_RAMP THRUST_RAMP h= 0.0
+velocity_warning ASCEND ASCEND h= 0.227
+velocity_warning HEIGHT_HOLD HEIGHT_HOLD h= 1.5
+velocity_warning SAFETY UNEXPLAINED_Z_VZ_ESTIMATOR_JUMP h= 0.0
+{"result": "PASS", "error": null, "scenario": "velocity_warning", "motion": "replay", "metrics": {"target_m": 1.5, "overshoot_m": 0.0, "settling_entry_from_ramp_s": 7.545704506999755, "height_hold_from_ramp_s": 9.672237344999303, "hold_observation_s": 2.0009642010008974, "hold_max_abs_error_m": 0.0, "hold_rms_error_m": 0.0, "horizontal_drift_m": 0.0, "horizontal_drift_interpretation": "fixed XY input, not measured capability", "max_heartbeat_receive_gap_s": 0.051140121000571526, "max_heartbeat_wire_gap_s": 0.050311, "max_heartbeat_gap_including_window_edges_s": 0.051140121000571526, "max_target_gap_including_window_edges_s": 0.05132558799959952, "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"}}

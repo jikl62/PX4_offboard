@@ -1,0 +1,17 @@
+{
+  "baseline": "8767608f79a56e346d5654228770f948841fe0e3",
+  "branch": "readability/fc01-chinese-20261111",
+  "production_diff_exit": 0,
+  "production_diff": "",
+  "protected_unchanged": true,
+  "hardware_access": false,
+  "push": false,
+  "deploy": false,
+  "merge": false,
+  "unrelated_untracked_preserved": [
+    "docs/investigations/20261116_stage1/",
+    "tests/test_micovio_clock_candidate.py",
+    "tests/test_micovio_uart0_reader.py",
+    "tools/"
+  ]
+}

@@ -1,0 +1,1163 @@
+{
+  "head": "8767608f79a56e346d5654228770f948841fe0e3",
+  "build_record_sha256": "16c0a2b2cec87f7d19737343fe6c19a1c00404448bea87e960788f74297fd02c",
+  "binary": {
+    "path": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node",
+    "exists": true,
+    "recorded_sha256": "c14dbd9548217df28ceaf46ddc5de57b94a30e8b49dd9af9582668353defc0c0",
+    "current_sha256": "c14dbd9548217df28ceaf46ddc5de57b94a30e8b49dd9af9582668353defc0c0",
+    "match": true,
+    "file": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node: ELF 64-bit LSB pie executable, x86-64, version 1 (GNU/Linux), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=72574494d98ff42b3c179499b7e8afe55343af99, for GNU/Linux 3.2.0, not stripped"
+  },
+  "production_record_entries": 47,
+  "production_checks": {
+    "native/src/jikl_fc01_system/CMakeLists.txt": {
+      "recorded": "dae3e59d46e65ad5ab9d9d785915d36693da8a4240d31212d270d2d7207a9503",
+      "current": "dae3e59d46e65ad5ab9d9d785915d36693da8a4240d31212d270d2d7207a9503",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp": {
+      "recorded": "6ad57d9dbcb7665eec10027d71db8c82a9cdabaa24f6a74340ceaeea93478842",
+      "current": "6ad57d9dbcb7665eec10027d71db8c82a9cdabaa24f6a74340ceaeea93478842",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp": {
+      "recorded": "9f8fc6729ff315ece120f13bc1c95623715f1b1c2ebc23ea8c17efcd8ed0efd4",
+      "current": "9f8fc6729ff315ece120f13bc1c95623715f1b1c2ebc23ea8c17efcd8ed0efd4",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_diagnostics.hpp": {
+      "recorded": "3b71a16bf710bdf632a44507df87aa53286169ce34c5a32655a77a888532bfb2",
+      "current": "3b71a16bf710bdf632a44507df87aa53286169ce34c5a32655a77a888532bfb2",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp": {
+      "recorded": "6b583b4db3477b13aee41112761dbf0f89fe8378d6d4bd636491e3d12a49b43c",
+      "current": "6b583b4db3477b13aee41112761dbf0f89fe8378d6d4bd636491e3d12a49b43c",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp": {
+      "recorded": "9f69a4cdd11822782a9cf9a1dc2eded00f0ac5b9138cd34fb5f0be6407cc2485",
+      "current": "9f69a4cdd11822782a9cf9a1dc2eded00f0ac5b9138cd34fb5f0be6407cc2485",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp": {
+      "recorded": "d857a1e0c585dba543fb72c9cecfd168c9888685b489167afa30bad2d136a8aa",
+      "current": "d857a1e0c585dba543fb72c9cecfd168c9888685b489167afa30bad2d136a8aa",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp": {
+      "recorded": "207c609b1484a0fbe3816dcdc9cfe8181d2440714cd5a3769fe66728100df92a",
+      "current": "207c609b1484a0fbe3816dcdc9cfe8181d2440714cd5a3769fe66728100df92a",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/authority.hpp": {
+      "recorded": "76149d4ccda64d63c3d3e13dadd62e3095143f4287f7427e0d9e7914eeaa26d1",
+      "current": "76149d4ccda64d63c3d3e13dadd62e3095143f4287f7427e0d9e7914eeaa26d1",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp": {
+      "recorded": "ff66a32c79ce4d585a7ad7e524b2ee76444b02e0d2cbc6547e9b617c08a00793",
+      "current": "ff66a32c79ce4d585a7ad7e524b2ee76444b02e0d2cbc6547e9b617c08a00793",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp.bak": {
+      "recorded": "c2749b98938c3a5f8929eba8c1d4064b7c46cb8a5beba3d736abbca9b212b036",
+      "current": "c2749b98938c3a5f8929eba8c1d4064b7c46cb8a5beba3d736abbca9b212b036",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/control_diagnostics.hpp": {
+      "recorded": "57549f2b5bd371b940055533bd747beacbf1b948c664ba1b495954b366c1df1e",
+      "current": "57549f2b5bd371b940055533bd747beacbf1b948c664ba1b495954b366c1df1e",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp": {
+      "recorded": "98677753de1b5c5e1097777aee54307acdedf60ed6ab7ae57673155155789d04",
+      "current": "98677753de1b5c5e1097777aee54307acdedf60ed6ab7ae57673155155789d04",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp": {
+      "recorded": "0967384b3cbd9245bc5df20d7213938be455eae75fe2defa10a697507e8372f6",
+      "current": "0967384b3cbd9245bc5df20d7213938be455eae75fe2defa10a697507e8372f6",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp": {
+      "recorded": "c7e489825229facb6c7c8fe508257974da6e8a1a7ea8b9ac7d4c43e9378ee102",
+      "current": "c7e489825229facb6c7c8fe508257974da6e8a1a7ea8b9ac7d4c43e9378ee102",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp": {
+      "recorded": "ad5a429800cfe414e0068804085b27f1ddaf8ffb057a862e32a895f5030b197c",
+      "current": "ad5a429800cfe414e0068804085b27f1ddaf8ffb057a862e32a895f5030b197c",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_audit.hpp": {
+      "recorded": "00fe894691b8676a9b8a43dc2e6ced36a3e2f2c6196107cb152e764ef4ddfcf2",
+      "current": "00fe894691b8676a9b8a43dc2e6ced36a3e2f2c6196107cb152e764ef4ddfcf2",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp": {
+      "recorded": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+      "current": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp": {
+      "recorded": "242d7d64d137d835fae4e682ead34e71998d6aaa90fd80860235e67eb8389ab6",
+      "current": "242d7d64d137d835fae4e682ead34e71998d6aaa90fd80860235e67eb8389ab6",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/range_trend_diagnostics.hpp": {
+      "recorded": "55515d018f6209896f8de831a116d0ad4f00c5a29a1127e7ff00509134ca7cb9",
+      "current": "55515d018f6209896f8de831a116d0ad4f00c5a29a1127e7ff00509134ca7cb9",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp": {
+      "recorded": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+      "current": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp": {
+      "recorded": "4757cd5a450ff4e6ff883c480ab5bfc3a10e9e8496e385fec76c9edf3ab171b9",
+      "current": "4757cd5a450ff4e6ff883c480ab5bfc3a10e9e8496e385fec76c9edf3ab171b9",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp": {
+      "recorded": "0ac823c9daaa1d001db0908dc4d5a5bc9d0f823f655eede874421e7b06250253",
+      "current": "0ac823c9daaa1d001db0908dc4d5a5bc9d0f823f655eede874421e7b06250253",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/ros_config.hpp": {
+      "recorded": "69bb79f935101170ff708904515ed48b78575dde92bfeaf1b85391cbfe8927b8",
+      "current": "69bb79f935101170ff708904515ed48b78575dde92bfeaf1b85391cbfe8927b8",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp": {
+      "recorded": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+      "current": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp": {
+      "recorded": "f1702f22bb214b2c16ad31c17dd0a242719450d7b04df396896ea09dbf612c82",
+      "current": "f1702f22bb214b2c16ad31c17dd0a242719450d7b04df396896ea09dbf612c82",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp": {
+      "recorded": "dd7795a21c651f7c7bf5f7045e512f27a9c885543ad0e3fdc178731be82bfbc3",
+      "current": "dd7795a21c651f7c7bf5f7045e512f27a9c885543ad0e3fdc178731be82bfbc3",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp": {
+      "recorded": "35d3c0b30c77d22c3598be88b2555eafd4b71bdd01ee386f9db66b3f26e55a18",
+      "current": "35d3c0b30c77d22c3598be88b2555eafd4b71bdd01ee386f9db66b3f26e55a18",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/source_diagnostics.hpp": {
+      "recorded": "b2a9865e4721df8e216255e01d7af619b0d598d6124eaf2f0e09ed667f3f570d",
+      "current": "b2a9865e4721df8e216255e01d7af619b0d598d6124eaf2f0e09ed667f3f570d",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp": {
+      "recorded": "7fb245edd6d21df0f4dd9abf5111860af5d3782ed8b7fea25a493fc201654b4d",
+      "current": "7fb245edd6d21df0f4dd9abf5111860af5d3782ed8b7fea25a493fc201654b4d",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp": {
+      "recorded": "4886efd0342aad2040a6f94c3d075578d44a5ace728169f4f6a08ba43269595e",
+      "current": "4886efd0342aad2040a6f94c3d075578d44a5ace728169f4f6a08ba43269595e",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp": {
+      "recorded": "bbe999b2481515b25d592607b758134cfb828c973794e3e342f2ba12cca11dbd",
+      "current": "bbe999b2481515b25d592607b758134cfb828c973794e3e342f2ba12cca11dbd",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp": {
+      "recorded": "ec05018b92a5c0e05698c12d8ec4c590db96ffb11b6626ba5654f5072e3cf1b7",
+      "current": "ec05018b92a5c0e05698c12d8ec4c590db96ffb11b6626ba5654f5072e3cf1b7",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp": {
+      "recorded": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+      "current": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp": {
+      "recorded": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+      "current": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp": {
+      "recorded": "e607d9d2abb0510abf9a9ec8cb4e44df48d9d82fe4dd511b3825ccc0a497ddb1",
+      "current": "e607d9d2abb0510abf9a9ec8cb4e44df48d9d82fe4dd511b3825ccc0a497ddb1",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_resource_budget.hpp": {
+      "recorded": "f30e9ebd55af5c98a03ddb20511efdfa341262424a9f035b6b8dae56bee647c7",
+      "current": "f30e9ebd55af5c98a03ddb20511efdfa341262424a9f035b6b8dae56bee647c7",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp": {
+      "recorded": "f9c0d0cc57f1f356ded97a841838203c4e940f374b8035d433061e440c793cad",
+      "current": "f9c0d0cc57f1f356ded97a841838203c4e940f374b8035d433061e440c793cad",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg": {
+      "recorded": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf",
+      "current": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/msg/NavigationCommand.msg": {
+      "recorded": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117",
+      "current": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/msg/VelocityCommand.msg": {
+      "recorded": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46",
+      "current": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/msg/VisionHealth.msg": {
+      "recorded": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb",
+      "current": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/msg/VisionState.msg": {
+      "recorded": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05",
+      "current": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/package.xml": {
+      "recorded": "d10f583c111190224c62d6508dd2dfb8671a0e83ff7d6d61766360fd50fd4a0b",
+      "current": "d10f583c111190224c62d6508dd2dfb8671a0e83ff7d6d61766360fd50fd4a0b",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/src/fc01_config_check.cpp": {
+      "recorded": "888fbd8a1f34cd0eb4412428f9e510799b236cd6cbadc0854ae08d9b3e915005",
+      "current": "888fbd8a1f34cd0eb4412428f9e510799b236cd6cbadc0854ae08d9b3e915005",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/src/fc01_system_node.cpp": {
+      "recorded": "309a8008f2b9ebc5d77afcef401437eeda9f1306204287d13790f8baebde4122",
+      "current": "309a8008f2b9ebc5d77afcef401437eeda9f1306204287d13790f8baebde4122",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/src/fc01_system_node.cpp.before_message_version_fix": {
+      "recorded": "06d8e7d5dc8c02e316d30cbc15041023dd195eeaba4702762926819375e45086",
+      "current": "06d8e7d5dc8c02e316d30cbc15041023dd195eeaba4702762926819375e45086",
+      "match": true
+    }
+  },
+  "installed_header_entries": 37,
+  "installed_header_checks": {
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp",
+      "source_sha256": "dd7795a21c651f7c7bf5f7045e512f27a9c885543ad0e3fdc178731be82bfbc3",
+      "installed_sha256": "dd7795a21c651f7c7bf5f7045e512f27a9c885543ad0e3fdc178731be82bfbc3",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "source_sha256": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+      "installed_sha256": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/source_diagnostics.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/source_diagnostics.hpp",
+      "source_sha256": "b2a9865e4721df8e216255e01d7af619b0d598d6124eaf2f0e09ed667f3f570d",
+      "installed_sha256": "b2a9865e4721df8e216255e01d7af619b0d598d6124eaf2f0e09ed667f3f570d",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "source_sha256": "9f8fc6729ff315ece120f13bc1c95623715f1b1c2ebc23ea8c17efcd8ed0efd4",
+      "installed_sha256": "9f8fc6729ff315ece120f13bc1c95623715f1b1c2ebc23ea8c17efcd8ed0efd4",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/ros_config.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/ros_config.hpp",
+      "source_sha256": "69bb79f935101170ff708904515ed48b78575dde92bfeaf1b85391cbfe8927b8",
+      "installed_sha256": "69bb79f935101170ff708904515ed48b78575dde92bfeaf1b85391cbfe8927b8",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp",
+      "source_sha256": "f9c0d0cc57f1f356ded97a841838203c4e940f374b8035d433061e440c793cad",
+      "installed_sha256": "f9c0d0cc57f1f356ded97a841838203c4e940f374b8035d433061e440c793cad",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+      "source_sha256": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+      "installed_sha256": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp",
+      "source_sha256": "207c609b1484a0fbe3816dcdc9cfe8181d2440714cd5a3769fe66728100df92a",
+      "installed_sha256": "207c609b1484a0fbe3816dcdc9cfe8181d2440714cd5a3769fe66728100df92a",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+      "source_sha256": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+      "installed_sha256": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/authority.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/authority.hpp",
+      "source_sha256": "76149d4ccda64d63c3d3e13dadd62e3095143f4287f7427e0d9e7914eeaa26d1",
+      "installed_sha256": "76149d4ccda64d63c3d3e13dadd62e3095143f4287f7427e0d9e7914eeaa26d1",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "source_sha256": "e607d9d2abb0510abf9a9ec8cb4e44df48d9d82fe4dd511b3825ccc0a497ddb1",
+      "installed_sha256": "e607d9d2abb0510abf9a9ec8cb4e44df48d9d82fe4dd511b3825ccc0a497ddb1",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
+      "source_sha256": "4886efd0342aad2040a6f94c3d075578d44a5ace728169f4f6a08ba43269595e",
+      "installed_sha256": "4886efd0342aad2040a6f94c3d075578d44a5ace728169f4f6a08ba43269595e",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/range_trend_diagnostics.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/range_trend_diagnostics.hpp",
+      "source_sha256": "55515d018f6209896f8de831a116d0ad4f00c5a29a1127e7ff00509134ca7cb9",
+      "installed_sha256": "55515d018f6209896f8de831a116d0ad4f00c5a29a1127e7ff00509134ca7cb9",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp",
+      "source_sha256": "c7e489825229facb6c7c8fe508257974da6e8a1a7ea8b9ac7d4c43e9378ee102",
+      "installed_sha256": "c7e489825229facb6c7c8fe508257974da6e8a1a7ea8b9ac7d4c43e9378ee102",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp",
+      "source_sha256": "0967384b3cbd9245bc5df20d7213938be455eae75fe2defa10a697507e8372f6",
+      "installed_sha256": "0967384b3cbd9245bc5df20d7213938be455eae75fe2defa10a697507e8372f6",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
+      "source_sha256": "6ad57d9dbcb7665eec10027d71db8c82a9cdabaa24f6a74340ceaeea93478842",
+      "installed_sha256": "6ad57d9dbcb7665eec10027d71db8c82a9cdabaa24f6a74340ceaeea93478842",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp",
+      "source_sha256": "7fb245edd6d21df0f4dd9abf5111860af5d3782ed8b7fea25a493fc201654b4d",
+      "installed_sha256": "7fb245edd6d21df0f4dd9abf5111860af5d3782ed8b7fea25a493fc201654b4d",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+      "source_sha256": "d857a1e0c585dba543fb72c9cecfd168c9888685b489167afa30bad2d136a8aa",
+      "installed_sha256": "d857a1e0c585dba543fb72c9cecfd168c9888685b489167afa30bad2d136a8aa",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp",
+      "source_sha256": "35d3c0b30c77d22c3598be88b2555eafd4b71bdd01ee386f9db66b3f26e55a18",
+      "installed_sha256": "35d3c0b30c77d22c3598be88b2555eafd4b71bdd01ee386f9db66b3f26e55a18",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+      "source_sha256": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+      "installed_sha256": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp",
+      "source_sha256": "bbe999b2481515b25d592607b758134cfb828c973794e3e342f2ba12cca11dbd",
+      "installed_sha256": "bbe999b2481515b25d592607b758134cfb828c973794e3e342f2ba12cca11dbd",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp.bak": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp.bak",
+      "source_sha256": "c2749b98938c3a5f8929eba8c1d4064b7c46cb8a5beba3d736abbca9b212b036",
+      "installed_sha256": "c2749b98938c3a5f8929eba8c1d4064b7c46cb8a5beba3d736abbca9b212b036",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp",
+      "source_sha256": "0ac823c9daaa1d001db0908dc4d5a5bc9d0f823f655eede874421e7b06250253",
+      "installed_sha256": "0ac823c9daaa1d001db0908dc4d5a5bc9d0f823f655eede874421e7b06250253",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp",
+      "source_sha256": "ff66a32c79ce4d585a7ad7e524b2ee76444b02e0d2cbc6547e9b617c08a00793",
+      "installed_sha256": "ff66a32c79ce4d585a7ad7e524b2ee76444b02e0d2cbc6547e9b617c08a00793",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
+      "source_sha256": "ec05018b92a5c0e05698c12d8ec4c590db96ffb11b6626ba5654f5072e3cf1b7",
+      "installed_sha256": "ec05018b92a5c0e05698c12d8ec4c590db96ffb11b6626ba5654f5072e3cf1b7",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+      "source_sha256": "242d7d64d137d835fae4e682ead34e71998d6aaa90fd80860235e67eb8389ab6",
+      "installed_sha256": "242d7d64d137d835fae4e682ead34e71998d6aaa90fd80860235e67eb8389ab6",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp",
+      "source_sha256": "f1702f22bb214b2c16ad31c17dd0a242719450d7b04df396896ea09dbf612c82",
+      "installed_sha256": "f1702f22bb214b2c16ad31c17dd0a242719450d7b04df396896ea09dbf612c82",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp",
+      "source_sha256": "9f69a4cdd11822782a9cf9a1dc2eded00f0ac5b9138cd34fb5f0be6407cc2485",
+      "installed_sha256": "9f69a4cdd11822782a9cf9a1dc2eded00f0ac5b9138cd34fb5f0be6407cc2485",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_diagnostics.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/attitude_diagnostics.hpp",
+      "source_sha256": "3b71a16bf710bdf632a44507df87aa53286169ce34c5a32655a77a888532bfb2",
+      "installed_sha256": "3b71a16bf710bdf632a44507df87aa53286169ce34c5a32655a77a888532bfb2",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp",
+      "source_sha256": "ad5a429800cfe414e0068804085b27f1ddaf8ffb057a862e32a895f5030b197c",
+      "installed_sha256": "ad5a429800cfe414e0068804085b27f1ddaf8ffb057a862e32a895f5030b197c",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_audit.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/publication_audit.hpp",
+      "source_sha256": "00fe894691b8676a9b8a43dc2e6ced36a3e2f2c6196107cb152e764ef4ddfcf2",
+      "installed_sha256": "00fe894691b8676a9b8a43dc2e6ced36a3e2f2c6196107cb152e764ef4ddfcf2",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "source_sha256": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+      "installed_sha256": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp",
+      "source_sha256": "6b583b4db3477b13aee41112761dbf0f89fe8378d6d4bd636491e3d12a49b43c",
+      "installed_sha256": "6b583b4db3477b13aee41112761dbf0f89fe8378d6d4bd636491e3d12a49b43c",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_resource_budget.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/vision_resource_budget.hpp",
+      "source_sha256": "f30e9ebd55af5c98a03ddb20511efdfa341262424a9f035b6b8dae56bee647c7",
+      "installed_sha256": "f30e9ebd55af5c98a03ddb20511efdfa341262424a9f035b6b8dae56bee647c7",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp",
+      "source_sha256": "98677753de1b5c5e1097777aee54307acdedf60ed6ab7ae57673155155789d04",
+      "installed_sha256": "98677753de1b5c5e1097777aee54307acdedf60ed6ab7ae57673155155789d04",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp",
+      "source_sha256": "4757cd5a450ff4e6ff883c480ab5bfc3a10e9e8496e385fec76c9edf3ab171b9",
+      "installed_sha256": "4757cd5a450ff4e6ff883c480ab5bfc3a10e9e8496e385fec76c9edf3ab171b9",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/control_diagnostics.hpp": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/include/jikl_fc01_system/control_diagnostics.hpp",
+      "source_sha256": "57549f2b5bd371b940055533bd747beacbf1b948c664ba1b495954b366c1df1e",
+      "installed_sha256": "57549f2b5bd371b940055533bd747beacbf1b948c664ba1b495954b366c1df1e",
+      "match": true
+    }
+  },
+  "installed_message_checks": {
+    "native/src/jikl_fc01_system/msg/VisionState.msg": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/VisionState.msg",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/msg/VelocityCommand.msg": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/VelocityCommand.msg",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/msg/VisionHealth.msg": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/VisionHealth.msg",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+      "match": true
+    },
+    "native/src/jikl_fc01_system/msg/NavigationCommand.msg": {
+      "installed": "/home/jikl62/.cache/fc01-stage2-20261116/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/NavigationCommand.msg",
+      "match": true
+    }
+  },
+  "runtime_yaml": {
+    "board_path": "docs/investigations/20261116_stage1/evidence/runtime_20261114.yaml",
+    "fixture_path": "tests/fixtures/stage3_runtime_20261114.yaml",
+    "board_sha256": "800202615c8d45e4627c79d308ea4097f15c545ebb45181eaf8451419818f089",
+    "fixture_sha256": "800202615c8d45e4627c79d308ea4097f15c545ebb45181eaf8451419818f089",
+    "bytes_match": true,
+    "params_match": true,
+    "param_count": 72
+  },
+  "cpp_fixture_param_count": 64,
+  "cpp_fixture_checks": [
+    {
+      "param": "visual_navigation_enabled",
+      "member": "c.visual.enabled",
+      "cpp_value": false,
+      "board_value": false,
+      "match": true
+    },
+    {
+      "param": "rc_navigation_enabled",
+      "member": "c.rc_navigation_enabled",
+      "cpp_value": true,
+      "board_value": true,
+      "match": true
+    },
+    {
+      "param": "rc_target_height",
+      "member": "c.rc_target_height",
+      "cpp_value": 1.5,
+      "board_value": 1.5,
+      "match": true
+    },
+    {
+      "param": "rc_navigation_mode_slot",
+      "member": "c.rc_navigation_mode_slot",
+      "cpp_value": 1,
+      "board_value": 1,
+      "match": true
+    },
+    {
+      "param": "rc_arm_to_navigation_timeout",
+      "member": "c.rc_arm_to_navigation_timeout",
+      "cpp_value": 8.0,
+      "board_value": 8.0,
+      "match": true
+    },
+    {
+      "param": "flight_actions_enabled",
+      "member": "c.flight_actions_enabled",
+      "cpp_value": true,
+      "board_value": true,
+      "match": true
+    },
+    {
+      "param": "bench_arm_only_enabled",
+      "member": "c.bench_arm_only_enabled",
+      "cpp_value": false,
+      "board_value": false,
+      "match": true
+    },
+    {
+      "param": "arm_enabled",
+      "member": "c.arm_enabled",
+      "cpp_value": false,
+      "board_value": false,
+      "match": true
+    },
+    {
+      "param": "takeoff_enabled",
+      "member": "c.takeoff_enabled",
+      "cpp_value": true,
+      "board_value": true,
+      "match": true
+    },
+    {
+      "param": "flight_parameters_confirmed",
+      "member": "c.parameters_confirmed",
+      "cpp_value": true,
+      "board_value": true,
+      "match": true
+    },
+    {
+      "param": "rc_takeover_confirmed",
+      "member": "c.rc_takeover_confirmed",
+      "cpp_value": true,
+      "board_value": true,
+      "match": true
+    },
+    {
+      "param": "autonomous_failsafe_confirmed",
+      "member": "c.autonomous_failsafe_confirmed",
+      "cpp_value": false,
+      "board_value": false,
+      "match": true
+    },
+    {
+      "param": "px4_land_fallback_confirmed",
+      "member": "c.px4_land_fallback_confirmed",
+      "cpp_value": false,
+      "board_value": false,
+      "match": true
+    },
+    {
+      "param": "px4_land_evidence_id",
+      "member": "c.px4_land_evidence_id",
+      "cpp_value": "",
+      "board_value": "",
+      "match": true
+    },
+    {
+      "param": "aa_vertical_feedback_guard_enabled",
+      "member": "c.feedback_guard.enabled",
+      "cpp_value": true,
+      "board_value": true,
+      "match": true
+    },
+    {
+      "param": "control_loop_hz",
+      "member": "c.loop_hz",
+      "cpp_value": 20.0,
+      "board_value": 20.0,
+      "match": true
+    },
+    {
+      "param": "aa_armed_dwell_seconds",
+      "member": "c.armed_dwell_seconds",
+      "cpp_value": 1.0,
+      "board_value": 1.0,
+      "match": true
+    },
+    {
+      "param": "aa_feedback_rate_tolerance_mps",
+      "member": "c.feedback_guard.rate_tolerance_mps",
+      "cpp_value": 0.2,
+      "board_value": 0.2,
+      "match": true
+    },
+    {
+      "param": "aa_feedback_dwell_seconds",
+      "member": "c.feedback_guard.dwell_seconds",
+      "cpp_value": 0.5,
+      "board_value": 0.5,
+      "match": true
+    },
+    {
+      "param": "aa_liftoff_dwell_seconds",
+      "member": "c.liftoff_dwell_seconds",
+      "cpp_value": 0.2,
+      "board_value": 0.2,
+      "match": true
+    },
+    {
+      "param": "aa_liftoff_height_m",
+      "member": "c.liftoff_height_m",
+      "cpp_value": 0.12,
+      "board_value": 0.12,
+      "match": true
+    },
+    {
+      "param": "aa_liftoff_speed_mps",
+      "member": "c.liftoff_speed_mps",
+      "cpp_value": 0.08,
+      "board_value": 0.08,
+      "match": true
+    },
+    {
+      "param": "aa_touchdown_dwell_seconds",
+      "member": "c.touchdown_dwell_seconds",
+      "cpp_value": 0.3,
+      "board_value": 0.3,
+      "match": true
+    },
+    {
+      "param": "aa_height_lower_margin_m",
+      "member": "c.height_lower_margin_m",
+      "cpp_value": 0.25,
+      "board_value": 0.25,
+      "match": true
+    },
+    {
+      "param": "aa_z_jump_limit_m",
+      "member": "c.z_jump_limit_m",
+      "cpp_value": 0.45,
+      "board_value": 0.45,
+      "match": true
+    },
+    {
+      "param": "aa_vz_jump_limit_mps",
+      "member": "c.vz_jump_limit_mps",
+      "cpp_value": 1.5,
+      "board_value": 1.5,
+      "match": true
+    },
+    {
+      "param": "aa_prestream_seconds",
+      "member": "c.prestream_seconds",
+      "cpp_value": 1.2,
+      "board_value": 1.2,
+      "match": true
+    },
+    {
+      "param": "aa_ground_seconds",
+      "member": "c.ground_seconds",
+      "cpp_value": 2.0,
+      "board_value": 2.0,
+      "match": true
+    },
+    {
+      "param": "aa_stall_seconds",
+      "member": "c.stall_seconds",
+      "cpp_value": 0.3,
+      "board_value": 0.3,
+      "match": true
+    },
+    {
+      "param": "aa_attitude_timeout",
+      "member": "c.attitude_timeout",
+      "cpp_value": 0.5,
+      "board_value": 0.5,
+      "match": true
+    },
+    {
+      "param": "aa_local_timeout",
+      "member": "c.local_timeout",
+      "cpp_value": 0.5,
+      "board_value": 0.5,
+      "match": true
+    },
+    {
+      "param": "aa_status_timeout",
+      "member": "c.status_timeout",
+      "cpp_value": 2.5,
+      "board_value": 2.5,
+      "match": true
+    },
+    {
+      "param": "aa_land_timeout",
+      "member": "c.land_timeout",
+      "cpp_value": 2.5,
+      "board_value": 2.5,
+      "match": true
+    },
+    {
+      "param": "aa_land_sample_max_gap",
+      "member": "c.land_sample_max_gap",
+      "cpp_value": 1.25,
+      "board_value": 1.25,
+      "match": true
+    },
+    {
+      "param": "aa_flags_timeout",
+      "member": "c.flags_timeout",
+      "cpp_value": 2.5,
+      "board_value": 2.5,
+      "match": true
+    },
+    {
+      "param": "aa_console_timeout",
+      "member": "c.console_timeout",
+      "cpp_value": 3.0,
+      "board_value": 3.0,
+      "match": true
+    },
+    {
+      "param": "aa_command_timeout",
+      "member": "c.command_timeout",
+      "cpp_value": 5.0,
+      "board_value": 5.0,
+      "match": true
+    },
+    {
+      "param": "aa_ground_vz_tolerance",
+      "member": "c.ground_vz_tolerance",
+      "cpp_value": 0.1,
+      "board_value": 0.1,
+      "match": true
+    },
+    {
+      "param": "aa_max_tilt_deg",
+      "member": "c.max_tilt_deg",
+      "cpp_value": 10.0,
+      "board_value": 10.0,
+      "match": true
+    },
+    {
+      "param": "aa_bench_ground_down_tolerance_m",
+      "member": "c.bench_ground_down_tolerance_m",
+      "cpp_value": 0.5,
+      "board_value": 0.5,
+      "match": true
+    },
+    {
+      "param": "aa_bench_ground_vz_tolerance_mps",
+      "member": "c.bench_ground_vz_tolerance_mps",
+      "cpp_value": 0.25,
+      "board_value": 0.25,
+      "match": true
+    },
+    {
+      "param": "aa_hover_thrust",
+      "member": "c.vertical.hover",
+      "cpp_value": 0.5,
+      "board_value": 0.5,
+      "match": true
+    },
+    {
+      "param": "aa_thrust_min",
+      "member": "c.vertical.minimum",
+      "cpp_value": 0.12,
+      "board_value": 0.12,
+      "match": true
+    },
+    {
+      "param": "aa_thrust_max",
+      "member": "c.vertical.maximum",
+      "cpp_value": 0.8,
+      "board_value": 0.8,
+      "match": true
+    },
+    {
+      "param": "aa_thrust_slew",
+      "member": "c.vertical.slew",
+      "cpp_value": 0.4,
+      "board_value": 0.4,
+      "match": true
+    },
+    {
+      "param": "aa_height_gain",
+      "member": "c.vertical.height_gain",
+      "cpp_value": 0.5,
+      "board_value": 0.5,
+      "match": true
+    },
+    {
+      "param": "aa_velocity_gain",
+      "member": "c.vertical.velocity_gain",
+      "cpp_value": 0.15,
+      "board_value": 0.15,
+      "match": true
+    },
+    {
+      "param": "aa_integral_gain",
+      "member": "c.vertical.integral_gain",
+      "cpp_value": 0.03,
+      "board_value": 0.03,
+      "match": true
+    },
+    {
+      "param": "aa_integral_limit",
+      "member": "c.vertical.integral_limit",
+      "cpp_value": 0.08,
+      "board_value": 0.08,
+      "match": true
+    },
+    {
+      "param": "aa_max_height",
+      "member": "c.vertical.max_height",
+      "cpp_value": 5.0,
+      "board_value": 5.0,
+      "match": true
+    },
+    {
+      "param": "aa_max_climb",
+      "member": "c.vertical.max_climb",
+      "cpp_value": 0.3,
+      "board_value": 0.3,
+      "match": true
+    },
+    {
+      "param": "aa_max_descent",
+      "member": "c.vertical.max_descent",
+      "cpp_value": 0.2,
+      "board_value": 0.2,
+      "match": true
+    },
+    {
+      "param": "aa_ramp_seconds",
+      "member": "c.ramp_seconds",
+      "cpp_value": 2.0,
+      "board_value": 2.0,
+      "match": true
+    },
+    {
+      "param": "aa_settle_seconds",
+      "member": "c.settle_seconds",
+      "cpp_value": 2.0,
+      "board_value": 2.0,
+      "match": true
+    },
+    {
+      "param": "aa_landing_seconds",
+      "member": "c.landing_seconds",
+      "cpp_value": 3.0,
+      "board_value": 3.0,
+      "match": true
+    },
+    {
+      "param": "aa_takeoff_reserve_thrust",
+      "member": "c.takeoff_reserve_thrust",
+      "cpp_value": 0.04,
+      "board_value": 0.04,
+      "match": true
+    },
+    {
+      "param": "aa_height_tolerance",
+      "member": "c.height_tolerance",
+      "cpp_value": 0.15,
+      "board_value": 0.15,
+      "match": true
+    },
+    {
+      "param": "aa_speed_tolerance",
+      "member": "c.speed_tolerance",
+      "cpp_value": 0.15,
+      "board_value": 0.15,
+      "match": true
+    },
+    {
+      "param": "aa_ascent_timeout",
+      "member": "c.ascent_timeout",
+      "cpp_value": 10.0,
+      "board_value": 10.0,
+      "match": true
+    },
+    {
+      "param": "aa_descent_timeout",
+      "member": "c.descent_timeout",
+      "cpp_value": 10.0,
+      "board_value": 10.0,
+      "match": true
+    },
+    {
+      "param": "aa_recovery_seconds",
+      "member": "c.recovery_seconds",
+      "cpp_value": 15.0,
+      "board_value": 15.0,
+      "match": true
+    },
+    {
+      "param": "aa_px4_land_ack_seconds",
+      "member": "c.px4_land_ack_seconds",
+      "cpp_value": 5.0,
+      "board_value": 5.0,
+      "match": true
+    },
+    {
+      "param": "aa_saturation_seconds",
+      "member": "c.saturation_seconds",
+      "cpp_value": 1.5,
+      "board_value": 1.5,
+      "match": true
+    },
+    {
+      "param": "aa_max_flight_seconds",
+      "member": "c.max_flight_seconds",
+      "cpp_value": 30.0,
+      "board_value": 30.0,
+      "match": true
+    }
+  ],
+  "old_production_commit": "e8652ad686c52502ea877fd23b5805d6b64e0da6",
+  "current_production_diff_names": [],
+  "board_archive": {
+    "path": "/home/jikl62/桌面/FC01_navigation_report_20261114_093631_680121.zip",
+    "sha256": "ca2a2cc685995169526e08658d552103c4419bccb08c8cb2e7f1a4cf4a7eac4f",
+    "expected_sha256": "ca2a2cc685995169526e08658d552103c4419bccb08c8cb2e7f1a4cf4a7eac4f",
+    "runtime_members": {
+      "runtime.yaml": "800202615c8d45e4627c79d308ea4097f15c545ebb45181eaf8451419818f089"
+    },
+    "runtime_member_matches_snapshot": true
+  },
+  "protected_file_checks": [
+    {
+      "file": "native/config/R6_OFFLINE_DEV.yaml",
+      "recorded": "1d223c9a0884df619595605c62d276b8db07fa037ec41dc11753f65f719f6898",
+      "current": "1d223c9a0884df619595605c62d276b8db07fa037ec41dc11753f65f719f6898",
+      "match": true
+    },
+    {
+      "file": "native/config/R6_REAL_FC01_PENDING_REVIEW.yaml",
+      "recorded": "f098f9d530111aabd396067af9c64fb6056a9ae701dab4f46802e3a4353a75f9",
+      "current": "f098f9d530111aabd396067af9c64fb6056a9ae701dab4f46802e3a4353a75f9",
+      "match": true
+    },
+    {
+      "file": "native/config/S10_1HZ_EXPERIMENTAL_SIM_ONLY.yaml",
+      "recorded": "c98e291e8684e9544847d9e68b85bb1af715f8ed0f1b2998c34e1a679ef10fbc",
+      "current": "c98e291e8684e9544847d9e68b85bb1af715f8ed0f1b2998c34e1a679ef10fbc",
+      "match": true
+    },
+    {
+      "file": "native/config/attitude_altitude.yaml",
+      "recorded": "01fec7e4388f948c77847ef9ccfc116c3b83f3a2add3a4a1f08de3d1606ce692",
+      "current": "01fec7e4388f948c77847ef9ccfc116c3b83f3a2add3a4a1f08de3d1606ce692",
+      "match": true
+    },
+    {
+      "file": "native/config/attitude_altitude.yaml.bak",
+      "recorded": "dee48d6374ef73330993c4fecc5f52711eca35b9458b68ed9bff0560d63c093f",
+      "current": "dee48d6374ef73330993c4fecc5f52711eca35b9458b68ed9bff0560d63c093f",
+      "match": true
+    },
+    {
+      "file": "native/config/attitude_altitude.yaml.before_flight_params",
+      "recorded": "8abd5b7c32660f4e9594db71a9fe5e3a68719d0ce131ba03c99245fe44473a24",
+      "current": "8abd5b7c32660f4e9594db71a9fe5e3a68719d0ce131ba03c99245fe44473a24",
+      "match": true
+    },
+    {
+      "file": "native/config/attitude_altitude.yaml.before_rc_confirm",
+      "recorded": "68813188937743c469d67c7f8c7ecf4666ad6d67319fb64f8a7d7ee5f0d404fa",
+      "current": "68813188937743c469d67c7f8c7ecf4666ad6d67319fb64f8a7d7ee5f0d404fa",
+      "match": true
+    },
+    {
+      "file": "native/config/diagnostic.yaml",
+      "recorded": "ee965f34b33c9be7d46900ba2dfc32a8c8181e68efecb893b86179e96a28023d",
+      "current": "ee965f34b33c9be7d46900ba2dfc32a8c8181e68efecb893b86179e96a28023d",
+      "match": true
+    },
+    {
+      "file": "native/config/flight.yaml",
+      "recorded": "7bb138448112e272e05a8e50c08a1eb260f892167614ef91a29c1e902e892188",
+      "current": "7bb138448112e272e05a8e50c08a1eb260f892167614ef91a29c1e902e892188",
+      "match": true
+    },
+    {
+      "file": "native/config/flight_test.yaml",
+      "recorded": "1ddce8549bcd9f9b6eaacf532ad9f00d04b70706a54245f51eddbce6cdc5ff2b",
+      "current": "1ddce8549bcd9f9b6eaacf532ad9f00d04b70706a54245f51eddbce6cdc5ff2b",
+      "match": true
+    },
+    {
+      "file": "native/config/ground.yaml",
+      "recorded": "8947013b855967b91d1a4d6493b6c280054aa88deab264a67f4de3dfeea4387a",
+      "current": "8947013b855967b91d1a4d6493b6c280054aa88deab264a67f4de3dfeea4387a",
+      "match": true
+    },
+    {
+      "file": "native/config/historical/R5_CANDIDATES_GATES_CLOSED.yaml",
+      "recorded": "57f336de2cf7caacc217faf5192f438b7a7e303f361fbd163dd04f3ae652495b",
+      "current": "57f336de2cf7caacc217faf5192f438b7a7e303f361fbd163dd04f3ae652495b",
+      "match": true
+    },
+    {
+      "file": "native/config/sim.yaml",
+      "recorded": "49df2f1ab02f3785e5ec6d76a2762443b84b005c944af27ddaa0c9f22e667474",
+      "current": "49df2f1ab02f3785e5ec6d76a2762443b84b005c944af27ddaa0c9f22e667474",
+      "match": true
+    },
+    {
+      "file": "navigation_settings.json",
+      "recorded": "a3ecf4759adad9901bd0efbae4eff0a7860ad3e4a4a91afdb7c0b1fe8d516131",
+      "current": "a3ecf4759adad9901bd0efbae4eff0a7860ad3e4a4a91afdb7c0b1fe8d516131",
+      "match": true
+    },
+    {
+      "file": "navigation_service.py",
+      "recorded": "e6337790480c09c08c25988d001bb9627b92573b17a0d1269017bf20169e063a",
+      "current": "e6337790480c09c08c25988d001bb9627b92573b17a0d1269017bf20169e063a",
+      "match": true
+    },
+    {
+      "file": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+      "recorded": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+      "current": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+      "match": true
+    },
+    {
+      "file": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "recorded": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+      "current": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+      "match": true
+    },
+    {
+      "file": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp",
+      "recorded": "6b583b4db3477b13aee41112761dbf0f89fe8378d6d4bd636491e3d12a49b43c",
+      "current": "6b583b4db3477b13aee41112761dbf0f89fe8378d6d4bd636491e3d12a49b43c",
+      "match": true
+    },
+    {
+      "file": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+      "recorded": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+      "current": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+      "match": true
+    },
+    {
+      "file": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+      "recorded": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+      "current": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+      "match": true
+    }
+  ],
+  "regression_input_recheck": {
+    "manifest_files": 200,
+    "mismatches": [],
+    "recorded_passed": true,
+    "recorded_source_unchanged_during_run": true,
+    "this_audit_reran_tests": false
+  },
+  "key_parameter_contract": {
+    "aa_hover_thrust": {
+      "member": "c.vertical.hover",
+      "expected": 0.5,
+      "board_value": 0.5,
+      "board_matches": true,
+      "current_production_mapping_found": true
+    },
+    "aa_takeoff_reserve_thrust": {
+      "member": "c.takeoff_reserve_thrust",
+      "expected": 0.04,
+      "board_value": 0.04,
+      "board_matches": true,
+      "current_production_mapping_found": true
+    },
+    "aa_thrust_min": {
+      "member": "c.vertical.minimum",
+      "expected": 0.12,
+      "board_value": 0.12,
+      "board_matches": true,
+      "current_production_mapping_found": true
+    },
+    "aa_thrust_max": {
+      "member": "c.vertical.maximum",
+      "expected": 0.8,
+      "board_value": 0.8,
+      "board_matches": true,
+      "current_production_mapping_found": true
+    },
+    "aa_thrust_slew": {
+      "member": "c.vertical.slew",
+      "expected": 0.4,
+      "board_value": 0.4,
+      "board_matches": true,
+      "current_production_mapping_found": true
+    },
+    "rc_target_height": {
+      "member": "c.rc_target_height",
+      "expected": 1.5,
+      "board_value": 1.5,
+      "board_matches": true,
+      "current_production_mapping_found": true
+    },
+    "visual_navigation_enabled": {
+      "member": "c.visual.enabled",
+      "expected": false,
+      "board_value": false,
+      "board_matches": true,
+      "current_production_mapping_found": true
+    }
+  },
+  "audit_utc": "2026-11-16T11:56:50.027076+00:00",
+  "reused_build_configuration": {
+    "cmake_home_directory": "/home/jikl62/FC01_OrangePi_Navigation_20261028/native/src/jikl_fc01_system",
+    "build_type": "Release",
+    "compiler": "/usr/bin/c++",
+    "ros": "/opt/ros/humble",
+    "px4_msgs": "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/install_r632/px4_msgs",
+    "node_compile_workspace_dependency_count": 36,
+    "workspace_dependencies_missing_manifest": [],
+    "inspected_build_files": {
+      "/home/jikl62/.cache/fc01-stage2-20261116/ros/build/jikl_fc01_system/CMakeCache.txt": "3366b853599f45c2fde60db95abc848bdcecb5e21e4557b37911ef20f53e70a7",
+      "/home/jikl62/.cache/fc01-stage2-20261116/ros/build/jikl_fc01_system/CMakeFiles/fc01_system_node.dir/flags.make": "8d711743488d1c7793d25bdc174256121253310ac9087741db4ff25b2801afef",
+      "/home/jikl62/.cache/fc01-stage2-20261116/ros/build/jikl_fc01_system/CMakeFiles/fc01_system_node.dir/src/fc01_system_node.cpp.o.d": "61fd4a4a0647da6b8776e0e2297aaa2ecc0554875c0dc1c83581afbab6200223"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+range_unavailable IDLE IDLE_NO_AUTOMATIC_ARM h= 0.0
+range_unavailable RC_PRESTREAM RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE h= 0.0
+range_unavailable RC_READY_WAIT_ARM RC_READY_WAIT_CH5_MANUAL_ARM h= 0.0
+range_unavailable RC_ARMED_WAIT_NAVIGATION RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS h= 0.0
+range_unavailable ARMED_GROUND RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED h= 0.0
+range_unavailable THRUST_RAMP THRUST_RAMP h= 0.0
+range_unavailable ASCEND ASCEND h= 0.226
+range_unavailable HEIGHT_HOLD HEIGHT_HOLD h= 1.5
+range_unavailable DESCENT LAND_ACCEPTED h= 1.5
+range_unavailable LANDED LANDED h= 0.0
+range_unavailable REQUEST_DISARM REQUEST_DISARM h= 0.0
+range_unavailable SAFE_DISARMED DISARM_ACK_AND_NEW_DISARMED_LANDED_STATUS h= 0.0
+range_unavailable RELEASE_OFFBOARD RELEASE_OFFBOARD h= 0.0
+range_unavailable SAFETY OPERATOR_TAKEOVER_LATCHED h= 0.0
+range_unavailable IDLE RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET h= 0.0
+range_unavailable RC_PRESTREAM RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE h= 0.0
+range_unavailable RC_READY_WAIT_ARM RC_READY_WAIT_CH5_MANUAL_ARM h= 0.0
+{"result": "PASS", "error": null, "scenario": "range_unavailable", "motion": "replay", "metrics": {"target_m": 1.5, "overshoot_m": 0.0, "settling_entry_from_ramp_s": 7.519285749000119, "height_hold_from_ramp_s": 9.670038852000289, "hold_observation_s": 2.0012352100002317, "hold_max_abs_error_m": 0.0, "hold_rms_error_m": 0.0, "horizontal_drift_m": 0.0, "horizontal_drift_interpretation": "fixed XY input, not measured capability", "max_heartbeat_receive_gap_s": 0.05116824000106135, "max_heartbeat_wire_gap_s": 0.050365, "max_heartbeat_gap_including_window_edges_s": 0.05116824000106135, "max_target_gap_including_window_edges_s": 0.051146751999112894, "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"}}

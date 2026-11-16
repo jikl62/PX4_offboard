@@ -1,0 +1,11 @@
+rc_takeover IDLE IDLE_NO_AUTOMATIC_ARM h= 0.0
+rc_takeover RC_PRESTREAM RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE h= 0.0
+rc_takeover RC_READY_WAIT_ARM RC_READY_WAIT_CH5_MANUAL_ARM h= 0.0
+rc_takeover RC_ARMED_WAIT_NAVIGATION RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS h= 0.0
+rc_takeover ARMED_GROUND RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED h= 0.0
+rc_takeover THRUST_RAMP THRUST_RAMP h= 0.0
+rc_takeover ASCEND ASCEND h= 0.227
+rc_takeover HEIGHT_HOLD HEIGHT_HOLD h= 1.5
+rc_takeover DESCENT TAKEOVER_REQUEST_PENDING_CONTROLLED_GROUND_RECOVERY h= 1.5
+rc_takeover SAFETY OPERATOR_TAKEOVER_LATCHED h= 1.5
+{"result": "PASS", "error": null, "scenario": "rc_takeover", "motion": "replay", "metrics": {"target_m": 1.5, "overshoot_m": 0.0, "settling_entry_from_ramp_s": 7.524780251000266, "height_hold_from_ramp_s": 9.67510933000085, "hold_observation_s": 2.0008630199990876, "hold_max_abs_error_m": 0.0, "hold_rms_error_m": 0.0, "horizontal_drift_m": 0.0, "horizontal_drift_interpretation": "fixed XY input, not measured capability", "max_heartbeat_receive_gap_s": 0.05097496999951545, "max_heartbeat_wire_gap_s": 0.05023, "max_heartbeat_gap_including_window_edges_s": 0.05097496999951545, "max_target_gap_including_window_edges_s": 0.05120821000127762, "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"}}

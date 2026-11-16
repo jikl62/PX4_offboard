@@ -1,0 +1,10 @@
+{
+  "tests/ros_stage3_lifecycle.py": {
+    "sha256": "8e6a54ba16d5796b71071f98a9bc91bded8abef18a41f3f7321fa18033ae6096",
+    "matches_tested": true
+  },
+  "tests/fixtures/stage3_runtime_20261114.yaml": {
+    "sha256": "800202615c8d45e4627c79d308ea4097f15c545ebb45181eaf8451419818f089",
+    "matches_tested": true
+  }
+}

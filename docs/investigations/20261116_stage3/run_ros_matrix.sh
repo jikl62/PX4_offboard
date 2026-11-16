@@ -17,6 +17,8 @@ mkdir -p "$fc01_stage3_output"
 # Humble环境脚本可能引用未定义变量；不在source前启用nounset。
 source /opt/ros/humble/setup.bash
 source /home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/install_r632/px4_msgs/share/px4_msgs/local_setup.bash
+fc01_stage3_install=$(cd "$(dirname "$fc01_stage3_node")/../../.." && pwd)
+source "$fc01_stage3_install/local_setup.bash"
 cd "$fc01_stage3_repo"
 for fc01_stage3_scenario in normal range_unavailable feedback_stale quat_reset vertical_reset offboard_loss offboard_flag rc_takeover kill velocity_warning; do
   /usr/bin/python3 tests/ros_stage3_lifecycle.py --node "$fc01_stage3_node" \

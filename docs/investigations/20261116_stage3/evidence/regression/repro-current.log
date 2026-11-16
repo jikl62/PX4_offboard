@@ -1,0 +1,2 @@
+rise=1 phase=8
+after_expiry rise=0 detector=1 confirmed=0 phase=8 reason=RAMP_HEIGHT_GUARD_WAIT_NEW_LIFTOFF_EVIDENCE
