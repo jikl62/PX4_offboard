@@ -36,6 +36,9 @@ MANIFEST = 'ARM64_RELEASE.json'
 MAX_ARCHIVE = 1024 * 1024 * 1024
 MAX_TOTAL = 4 * 1024 * 1024 * 1024
 MAX_FILES = 30000
+# 安装验收需等完整payload/type support/ldd预检；与飞控反馈TTL和控制循环时限无关。
+# ARM64 TCG测得单次启动预检46.377s，30s会误判未启动；真实原生启动仍按已有保护执行。
+STARTUP_ACCEPTANCE_SECONDS = 180
 ENV_KEYS = ('ROS_DOMAIN_ID', 'ROS_LOCALHOST_ONLY', 'RMW_IMPLEMENTATION',
             'ROS_DISCOVERY_SERVER', 'ROS_STATIC_PEERS', 'CYCLONEDDS_URI',
             'FASTRTPS_DEFAULT_PROFILES_FILE', 'FASTDDS_DEFAULT_PROFILES_FILE',
@@ -345,14 +348,19 @@ class Backend:
         last=None
         while True:
             try:
+                # systemctl可能需百毫秒：先取身份，再读最新快照，不能让慢查询耗尽快照TTL。
+                # 仍用原始原生时间校验；不修改任何时间戳，也不延长.25s窗口。
+                service=self.service()
+                main=int(service.get('MainPID') or 0)
+                stat_text=(self.proc/str(controller['pid'])/'stat').read_text()
+                started=int(stat_text.rsplit(')',1)[1].split()[19])/os.sysconf('SC_CLK_TCK')
+                boot=self.boot_id()
                 if (path.is_symlink() or not path.is_file() or path.stat().st_uid!=self.uid
                         or path.stat().st_size>1048576):
                     raise InstallError('监督器状态文件来源或大小无效')
                 row=json.loads(path.read_text())
-                service=self.service()
-                main=int(service.get('MainPID') or 0)
                 if (not main or row.get('supervisor_pid')!=main
-                        or row.get('boot_id')!=self.boot_id()
+                        or row.get('boot_id')!=boot
                         or row.get('controller_pid')!=controller['pid']
                         or row.get('state_controller_pid')!=controller['pid']
                         or row.get('status') not in
@@ -362,9 +370,7 @@ class Backend:
                         or row.get('retry_in_seconds') is not None):
                     raise InstallError('监督器/控制器/boot或实时IPC状态不匹配')
                 state=row.get('state')
-                # /proc stat第22列为本次进程启动ticks；防止同boot旧快照遇到PID复用。
-                stat_text=(self.proc/str(controller['pid'])/'stat').read_text()
-                started=int(stat_text.rsplit(')',1)[1].split()[19])/os.sysconf('SC_CLK_TCK')
+                # /proc stat第22列本次进程启动ticks继续绑定快照，防止PID复用。
                 validate_snapshot_age(state,time.monotonic(),started)
                 return state
             except (OSError,ValueError,TypeError,InstallError) as exc:
@@ -666,7 +672,7 @@ def stop_and_wait(backend, *, timeout=30):
         backend.sleep(.1)
 
 
-def verify_active(backend, entry, manifest, environment, *, timeout=30):
+def verify_active(backend, entry, manifest, environment, *, timeout=STARTUP_ACCEPTANCE_SECONDS):
     deadline=time.monotonic()+timeout
     last=None
     while True:

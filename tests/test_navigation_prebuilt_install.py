@@ -326,6 +326,36 @@ class InstallerTest(unittest.TestCase):
             with patch.object(m.time,'monotonic',return_value=100.1):
                 with self.assertRaisesRegex(m.InstallError,'refused stale'):m.Backend.live_state(f,f.controller)
 
+    def test_slow_service_query_precedes_latest_snapshot_read_without_extending_ttl(self):
+        with tempfile.TemporaryDirectory() as temp:
+            f=Fixture(temp);f.proc=f.home/'proc';(f.proc/'12').mkdir(parents=True)
+            fields=['S']+['0']*18+[str(int(90*os.sysconf('SC_CLK_TCK')))]
+            (f.proc/'12/stat').write_text('12 (fc01_system_node) '+' '.join(fields))
+            path=f.home/'FC01_navigation/status.json'
+            row=dict(supervisor_pid=10,boot_id='test-boot',controller_pid=12,state_controller_pid=12,
+                     status='READY_WAIT_ARM',feedback_current=True,state=self.timed_state(99.))
+            path.write_text(json.dumps(row))
+            calls=[];service=f.service;clock=[100.]
+            def slow_query():
+                calls.append('service');clock[0]+=.13
+                # 查询耗时期间监督器发布新原生事实：必须在查询之后读取它。
+                row['state']=self.timed_state(clock[0]-.02)
+                path.write_text(json.dumps(row))
+                return service()
+            f.service=slow_query;read=Path.read_text
+            def read_trace(p,*args,**kwargs):
+                if p==path:calls.append('snapshot')
+                return read(p,*args,**kwargs)
+            with patch.object(m.time,'monotonic',side_effect=lambda:clock[0]),patch.object(Path,'read_text',read_trace):
+                state=m.Backend.live_state(f,f.controller)
+            self.assertEqual(calls[:2],['service','snapshot'])
+            self.assertAlmostEqual(state['diagnostic_monotonic_s'],100.11)
+            # 相同窗口不变：若没有新原生事实，不能把旧99s状态改写为当前时间。
+            f.service=service;row['state']=self.timed_state(99.);path.write_text(json.dumps(row))
+            f.sleep=lambda _: (_ for _ in ()).throw(m.InstallError('stale remains stale'))
+            with patch.object(m.time,'monotonic',return_value=100.13):
+                with self.assertRaisesRegex(m.InstallError,'stale remains stale'):m.Backend.live_state(f,f.controller)
+
     def test_unknown_supervisor_owned_agent_arguments_refuse_before_stop(self):
         with tempfile.TemporaryDirectory() as temp:
             f=Fixture(temp);f.agent_owned=True;f.agent['argv']+=['--unknown']
@@ -409,6 +439,26 @@ class InstallerTest(unittest.TestCase):
                  and isinstance(node.value.value,ast.Name) and node.value.value.id=='sys'
                  and node.value.attr=='argv' and isinstance(node.slice,ast.Constant)]
         self.assertEqual(indices,[1])
+
+    def test_startup_acceptance_waits_for_measured_slow_preflight_not_stale_feedback(self):
+        with tempfile.TemporaryDirectory() as temp:
+            f=Fixture(temp);archive,sha=f.archive();result=m.install(archive,sha,f)
+            entry=Path(result['entry']);manifest=json.loads((entry/m.MANIFEST).read_text())
+            environment=json.loads((entry/'deployment/environment.json').read_text())
+            controller=f.controllers;clock=[0.]
+            f.controllers=lambda:[] if clock[0]<40 else controller()
+            f.sleep=lambda seconds:clock.__setitem__(0,clock[0]+10)
+            with patch.object(m.time,'monotonic',side_effect=lambda:clock[0]):
+                actual=m.verify_active(f,entry,manifest,environment)
+            self.assertGreaterEqual(clock[0],40)
+            self.assertEqual(actual['controller']['exe'],str(entry/manifest['controller_relative']))
+            self.assertEqual(m.STARTUP_ACCEPTANCE_SECONDS,180)
+            # 同一验收等待仍有界；永远没控制器必须失败，不能变成无限重试。
+            f.controllers=lambda:[];clock[0]=0
+            with patch.object(m.time,'monotonic',side_effect=lambda:clock[0]):
+                with self.assertRaisesRegex(m.InstallError,'启动验收失败'):
+                    m.verify_active(f,entry,manifest,environment)
+            self.assertEqual(clock[0],180)
 
     def test_live_rc_configuration_mismatch_never_silently_inherited(self):
         with tempfile.TemporaryDirectory() as temp:
