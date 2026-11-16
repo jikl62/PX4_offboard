@@ -120,6 +120,10 @@ public:
     }
     if (local_last_time_ >= 0 && now - local_last_time_ > c.local_timeout)
       clear_local();
+    // local缓存仍新鲜也不能延长最后真实上升的关联期限；检测器可在两条local之间到达。
+    // 每次观察都复核主机期限，源域期限仍由上面新local分支检查；不改变阈值及有效迟到配对。
+    if (e_.rise_confirmed && (motion_at_ < 0 || now - motion_at_ > c.land_timeout))
+      clear_rise();
     // 制动后只能在实测上升运动的land_timeout内桥接新本地观测，同时核对源域和主机域的期限。
     // 最终取两证据交集：当前非地面、检测器和上升均确认，高度达标，最新各源未超时。
     e_.confirmed = !landed && e_.detector_confirmed && e_.rise_confirmed &&
