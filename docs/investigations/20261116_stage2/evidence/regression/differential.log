@@ -1,0 +1,20 @@
+test_duplicate_keys_or_baseline_diagnostic_cannot_be_hidden (test_20261116_stage2_equivalence.DiagnosticFilterTests) ... ok
+test_existing_values_order_and_sink_bytes_remain_visible (test_20261116_stage2_equivalence.DiagnosticFilterTests) ... ok
+test_only_additive_top_level_members_are_removed (test_20261116_stage2_equivalence.DiagnosticFilterTests) ... ok
+test_actual_node_tick_and_status_bytes (test_20261116_stage2_equivalence.Stage2CoreEquivalenceTests) ... ok
+test_control_trace (test_20261116_stage2_equivalence.Stage2CoreEquivalenceTests)
+高度/姿态/RC/视觉与多轮恢复使用真实Core，double输出不设容差。 ... ok
+test_publication_observation_combinations (test_20261116_stage2_equivalence.Stage2CoreEquivalenceTests)
+三个观察点的 512 种证据组合与 10 种异常注入必须保持相同结果。 ... ok
+test_publication_policy_and_sink_order (test_20261116_stage2_equivalence.Stage2CoreEquivalenceTests)
+逐阶段坏证据与微小非零推力，及三次上下文/双sink部分提交严格对照。 ... ok
+test_runtime_ack_and_ipc_trace (test_20261116_stage2_equivalence.Stage2CoreEquivalenceTests)
+请求优先级、ACK归属/水位/终态和真实临时Unix会话均逐字节对照。 ... ok
+test_unauthorized_startup_and_latched_hazards (test_20261116_stage2_equivalence.Stage2CoreEquivalenceTests)
+256 种无本轮授权启动、25 种危险事件次序、1024 种 FIFO 突发序列。 ... ok
+test_powered_rc_lifecycle_and_all_sink_fields_match_baseline (test_20261116_stage2_equivalence.Stage2PoweredNodeEquivalenceTests) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 22.508s
+
+OK

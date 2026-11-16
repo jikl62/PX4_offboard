@@ -1,0 +1,32 @@
+{
+  "baseline": "3677b9dd1f35e092e43501d26164c6263545c947",
+  "comparison": "exact-existing-json-members-and-wire-bytes",
+  "controlled_fixture_input": {
+    "diagnostic_controller_pid": 4242
+  },
+  "state_samples": 1350,
+  "lines": 1908,
+  "sha256": "5f968a9e84f787e3cbc6dd03939cb965a1c62303688d3190f88ad9df80803c2d",
+  "allowed_additive_keys": [
+    "range_available",
+    "range_compared",
+    "range_distance_m",
+    "range_fused_rise_m",
+    "range_interval_s",
+    "range_policy",
+    "range_rise_m",
+    "range_same_direction",
+    "range_sample_stamp",
+    "range_variance_m2",
+    "rc_queued_safety_land_stamp",
+    "rc_queued_safety_local_stamp",
+    "rc_queued_safety_mask",
+    "rc_queued_safety_observed_at",
+    "rc_queued_safety_recorded",
+    "rc_queued_safety_source",
+    "rc_queued_safety_status_stamp",
+    "rc_queued_safety_switch_stamp"
+  ],
+  "comparison_evidence": "recovery-node-comparison.json",
+  "raw_json_byte_identity_claimed": false
+}
