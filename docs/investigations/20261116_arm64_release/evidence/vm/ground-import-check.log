@@ -1,0 +1,10 @@
+failed
+Nov 16 13:17:10 fc01-arm64-test-vm systemd[1]: Started VM-only synthetic disarmed PX4 ground telemetry.
+Nov 16 13:17:13 fc01-arm64-test-vm bash[737]: /home/orangepi/vm-ground.sh: line 4: /home/orangepi/fc01-old/install/local_setup.bash: No such file or directory
+Nov 16 13:17:13 fc01-arm64-test-vm systemd[1]: fc01-vm-ground.service: Main process exited, code=exited, status=1/FAILURE
+Nov 16 13:17:13 fc01-arm64-test-vm systemd[1]: fc01-vm-ground.service: Failed with result 'exit-code'.
+Nov 16 13:17:13 fc01-arm64-test-vm systemd[1]: fc01-vm-ground.service: Consumed 2.346s CPU time.
+bash: line 1: /home/orangepi/fc01-old/install/local_setup.bash: No such file or directory
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'px4_msgs'

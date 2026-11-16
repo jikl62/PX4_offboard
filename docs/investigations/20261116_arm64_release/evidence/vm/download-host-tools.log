@@ -1,0 +1,8 @@
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+获取:1 https://repo.huaweicloud.com/ubuntu jammy/main amd64 libfdt1 amd64 1.6.1-1 [20.0 kB]
+获取:2 https://repo.huaweicloud.com/ubuntu jammy-updates/main amd64 qemu-system-arm amd64 1:6.2+dfsg-2ubuntu6.31 [10.1 MB]
+获取:3 https://repo.huaweicloud.com/ubuntu jammy-updates/main amd64 qemu-system-common amd64 1:6.2+dfsg-2ubuntu6.31 [2049 kB]
+获取:4 https://repo.huaweicloud.com/ubuntu jammy-updates/main amd64 qemu-system-data all 1:6.2+dfsg-2ubuntu6.31 [1430 kB]
+已下载 13.6 MB，耗时 4秒 (3407 kB/s)

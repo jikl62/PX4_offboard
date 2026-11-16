@@ -1,0 +1,5 @@
+{
+  "backup": "/home/orangepi/FC01_navigation/prebuilt-backups/20261116T135220_254940Z-3669",
+  "restored_controller": "/home/orangepi/fc01-old/install/lib/jikl_fc01_system/fc01_system_node"
+}
+FC01_ROLLBACK_COMMAND=bash ./install_fc01.sh --rollback /home/orangepi/FC01_navigation/prebuilt-backups/20261116T135220_254940Z-3669

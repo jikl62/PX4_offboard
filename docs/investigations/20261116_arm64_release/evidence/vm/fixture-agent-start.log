@@ -1,0 +1,11 @@
+● fc01-vm-agent.service - VM-only dummy serial owner (no XRCE transport)
+     Loaded: loaded (/etc/systemd/system/fc01-vm-agent.service; disabled; vendor preset: enabled)
+     Active: active (running) since Mon 2026-11-16 13:14:45 UTC; 289ms ago
+   Main PID: 671 (MicroXRCEAgent)
+      Tasks: 1 (limit: 2290)
+     Memory: 136.0K
+        CPU: 36ms
+     CGroup: /system.slice/fc01-vm-agent.service
+             └─671 /home/orangepi/fc01_agent_build_offline/MicroXRCEAgent serial -D /dev/ttyS2 -b 115200 -v 0
+
+Nov 16 13:14:45 fc01-arm64-test-vm systemd[1]: Started VM-only dummy serial owner (no XRCE transport).

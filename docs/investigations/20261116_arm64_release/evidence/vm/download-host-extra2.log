@@ -1,0 +1,6 @@
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+获取:1 https://repo.huaweicloud.com/ubuntu jammy/main amd64 libdaxctl1 amd64 72.1-1 [19.8 kB]
+获取:2 https://repo.huaweicloud.com/ubuntu jammy/main amd64 libndctl6 amd64 72.1-1 [57.7 kB]
+已下载 77.5 kB，耗时 1秒 (104 kB/s)

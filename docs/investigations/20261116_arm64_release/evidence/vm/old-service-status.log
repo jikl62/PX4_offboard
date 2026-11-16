@@ -1,0 +1,11 @@
+active
+active
+Nov 16 13:18:43 fc01-arm64-test-vm systemd[1]: Started FC01 manual RC navigation controller.
+Nov 16 13:18:52 fc01-arm64-test-vm fc01-navigation[808]: FC01 导航启动 version=20261112.1 mode=flight-test hover_thrust=0.500 reserve=0.040 target=1.230 permissions=flight_actions_enabled=True,arm_enabled=False,takeoff_enabled=True,rc_navigation_enabled=True visual=False config=/home/orangepi/FC01_navigation/runtime.yaml
+Nov 16 13:18:52 fc01-arm64-test-vm fc01-navigation[808]: Agent transport CONNECTED: UART /dev/ttyS2 115200; PID=671
+Nov 16 13:18:52 fc01-arm64-test-vm fc01-navigation[808]: WAITING: 控制器已启动，等待飞控反馈
+Nov 16 13:18:53 fc01-arm64-test-vm fc01-navigation[808]: WAITING: 等待飞控新鲜状态和本地位置
+Nov 16 13:18:53 fc01-arm64-test-vm fc01-navigation[808]: WAITING: RC_QUEUED_SAFETY_CONDITION
+Nov 16 13:18:54 fc01-arm64-test-vm fc01-navigation[808]: WAITING: PUBLISHER_OR_TELEMETRY_CONFLICT
+{'status': 'WAITING', 'reason': 'PUBLISHER_OR_TELEMETRY_CONFLICT', 'controller_pid': 845, 'feedback_current': True}
+{'phase': 'IDLE', 'reason': 'PUBLISHER_OR_TELEMETRY_CONFLICT', 'rc_target_height': 1.23, 'armed': False, 'landed': True, 'at_rest': True, 'thrust_body': [0, 0, 0], 'rc_navigation_mode_slot': 1}

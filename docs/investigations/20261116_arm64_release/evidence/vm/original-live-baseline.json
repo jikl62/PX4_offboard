@@ -1,0 +1,25 @@
+{
+  "captured_unix": 1794835698.7608259,
+  "supervisor_pid": 808,
+  "controller_pid": 845,
+  "status": "READY_WAIT_ARM",
+  "phase": "RC_READY_WAIT_ARM",
+  "state": {
+    "armed": false,
+    "landed": true,
+    "at_rest": true,
+    "thrust_body": [
+      0,
+      0,
+      0
+    ],
+    "rc_target_height": 1.23,
+    "rc_navigation_mode_slot": 1,
+    "visual_navigation_enabled": false,
+    "arm_enabled": false,
+    "flight_actions_enabled": true,
+    "takeoff_enabled": true
+  },
+  "runtime_sha256": "929eb1cb029d3a6af38197e0d8e396ca9145a0d5b83a8465dd049f715cefe13c",
+  "unit_sha256": "c7b56ab4ee555e2c8133d745421993ea6f6ca2259098af6fb8a44643a5d8f6fe"
+}

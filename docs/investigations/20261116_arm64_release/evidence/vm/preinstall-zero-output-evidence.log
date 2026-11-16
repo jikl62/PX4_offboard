@@ -1,0 +1,2 @@
+{'setpoint': 20234, 'heartbeat': 20234}
+all-disarmed VM outputs zero; no VehicleCommand

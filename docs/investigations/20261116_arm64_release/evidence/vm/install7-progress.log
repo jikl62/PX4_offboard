@@ -1,0 +1,5 @@
+MainPID=3187
+ActiveState=active
+3669 /usr/bin/python3 - /home/orangepi/FC01_OrangePi_20261116_stage3_arm64.tar.gz
+3875 /usr/bin/python3 /home/orangepi/FC01_versions/20261116_stage3/navigation_prebuilt_service.py check --config /home/orangepi/FC01_versions/20261116_stage3/deployment/runtime.yaml
+3905 bash -c systemctl show fc01-navigation.service -p MainPID -p ActiveState; pgrep -af "fc01_config_check|ldd|python3 -|prebuilt_service" | head -6

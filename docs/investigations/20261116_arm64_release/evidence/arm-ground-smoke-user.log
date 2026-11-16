@@ -1,0 +1,1 @@
+{"result": "FAIL", "errors": ["controller graceful shutdown timeout in isolated simulation", "controller exit=-9", "no fresh disarmed ground state observed"], "counts": {"feedback_batches": 742, "targets": 0, "commands": 0}, "controller_exit": -9}

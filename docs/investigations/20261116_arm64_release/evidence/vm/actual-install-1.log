@@ -1,0 +1,3 @@
+{'status': 'WAITING', 'reason': '等待飞控新鲜状态和本地位置', 'controller_pid': 845, 'feedback_current': False}
+{'phase': 'IDLE', 'reason': 'DDS_SOURCE_CLOCK_UNSYNCHRONIZED_OR_STALE', 'rc_target_height': 1.23, 'armed': False, 'landed': True, 'at_rest': True, 'thrust_body': [0, 0, 0], 'rc_navigation_mode_slot': 1, 'status_fresh': False, 'source_clock_valid': False}
+FC01_PREBUILT_INSTALL_FAILED: Command '['/usr/bin/systemctl', 'show', 'fc01-navigation.service', '--property=FragmentPath,DropInPaths,MainPID,ActiveState,SubState,UnitFileState,WorkingDirectory,User,Environment,EnvironmentFiles,ExecStart']' returned non-zero exit status 1.

@@ -1,0 +1,5 @@
+MainPID=5297
+ExecStart={ path=/bin/bash ; argv[]=/bin/bash /home/orangepi/fc01-old/navigation_boot.sh run --mode flight-test --confirm-flight-test ; ignore_errors=no ; start_time=[Mon 2026-11-16 13:58:41 UTC] ; stop_time=[n/a] ; pid=5297 ; code=(null) ; status=0/0 }
+WorkingDirectory=/home/orangepi/fc01-old
+ActiveState=active
+DropInPaths=

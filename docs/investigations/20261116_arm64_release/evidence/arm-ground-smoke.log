@@ -1,0 +1,1 @@
+{"result": "FAIL", "errors": ["RuntimeError('controller exited before test end: 2')", "controller exit=2", "no fresh disarmed ground state observed"], "counts": {"feedback_batches": 25, "targets": 0, "commands": 0}, "controller_exit": 2}

@@ -1,0 +1,86 @@
+Agent transport CONNECTED: UART /dev/ttyS2 115200; PID=106101
+WAITING: 控制器已启动，等待飞控反馈
+HEIGHT_HOLD: native recovery
+STOPPING: 等待原生退出
+STOPPING: 原生控制器退出，code=0
+STOPPED: 后台待命已停止
+_valid_mode_slots_are_accepted_by_actual_native_config (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_check_session_is_accepted_by_actual_native_config (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_flight_session_is_accepted_by_actual_native_config (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_native_validator_rejects_legacy_flight_flag_in_attitude_mode (test_navigation_service.NavigationNativeConfigContract) ... ok
+test_closed_read_only_view_does_not_stop_or_manage_service (test_navigation_service.NavigationServiceTests) ... ok
+test_current_native_fault_survives_expired_aircraft_feedback (test_navigation_service.NavigationServiceTests) ... ok
+test_current_service_instance_controls_snapshot_validity (test_navigation_service.NavigationServiceTests) ... ok
+test_diagnostic_mode_closes_every_action_authority_and_visual_gate (test_navigation_service.NavigationServiceTests) ... ok
+test_flight_test_requires_explicit_confirmation (test_navigation_service.NavigationServiceTests) ... usage: python3 -m unittest [-h] [--mode {diagnostic,flight-test}]
+                           [--flight-test] [--confirm-flight-test]
+                           [--file FILE] [--prefix PREFIX]
+                           [--build-dir BUILD_DIR] [--require-existing-agent]
+                           [--require-rc-safe]
+                           [{run,prepare-config,validate-env,check-config,probe,build}]
+python3 -m unittest: error: Flight Test 必须同时提供 --confirm-flight-test；不会隐式开启动作门
+ok
+test_historical_phase_cannot_override_retry_or_channel_failure (test_navigation_service.NavigationServiceTests) ... ok
+test_load_profile_uses_bundle_candidate_and_writes_mode_metadata (test_navigation_service.NavigationServiceTests) ... ok
+test_load_profile_uses_settings_slot_and_preserves_base_when_omitted (test_navigation_service.NavigationServiceTests) ... ok
+test_mode_slot_is_configurable_and_rejects_invalid_values (test_navigation_service.NavigationServiceTests) ... ok
+test_native_fault_overrides_connected_and_ready_is_distinct (test_navigation_service.NavigationServiceTests) ... ok
+test_navigation_profile_keeps_program_arm_disabled_and_numeric_limits (test_navigation_service.NavigationServiceTests) ... ok
+test_old_binary_without_lifecycle_marker_is_not_accepted (test_navigation_service.NavigationServiceTests) ... ok
+test_old_or_disconnected_safety_cannot_override_transport_status (test_navigation_service.NavigationServiceTests) ... ok
+test_private_controller_does_not_require_the_sdk_controller_binary (test_navigation_service.NavigationServiceTests) ... ok
+test_release_entry_and_native_controller_share_the_current_identity (test_navigation_service.NavigationServiceTests) ... ok
+test_role_metadata_does_not_override_actual_native_gate_values (test_navigation_service.NavigationServiceTests) ... ok
+test_service_runs_private_native_with_status_only_and_graceful_recovery (test_navigation_service.NavigationServiceTests) ... ok
+test_shipped_mode_candidates_start_with_closed_gates (test_navigation_service.NavigationServiceTests) ... ok
+test_unknown_aircraft_feedback_cannot_become_ready (test_navigation_service.NavigationServiceTests) ... ok
+test_view_rejects_previous_boot_and_malformed_time (test_navigation_service.NavigationServiceTests) ... ok
+test_check_runs_only_ldd_and_packaged_checker_with_preserved_config (test_navigation_prebuilt_service.PrebuiltServiceTests) ... ok
+test_environment_preserves_dds_and_discards_old_overlay_and_reserved_paths (test_navigation_prebuilt_service.PrebuiltServiceTests) ... ok
+test_inherited_settings_refuse_incompatible_policy_without_mutation (test_navigation_prebuilt_service.PrebuiltServiceTests) ... ok
+test_payload_hash_arch_and_dependency_errors_refuse_before_checker (test_navigation_prebuilt_service.PrebuiltServiceTests) ... ok
+test_snapshot_preserves_every_control_and_only_changes_identity (test_navigation_prebuilt_service.PrebuiltServiceTests) ... ok
+test_supervisor_uses_packaged_node_snapshot_and_original_agent (test_navigation_prebuilt_service.PrebuiltServiceTests) ... FC01_PREBUILT_SERVICE version=20261116.stage3-abcdef source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa inherited_config=/tmp/tmpgtp1j97e/release/deployment/runtime.yaml
+ok
+test_archive_traversal_and_symlink_rejected (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_bad_hash_and_architecture_rejected_before_stop (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_busy_old_controller_never_changes_service (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_corrupted_existing_payload_is_not_overwritten (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_duplicate_controller_rejects_without_stop (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_external_unit_edit_blocks_rollback_before_overwrite (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_failed_new_start_restores_old_active (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_failed_supervisor_without_controller_restores_old_active (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_ground_but_active_or_stale_rc_never_authorizes_switch (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_ground_ready_prestream_does_not_require_heartbeat_off (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_inactive_failed_candidate_can_roll_back_without_live_controller (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_install_repeat_rollback_and_effective_inheritance (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_invalid_backup_rejected_without_configuration_write (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_live_rc_configuration_mismatch_never_silently_inherited (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_missing_dependency_rejected_before_stop (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_nan_or_incomplete_zero_thrust_proof_rejects (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_old_or_pid_reused_snapshot_never_gets_freshened (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_original_dropin_and_environment_file_backed_up_unchanged (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_original_restart_different_parameters_is_not_reported_recovered (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_owned_agent_handoff_changed_program_is_never_accepted (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_owned_agent_handoff_install_repeat_rollback_preserves_exe_arguments (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_owned_agent_new_start_failure_restores_original_with_same_parameters (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_real_backend_missing_agent_requires_clean_free_uart_evidence (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_real_size_manifest_never_enters_dependency_process_argv (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_real_systemd_parser_accepts_scalar_working_directory (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_repeat_install_without_legacy_sdk_environment (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_scalar_working_directory_rejects_ambiguous_values (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_shared_agent_disappearance_is_not_treated_as_owned_handoff (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_slow_service_query_precedes_latest_snapshot_read_without_extending_ttl (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_startup_acceptance_waits_for_measured_slow_preflight_not_stale_feedback (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_supervisor_snapshot_uses_identity_not_a_second_ipc_client (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_unknown_or_armed_controller_rejected_without_changes (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_unknown_supervisor_owned_agent_arguments_refuse_before_stop (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_unmodified_sources_are_never_privileged_rewritten_on_rollback (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_unsupported_domain_preserved_and_rejected (test_navigation_prebuilt_install.InstallerTest) ... ok
+test_complete_evidence_accepts_and_partial_or_changed_rejects (test_arm64_bundle.BundleEvidenceTest) ... ok
+test_install_directory_link_is_explicitly_rejected (test_arm64_bundle.BundleEvidenceTest) ... ok
+
+----------------------------------------------------------------------
+Ran 69 tests in 2.056s
+
+OK

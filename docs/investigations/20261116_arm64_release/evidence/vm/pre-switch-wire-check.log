@@ -1,0 +1,12 @@
+Nov 16 13:19:59 fc01-arm64-test-vm fc01-navigation[808]: WAITING: 等待飞控新鲜状态和本地位置
+Nov 16 13:20:07 fc01-arm64-test-vm fc01-navigation[808]: WAITING: RC_QUEUED_SAFETY_CONDITION
+Nov 16 13:20:07 fc01-arm64-test-vm fc01-navigation[808]: WAITING: RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND
+Nov 16 13:20:09 fc01-arm64-test-vm fc01-navigation[808]: PRESTREAM: RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE
+Nov 16 13:20:09 fc01-arm64-test-vm fc01-navigation[808]: WAITING: 等待飞控新鲜状态和本地位置
+Nov 16 13:21:49 fc01-arm64-test-vm fc01-navigation[808]: WAITING: RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND
+Nov 16 13:21:51 fc01-arm64-test-vm fc01-navigation[808]: PRESTREAM: RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE
+Nov 16 13:21:53 fc01-arm64-test-vm fc01-navigation[808]: READY_WAIT_ARM: RC_READY_WAIT_CH5_MANUAL_ARM
+26032 /home/orangepi/vm-output.jsonl
+{"kind": "heartbeat", "monotonic": 1540.350402032, "timestamp": 1794835968095262}
+{"kind": "setpoint", "monotonic": 1540.399826896, "timestamp": 1794835968145498, "thrust_body": [0.0, 0.0, 0.0]}
+{"kind": "heartbeat", "monotonic": 1540.401174784, "timestamp": 1794835968145498}

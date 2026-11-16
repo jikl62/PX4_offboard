@@ -1,0 +1,6 @@
+dbus arm64 1.12.20-2ubuntu4.1
+python3 arm64 3.10.6-1~22.04.1
+ros-humble-rclcpp arm64 16.0.21-1jammy.20260908.001534
+ros-humble-rclpy arm64 3.3.22-1jammy.20260907.232408
+ros-humble-rmw-fastrtps-cpp arm64 6.2.10-1jammy.20260907.212405
+systemd arm64 249.11-0ubuntu3.23

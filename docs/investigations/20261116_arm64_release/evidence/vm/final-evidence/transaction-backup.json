@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "entry": "/home/orangepi/FC01_versions/20261116_stage3",
+  "archive_sha256": "3c876f6f98d45df994658ad3f68691c12dee0cf14befa18f2824a52f58d2a123",
+  "service": {
+    "MainPID": "3187",
+    "ExecStart": "{ path=/bin/bash ; argv[]=/bin/bash /home/orangepi/fc01-old/navigation_boot.sh run --mode flight-test --confirm-flight-test ; ignore_errors=no ; start_time=[Mon 2026-11-16 13:45:09 UTC] ; stop_time=[n/a] ; pid=3187 ; code=(null) ; status=0/0 }",
+    "Environment": "HOME=/home/orangepi FC01_PROJECT_ROOT=/home/orangepi/sdk ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0 PYTHONUNBUFFERED=1",
+    "WorkingDirectory": "/home/orangepi/fc01-old",
+    "User": "orangepi",
+    "ActiveState": "active",
+    "SubState": "running",
+    "FragmentPath": "/etc/systemd/system/fc01-navigation.service",
+    "DropInPaths": "",
+    "UnitFileState": "enabled"
+  },
+  "controller": {
+    "pid": 3231,
+    "uid": 1000,
+    "argv": [
+      "/home/orangepi/fc01-old/install/lib/jikl_fc01_system/fc01_system_node",
+      "--ros-args",
+      "--disable-external-lib-logs",
+      "--params-file",
+      "/home/orangepi/FC01_navigation/runtime.yaml",
+      "-p",
+      "socket_path:=/home/orangepi/.cache/fc01_operator/ipc/s_nls516t4/control.sock"
+    ],
+    "exe": "/home/orangepi/fc01-old/install/lib/jikl_fc01_system/fc01_system_node",
+    "cwd": "/home/orangepi/fc01-old",
+    "sha256": "c446afae3d2a262bff132232cac77a40d2c9499ce8ea6a765d6d52c97f02cdc7"
+  },
+  "runtime_path": "/home/orangepi/FC01_navigation/runtime.yaml",
+  "runtime_sha256": "929eb1cb029d3a6af38197e0d8e396ca9145a0d5b83a8465dd049f715cefe13c",
+  "runtime_mode": 384,
+  "environment": {
+    "environment": {
+      "ROS_DOMAIN_ID": "0",
+      "ROS_LOCALHOST_ONLY": "0"
+    },
+    "sdk_root": "/home/orangepi/sdk",
+    "original_entry": "/home/orangepi/fc01-old",
+    "service_mode": "flight-test",
+    "controller_environment_sha256": "8c9e670bcf91dcffe76da8f359c7aa6476143abf9a314d3adbbffa9e47db9d4d",
+    "agent_path": "/home/orangepi/fc01_agent_build_offline/MicroXRCEAgent"
+  },
+  "files": [
+    {
+      "path": "/etc/systemd/system/fc01-navigation.service",
+      "mode": 420,
+      "sha256": "c7b56ab4ee555e2c8133d745421993ea6f6ca2259098af6fb8a44643a5d8f6fe",
+      "present": true,
+      "backup": "file-000"
+    },
+    {
+      "path": "/etc/systemd/system/fc01-navigation.service.d/zzzz-fc01-prebuilt.conf",
+      "present": false
+    }
+  ],
+  "agent": {
+    "pid": 671,
+    "uid": 1000,
+    "argv": [
+      "/home/orangepi/fc01_agent_build_offline/MicroXRCEAgent",
+      "serial",
+      "-D",
+      "/dev/ttyS2",
+      "-b",
+      "115200",
+      "-v",
+      "0"
+    ],
+    "exe": "/home/orangepi/fc01_agent_build_offline/MicroXRCEAgent",
+    "cwd": "/",
+    "sha256": "dfaebdde06bc6dcaaa96b49ce5e8579c6c535f55953b75f5173def1ad42adde5"
+  },
+  "agent_owned": false,
+  "boot_id": "662ede28-4b6e-4914-84f9-6c0e8f9ab7bc",
+  "phase": "rolled_back",
+  "installed_dropin_sha256": "3f564445c8dfd4d7776d6dbd68816a17011b5d9863f9ff8079c5787f8ed3f75a"
+}

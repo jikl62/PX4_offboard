@@ -1,0 +1,5 @@
+   2459    2443       00:00 bash -c ps -eo pid,ppid,etime,args | grep -E "fc01-prebuilt|fc01_config_check|/ldd|systemd-analyze|prebuilt_boot" | head -12; systemctl show fc01-navigation.service -p MainPID -p ActiveState -p DropInPaths
+   2462    2459       00:00 grep -E fc01-prebuilt|fc01_config_check|/ldd|systemd-analyze|prebuilt_boot
+MainPID=808
+ActiveState=active
+DropInPaths=

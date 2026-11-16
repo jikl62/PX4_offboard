@@ -1,0 +1,12 @@
+● fc01-vm-ground.service - VM-only synthetic disarmed PX4 ground telemetry
+     Loaded: loaded (/etc/systemd/system/fc01-vm-ground.service; disabled; vendor preset: enabled)
+     Active: active (running) since Mon 2026-11-16 13:17:10 UTC; 320ms ago
+   Main PID: 737 (bash)
+      Tasks: 3 (limit: 2290)
+     Memory: 940.0K
+        CPU: 100ms
+     CGroup: /system.slice/fc01-vm-ground.service
+             ├─737 /bin/bash /home/orangepi/vm-ground.sh
+             └─742 /usr/bin/python3 /opt/ros/humble/_local_setup_util.py sh bash
+
+Nov 16 13:17:10 fc01-arm64-test-vm systemd[1]: Started VM-only synthetic disarmed PX4 ground telemetry.

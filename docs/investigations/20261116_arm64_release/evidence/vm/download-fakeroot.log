@@ -1,0 +1,6 @@
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+获取:1 https://repo.huaweicloud.com/ubuntu jammy/main amd64 fakeroot amd64 1.28-1ubuntu1 [60.4 kB]
+获取:2 https://repo.huaweicloud.com/ubuntu jammy/main amd64 libfakeroot amd64 1.28-1ubuntu1 [31.5 kB]
+已下载 91.9 kB，耗时 0秒 (245 kB/s)

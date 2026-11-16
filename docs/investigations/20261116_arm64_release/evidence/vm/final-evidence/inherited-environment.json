@@ -1,0 +1,12 @@
+{
+  "environment": {
+    "ROS_DOMAIN_ID": "0",
+    "ROS_LOCALHOST_ONLY": "0"
+  },
+  "sdk_root": "/home/orangepi/sdk",
+  "original_entry": "/home/orangepi/fc01-old",
+  "service_mode": "flight-test",
+  "controller_environment_sha256": "8c9e670bcf91dcffe76da8f359c7aa6476143abf9a314d3adbbffa9e47db9d4d",
+  "agent_path": "/home/orangepi/fc01_agent_build_offline/MicroXRCEAgent",
+  "mode": "flight-test"
+}

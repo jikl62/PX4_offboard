@@ -1,0 +1,7 @@
+Linux fc01-arm64-test-vm 5.15.0-203-generic #213-Ubuntu SMP Fri Oct 23 13:20:09 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux
+running
+lrwxrwxrwx 1 root root 10 Oct 12 07:47 /dev/ttyS2 -> /dev/pts/0
+uid=1000(orangepi) gid=1000(orangepi) groups=1000(orangepi)
+ 
+ 
+ 
