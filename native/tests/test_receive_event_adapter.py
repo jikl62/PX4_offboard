@@ -163,6 +163,25 @@ static void rate_diagnostics_preserve_fatal_feedback_checks(){
   assert(blocked);
 }
 int main(){
+  {Fixture f;Local l;l.timestamp=l.timestamp_sample=1000000;l.z_valid=true;
+   l.z=2;l.dist_bottom=.1f;l.dist_bottom_var=.01f;l.dist_bottom_valid=true;
+   // 只有RANGE参与位才用于测距趋势；FLOW单独有效不认证测距。
+   l.dist_bottom_sensor_bitfield=2;
+   f.node.receive_sampled(l,f.node.local_,f.node.local_stamp_,f.node.local_sample_,
+     fc01::SourceSlot::Local,rclcpp::MessageInfo{});
+   assert(!f.node.range_trend_.evidence(true).available);
+   l.timestamp+=250000;l.timestamp_sample=l.timestamp;l.dist_bottom_sensor_bitfield=Local::DIST_BOTTOM_SENSOR_RANGE;
+   f.node.receive_sampled(l,f.node.local_,f.node.local_stamp_,f.node.local_sample_,
+     fc01::SourceSlot::Local,rclcpp::MessageInfo{});
+   auto s=f.s;s.attitude.source_host_stamp=l.timestamp;
+   s.attitude.source_clock_validated=s.attitude.source_clock_valid=true;
+   auto fields=f.node.vertical_feedback_fields(s,steady());
+   assert(fields.find("\"range_available\":true")!=std::string::npos);
+   s.attitude.source_host_stamp+=600000;
+   fields=f.node.vertical_feedback_fields(s,steady());
+   assert(fields.find("\"range_available\":false")!=std::string::npos);
+   assert(f.node.runtime_->attitude_core().phase()==fc01::attitude::Phase::ThrustRamp);
+  }
   alternating_rate_samples_keep_separate_diagnostic_episodes();
   persistent_rate_difference_warns_without_cutting_publication();
   rate_diagnostics_do_not_freeze_vertical_integration();

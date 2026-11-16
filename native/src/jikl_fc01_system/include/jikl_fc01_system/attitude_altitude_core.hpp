@@ -1015,6 +1015,25 @@ public:
   }
   // 离散安全来源分别为姿态/垂向/状态/failsafe/权限/电池/着陆；枚举仅选择检查分支，不直接推进正常阶段。
   enum class SafetyEvent { Attitude, Vertical, Status, Failsafe, Authority, Battery, Land };
+  // 通用拒绝原因继续沿用原协议；另存首次触发的全部失败位，避免健康尾帧或后续坏帧抹掉首因。
+  // 这些值只供日志读取，不参与恢复资格、控制计算或发布裁决。源戳为各来源微秒，now为主机单调秒。
+  struct QueuedSafetyEvidence {
+    bool recorded{};
+    std::uint32_t mask{};
+    SafetyEvent source{SafetyEvent::Status};
+    double observed_at{};
+    std::uint64_t status_stamp{}, land_stamp{}, local_stamp{}, switch_stamp{};
+  };
+  const QueuedSafetyEvidence& queued_safety_evidence() const {
+    return queued_safety_evidence_;
+  }
+  // 位0..9依次对应原通用条件；bit6仍严格复用rc_live，不能用诊断细分放宽原来的准入规则。
+  static std::uint32_t queued_safety_mask(const Feedback& s) {
+    return (s.kill ? 1U : 0U) | (s.failsafe ? 2U : 0U) | (s.calibration ? 4U : 0U) |
+           (s.hil ? 8U : 0U) | (!s.preflight ? 16U : 0U) | (!s.battery_ready ? 32U : 0U) |
+           (!RcNavigationStart::rc_live(s) ? 64U : 0U) | (!s.rc_axes_safe ? 128U : 0U) |
+           (s.rc_sticks_moving ? 256U : 0U) | (!s.rc_aux_switches_safe ? 512U : 0U);
+  }
   // 规划前逐个检查排队载荷，健康观察不推进正常阶段也不清故障。
   // 未汇合RC仍用原等待/重置策略；一旦已有解锁意图，该策略会阻塞本次准入。
   bool observe_safety_event(const Feedback& s, SafetyEvent source, double now) {
@@ -1116,10 +1135,16 @@ public:
     } else if (source == SafetyEvent::Status || source == SafetyEvent::Failsafe ||
                source == SafetyEvent::Authority) {
       if (c_.rc_navigation_enabled && !rc_joined_) {
-        if (s.kill || s.failsafe || s.calibration || s.hil || !s.preflight || !s.battery_ready ||
-            !RcNavigationStart::rc_live(s) || !s.rc_axes_safe || s.rc_sticks_moving ||
-            !s.rc_aux_switches_safe)
-          return reject("RC_QUEUED_SAFETY_CONDITION");
+        const auto mask = queued_safety_mask(s);
+        if (mask) {
+          const bool rejected = reject("RC_QUEUED_SAFETY_CONDITION");
+          // 未解锁的临时准备拒绝会按原规则重新等待；只记录真正锁存Safety的任务首因。
+          // 否则启动期preflight未就绪会污染稍后人工解锁任务的真正故障。
+          if (phase_ == Phase::Safety && !queued_safety_evidence_.recorded)
+            queued_safety_evidence_ = {true, mask, source, now, s.status_stamp, s.land_stamp,
+                                       s.local_stamp, s.rc_switch_sample_stamp};
+          return rejected;
+        }
       }
       if (const auto cause = takeover_cause(s)) {
         if (s.offboard && s.armed && !s.kill && !s.failsafe && s.status_fresh &&
@@ -2827,6 +2852,7 @@ private:
   // 飞行监测与恢复监测各有独立积分状态，恢复不能继承旧飞行窗口。
   VerticalFeedbackGuard feedback_guard_;
   VerticalFeedbackGuard recovery_feedback_guard_;
+  QueuedSafetyEvidence queued_safety_evidence_;
   // 成员组3：故障恢复窗口、独立源计数、reset与因果水位；本周期坏事件会否决整轮恢复。
   bool rc_fault_recoverable_{}, rc_recovery_ready_{}, recovery_event_blocked_{};
   double rc_recovery_since_{-1}, rc_recovery_last_land_at_{-1}, rc_recovery_z_{},

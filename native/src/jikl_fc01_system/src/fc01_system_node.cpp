@@ -16,6 +16,7 @@
 #include "jikl_fc01_system/async_log.hpp"
 #include "jikl_fc01_system/attitude_wire.hpp"
 #include "jikl_fc01_system/attitude_diagnostics.hpp"
+#include "jikl_fc01_system/range_trend_diagnostics.hpp"
 #include "jikl_fc01_system/publication_boundary.hpp"
 #include "jikl_fc01_system/publication_audit.hpp"
 #include "jikl_fc01_system/authority_telemetry.hpp"
@@ -51,6 +52,7 @@
 #include <iomanip>
 #include <iostream>
 #include <thread>
+#include <type_traits>
 
 // 本地别名缩短协议类型；实际 PX4 消息身份与版本在下方编译期断言中固定。
 // namespace 别名 f/v 缩短命名空间；using 只给已有类型取短名，不创建另一种 ROS 消息。
@@ -940,9 +942,17 @@ private:
     record_receipt(slot, msg.timestamp, msg.timestamp_sample, true, received, info);
     const bool accepted = f::receive_sampled_source(msg, destination, stamp, sample, received);
     receipt_accepted_[std::size_t(slot)] = accepted;
-    if (accepted)
+    if (accepted) {
       ++source_accepted_[std::size_t(slot)];
-    else
+      if constexpr (std::is_same_v<T, Local>) {
+        // 只旁观同一local流；缺测距不创建新依赖，不向Core传控制授权。
+        range_trend_.observe(msg.timestamp_sample,
+                             msg.z_valid && msg.dist_bottom_valid &&
+                                 (msg.dist_bottom_sensor_bitfield & Local::DIST_BOTTOM_SENSOR_RANGE),
+                             msg.z, msg.dist_bottom, msg.dist_bottom_var, msg.z_reset_counter,
+                             msg.dist_bottom_reset_counter, config_.attitude.local_timeout);
+      }
+    } else
       ++receive_events_;
   }
   // 固定容量队列满则锁存传输故障，不能静默丢危险证据后继续声称安全恢复。
@@ -1589,8 +1599,15 @@ private:
     return s;
   }
   // 导数差为独立监测诊断；位置积分一致性另有证据与故障条件，不能把两个误差混为独立停机。
-  std::string vertical_feedback_fields() const {
+  std::string vertical_feedback_fields(const f::Snapshot& s, double now) const {
     const auto& e = runtime_->attitude_core().vertical_feedback_evidence();
+    const auto host = s.attitude.source_host_stamp;
+    const auto range = range_trend_.evidence(
+        s.attitude.source_clock_validated && s.attitude.source_clock_valid && host > 0 &&
+        local_stamp_.fresh(now, config_.attitude.local_timeout) &&
+        local_sample_.fresh(host, now, config_.attitude.local_timeout) &&
+        f::source_sample_in_clock(local_stamp_.value, local_.timestamp_sample,
+                                  host, config_.attitude.local_timeout));
     std::ostringstream out;
     out << ",\"vertical_feedback_guard_enabled\":"
         << boolean(config_.attitude.feedback_guard.enabled)
@@ -1606,7 +1623,17 @@ private:
         << ",\"vertical_feedback_disagreement_s\":" << number(e.disagreement_seconds, e.checked)
         << ",\"vertical_feedback_disagreement_samples\":" << e.disagreement_samples
         << ",\"vertical_feedback_sample_stamp\":" << e.sample_stamp
-        << ",\"vertical_feedback_reason\":" << f::quote(e.reason);
+        << ",\"vertical_feedback_reason\":" << f::quote(e.reason)
+        << ",\"range_policy\":\"diagnostic_only_px4_dist_bottom\""
+        << ",\"range_available\":" << boolean(range.available)
+        << ",\"range_compared\":" << boolean(range.compared)
+        << ",\"range_distance_m\":" << number(range.distance_m, range.available)
+        << ",\"range_variance_m2\":" << number(range.variance_m2, range.available)
+        << ",\"range_fused_rise_m\":" << number(range.fused_rise_m, range.compared)
+        << ",\"range_rise_m\":" << number(range.range_rise_m, range.compared)
+        << ",\"range_interval_s\":" << number(range.interval_s, range.compared)
+        << ",\"range_same_direction\":" << boolean(range.compared && range.same_direction)
+        << ",\"range_sample_stamp\":" << range.sample_stamp;
     return out.str();
   }
   // 区分planned与实际提交推力；比例/积分/原始推力/上限/限斜率仅表示本地计算与边界结果。
@@ -1634,7 +1661,7 @@ private:
               << ",\"phase_before\":" << f::quote(before)
               << ",\"phase_after\":" << f::quote(runtime_->phase_name())
               << ",\"reason\":" << f::quote(core.reason()) << progress_fields()
-              << rc_recovery_fields(s, now) << reference_fields(s) << vertical_feedback_fields()
+              << rc_recovery_fields(s, now) << reference_fields(s) << vertical_feedback_fields(s, now)
               << vertical_control_fields(planned, true)
               << ",\"ownership\":" << f::quote(core.recovery_responsibility(fb))
               << ",\"armed\":" << boolean(s.feedback.armed) << ",\"nav_state\":" << s.nav_state
@@ -1710,10 +1737,19 @@ private:
   std::string rc_recovery_fields(const f::Snapshot& s, double now) const {
     const auto& core = runtime_->attitude_core();
     const auto d = core.rc_recovery_diagnostics();
+    const auto& queued = core.queued_safety_evidence();
     // d.ready 是 Core 的恢复证据状态；Runtime 还有重新准备条件，所以同时输出两种 block_reason。
     // 看见 ready 不能跳过本轮安全事件、停止请求或其他任务生命周期检查直接重启任务。
     std::ostringstream out;
-    out << ",\"rc_first_fault_reason\":" << f::quote(d.first_fault_reason)
+    out << ",\"rc_queued_safety_recorded\":" << boolean(queued.recorded)
+        << ",\"rc_queued_safety_mask\":" << queued.mask
+        << ",\"rc_queued_safety_source\":" << unsigned(queued.source)
+        << ",\"rc_queued_safety_observed_at\":" << number(queued.observed_at, queued.recorded)
+        << ",\"rc_queued_safety_status_stamp\":" << queued.status_stamp
+        << ",\"rc_queued_safety_land_stamp\":" << queued.land_stamp
+        << ",\"rc_queued_safety_local_stamp\":" << queued.local_stamp
+        << ",\"rc_queued_safety_switch_stamp\":" << queued.switch_stamp
+        << ",\"rc_first_fault_reason\":" << f::quote(d.first_fault_reason)
         << ",\"rc_latest_fault_reason\":" << f::quote(d.latest_fault_reason)
         << ",\"rc_fault_recoverable\":" << boolean(d.recoverable)
         << ",\"rc_restart_required\":" << boolean(core.restart_required())
@@ -2099,7 +2135,7 @@ private:
                     : !local_.z_valid || !std::isfinite(local_.z) || !std::isfinite(reference_z())
                         ? "Z_ESTIMATE_INVALID"
                         : "")
-        << vertical_feedback_fields() << vertical_control_fields(last_attitude_output_)
+        << vertical_feedback_fields(s, now) << vertical_control_fields(last_attitude_output_)
         << ",\"ground_test\":" << f::quote(runtime_->ground_name())
         << ",\"ground_reason\":" << f::quote(runtime_->ground_reason())
         << ",\"reason\":" << f::quote(runtime_->message()) << ",\"source_counts\":["
@@ -2226,6 +2262,7 @@ private:
   // 可选同步CSV及异步stdout审计分离；下列ROS SharedPtr保持端点存活直到节点释放。
   std::ofstream csv_;
   f::attitude::PublicationAudit publication_audit_;
+  f::attitude::RangeTrendDiagnostics range_trend_;
   rclcpp::Subscription<Attitude>::SharedPtr attitude_sub_;
   rclcpp::Subscription<Manual>::SharedPtr manual_sub_;
   rclcpp::Subscription<Switches>::SharedPtr switches_sub_;

@@ -128,7 +128,7 @@ MESSAGES = {
     'vehicle_local_position': (
         'VehicleLocalPosition',
         0,
-        'std::uint64_t timestamp_sample{};float x{},y{},z{},vx{},vy{},vz{},z_deriv{},ax{},ay{},az{},heading{};bool xy_valid{},z_valid{},v_xy_valid{},v_z_valid{},heading_good_for_control{},dead_reckoning{};std::uint8_t xy_reset_counter{},z_reset_counter{},vxy_reset_counter{},vz_reset_counter{},heading_reset_counter{};',
+        'static constexpr std::uint8_t DIST_BOTTOM_SENSOR_RANGE=1;std::uint64_t timestamp_sample{};float x{},y{},z{},vx{},vy{},vz{},z_deriv{},ax{},ay{},az{},heading{},dist_bottom{},dist_bottom_var{};bool xy_valid{},z_valid{},v_xy_valid{},v_z_valid{},heading_good_for_control{},dead_reckoning{},dist_bottom_valid{};std::uint8_t xy_reset_counter{},z_reset_counter{},vxy_reset_counter{},vz_reset_counter{},heading_reset_counter{},dist_bottom_reset_counter{},dist_bottom_sensor_bitfield{};',
     ),
     'trajectory_setpoint': (
         'TrajectorySetpoint',
