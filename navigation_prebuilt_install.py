@@ -220,6 +220,19 @@ def systemd_quote(value):
     return '"' + str(value).replace('\\', '\\\\').replace('"', '\\"').replace('%', '%%') + '"'
 
 
+def systemd_directory(value):
+    """WorkingDirectory是单个路径值，不使用ExecStart的shell词法双引号。
+
+    systemd249会把这里的双引号保留为路径字符；百分号仍需转义以免展开specifier。
+    拒绝控制字/反斜杠和边缘空白，避免unit续行/转义改变实际目录。
+    """
+    text=str(value)
+    if (not Path(text).is_absolute() or text!=text.strip() or '\\' in text
+            or any(ord(c)<32 or ord(c)==127 for c in text)):
+        raise InstallError('systemd工作目录必须是无控制字的明确绝对路径')
+    return text.replace('%','%%')
+
+
 class Backend:
     """唯一系统副作用边界；测试替身只替换此对象，不向生产CLI开放跳过开关。"""
 
@@ -828,7 +841,7 @@ def install(archive, expected, backend):
         write_deployment(entry,config,mode,environment,manifest,backup)
         backend.config_check(entry,manifest,entry/'deployment/runtime.yaml',environment)
         own=backend.units/(SERVICE+'.d')/DROPIN
-        dropin=('[Service]\nExecStart=\nExecStart=/bin/bash '+systemd_quote(entry/'prebuilt_boot.sh')+'\nWorkingDirectory='+systemd_quote(entry)+'\n').encode()
+        dropin=('[Service]\nExecStart=\nExecStart=/bin/bash '+systemd_quote(entry/'prebuilt_boot.sh')+'\nWorkingDirectory='+systemd_directory(entry)+'\n').encode()
         with tempfile.TemporaryDirectory(prefix='fc01-unit-check-') as unit_tmp:
             unit=Path(unit_tmp)/SERVICE
             unit.write_bytes(Path(record['service']['FragmentPath']).read_bytes()+b'\n'+dropin)

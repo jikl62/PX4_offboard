@@ -6,6 +6,8 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
+import subprocess
 import tarfile
 import tempfile
 import types
@@ -163,6 +165,9 @@ class InstallerTest(unittest.TestCase):
             inherited=json.loads((entry/'deployment/environment.json').read_text())
             self.assertEqual(inherited['environment']['FASTRTPS_DEFAULT_PROFILES_FILE'],'/unchanged/profile.xml')
             self.assertEqual(f.unit.read_bytes(),f.original_unit)
+            dropin=(f.units/(m.SERVICE+'.d')/m.DROPIN).read_text()
+            self.assertIn('\nWorkingDirectory='+str(entry)+'\n',dropin)
+            self.assertNotIn('WorkingDirectory="',dropin)
             again=m.install(archive,sha,f)
             self.assertTrue(again['already_active']);self.assertEqual(f.calls.count('stop'),1)
             self.assertEqual(again['backup'],result['backup'])
@@ -170,6 +175,24 @@ class InstallerTest(unittest.TestCase):
             self.assertEqual(f.unit.read_bytes(),f.original_unit);self.assertEqual(f.runtime.read_bytes(),f.original_runtime)
             self.assertEqual(f.controller['exe'],str(f.binary));self.assertEqual(f.info['ActiveState'],'active')
             self.assertFalse((f.units/(m.SERVICE+'.d')/m.DROPIN).exists())
+
+    @unittest.skipUnless(shutil.which('systemd-analyze'),'requires real systemd parser')
+    def test_real_systemd_parser_accepts_scalar_working_directory(self):
+        # 使用宿主真实解析器，不启动unit、不调用systemctl、不要求root。
+        with tempfile.TemporaryDirectory(prefix='fc01 unit % ') as temp:
+            root=Path(temp);boot=root/'prebuilt_boot.sh';boot.write_text('#!/bin/bash\n')
+            unit=root/'fc01-scalar-test.service'
+            unit.write_text('[Unit]\nDescription=FC01 parser-only fixture\n[Service]\nType=simple\n'
+                +'ExecStart=/bin/bash '+m.systemd_quote(boot)+'\n'
+                +'WorkingDirectory='+m.systemd_directory(root)+'\n')
+            result=subprocess.run(['systemd-analyze','verify',str(unit)],capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertNotIn('WorkingDirectory="',unit.read_text())
+            self.assertIn('%%',unit.read_text())
+
+    def test_scalar_working_directory_rejects_ambiguous_values(self):
+        for value in ('relative','/tmp/new\n[Service]','/tmp/new\\path','/tmp/new\tpath','/tmp/new '):
+            with self.subTest(value=value),self.assertRaises(m.InstallError):m.systemd_directory(value)
 
     def test_bad_hash_and_architecture_rejected_before_stop(self):
         with tempfile.TemporaryDirectory() as temp:
