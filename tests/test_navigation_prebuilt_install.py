@@ -1,5 +1,6 @@
 """预编译安装事务离线回归；fake systemd/proc绝不操作宿主服务或设备。"""
 import copy
+import ast
 import hashlib
 import io
 import json
@@ -358,6 +359,33 @@ class InstallerTest(unittest.TestCase):
             with patch.object(Path,'is_char_device',return_value=False):
                 with patch.object(m.subprocess,'run',return_value=clean):
                     with self.assertRaises(m.InstallError):backend.retained_agent(allow_missing=True)
+
+    def test_real_size_manifest_never_enters_dependency_process_argv(self):
+        # 真实发行约5000成员；单个Linux argv不能超过MAX_ARG_STRLEN约128KiB。
+        # 检查真正Backend生成的命令及内层Python，而不是Fixture的空dependencies替身。
+        manifest={'payload_sha256':{
+            'install/lib/project/'+('long_source_name_'*4)+str(i):'a'*64 for i in range(5000)}}
+        self.assertGreater(len(json.dumps(manifest)),131072)
+        commands=[]
+        backend=object.__new__(m.Backend)
+        def capture(argv):
+            commands.append(argv);return types.SimpleNamespace(stdout='dependencies checked')
+        backend.run=capture
+        result=backend.dependencies(Path('/independent/release'),manifest,{})
+        self.assertEqual(result,'dependencies checked')
+        command=commands[0]
+        self.assertTrue(all(len(arg.encode())<131072 for arg in command))
+        self.assertEqual(command[-1],'/independent/release')
+        self.assertEqual(len(command),5)
+        script=command[2]
+        self.assertIn('exec /usr/bin/python3 - "$1" <<',script)
+        nested=script.split("<<'CHECK'\n",1)[1].rsplit('\nCHECK',1)[0]
+        tree=ast.parse(nested)
+        indices=[node.slice.value for node in ast.walk(tree)
+                 if isinstance(node,ast.Subscript) and isinstance(node.value,ast.Attribute)
+                 and isinstance(node.value.value,ast.Name) and node.value.value.id=='sys'
+                 and node.value.attr=='argv' and isinstance(node.slice,ast.Constant)]
+        self.assertEqual(indices,[1])
 
     def test_live_rc_configuration_mismatch_never_silently_inherited(self):
         with tempfile.TemporaryDirectory() as temp:

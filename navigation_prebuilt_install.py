@@ -368,14 +368,14 @@ export PYTHONDONTWRITEBYTECODE=1
 unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH LD_LIBRARY_PATH ROS_PACKAGE_PATH
 source /opt/ros/humble/setup.bash
 source "$1/install/local_setup.bash"
-exec /usr/bin/python3 - "$1" "$2" <<'CHECK'
-import ctypes,json,subprocess,sys
+exec /usr/bin/python3 - "$1" <<'CHECK'
+import subprocess,sys
 from pathlib import Path
 from rclpy.type_support import check_for_type_support
 from px4_msgs.msg import VehicleStatus,VehicleLocalPosition,VehicleAttitude,ManualControlSwitches
 from jikl_fc01_system.msg import VisionState,VisionHealth,NavigationCommand,VelocityCommand,AttitudeThrustPreview
 for cls in (VehicleStatus,VehicleLocalPosition,VehicleAttitude,ManualControlSwitches,VisionState,VisionHealth,NavigationCommand,VelocityCommand,AttitudeThrustPreview):check_for_type_support(cls)
-entry=Path(sys.argv[1]);manifest=json.loads(sys.argv[2])
+entry=Path(sys.argv[1])
 for path in entry.rglob('*'):
  if not path.is_file():continue
  with path.open('rb') as stream:is_elf=stream.read(4)==b'\\x7fELF'
@@ -386,7 +386,7 @@ for path in entry.rglob('*'):
 print('FC01_PREBUILT_RUNTIME_DEPENDENCIES_OK')
 CHECK
 '''
-        return self.run(['/bin/bash', '-c', script, 'fc01-prebuilt-check', str(entry), json.dumps(manifest)]).stdout
+        return self.run(['/bin/bash', '-c', script, 'fc01-prebuilt-check', str(entry)]).stdout
 
     def config_check(self, entry, manifest, runtime, environment):
         binary = entry / manifest['controller_relative']
