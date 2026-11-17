@@ -1,0 +1,565 @@
+{
+  "all_paths": 361,
+  "excluded_trash_or_px4_sample": 300,
+  "selected_paths": 61,
+  "unique": 30,
+  "files": [
+    {
+      "sha256": "21397a1b4e313a63a6b8401f5632218aa785a0c4212a88dbe8a30612a0b4b9d1",
+      "size": 44282324,
+      "paths": [
+        "/home/jikl62/DroneProjects/05_飞行日志与测试证据/原下载目录/FC01_M1_S10_failure.ulg"
+      ]
+    },
+    {
+      "sha256": "bc166ebd505fbe976ddfbaf57db82b907851e49b9fc2553d4a92bff682b9f5c8",
+      "size": 8553956,
+      "paths": [
+        "/home/jikl62/DroneProjects/05_飞行日志与测试证据/原下载目录/log_6_UnknownDate(2).ulg"
+      ]
+    },
+    {
+      "sha256": "036f07e041335a4d928655b87ba8ec74af94a3e1d7622718f42fd4f7694c29c1",
+      "size": 72259003,
+      "paths": [
+        "/home/jikl62/DroneProjects/05_飞行日志与测试证据/原主目录/FC01_SITL_OFFBOARD_LOSS.ulg"
+      ]
+    },
+    {
+      "sha256": "dead944da7746f783d5ff2b8fd46a15878195de2e4c70acddccfd0ca0079256b",
+      "size": 456350,
+      "paths": [
+        "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_0_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive/04_FIELD_EVIDENCE/05_ULOG/log_0_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive_v2/04_FIELD_EVIDENCE/05_ULOG/log_0_UnknownDate.ulg"
+      ]
+    },
+    {
+      "sha256": "49a43695cd617544839c296e775cd317bcda0bffdc4ff72406dd18c2e9bb795d",
+      "size": 585411,
+      "paths": [
+        "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_1_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive/04_FIELD_EVIDENCE/05_ULOG/log_1_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive_v2/04_FIELD_EVIDENCE/05_ULOG/log_1_UnknownDate.ulg"
+      ]
+    },
+    {
+      "sha256": "4b2af77bf0d778b9095a6fa91c2f611201bb362ab267edc3341f4e6b9af105f8",
+      "size": 308218,
+      "paths": [
+        "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_2_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive/04_FIELD_EVIDENCE/05_ULOG/log_2_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive_v2/04_FIELD_EVIDENCE/05_ULOG/log_2_UnknownDate.ulg"
+      ]
+    },
+    {
+      "sha256": "e3f1bf0db184f49c4fce42eefe00b45904bc2b60bc22c37eaa0701c5e14e1bd7",
+      "size": 257372,
+      "paths": [
+        "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_3_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive/04_FIELD_EVIDENCE/05_ULOG/log_3_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive_v2/04_FIELD_EVIDENCE/05_ULOG/log_3_UnknownDate.ulg"
+      ]
+    },
+    {
+      "sha256": "250291000bbaf0755b483f867bc8e37a4cb9912bd3ec522d31be32333fb09346",
+      "size": 445838,
+      "paths": [
+        "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_4_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive/04_FIELD_EVIDENCE/05_ULOG/log_4_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive_v2/04_FIELD_EVIDENCE/05_ULOG/log_4_UnknownDate.ulg"
+      ]
+    },
+    {
+      "sha256": "6cba8203609ced57827a2d5eb615f533e3a9cca48d32a9b829de729d38d03e23",
+      "size": 645663,
+      "paths": [
+        "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_5_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive/04_FIELD_EVIDENCE/05_ULOG/log_5_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive_v2/04_FIELD_EVIDENCE/05_ULOG/log_5_UnknownDate.ulg"
+      ]
+    },
+    {
+      "sha256": "7451c4ddb2004be8500d5f70877aa9387ff63911d4c2369542397562331996c8",
+      "size": 891475,
+      "paths": [
+        "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_6_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive/04_FIELD_EVIDENCE/05_ULOG/log_6_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive_v2/04_FIELD_EVIDENCE/05_ULOG/log_6_UnknownDate.ulg"
+      ]
+    },
+    {
+      "sha256": "e76ec533e5911a01debacc9b8e4b6b25ac52ade2ecb56386c9289c402360a272",
+      "size": 1066071,
+      "paths": [
+        "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_7_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive/04_FIELD_EVIDENCE/05_ULOG/log_7_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive_v2/04_FIELD_EVIDENCE/05_ULOG/log_7_UnknownDate.ulg"
+      ]
+    },
+    {
+      "sha256": "4a26ea1edbb37daa88b49943182e05812294799e26e451077f17e21ebd095051",
+      "size": 1037974,
+      "paths": [
+        "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_8_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive/04_FIELD_EVIDENCE/05_ULOG/log_8_UnknownDate.ulg",
+        "/home/jikl62/DroneProjects/FC01_Project_Archive_v2/04_FIELD_EVIDENCE/05_ULOG/log_8_UnknownDate.ulg"
+      ]
+    },
+    {
+      "sha256": "284761ddb04bff95d2d984e6fa87aaa5344f502bc8e1aed07ad6beba47c1610b",
+      "size": 1614325,
+      "paths": [
+        "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_0_2026-10-18-15-38-22.ulg",
+        "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/verification/height_feedback_guard/inputs/log_0_2026-10-18-15-38-22.ulg",
+        "/home/jikl62/FC01_R632_VERTICAL_REFINEMENT_CANDIDATE/verification/height_feedback_guard/inputs/log_0_2026-10-18-15-38-22.ulg"
+      ]
+    },
+    {
+      "sha256": "29df600a5bc8beab26b3a0dda08216961197c4431c9151c1178a6b681737ae75",
+      "size": 857552,
+      "paths": [
+        "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_1_2026-10-18-15-40-08.ulg",
+        "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/verification/height_feedback_guard/inputs/log_1_2026-10-18-15-40-08.ulg",
+        "/home/jikl62/FC01_R632_VERTICAL_REFINEMENT_CANDIDATE/verification/height_feedback_guard/inputs/log_1_2026-10-18-15-40-08.ulg"
+      ]
+    },
+    {
+      "sha256": "2f3af9d4ada81c98e99e84cd6a9b2956fe44ace7c99fe76f2904fbb38799eb3a",
+      "size": 837912,
+      "paths": [
+        "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_2_2026-10-18-15-40-56.ulg",
+        "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/verification/height_feedback_guard/inputs/log_2_2026-10-18-15-40-56.ulg",
+        "/home/jikl62/FC01_R632_VERTICAL_REFINEMENT_CANDIDATE/verification/height_feedback_guard/inputs/log_2_2026-10-18-15-40-56.ulg"
+      ]
+    },
+    {
+      "sha256": "ea1bce1e49bd30ba6de277bbdde9dc2ff7d5f505172fb89bb69a597a6d39ac8d",
+      "size": 984234,
+      "paths": [
+        "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_3_2026-10-18-15-43-28.ulg",
+        "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/verification/height_feedback_guard/inputs/log_3_2026-10-18-15-43-28.ulg",
+        "/home/jikl62/FC01_R632_VERTICAL_REFINEMENT_CANDIDATE/verification/height_feedback_guard/inputs/log_3_2026-10-18-15-43-28.ulg"
+      ]
+    },
+    {
+      "sha256": "599a78fc05d796a3bb67b4e517f6420db3049eb925cbed9f7bf5bcbfa62353df",
+      "size": 874094,
+      "paths": [
+        "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_4_2026-10-18-15-44-46.ulg",
+        "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/verification/height_feedback_guard/inputs/log_4_2026-10-18-15-44-46.ulg",
+        "/home/jikl62/FC01_R632_VERTICAL_REFINEMENT_CANDIDATE/verification/height_feedback_guard/inputs/log_4_2026-10-18-15-44-46.ulg"
+      ]
+    },
+    {
+      "sha256": "7e22d939c5a5faae6395cbcb54e73b96bd15c1f7c1188cce21a4f4519e5455f2",
+      "size": 737590,
+      "paths": [
+        "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/verification/vertical_refinement/inputs/log_0_2026-10-18-21-02-18.ulg",
+        "/home/jikl62/FC01_R632_VERTICAL_REFINEMENT_CANDIDATE/verification/vertical_refinement/inputs/log_0_2026-10-18-21-02-18.ulg",
+        "/home/jikl62/log_0_2026-10-18-21-02-18_1.ulg"
+      ]
+    },
+    {
+      "sha256": "d9a26f0ba31179ed07a3f937e347e1d9ffb891513113948ea829311f008fc677",
+      "size": 719941,
+      "paths": [
+        "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/verification/vertical_refinement/inputs/log_1_2026-10-18-21-00-40.ulg",
+        "/home/jikl62/FC01_R632_VERTICAL_REFINEMENT_CANDIDATE/verification/vertical_refinement/inputs/log_1_2026-10-18-21-00-40.ulg"
+      ]
+    },
+    {
+      "sha256": "a197766716e5331f59cdddecb53538fc393818b6417f6041c1f701de6364251c",
+      "size": 588312,
+      "paths": [
+        "/home/jikl62/log_0_2026-10-20-10-02-06.ulg"
+      ]
+    },
+    {
+      "sha256": "33ea8241ad1adc7cdddb43765aff762973e598d0ff64acd6a229e1e4e1910a7b",
+      "size": 1216556,
+      "paths": [
+        "/home/jikl62/log_0_2026-10-20-11-12-26_1.ulg"
+      ]
+    },
+    {
+      "sha256": "5bf44997346c403676483dfb2334a559c83c4275b7a4fbec2c27d3af14e5ef84",
+      "size": 1149211,
+      "paths": [
+        "/home/jikl62/log_2_2026-10-16-11-57-46_1.ulg"
+      ]
+    },
+    {
+      "sha256": "4e0b00619fcc5b9d9be2924810732a1cd03cc034e976e2fa2a9f2a78595f7608",
+      "size": 2001965,
+      "paths": [
+        "/home/jikl62/log_4_2026-10-16-11-58-42_1.ulg"
+      ]
+    },
+    {
+      "sha256": "071817b2234aba68f299ebfffb07fbf5ad73c3a333629bd9712e59d349d27455",
+      "size": 1405550,
+      "paths": [
+        "/home/jikl62/log_5_2026-10-16-12-00-18_1.ulg"
+      ]
+    },
+    {
+      "sha256": "6aba5c784d2728f050a551375dbc9d8715dbbd386b60f5f68907233d3135f1d0",
+      "size": 731537,
+      "paths": [
+        "/home/jikl62/桌面/log_0_2026-10-20-11-19-52.ulg"
+      ]
+    },
+    {
+      "sha256": "8d510d25fbea1e6473939765532ca051705f18cbf967a740fbe05f992490ee11",
+      "size": 418786,
+      "paths": [
+        "/home/jikl62/桌面/log_10_2026-11-15-16-47-56.ulg"
+      ]
+    },
+    {
+      "sha256": "a426241fb8985a2dfed617bc9f86f19e3e4c1a44608e12532f1e05f4409efb9c",
+      "size": 145634,
+      "paths": [
+        "/home/jikl62/桌面/log_1_2026-10-20-11-20-32.ulg"
+      ]
+    },
+    {
+      "sha256": "3dbc919761a11325846c75dd804249b3c477317d8e8b13d9a9ea681f8c44d3c1",
+      "size": 780170,
+      "paths": [
+        "/home/jikl62/桌面/log_2_2026-10-20-11-21-14.ulg"
+      ]
+    },
+    {
+      "sha256": "a68c79168746d1d99fc0f980e0852c5d5a71ed01e117c2b2c9c316bd05c0f8ed",
+      "size": 680876,
+      "paths": [
+        "/home/jikl62/桌面/log_3_2026-10-20-11-22-20.ulg"
+      ]
+    },
+    {
+      "sha256": "6de756522288ccf57df545ec9f7f98b5e9437bb9861b7c03e39bb3c7c81f5b0f",
+      "size": 857825,
+      "paths": [
+        "/home/jikl62/桌面/log_4_2026-10-20-11-23-54.ulg"
+      ]
+    }
+  ],
+  "discovery_command": [
+    "rg",
+    "--files",
+    "--hidden",
+    "/home/jikl62",
+    "-g",
+    "*.ulg",
+    "-g",
+    "!.git",
+    "-g",
+    "!node_modules"
+  ],
+  "discovery_stderr": "",
+  "excluded_paths": [
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-11-17-04-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-11-18-20-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-11-19-18-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-12-13-53-14.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-12-14-13-40.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-16-11-56-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-16-13-15-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-12-34-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-12-38-04.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-13-23-42.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-15-30-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-15-38-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-15-53-12.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-20-58-54.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-21-02-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-21-49-16.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-18-23-00-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-20-10-02-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-20-10-09-02.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-20-11-12-26.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-28-20-55-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-28-20-58-56.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_2026-10-5-16-11-30.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_UnknownDate.2.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_0_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_10_2026-10-11-17-07-48.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_10_2026-10-11-21-22-12.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_10_2026-10-12-14-20-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_10_2026-10-16-12-02-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_10_2026-10-16-13-22-14.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_10_2026-10-18-16-28-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_10_2026-10-5-16-42-56.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_10_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_11_2026-10-11-17-10-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_11_2026-10-11-21-23-38.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_11_2026-10-12-14-20-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_11_2026-10-16-12-08-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_11_2026-10-16-13-22-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_11_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_12_2026-10-11-21-25-54.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_12_2026-10-12-14-21-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_12_2026-10-16-12-09-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_12_2026-10-16-13-22-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_12_2026-10-18-16-30-14.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_12_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_13_2026-10-11-21-26-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_13_2026-10-12-14-21-14.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_13_2026-10-16-12-09-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_13_2026-10-16-13-23-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_13_2026-10-5-18-13-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_14_2026-10-11-21-28-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_14_2026-10-12-14-21-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_14_2026-10-16-11-54-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_14_2026-10-16-12-09-32.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_14_2026-10-16-13-25-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_14_2026-10-5-18-14-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_15_2026-10-11-21-28-08.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_15_2026-10-12-14-21-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_15_2026-10-16-12-10-04.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_15_2026-10-16-13-25-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_15_2026-10-16-15-39-04.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_15_2026-10-18-14-13-54.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_15_2026-10-18-16-31-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_15_2026-10-20-11-07-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_15_2026-10-5-18-14-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_16_2026-10-11-21-28-10.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_16_2026-10-12-14-21-40.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_16_2026-10-16-12-10-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_16_2026-10-16-13-26-14.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_16_2026-10-20-11-08-38.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_16_2026-10-5-18-15-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_17_2026-10-11-21-28-14.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_17_2026-10-12-14-22-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_17_2026-10-16-13-26-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_17_2026-10-18-14-14-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_18_2026-10-11-21-28-32.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_18_2026-10-12-14-23-48.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_18_2026-10-16-13-26-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_19_2026-10-11-21-28-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_19_2026-10-12-14-23-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_19_2026-10-16-13-30-04.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_19_2026-10-16-15-40-44.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_19_UnknownDate.2.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_19_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-11-17-05-12.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-11-18-22-30.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-11-19-19-40.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-12-13-54-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-12-14-13-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-16-11-57-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-16-13-15-54.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-18-15-27-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-18-15-40-08.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-18-15-53-56.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-18-21-00-40.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-18-21-49-16.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-18-23-04-56.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-20-11-13-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_2026-10-5-16-11-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_UnknownDate.2.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_1_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_20_2026-10-11-21-29-38.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_20_2026-10-12-14-24-02.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_20_2026-10-16-13-30-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_20_2026-10-16-15-41-02.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_20_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_21_2026-10-11-21-29-48.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_21_2026-10-12-14-24-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_21_2026-10-16-13-30-08.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_22_2026-10-11-21-29-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_22_2026-10-12-14-30-08.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_22_2026-10-16-13-30-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_23_2026-10-11-21-29-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_23_2026-10-12-14-30-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_23_2026-10-16-13-30-38.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_24_2026-10-12-14-30-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_24_2026-10-16-13-30-38.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_24_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_25_2026-10-12-14-30-30.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_25_2026-10-16-13-31-02.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_25_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_26_2026-10-12-14-30-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_26_2026-10-16-13-31-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_26_2026-10-16-15-46-56.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_27_2026-10-12-14-31-44.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_27_2026-10-16-13-31-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_27_2026-10-16-15-47-12.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_27_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_28_2026-10-12-14-31-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_28_2026-10-16-13-31-42.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_29_2026-10-12-14-32-04.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_29_2026-10-16-13-32-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-11-17-05-16.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-11-18-23-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-11-19-21-08.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-12-13-16-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-12-13-54-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-12-14-14-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-16-11-57-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-16-13-16-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-18-13-01-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-18-13-20-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-18-13-29-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-18-15-35-12.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-18-15-40-56.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-18-20-57-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-18-21-50-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_2026-10-5-16-13-40.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_UnknownDate.2.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_2_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_30_2026-10-16-13-32-10.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_31_2026-10-16-13-32-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_31_2026-10-16-15-48-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_31_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_32_2026-10-16-13-34-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_32_2026-10-17-17-51-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_33_2026-10-16-13-34-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_34_2026-10-16-13-34-38.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_35_2026-10-16-13-35-10.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_35_2026-10-16-15-54-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_36_2026-10-16-13-36-30.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_37_2026-10-16-13-37-12.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_37_2026-10-16-15-56-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_38_2026-10-16-13-37-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_39_2026-10-16-13-37-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-11-17-05-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-11-18-27-48.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-11-19-21-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-12-13-54-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-12-14-14-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-16-11-57-48.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-16-13-18-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-16-15-28-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-18-13-30-00.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-18-15-43-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-18-21-55-42.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-20-10-05-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_2026-10-5-16-14-10.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_UnknownDate.2.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_3_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_40_2026-10-16-13-38-30.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_41_2026-10-16-13-39-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_42_2026-10-16-13-39-44.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_43_2026-10-16-13-39-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_43_2026-10-16-16-09-16.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_44_2026-10-16-13-39-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_45_2026-10-16-13-40-32.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_46_2026-10-16-13-40-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_47_2026-10-16-13-41-02.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_48_2026-10-16-13-41-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_49_2026-10-16-13-41-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-11-17-05-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-11-18-28-40.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-11-19-24-08.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-12-13-54-26.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-12-14-14-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-16-11-58-42.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-16-13-18-56.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-18-15-44-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-18-21-47-40.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-18-21-57-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-5-16-14-24.2.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_2026-10-5-16-14-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_UnknownDate.2.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_4_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_50_2026-10-16-13-41-56.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_51_2026-10-16-13-42-08.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_51_2026-10-16-16-14-54.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_52_2026-10-16-13-42-12.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_53_2026-10-16-13-42-26.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_54_2026-10-16-13-42-42.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_55_2026-10-16-13-42-48.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_56_2026-10-16-13-43-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_57_2026-10-16-13-43-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_58_2026-10-16-13-44-04.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_58_2026-10-16-16-15-48.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_59_2026-10-16-13-44-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_2026-10-11-17-06-12.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_2026-10-11-18-33-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_2026-10-11-19-24-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_2026-10-12-13-54-38.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_2026-10-12-14-14-30.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_2026-10-16-12-00-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_2026-10-16-13-19-56.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_2026-10-16-15-29-32.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_2026-10-18-22-59-28.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_UnknownDate.2.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_5_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_60_2026-10-16-13-45-00.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_60_2026-10-16-16-39-16.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_61_2026-10-16-13-45-02.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_62_2026-10-16-13-45-08.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_63_2026-10-16-13-45-10.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_64_2026-10-16-13-45-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_64_2026-10-16-16-41-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_65_2026-10-16-13-45-26.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_66_2026-10-16-13-45-26.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_67_2026-10-16-13-45-32.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_68_2026-10-16-13-49-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_69_2026-10-16-13-50-12.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_6_2026-10-11-17-06-16.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_6_2026-10-11-19-24-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_6_2026-10-12-13-54-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_6_2026-10-12-14-14-30.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_6_2026-10-16-12-01-42.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_6_2026-10-16-13-20-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_6_2026-10-16-18-59-54.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_6_UnknownDate.2.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_6_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_70_2026-10-16-13-50-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_71_2026-10-16-13-50-54.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_72_2026-10-16-13-51-16.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_73_2026-10-16-13-51-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_74_2026-10-16-13-52-06.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_75_2026-10-16-13-52-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_76_2026-10-16-13-53-04.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_77_2026-10-16-13-53-34.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_78_2026-10-16-13-53-36.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_79_2026-10-16-13-53-38.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_79_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_7_2026-10-11-17-06-16.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_7_2026-10-11-19-26-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_7_2026-10-12-14-20-00.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_7_2026-10-16-12-02-04.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_7_2026-10-16-13-20-18.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_7_2026-10-16-15-34-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_7_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_80_2026-10-16-13-53-40.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_80_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_81_2026-10-16-13-53-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_82_2026-10-16-13-54-02.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_83_2026-10-16-13-54-22.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_84_2026-10-16-13-54-46.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_85_2026-10-16-13-54-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_86_2026-10-16-13-54-52.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_87_2026-10-16-13-54-54.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_88_2026-10-16-13-54-58.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_8_2026-10-11-17-07-02.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_8_2026-10-11-19-26-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_8_2026-10-12-14-20-20.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_8_2026-10-16-12-02-10.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_8_2026-10-16-13-20-42.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_8_2026-10-16-15-35-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_8_2026-10-5-16-42-02.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_8_UnknownDate.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_96_2026-10-31-17-52-00.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_9_2026-10-11-17-07-48.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_9_2026-10-11-19-26-24.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_9_2026-10-12-14-20-42.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_9_2026-10-16-12-02-26.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_9_2026-10-16-13-22-08.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_9_2026-10-16-15-35-50.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_9_2026-10-18-16-27-38.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_9_2026-10-5-16-42-14.ulg",
+    "/home/jikl62/.local/share/Trash/files/log_9_UnknownDate.ulg",
+    "/home/jikl62/DroneProjects/FC01_M1/PX4_v1.16_SITL/docs/assets/flight_log_analysis/plot_juggler/sample_log_boat_testing_2022-7-28-13-31-16.ulg",
+    "/home/jikl62/FC01_DDS_STARTUP_BUILD_20261026/docs/assets/flight_log_analysis/plot_juggler/sample_log_boat_testing_2022-7-28-13-31-16.ulg",
+    "/home/jikl62/FC01_DDS_V3_NATIVE_BUILD/docs/assets/flight_log_analysis/plot_juggler/sample_log_boat_testing_2022-7-28-13-31-16.ulg",
+    "/home/jikl62/PX4-Autopilot/docs/assets/flight_log_analysis/plot_juggler/sample_log_boat_testing_2022-7-28-13-31-16.ulg",
+    "/home/jikl62/fc01_px4_dds_build/PX4-DM-FC01-v1.16/docs/assets/flight_log_analysis/plot_juggler/sample_log_boat_testing_2022-7-28-13-31-16.ulg"
+  ],
+  "limits": "No external mounts or compressed-archive traversal; filename alone does not establish hardware identity."
+}

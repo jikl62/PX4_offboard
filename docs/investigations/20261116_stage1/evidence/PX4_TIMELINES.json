@@ -1,0 +1,1129 @@
+[
+  {
+    "source": "/home/jikl62/log_0_2026-10-18-21-02-18_1.ulg",
+    "sha256": "7e22d939c5a5faae6395cbcb54e73b96bd15c1f7c1188cce21a4f4519e5455f2",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 281
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 469488827,
+            "seconds_since_ulog_header": 0.414267,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 469336234,
+        "type": "offboard_control_signal_lost",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 469369945,
+        "type": "nav_state",
+        "value": 14,
+        "initial": true
+      },
+      {
+        "timestamp_us": 469369945,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 469369945,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 481034862,
+        "type": "last_logged_offboard_control_mode",
+        "value": true
+      },
+      {
+        "timestamp_us": 481250106,
+        "type": "nav_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 481549463,
+        "type": "nav_state",
+        "value": 15,
+        "initial": false
+      },
+      {
+        "timestamp_us": 482090951,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 482478150,
+        "seconds_since_ulog_header": 13.40359,
+        "level": "INFO",
+        "message": "Disarmed by RC switch",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 482478166,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/log_0_2026-10-20-10-02-06.ulg",
+    "sha256": "a197766716e5331f59cdddecb53538fc393818b6417f6041c1f701de6364251c",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 214
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 243050157,
+            "seconds_since_ulog_header": 0.40631,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 242552240,
+        "type": "offboard_control_signal_lost",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 242940611,
+        "type": "nav_state",
+        "value": 14,
+        "initial": true
+      },
+      {
+        "timestamp_us": 242940611,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 242940611,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 246871196,
+        "type": "last_logged_offboard_control_mode",
+        "value": true
+      },
+      {
+        "timestamp_us": 247673466,
+        "seconds_since_ulog_header": 5.029619,
+        "level": "INFO",
+        "message": "Kill engaged",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 247918172,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 247929803,
+        "seconds_since_ulog_header": 5.285956,
+        "level": "WARNING",
+        "message": "Failsafe activated: Autopilot disengaged, switching to Altitude mode",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 247930324,
+        "type": "nav_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 247930324,
+        "type": "failsafe",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 248073230,
+        "seconds_since_ulog_header": 5.429383,
+        "level": "WARNING",
+        "message": "Failsafe activated: Autopilot disengaged, switching to Altitude mode",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 252683017,
+        "seconds_since_ulog_header": 10.03917,
+        "level": "INFO",
+        "message": "Disarmed by kill switch",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 252683420,
+        "type": "nav_state",
+        "value": 14,
+        "initial": false
+      },
+      {
+        "timestamp_us": 252683420,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 252683420,
+        "type": "failsafe",
+        "value": 0,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/log_0_2026-10-20-11-12-26_1.ulg",
+    "sha256": "33ea8241ad1adc7cdddb43765aff762973e598d0ff64acd6a229e1e4e1910a7b",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 1,
+            "samples": 547
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 1199305937,
+            "seconds_since_ulog_header": 0.267608,
+            "sample_index": 0,
+            "value": 1,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 1198829297,
+        "type": "nav_state",
+        "value": 15,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1198829297,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1198829297,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1198895110,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1209999194,
+        "type": "nav_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 1225222902,
+        "type": "nav_state",
+        "value": 15,
+        "initial": false
+      },
+      {
+        "timestamp_us": 1225588243,
+        "seconds_since_ulog_header": 26.549914,
+        "level": "INFO",
+        "message": "Disarmed by RC switch",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1225588254,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/log_2_2026-10-16-11-57-46_1.ulg",
+    "sha256": "5bf44997346c403676483dfb2334a559c83c4275b7a4fbec2c27d3af14e5ef84",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 4,
+            "samples": 89
+          },
+          {
+            "value": 5,
+            "samples": 375
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 1465707982,
+            "seconds_since_ulog_header": 0.297141,
+            "sample_index": 0,
+            "value": 4,
+            "initial": true
+          },
+          {
+            "timestamp_us": 1470110964,
+            "seconds_since_ulog_header": 4.700123,
+            "sample_index": 89,
+            "value": 5,
+            "initial": false
+          }
+        ],
+        "observed_change_count": 1
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 1465239088,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1465404216,
+        "type": "nav_state",
+        "value": 15,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1465404216,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1465404216,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1471570176,
+        "type": "nav_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 1483654308,
+        "seconds_since_ulog_header": 18.243467,
+        "level": "INFO",
+        "message": "Kill engaged",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1486061591,
+        "seconds_since_ulog_header": 20.65075,
+        "level": "INFO",
+        "message": "Disarming denied: not landed",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1486546198,
+        "type": "nav_state",
+        "value": 15,
+        "initial": false
+      },
+      {
+        "timestamp_us": 1486941946,
+        "seconds_since_ulog_header": 21.531105,
+        "level": "INFO",
+        "message": "Kill disengaged",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1487748220,
+        "seconds_since_ulog_header": 22.337379,
+        "level": "INFO",
+        "message": "Kill engaged",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1488650498,
+        "seconds_since_ulog_header": 23.239657,
+        "level": "INFO",
+        "message": "Disarmed by RC switch",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1488650509,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/log_4_2026-10-16-11-58-42_1.ulg",
+    "sha256": "4e0b00619fcc5b9d9be2924810732a1cd03cc034e976e2fa2a9f2a78595f7608",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 5,
+            "samples": 867
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 1500261466,
+            "seconds_since_ulog_header": 0.295869,
+            "sample_index": 0,
+            "value": 5,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 1499806904,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1499961432,
+        "type": "nav_state",
+        "value": 15,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1499961432,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1499961432,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1538451836,
+        "seconds_since_ulog_header": 38.486239,
+        "level": "WARNING",
+        "message": "Failsafe warning:",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1542510146,
+        "seconds_since_ulog_header": 42.544549,
+        "level": "INFO",
+        "message": "Disarmed by landing",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1542510379,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/log_5_2026-10-16-12-00-18_1.ulg",
+    "sha256": "071817b2234aba68f299ebfffb07fbf5ad73c3a333629bd9712e59d349d27455",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 5,
+            "samples": 598
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 1609484411,
+            "seconds_since_ulog_header": 0.298455,
+            "sample_index": 0,
+            "value": 5,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 1609160223,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1609182357,
+        "type": "nav_state",
+        "value": 15,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1609182357,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1609182357,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 1624721108,
+        "type": "nav_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 1630250919,
+        "seconds_since_ulog_header": 21.064963,
+        "level": "WARNING",
+        "message": "Failsafe warning:",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1632194836,
+        "seconds_since_ulog_header": 23.00888,
+        "level": "WARNING",
+        "message": "Failsafe warning:",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1633310093,
+        "seconds_since_ulog_header": 24.124137,
+        "level": "INFO",
+        "message": "Kill engaged",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1633783124,
+        "seconds_since_ulog_header": 24.597168,
+        "level": "WARNING",
+        "message": "Failsafe warning:",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1637937206,
+        "seconds_since_ulog_header": 28.75125,
+        "level": "INFO",
+        "message": "Disarming denied: not landed",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1638313944,
+        "seconds_since_ulog_header": 29.127988,
+        "level": "INFO",
+        "message": "Disarmed by kill switch",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 1638316742,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 1638896097,
+        "type": "nav_state",
+        "value": 15,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/桌面/log_0_2026-10-20-11-19-52.ulg",
+    "sha256": "6aba5c784d2728f050a551375dbc9d8715dbbd386b60f5f68907233d3135f1d0",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 323
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 198521531,
+            "seconds_since_ulog_header": 0.308815,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 198012411,
+        "type": "nav_state",
+        "value": 14,
+        "initial": true
+      },
+      {
+        "timestamp_us": 198012411,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 198012411,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 198267238,
+        "type": "offboard_control_signal_lost",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 209114193,
+        "type": "last_logged_offboard_control_mode",
+        "value": true
+      },
+      {
+        "timestamp_us": 210135131,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 210145858,
+        "seconds_since_ulog_header": 11.933142,
+        "level": "WARNING",
+        "message": "Failsafe activated: Autopilot disengaged, switching to Altitude mode",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 210146463,
+        "type": "nav_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 210146463,
+        "type": "failsafe",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 213618923,
+        "seconds_since_ulog_header": 15.406207,
+        "level": "INFO",
+        "message": "Disarmed by landing",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 213619043,
+        "type": "nav_state",
+        "value": 14,
+        "initial": false
+      },
+      {
+        "timestamp_us": 213619043,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 213619043,
+        "type": "failsafe",
+        "value": 0,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/桌面/log_10_2026-11-15-16-47-56.ulg",
+    "sha256": "8d510d25fbea1e6473939765532ca051705f18cbf967a740fbe05f992490ee11",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 2,
+            "samples": 150
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 63263943,
+            "seconds_since_ulog_header": 0.270797,
+            "sample_index": 0,
+            "value": 2,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 62932884,
+        "type": "nav_state",
+        "value": 15,
+        "initial": true
+      },
+      {
+        "timestamp_us": 62932884,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 62932884,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 63279520,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": true
+      },
+      {
+        "timestamp_us": 69672388,
+        "seconds_since_ulog_header": 6.679242,
+        "level": "INFO",
+        "message": "Disarmed by RC switch",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 69672397,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/桌面/log_1_2026-10-20-11-20-32.ulg",
+    "sha256": "a426241fb8985a2dfed617bc9f86f19e3e4c1a44608e12532f1e05f4409efb9c",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 15
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 253789101,
+            "seconds_since_ulog_header": 0.304119,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 253478037,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": true
+      },
+      {
+        "timestamp_us": 253478495,
+        "type": "nav_state",
+        "value": 15,
+        "initial": true
+      },
+      {
+        "timestamp_us": 253478495,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 253478495,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 253815063,
+        "seconds_since_ulog_header": 0.330081,
+        "level": "INFO",
+        "message": "Disarmed by RC switch",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 253815075,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/桌面/log_2_2026-10-20-11-21-14.ulg",
+    "sha256": "3dbc919761a11325846c75dd804249b3c477317d8e8b13d9a9ea681f8c44d3c1",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 345
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 278771565,
+            "seconds_since_ulog_header": 0.327102,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 278438333,
+        "type": "nav_state",
+        "value": 14,
+        "initial": true
+      },
+      {
+        "timestamp_us": 278438333,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 278438333,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 278520197,
+        "type": "offboard_control_signal_lost",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 290347726,
+        "type": "last_logged_offboard_control_mode",
+        "value": true
+      },
+      {
+        "timestamp_us": 291425350,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 291435922,
+        "seconds_since_ulog_header": 12.991459,
+        "level": "WARNING",
+        "message": "Failsafe activated: Autopilot disengaged, switching to Altitude mode",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 291436427,
+        "type": "nav_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 291436427,
+        "type": "failsafe",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 294077982,
+        "type": "failsafe",
+        "value": 0,
+        "initial": false
+      },
+      {
+        "timestamp_us": 294397185,
+        "type": "nav_state",
+        "value": 15,
+        "initial": false
+      },
+      {
+        "timestamp_us": 294925901,
+        "seconds_since_ulog_header": 16.481438,
+        "level": "INFO",
+        "message": "Disarmed by landing",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 294926318,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/桌面/log_3_2026-10-20-11-22-20.ulg",
+    "sha256": "a68c79168746d1d99fc0f980e0852c5d5a71ed01e117c2b2c9c316bd05c0f8ed",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 290
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 348211648,
+            "seconds_since_ulog_header": 0.323598,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 347883079,
+        "type": "nav_state",
+        "value": 14,
+        "initial": true
+      },
+      {
+        "timestamp_us": 347883079,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 347883079,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 348169873,
+        "type": "offboard_control_signal_lost",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 360039180,
+        "type": "last_logged_offboard_control_mode",
+        "value": true
+      },
+      {
+        "timestamp_us": 360049212,
+        "type": "nav_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 360424955,
+        "type": "nav_state",
+        "value": 15,
+        "initial": false
+      },
+      {
+        "timestamp_us": 361068361,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 361654161,
+        "seconds_since_ulog_header": 13.766111,
+        "level": "INFO",
+        "message": "Disarmed by RC switch",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 361654173,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      }
+    ]
+  },
+  {
+    "source": "/home/jikl62/桌面/log_4_2026-10-20-11-23-54.ulg",
+    "sha256": "6de756522288ccf57df545ec9f7f98b5e9437bb9861b7c03e39bb3c7c81f5b0f",
+    "attitude_counter_changes": [
+      {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 381
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 437795663,
+            "seconds_since_ulog_header": 0.318462,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    ],
+    "timeline": [
+      {
+        "timestamp_us": 437471664,
+        "type": "nav_state",
+        "value": 14,
+        "initial": true
+      },
+      {
+        "timestamp_us": 437471664,
+        "type": "arming_state",
+        "value": 2,
+        "initial": true
+      },
+      {
+        "timestamp_us": 437471664,
+        "type": "failsafe",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 437642035,
+        "type": "offboard_control_signal_lost",
+        "value": 0,
+        "initial": true
+      },
+      {
+        "timestamp_us": 449878727,
+        "type": "last_logged_offboard_control_mode",
+        "value": true
+      },
+      {
+        "timestamp_us": 450762075,
+        "seconds_since_ulog_header": 13.284874,
+        "level": "INFO",
+        "message": "Kill engaged",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 450895054,
+        "type": "offboard_control_signal_lost",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 450906012,
+        "seconds_since_ulog_header": 13.428811,
+        "level": "WARNING",
+        "message": "Failsafe activated: Autopilot disengaged, switching to Altitude mode",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 450906580,
+        "type": "nav_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 450906580,
+        "type": "failsafe",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 451954058,
+        "seconds_since_ulog_header": 14.476857,
+        "level": "WARNING",
+        "message": "Failsafe activated: Autopilot disengaged, switching to Altitude mode",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 455770109,
+        "seconds_since_ulog_header": 18.292908,
+        "level": "INFO",
+        "message": "Disarmed by kill switch",
+        "type": "decoded_event"
+      },
+      {
+        "timestamp_us": 455771495,
+        "type": "nav_state",
+        "value": 14,
+        "initial": false
+      },
+      {
+        "timestamp_us": 455771495,
+        "type": "arming_state",
+        "value": 1,
+        "initial": false
+      },
+      {
+        "timestamp_us": 455771495,
+        "type": "failsafe",
+        "value": 0,
+        "initial": false
+      }
+    ]
+  }
+]

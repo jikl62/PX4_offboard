@@ -1,0 +1,4059 @@
+{
+  "audit_generated_utc": "2026-11-16T10:19:07.109327+00:00",
+  "scope": "Only *.ulg directly inside /home/jikl62 and /home/jikl62/桌面; no archives, hardware, ROS, SSH or companion alignment",
+  "counts": {
+    "files_discovered": 12,
+    "parsed": 12,
+    "errors": 0,
+    "with_position_nav2": 0,
+    "with_offboard_nav14": 6,
+    "with_offboard_heartbeat": 6
+  },
+  "parse_errors": [],
+  "logs": [
+    {
+      "source": "/home/jikl62/log_0_2026-10-18-21-02-18_1.ulg",
+      "sha256": "7e22d939c5a5faae6395cbcb54e73b96bd15c1f7c1188cce21a4f4519e5455f2",
+      "size_bytes": 737590,
+      "ulog_duration_s": 14.403929,
+      "evidence_json": "home_log_0_2026-10-18-21-02-18_1.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          1,
+          14,
+          15
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": true,
+        "offboard_heartbeat_samples_observed": true,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": true,
+        "last_timestamp_us": 481034862,
+        "last_seconds_since_ulog_header": 11.960302,
+        "instance": 0,
+        "samples": 118,
+        "first": {
+          "timestamp_us": 469414445,
+          "seconds_since_ulog_header": 0.339885
+        },
+        "last": {
+          "timestamp_us": 481034862,
+          "seconds_since_ulog_header": 11.960302
+        },
+        "timestamp_span_s": 11.620417,
+        "sample_intervals_s": {
+          "samples": 117,
+          "finite_samples": 117,
+          "nonfinite_samples": 0,
+          "min": 0.050104,
+          "max": 0.100775,
+          "span": 0.050671,
+          "mean": 0.09931980341880342,
+          "std": 0.0064908279774733455,
+          "median": 0.100172,
+          "p05": 0.1000022,
+          "p95": 0.10040360000000001,
+          "first": 0.050119,
+          "last": 0.1001
+        },
+        "nonpositive_intervals": 0,
+        "observed_logger_samples_per_s": 10.068485494109204,
+        "ulog_end_minus_last_heartbeat_s": 2.443627,
+        "fields": {
+          "position": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 469414445,
+                "seconds_since_ulog_header": 0.339885,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "velocity": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 469414445,
+                "seconds_since_ulog_header": 0.339885,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "acceleration": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 469414445,
+                "seconds_since_ulog_header": 0.339885,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "attitude": {
+            "present": true,
+            "counts": [
+              {
+                "value": 1,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 469414445,
+                "seconds_since_ulog_header": 0.339885,
+                "sample_index": 0,
+                "value": 1,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "body_rate": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 469414445,
+                "seconds_since_ulog_header": 0.339885,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "thrust_and_torque": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 469414445,
+                "seconds_since_ulog_header": 0.339885,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "direct_actuator": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 469414445,
+                "seconds_since_ulog_header": 0.339885,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          }
+        }
+      },
+      "nav_segments": [
+        {
+          "nav_state": 14,
+          "name": "OFFBOARD",
+          "start": {
+            "timestamp_us": 469369945,
+            "seconds_since_ulog_header": 0.295385
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 481250106,
+            "seconds_since_ulog_header": 12.175546
+          },
+          "duration_s": 11.880161,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 1,
+          "name": "ALTCTL",
+          "start": {
+            "timestamp_us": 481250106,
+            "seconds_since_ulog_header": 12.175546
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 481549463,
+            "seconds_since_ulog_header": 12.474903
+          },
+          "duration_s": 0.299357,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 481549463,
+            "seconds_since_ulog_header": 12.474903
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 483478489,
+            "seconds_since_ulog_header": 14.403929
+          },
+          "duration_s": 1.929026,
+          "arming_states": [
+            1,
+            2
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 141,
+          "finite_samples": 141,
+          "nonfinite_samples": 0,
+          "min": 0.235315203666687,
+          "max": 2.013063669204712,
+          "span": 1.777748465538025,
+          "mean": 1.078348379608587,
+          "std": 0.5509568453538387,
+          "median": 0.9200952053070068,
+          "p05": 0.33128952980041504,
+          "p95": 2.0085055828094482,
+          "first": 2.0127053260803223,
+          "last": 0.235315203666687
+        },
+        "vz": {
+          "samples": 141,
+          "finite_samples": 141,
+          "nonfinite_samples": 0,
+          "min": -1.0905696153640747,
+          "max": 0.14799408614635468,
+          "span": 1.2385637015104294,
+          "mean": -0.26103314718872256,
+          "std": 0.3019022105196899,
+          "median": -0.1464432328939438,
+          "p05": -0.774854838848114,
+          "p95": 0.06527820974588394,
+          "first": 0.023360932245850563,
+          "last": -1.0905696153640747
+        },
+        "z_deriv": {
+          "samples": 141,
+          "finite_samples": 141,
+          "nonfinite_samples": 0,
+          "min": -0.6276646256446838,
+          "max": 0.18184863030910492,
+          "span": 0.8095132559537888,
+          "mean": -0.18334206152609914,
+          "std": 0.17841425348034273,
+          "median": -0.15148794651031494,
+          "p05": -0.5384325385093689,
+          "p95": 0.06460704654455185,
+          "first": -0.007176578976213932,
+          "last": -0.45983749628067017
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 141
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 469489688,
+              "seconds_since_ulog_header": 0.415128,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 141
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 469489688,
+              "seconds_since_ulog_header": 0.415128,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 141
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 469489688,
+              "seconds_since_ulog_header": 0.415128,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 141
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 469489688,
+              "seconds_since_ulog_header": 0.415128,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 281
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 469488827,
+              "seconds_since_ulog_header": 0.414267,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 29
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 469369945,
+            "seconds_since_ulog_header": 0.295385,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    },
+    {
+      "source": "/home/jikl62/log_0_2026-10-20-10-02-06.ulg",
+      "sha256": "a197766716e5331f59cdddecb53538fc393818b6417f6041c1f701de6364251c",
+      "size_bytes": 588312,
+      "ulog_duration_s": 11.035125,
+      "evidence_json": "home_log_0_2026-10-20-10-02-06.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          1,
+          14
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": true,
+        "offboard_heartbeat_samples_observed": true,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": true,
+        "last_timestamp_us": 246871196,
+        "last_seconds_since_ulog_header": 4.227349,
+        "instance": 0,
+        "samples": 41,
+        "first": {
+          "timestamp_us": 242964721,
+          "seconds_since_ulog_header": 0.320874
+        },
+        "last": {
+          "timestamp_us": 246871196,
+          "seconds_since_ulog_header": 4.227349
+        },
+        "timestamp_span_s": 3.906475,
+        "sample_intervals_s": {
+          "samples": 40,
+          "finite_samples": 40,
+          "nonfinite_samples": 0,
+          "min": 0.050093,
+          "max": 0.100401,
+          "span": 0.050308000000000005,
+          "mean": 0.09766187499999998,
+          "std": 0.01090993973216053,
+          "median": 0.1001485,
+          "p05": 0.0974995,
+          "p95": 0.10031905,
+          "first": 0.099993,
+          "last": 0.050093
+        },
+        "nonpositive_intervals": 0,
+        "observed_logger_samples_per_s": 10.239410209971908,
+        "ulog_end_minus_last_heartbeat_s": 6.807776,
+        "fields": {
+          "position": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 41
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 242964721,
+                "seconds_since_ulog_header": 0.320874,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "velocity": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 41
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 242964721,
+                "seconds_since_ulog_header": 0.320874,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "acceleration": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 41
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 242964721,
+                "seconds_since_ulog_header": 0.320874,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "attitude": {
+            "present": true,
+            "counts": [
+              {
+                "value": 1,
+                "samples": 41
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 242964721,
+                "seconds_since_ulog_header": 0.320874,
+                "sample_index": 0,
+                "value": 1,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "body_rate": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 41
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 242964721,
+                "seconds_since_ulog_header": 0.320874,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "thrust_and_torque": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 41
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 242964721,
+                "seconds_since_ulog_header": 0.320874,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "direct_actuator": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 41
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 242964721,
+                "seconds_since_ulog_header": 0.320874,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          }
+        }
+      },
+      "nav_segments": [
+        {
+          "nav_state": 14,
+          "name": "OFFBOARD",
+          "start": {
+            "timestamp_us": 242940611,
+            "seconds_since_ulog_header": 0.296764
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 247930324,
+            "seconds_since_ulog_header": 5.286477
+          },
+          "duration_s": 4.989713,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 1,
+          "name": "ALTCTL",
+          "start": {
+            "timestamp_us": 247930324,
+            "seconds_since_ulog_header": 5.286477
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 252683420,
+            "seconds_since_ulog_header": 10.039573
+          },
+          "duration_s": 4.753096,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 14,
+          "name": "OFFBOARD",
+          "start": {
+            "timestamp_us": 252683420,
+            "seconds_since_ulog_header": 10.039573
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 253678972,
+            "seconds_since_ulog_header": 11.035125
+          },
+          "duration_s": 0.995552,
+          "arming_states": [
+            1
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 108,
+          "finite_samples": 108,
+          "nonfinite_samples": 0,
+          "min": -1.644087791442871,
+          "max": -0.677233099937439,
+          "span": 0.9668546915054321,
+          "mean": -1.2179710495251197,
+          "std": 0.3381435719641755,
+          "median": -1.3755490183830261,
+          "p05": -1.5930941343307494,
+          "p95": -0.6897861868143081,
+          "first": -0.677233099937439,
+          "last": -1.255991816520691
+        },
+        "vz": {
+          "samples": 108,
+          "finite_samples": 108,
+          "nonfinite_samples": 0,
+          "min": -0.7145561575889587,
+          "max": 0.7980377674102783,
+          "span": 1.512593924999237,
+          "mean": -0.050460619679479686,
+          "std": 0.2072274734221794,
+          "median": -0.055682020261883736,
+          "p05": -0.4388816863298416,
+          "p95": 0.19235630482435218,
+          "first": -0.023123769089579582,
+          "last": 0.0664476826786995
+        },
+        "z_deriv": {
+          "samples": 108,
+          "finite_samples": 108,
+          "nonfinite_samples": 0,
+          "min": -0.7661474943161011,
+          "max": 0.7220321893692017,
+          "span": 1.4881796836853027,
+          "mean": -0.05063854716718197,
+          "std": 0.21142426290075986,
+          "median": -0.0347198061645031,
+          "p05": -0.47138787060976023,
+          "p95": 0.19407088607549658,
+          "first": -0.009263061918318272,
+          "last": 0.11840188503265381
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 108
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 243045275,
+              "seconds_since_ulog_header": 0.401428,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 108
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 243045275,
+              "seconds_since_ulog_header": 0.401428,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 108
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 243045275,
+              "seconds_since_ulog_header": 0.401428,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 108
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 243045275,
+              "seconds_since_ulog_header": 0.401428,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 214
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 243050157,
+              "seconds_since_ulog_header": 0.40631,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 14
+          },
+          {
+            "value": 1,
+            "samples": 11
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 242940611,
+            "seconds_since_ulog_header": 0.296764,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          },
+          {
+            "timestamp_us": 247930324,
+            "seconds_since_ulog_header": 5.286477,
+            "sample_index": 12,
+            "value": 1,
+            "initial": false
+          },
+          {
+            "timestamp_us": 252683420,
+            "seconds_since_ulog_header": 10.039573,
+            "sample_index": 23,
+            "value": 0,
+            "initial": false
+          }
+        ],
+        "observed_change_count": 2
+      }
+    },
+    {
+      "source": "/home/jikl62/log_0_2026-10-20-11-12-26_1.ulg",
+      "sha256": "33ea8241ad1adc7cdddb43765aff762973e598d0ff64acd6a229e1e4e1910a7b",
+      "size_bytes": 1216556,
+      "ulog_duration_s": 27.549694,
+      "evidence_json": "home_log_0_2026-10-20-11-12-26_1.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          1,
+          15
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": false,
+        "offboard_heartbeat_samples_observed": false,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": false,
+        "last_timestamp_us": null,
+        "last_seconds_since_ulog_header": null,
+        "absence_limit": "No samples in this ULog; alone this cannot establish unpublished topics were logged or prove physical link silence."
+      },
+      "nav_segments": [
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 1198829297,
+            "seconds_since_ulog_header": -0.209032
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1209999194,
+            "seconds_since_ulog_header": 10.960865
+          },
+          "duration_s": 11.169897,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 1,
+          "name": "ALTCTL",
+          "start": {
+            "timestamp_us": 1209999194,
+            "seconds_since_ulog_header": 10.960865
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1225222902,
+            "seconds_since_ulog_header": 26.184573
+          },
+          "duration_s": 15.223708,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 1225222902,
+            "seconds_since_ulog_header": 26.184573
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1226588023,
+            "seconds_since_ulog_header": 27.549694
+          },
+          "duration_s": 1.365121,
+          "arming_states": [
+            1,
+            2
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 274,
+          "finite_samples": 274,
+          "nonfinite_samples": 0,
+          "min": -3.29850172996521,
+          "max": -1.2012581825256348,
+          "span": 2.097243547439575,
+          "mean": -2.4178946126986594,
+          "std": 0.8127026391098995,
+          "median": -2.9134756326675415,
+          "p05": -3.224744462966919,
+          "p95": -1.2018056511878967,
+          "first": -1.20401132106781,
+          "last": -2.6476566791534424
+        },
+        "vz": {
+          "samples": 274,
+          "finite_samples": 274,
+          "nonfinite_samples": 0,
+          "min": -0.6154950857162476,
+          "max": 0.007205291651189327,
+          "span": 0.6227003773674369,
+          "mean": -0.23258025477124428,
+          "std": 0.15962261708493153,
+          "median": -0.2917133718729019,
+          "p05": -0.4304457470774651,
+          "p95": -9.504750778432979e-05,
+          "first": 0.0018787361914291978,
+          "last": -0.08012013137340546
+        },
+        "z_deriv": {
+          "samples": 274,
+          "finite_samples": 274,
+          "nonfinite_samples": 0,
+          "min": -0.7017108798027039,
+          "max": 0.3987758755683899,
+          "span": 1.1004867553710938,
+          "mean": -0.07671020480128171,
+          "std": 0.15721369754600453,
+          "median": -0.028052757494151592,
+          "p05": -0.40099994987249377,
+          "p95": 0.06821355596184715,
+          "first": 0.00560089573264122,
+          "last": 0.3987758755683899
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 274
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1199306746,
+              "seconds_since_ulog_header": 0.268417,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 274
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1199306746,
+              "seconds_since_ulog_header": 0.268417,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 3,
+              "samples": 274
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1199306746,
+              "seconds_since_ulog_header": 0.268417,
+              "sample_index": 0,
+              "value": 3,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 3,
+              "samples": 274
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1199306746,
+              "seconds_since_ulog_header": 0.268417,
+              "sample_index": 0,
+              "value": 3,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 547
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1199305937,
+              "seconds_since_ulog_header": 0.267608,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 56
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 1198829297,
+            "seconds_since_ulog_header": -0.209032,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    },
+    {
+      "source": "/home/jikl62/log_2_2026-10-16-11-57-46_1.ulg",
+      "sha256": "5bf44997346c403676483dfb2334a559c83c4275b7a4fbec2c27d3af14e5ef84",
+      "size_bytes": 1149211,
+      "ulog_duration_s": 23.417627,
+      "evidence_json": "home_log_2_2026-10-16-11-57-46_1.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          1,
+          15
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": false,
+        "offboard_heartbeat_samples_observed": false,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": false,
+        "last_timestamp_us": null,
+        "last_seconds_since_ulog_header": null,
+        "absence_limit": "No samples in this ULog; alone this cannot establish unpublished topics were logged or prove physical link silence."
+      },
+      "nav_segments": [
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 1465404216,
+            "seconds_since_ulog_header": -0.006625
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1471570176,
+            "seconds_since_ulog_header": 6.159335
+          },
+          "duration_s": 6.16596,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 1,
+          "name": "ALTCTL",
+          "start": {
+            "timestamp_us": 1471570176,
+            "seconds_since_ulog_header": 6.159335
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1486546198,
+            "seconds_since_ulog_header": 21.135357
+          },
+          "duration_s": 14.976022,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 1486546198,
+            "seconds_since_ulog_header": 21.135357
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1488828468,
+            "seconds_since_ulog_header": 23.417627
+          },
+          "duration_s": 2.28227,
+          "arming_states": [
+            1,
+            2
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 233,
+          "finite_samples": 233,
+          "nonfinite_samples": 0,
+          "min": -1.2327244281768799,
+          "max": 11.518553733825684,
+          "span": 12.751278162002563,
+          "mean": 3.3199378502567183,
+          "std": 4.692929306479594,
+          "median": 0.7773807048797607,
+          "p05": -1.204240083694458,
+          "p95": 11.407740211486816,
+          "first": 0.5572096109390259,
+          "last": 10.389150619506836
+        },
+        "vz": {
+          "samples": 233,
+          "finite_samples": 233,
+          "nonfinite_samples": 0,
+          "min": -1.120692491531372,
+          "max": 8.347065925598145,
+          "span": 9.467758417129517,
+          "mean": 3.1174111328087246,
+          "std": 3.130648504170795,
+          "median": 1.4415720701217651,
+          "p05": -0.03782508671283716,
+          "p95": 8.215266227722168,
+          "first": 0.7480353116989136,
+          "last": 5.867773056030273
+        },
+        "z_deriv": {
+          "samples": 233,
+          "finite_samples": 233,
+          "nonfinite_samples": 0,
+          "min": -1.7980927228927612,
+          "max": 3.029707193374634,
+          "span": 4.827799916267395,
+          "mean": 0.9077377098756383,
+          "std": 1.279004021185112,
+          "median": 0.3636547327041626,
+          "p05": -0.7766316652297973,
+          "p95": 2.8286181449890133,
+          "first": 0.2930563688278198,
+          "last": -0.7899861335754395
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 233
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1465709363,
+              "seconds_since_ulog_header": 0.298522,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 233
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1465709363,
+              "seconds_since_ulog_header": 0.298522,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 7,
+              "samples": 45
+            },
+            {
+              "value": 8,
+              "samples": 188
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1465709363,
+              "seconds_since_ulog_header": 0.298522,
+              "sample_index": 0,
+              "value": 7,
+              "initial": true
+            },
+            {
+              "timestamp_us": 1470111843,
+              "seconds_since_ulog_header": 4.701002,
+              "sample_index": 45,
+              "value": 8,
+              "initial": false
+            }
+          ],
+          "observed_change_count": 1
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 7,
+              "samples": 45
+            },
+            {
+              "value": 8,
+              "samples": 188
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1465709363,
+              "seconds_since_ulog_header": 0.298522,
+              "sample_index": 0,
+              "value": 7,
+              "initial": true
+            },
+            {
+              "timestamp_us": 1470111843,
+              "seconds_since_ulog_header": 4.701002,
+              "sample_index": 45,
+              "value": 8,
+              "initial": false
+            }
+          ],
+          "observed_change_count": 1
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 4,
+              "samples": 89
+            },
+            {
+              "value": 5,
+              "samples": 375
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1465707982,
+              "seconds_since_ulog_header": 0.297141,
+              "sample_index": 0,
+              "value": 4,
+              "initial": true
+            },
+            {
+              "timestamp_us": 1470110964,
+              "seconds_since_ulog_header": 4.700123,
+              "sample_index": 89,
+              "value": 5,
+              "initial": false
+            }
+          ],
+          "observed_change_count": 1
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 53
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 1465404216,
+            "seconds_since_ulog_header": -0.006625,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    },
+    {
+      "source": "/home/jikl62/log_4_2026-10-16-11-58-42_1.ulg",
+      "sha256": "4e0b00619fcc5b9d9be2924810732a1cd03cc034e976e2fa2a9f2a78595f7608",
+      "size_bytes": 2001965,
+      "ulog_duration_s": 43.550467,
+      "evidence_json": "home_log_4_2026-10-16-11-58-42_1.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          15
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": false,
+        "offboard_heartbeat_samples_observed": false,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": false,
+        "last_timestamp_us": null,
+        "last_seconds_since_ulog_header": null,
+        "absence_limit": "No samples in this ULog; alone this cannot establish unpublished topics were logged or prove physical link silence."
+      },
+      "nav_segments": [
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 1499961432,
+            "seconds_since_ulog_header": -0.004165
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1543516064,
+            "seconds_since_ulog_header": 43.550467
+          },
+          "duration_s": 43.554632,
+          "arming_states": [
+            1,
+            2
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 434,
+          "finite_samples": 434,
+          "nonfinite_samples": 0,
+          "min": -0.3153011202812195,
+          "max": 6.142018795013428,
+          "span": 6.457319915294647,
+          "mean": 3.6781704672676625,
+          "std": 2.1146042066221025,
+          "median": 4.655084609985352,
+          "p05": -0.08078797720372673,
+          "p95": 6.047022771835327,
+          "first": -0.3046663701534271,
+          "last": 4.0631632804870605
+        },
+        "vz": {
+          "samples": 434,
+          "finite_samples": 434,
+          "nonfinite_samples": 0,
+          "min": 0.17513516545295715,
+          "max": 4.080904960632324,
+          "span": 3.905769795179367,
+          "mean": 2.2421497949120086,
+          "std": 1.2338418457811609,
+          "median": 2.4193408489227295,
+          "p05": 0.2630732446908951,
+          "p95": 4.01121883392334,
+          "first": 0.17786091566085815,
+          "last": 1.5155689716339111
+        },
+        "z_deriv": {
+          "samples": 434,
+          "finite_samples": 434,
+          "nonfinite_samples": 0,
+          "min": -0.4249451458454132,
+          "max": 1.008833885192871,
+          "span": 1.4337790310382843,
+          "mean": 0.2564299127938921,
+          "std": 0.39305640945440595,
+          "median": 0.17474818229675293,
+          "p05": -0.33814877420663836,
+          "p95": 0.8920033127069473,
+          "first": -0.007826704531908035,
+          "last": -0.4249451458454132
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 434
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1500256520,
+              "seconds_since_ulog_header": 0.290923,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 434
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1500256520,
+              "seconds_since_ulog_header": 0.290923,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 8,
+              "samples": 434
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1500256520,
+              "seconds_since_ulog_header": 0.290923,
+              "sample_index": 0,
+              "value": 8,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 8,
+              "samples": 434
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1500256520,
+              "seconds_since_ulog_header": 0.290923,
+              "sample_index": 0,
+              "value": 8,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 5,
+              "samples": 867
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1500261466,
+              "seconds_since_ulog_header": 0.295869,
+              "sample_index": 0,
+              "value": 5,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 92
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 1499961432,
+            "seconds_since_ulog_header": -0.004165,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    },
+    {
+      "source": "/home/jikl62/log_5_2026-10-16-12-00-18_1.ulg",
+      "sha256": "071817b2234aba68f299ebfffb07fbf5ad73c3a333629bd9712e59d349d27455",
+      "size_bytes": 1405550,
+      "ulog_duration_s": 30.125789,
+      "evidence_json": "home_log_5_2026-10-16-12-00-18_1.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          1,
+          15
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": false,
+        "offboard_heartbeat_samples_observed": false,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": false,
+        "last_timestamp_us": null,
+        "last_seconds_since_ulog_header": null,
+        "absence_limit": "No samples in this ULog; alone this cannot establish unpublished topics were logged or prove physical link silence."
+      },
+      "nav_segments": [
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 1609182357,
+            "seconds_since_ulog_header": -0.003599
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1624721108,
+            "seconds_since_ulog_header": 15.535152
+          },
+          "duration_s": 15.538751,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 1,
+          "name": "ALTCTL",
+          "start": {
+            "timestamp_us": 1624721108,
+            "seconds_since_ulog_header": 15.535152
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1638896097,
+            "seconds_since_ulog_header": 29.710141
+          },
+          "duration_s": 14.174989,
+          "arming_states": [
+            1,
+            2
+          ]
+        },
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 1638896097,
+            "seconds_since_ulog_header": 29.710141
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 1639311745,
+            "seconds_since_ulog_header": 30.125789
+          },
+          "duration_s": 0.415648,
+          "arming_states": [
+            1
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 300,
+          "finite_samples": 300,
+          "nonfinite_samples": 0,
+          "min": -0.584473192691803,
+          "max": 4.285823345184326,
+          "span": 4.870296537876129,
+          "mean": 1.378769243049125,
+          "std": 1.752273363390553,
+          "median": 0.3247925341129303,
+          "p05": -0.41754547208547593,
+          "p95": 4.204354763031006,
+          "first": -0.584473192691803,
+          "last": 3.889115571975708
+        },
+        "vz": {
+          "samples": 300,
+          "finite_samples": 300,
+          "nonfinite_samples": 0,
+          "min": 0.10902789235115051,
+          "max": 5.22873067855835,
+          "span": 5.119702786207199,
+          "mean": 1.260993509689967,
+          "std": 1.083722210148398,
+          "median": 0.7826654314994812,
+          "p05": 0.1665009491145611,
+          "p95": 2.8337506651878357,
+          "first": 0.10909050703048706,
+          "last": 1.9485249519348145
+        },
+        "z_deriv": {
+          "samples": 300,
+          "finite_samples": 300,
+          "nonfinite_samples": 0,
+          "min": -0.5301344394683838,
+          "max": 2.904123544692993,
+          "span": 3.434257984161377,
+          "mean": 0.2903878812949794,
+          "std": 0.4568043226280421,
+          "median": 0.17597582191228867,
+          "p05": -0.14783138334751128,
+          "p95": 1.2876105070114146,
+          "first": 0.0381062887609005,
+          "last": -0.19353610277175903
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 300
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1609485148,
+              "seconds_since_ulog_header": 0.299192,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 300
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1609485148,
+              "seconds_since_ulog_header": 0.299192,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 8,
+              "samples": 300
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1609485148,
+              "seconds_since_ulog_header": 0.299192,
+              "sample_index": 0,
+              "value": 8,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 8,
+              "samples": 300
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1609485148,
+              "seconds_since_ulog_header": 0.299192,
+              "sample_index": 0,
+              "value": 8,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 5,
+              "samples": 598
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 1609484411,
+              "seconds_since_ulog_header": 0.298455,
+              "sample_index": 0,
+              "value": 5,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 73
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 1609182357,
+            "seconds_since_ulog_header": -0.003599,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    },
+    {
+      "source": "/home/jikl62/桌面/log_0_2026-10-20-11-19-52.ulg",
+      "sha256": "6aba5c784d2728f050a551375dbc9d8715dbbd386b60f5f68907233d3135f1d0",
+      "size_bytes": 731537,
+      "ulog_duration_s": 16.403305,
+      "evidence_json": "desktop_log_0_2026-10-20-11-19-52.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          1,
+          14
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": true,
+        "offboard_heartbeat_samples_observed": true,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": true,
+        "last_timestamp_us": 209114193,
+        "last_seconds_since_ulog_header": 10.901477,
+        "instance": 0,
+        "samples": 108,
+        "first": {
+          "timestamp_us": 198494740,
+          "seconds_since_ulog_header": 0.282024
+        },
+        "last": {
+          "timestamp_us": 209114193,
+          "seconds_since_ulog_header": 10.901477
+        },
+        "timestamp_span_s": 10.619453,
+        "sample_intervals_s": {
+          "samples": 107,
+          "finite_samples": 107,
+          "nonfinite_samples": 0,
+          "min": 0.050018,
+          "max": 0.100419,
+          "span": 0.050400999999999994,
+          "mean": 0.09924722429906542,
+          "std": 0.006784050480476435,
+          "median": 0.100169,
+          "p05": 0.1000386,
+          "p95": 0.1003232,
+          "first": 0.050175,
+          "last": 0.100059
+        },
+        "nonpositive_intervals": 0,
+        "observed_logger_samples_per_s": 10.075848539468087,
+        "ulog_end_minus_last_heartbeat_s": 5.501828,
+        "fields": {
+          "position": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 108
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 198494740,
+                "seconds_since_ulog_header": 0.282024,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "velocity": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 108
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 198494740,
+                "seconds_since_ulog_header": 0.282024,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "acceleration": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 108
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 198494740,
+                "seconds_since_ulog_header": 0.282024,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "attitude": {
+            "present": true,
+            "counts": [
+              {
+                "value": 1,
+                "samples": 108
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 198494740,
+                "seconds_since_ulog_header": 0.282024,
+                "sample_index": 0,
+                "value": 1,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "body_rate": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 108
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 198494740,
+                "seconds_since_ulog_header": 0.282024,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "thrust_and_torque": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 108
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 198494740,
+                "seconds_since_ulog_header": 0.282024,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "direct_actuator": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 108
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 198494740,
+                "seconds_since_ulog_header": 0.282024,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          }
+        }
+      },
+      "nav_segments": [
+        {
+          "nav_state": 14,
+          "name": "OFFBOARD",
+          "start": {
+            "timestamp_us": 198012411,
+            "seconds_since_ulog_header": -0.200305
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 210146463,
+            "seconds_since_ulog_header": 11.933747
+          },
+          "duration_s": 12.134052,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 1,
+          "name": "ALTCTL",
+          "start": {
+            "timestamp_us": 210146463,
+            "seconds_since_ulog_header": 11.933747
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 213619043,
+            "seconds_since_ulog_header": 15.406327
+          },
+          "duration_s": 3.47258,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 14,
+          "name": "OFFBOARD",
+          "start": {
+            "timestamp_us": 213619043,
+            "seconds_since_ulog_header": 15.406327
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 214616021,
+            "seconds_since_ulog_header": 16.403305
+          },
+          "duration_s": 0.996978,
+          "arming_states": [
+            1
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 162,
+          "finite_samples": 162,
+          "nonfinite_samples": 0,
+          "min": -1.3225029706954956,
+          "max": 0.7337450385093689,
+          "span": 2.0562480092048645,
+          "mean": -0.29151422448778225,
+          "std": 0.7455522262797545,
+          "median": -0.5343107581138611,
+          "p05": -1.2364792943000793,
+          "p95": 0.7299482941627502,
+          "first": 0.7122740149497986,
+          "last": -0.6314036250114441
+        },
+        "vz": {
+          "samples": 162,
+          "finite_samples": 162,
+          "nonfinite_samples": 0,
+          "min": -0.4261063039302826,
+          "max": 0.019234130159020424,
+          "span": 0.445340434089303,
+          "mean": -0.21630937932957436,
+          "std": 0.15263427595299145,
+          "median": -0.24999108910560608,
+          "p05": -0.41062633991241454,
+          "p95": 0.013601168384775516,
+          "first": 0.008530773222446442,
+          "last": -0.14088228344917297
+        },
+        "z_deriv": {
+          "samples": 162,
+          "finite_samples": 162,
+          "nonfinite_samples": 0,
+          "min": -0.4384979009628296,
+          "max": 0.28280124068260193,
+          "span": 0.7212991416454315,
+          "mean": -0.11505510361543943,
+          "std": 0.17786898085341285,
+          "median": -0.10401010885834694,
+          "p05": -0.40795332938432693,
+          "p95": 0.24237576276063907,
+          "first": 0.0004083587264176458,
+          "last": 0.28280124068260193
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 162
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 198516002,
+              "seconds_since_ulog_header": 0.303286,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 162
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 198516002,
+              "seconds_since_ulog_header": 0.303286,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 162
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 198516002,
+              "seconds_since_ulog_header": 0.303286,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 162
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 198516002,
+              "seconds_since_ulog_header": 0.303286,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 323
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 198521531,
+              "seconds_since_ulog_header": 0.308815,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 27
+          },
+          {
+            "value": 1,
+            "samples": 7
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 198012411,
+            "seconds_since_ulog_header": -0.200305,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          },
+          {
+            "timestamp_us": 210146463,
+            "seconds_since_ulog_header": 11.933747,
+            "sample_index": 25,
+            "value": 1,
+            "initial": false
+          },
+          {
+            "timestamp_us": 213619043,
+            "seconds_since_ulog_header": 15.406327,
+            "sample_index": 32,
+            "value": 0,
+            "initial": false
+          }
+        ],
+        "observed_change_count": 2
+      }
+    },
+    {
+      "source": "/home/jikl62/桌面/log_10_2026-11-15-16-47-56.ulg",
+      "sha256": "8d510d25fbea1e6473939765532ca051705f18cbf967a740fbe05f992490ee11",
+      "size_bytes": 418786,
+      "ulog_duration_s": 7.677352,
+      "evidence_json": "desktop_log_10_2026-11-15-16-47-56.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          15
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": false,
+        "offboard_heartbeat_samples_observed": false,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": false,
+        "last_timestamp_us": null,
+        "last_seconds_since_ulog_header": null,
+        "absence_limit": "No samples in this ULog; alone this cannot establish unpublished topics were logged or prove physical link silence."
+      },
+      "nav_segments": [
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 62932884,
+            "seconds_since_ulog_header": -0.060262
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 70670498,
+            "seconds_since_ulog_header": 7.677352
+          },
+          "duration_s": 7.737614,
+          "arming_states": [
+            1,
+            2
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 76,
+          "finite_samples": 76,
+          "nonfinite_samples": 0,
+          "min": -1.4853109121322632,
+          "max": 0.09694458544254303,
+          "span": 1.5822554975748062,
+          "mean": -0.3780287899150464,
+          "std": 0.5284008794298143,
+          "median": -0.11293384432792664,
+          "p05": -1.391159176826477,
+          "p95": 0.09535527043044567,
+          "first": 0.09694458544254303,
+          "last": -1.4853109121322632
+        },
+        "vz": {
+          "samples": 76,
+          "finite_samples": 76,
+          "nonfinite_samples": 0,
+          "min": -0.5196226239204407,
+          "max": 0.0002701034536585212,
+          "span": 0.5198927273740992,
+          "mean": -0.23688585098180306,
+          "std": 0.2015397180453965,
+          "median": -0.2089153751730919,
+          "p05": -0.5100271552801132,
+          "p95": -0.002512815408408642,
+          "first": 0.0002701034536585212,
+          "last": -0.49831417202949524
+        },
+        "z_deriv": {
+          "samples": 76,
+          "finite_samples": 76,
+          "nonfinite_samples": 0,
+          "min": -0.5049888491630554,
+          "max": -0.0025469365064054728,
+          "span": 0.50244191265665,
+          "mean": -0.22943421039350428,
+          "std": 0.18884599493517426,
+          "median": -0.2165832296013832,
+          "p05": -0.49167756736278534,
+          "p95": -0.005279555916786194,
+          "first": -0.0025469365064054728,
+          "last": -0.36245793104171753
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 76
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 63264452,
+              "seconds_since_ulog_header": 0.271306,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 76
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 63264452,
+              "seconds_since_ulog_header": 0.271306,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 76
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 63264452,
+              "seconds_since_ulog_header": 0.271306,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 76
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 63264452,
+              "seconds_since_ulog_header": 0.271306,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 2,
+              "samples": 150
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 63263943,
+              "seconds_since_ulog_header": 0.270797,
+              "sample_index": 0,
+              "value": 2,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 17
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 62932884,
+            "seconds_since_ulog_header": -0.060262,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    },
+    {
+      "source": "/home/jikl62/桌面/log_1_2026-10-20-11-20-32.ulg",
+      "sha256": "a426241fb8985a2dfed617bc9f86f19e3e4c1a44608e12532f1e05f4409efb9c",
+      "size_bytes": 145634,
+      "ulog_duration_s": 0.991693,
+      "evidence_json": "desktop_log_1_2026-10-20-11-20-32.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          15
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": false,
+        "offboard_heartbeat_samples_observed": false,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": false,
+        "last_timestamp_us": null,
+        "last_seconds_since_ulog_header": null,
+        "absence_limit": "No samples in this ULog; alone this cannot establish unpublished topics were logged or prove physical link silence."
+      },
+      "nav_segments": [
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 253478495,
+            "seconds_since_ulog_header": -0.006487
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 254476675,
+            "seconds_since_ulog_header": 0.991693
+          },
+          "duration_s": 0.99818,
+          "arming_states": [
+            1,
+            2
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.8556150197982788,
+          "max": 0.8595981597900391,
+          "span": 0.003983139991760254,
+          "mean": 0.8573534116148949,
+          "std": 0.0013810415999217323,
+          "median": 0.8572938442230225,
+          "p05": 0.8556711584329605,
+          "p95": 0.8593044489622116,
+          "first": 0.8556150197982788,
+          "last": 0.8595981597900391
+        },
+        "vz": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.01752195507287979,
+          "max": 0.020821604877710342,
+          "span": 0.003299649804830551,
+          "mean": 0.01909819687716663,
+          "std": 0.0012092693597099704,
+          "median": 0.019099493511021137,
+          "p05": 0.01753466632217169,
+          "p95": 0.020743988547474147,
+          "first": 0.020821604877710342,
+          "last": 0.017558272927999496
+        },
+        "z_deriv": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.008481849916279316,
+          "max": 0.01298920251429081,
+          "span": 0.004507352598011494,
+          "mean": 0.010628044954501092,
+          "std": 0.0016362545253720859,
+          "median": 0.010531333740800619,
+          "p05": 0.008548492705449462,
+          "p95": 0.012923827394843102,
+          "first": 0.01298920251429081,
+          "last": 0.008672257885336876
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 15
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789101,
+              "seconds_since_ulog_header": 0.304119,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 3
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 253478495,
+            "seconds_since_ulog_header": -0.006487,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    },
+    {
+      "source": "/home/jikl62/桌面/log_2_2026-10-20-11-21-14.ulg",
+      "sha256": "3dbc919761a11325846c75dd804249b3c477317d8e8b13d9a9ea681f8c44d3c1",
+      "size_bytes": 780170,
+      "ulog_duration_s": 17.481903,
+      "evidence_json": "desktop_log_2_2026-10-20-11-21-14.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          1,
+          14,
+          15
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": true,
+        "offboard_heartbeat_samples_observed": true,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": true,
+        "last_timestamp_us": 290347726,
+        "last_seconds_since_ulog_header": 11.903263,
+        "instance": 0,
+        "samples": 118,
+        "first": {
+          "timestamp_us": 278728716,
+          "seconds_since_ulog_header": 0.284253
+        },
+        "last": {
+          "timestamp_us": 290347726,
+          "seconds_since_ulog_header": 11.903263
+        },
+        "timestamp_span_s": 11.61901,
+        "sample_intervals_s": {
+          "samples": 117,
+          "finite_samples": 117,
+          "nonfinite_samples": 0,
+          "min": 0.050073,
+          "max": 0.100405,
+          "span": 0.050331999999999995,
+          "mean": 0.09930777777777776,
+          "std": 0.006479753452510221,
+          "median": 0.100165,
+          "p05": 0.10001020000000001,
+          "p95": 0.1003156,
+          "first": 0.050073,
+          "last": 0.100252
+        },
+        "nonpositive_intervals": 0,
+        "observed_logger_samples_per_s": 10.069704733880084,
+        "ulog_end_minus_last_heartbeat_s": 5.57864,
+        "fields": {
+          "position": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 278728716,
+                "seconds_since_ulog_header": 0.284253,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "velocity": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 278728716,
+                "seconds_since_ulog_header": 0.284253,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "acceleration": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 278728716,
+                "seconds_since_ulog_header": 0.284253,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "attitude": {
+            "present": true,
+            "counts": [
+              {
+                "value": 1,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 278728716,
+                "seconds_since_ulog_header": 0.284253,
+                "sample_index": 0,
+                "value": 1,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "body_rate": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 278728716,
+                "seconds_since_ulog_header": 0.284253,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "thrust_and_torque": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 278728716,
+                "seconds_since_ulog_header": 0.284253,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "direct_actuator": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 118
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 278728716,
+                "seconds_since_ulog_header": 0.284253,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          }
+        }
+      },
+      "nav_segments": [
+        {
+          "nav_state": 14,
+          "name": "OFFBOARD",
+          "start": {
+            "timestamp_us": 278438333,
+            "seconds_since_ulog_header": -0.00613
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 291436427,
+            "seconds_since_ulog_header": 12.991964
+          },
+          "duration_s": 12.998094,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 1,
+          "name": "ALTCTL",
+          "start": {
+            "timestamp_us": 291436427,
+            "seconds_since_ulog_header": 12.991964
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 294397185,
+            "seconds_since_ulog_header": 15.952722
+          },
+          "duration_s": 2.960758,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 294397185,
+            "seconds_since_ulog_header": 15.952722
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 295926366,
+            "seconds_since_ulog_header": 17.481903
+          },
+          "duration_s": 1.529181,
+          "arming_states": [
+            1,
+            2
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 173,
+          "finite_samples": 173,
+          "nonfinite_samples": 0,
+          "min": -1.5874043703079224,
+          "max": 0.9606426954269409,
+          "span": 2.5480470657348633,
+          "mean": -0.2645429125583241,
+          "std": 0.9097850326148534,
+          "median": -0.4320454001426697,
+          "p05": -1.4853106260299682,
+          "p95": 0.9511492848396301,
+          "first": 0.8604505658149719,
+          "last": -0.8521778583526611
+        },
+        "vz": {
+          "samples": 173,
+          "finite_samples": 173,
+          "nonfinite_samples": 0,
+          "min": -0.5059840083122253,
+          "max": 0.034158557653427124,
+          "span": 0.5401425659656525,
+          "mean": -0.23814602243455632,
+          "std": 0.1722360573056709,
+          "median": -0.26702097058296204,
+          "p05": -0.4654458165168762,
+          "p95": 0.025210048630833634,
+          "first": 0.012734428979456425,
+          "last": -0.19530771672725677
+        },
+        "z_deriv": {
+          "samples": 173,
+          "finite_samples": 173,
+          "nonfinite_samples": 0,
+          "min": -0.4800214469432831,
+          "max": 0.30787673592567444,
+          "span": 0.7878981828689575,
+          "mean": -0.1334733729276973,
+          "std": 0.1902750199651578,
+          "median": -0.15201058983802795,
+          "p05": -0.38888081908226013,
+          "p95": 0.24348467886447914,
+          "first": 0.017002446576952934,
+          "last": 0.30787673592567444
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 173
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 278766429,
+              "seconds_since_ulog_header": 0.321966,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 173
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 278766429,
+              "seconds_since_ulog_header": 0.321966,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 173
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 278766429,
+              "seconds_since_ulog_header": 0.321966,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 173
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 278766429,
+              "seconds_since_ulog_header": 0.321966,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 345
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 278771565,
+              "seconds_since_ulog_header": 0.327102,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 32
+          },
+          {
+            "value": 1,
+            "samples": 6
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 278438333,
+            "seconds_since_ulog_header": -0.00613,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          },
+          {
+            "timestamp_us": 291436427,
+            "seconds_since_ulog_header": 12.991964,
+            "sample_index": 27,
+            "value": 1,
+            "initial": false
+          },
+          {
+            "timestamp_us": 294077982,
+            "seconds_since_ulog_header": 15.633519,
+            "sample_index": 33,
+            "value": 0,
+            "initial": false
+          }
+        ],
+        "observed_change_count": 2
+      }
+    },
+    {
+      "source": "/home/jikl62/桌面/log_3_2026-10-20-11-22-20.ulg",
+      "sha256": "a68c79168746d1d99fc0f980e0852c5d5a71ed01e117c2b2c9c316bd05c0f8ed",
+      "size_bytes": 680876,
+      "ulog_duration_s": 14.764902,
+      "evidence_json": "desktop_log_3_2026-10-20-11-22-20.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          1,
+          14,
+          15
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": true,
+        "offboard_heartbeat_samples_observed": true,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": true,
+        "last_timestamp_us": 360039180,
+        "last_seconds_since_ulog_header": 12.15113,
+        "instance": 0,
+        "samples": 121,
+        "first": {
+          "timestamp_us": 348168258,
+          "seconds_since_ulog_header": 0.280208
+        },
+        "last": {
+          "timestamp_us": 360039180,
+          "seconds_since_ulog_header": 12.15113
+        },
+        "timestamp_span_s": 11.870922,
+        "sample_intervals_s": {
+          "samples": 120,
+          "finite_samples": 120,
+          "nonfinite_samples": 0,
+          "min": 0.049997,
+          "max": 0.100483,
+          "span": 0.050486,
+          "mean": 0.09892435000000001,
+          "std": 0.007833120160202232,
+          "median": 0.1001855,
+          "p05": 0.1000105,
+          "p95": 0.10033645,
+          "first": 0.049997,
+          "last": 0.05
+        },
+        "nonpositive_intervals": 0,
+        "observed_logger_samples_per_s": 10.108734603765402,
+        "ulog_end_minus_last_heartbeat_s": 2.613772,
+        "fields": {
+          "position": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 121
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 348168258,
+                "seconds_since_ulog_header": 0.280208,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "velocity": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 121
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 348168258,
+                "seconds_since_ulog_header": 0.280208,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "acceleration": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 121
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 348168258,
+                "seconds_since_ulog_header": 0.280208,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "attitude": {
+            "present": true,
+            "counts": [
+              {
+                "value": 1,
+                "samples": 121
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 348168258,
+                "seconds_since_ulog_header": 0.280208,
+                "sample_index": 0,
+                "value": 1,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "body_rate": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 121
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 348168258,
+                "seconds_since_ulog_header": 0.280208,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "thrust_and_torque": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 121
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 348168258,
+                "seconds_since_ulog_header": 0.280208,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "direct_actuator": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 121
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 348168258,
+                "seconds_since_ulog_header": 0.280208,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          }
+        }
+      },
+      "nav_segments": [
+        {
+          "nav_state": 14,
+          "name": "OFFBOARD",
+          "start": {
+            "timestamp_us": 347883079,
+            "seconds_since_ulog_header": -0.004971
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 360049212,
+            "seconds_since_ulog_header": 12.161162
+          },
+          "duration_s": 12.166133,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 1,
+          "name": "ALTCTL",
+          "start": {
+            "timestamp_us": 360049212,
+            "seconds_since_ulog_header": 12.161162
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 360424955,
+            "seconds_since_ulog_header": 12.536905
+          },
+          "duration_s": 0.375743,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 15,
+          "name": "STAB",
+          "start": {
+            "timestamp_us": 360424955,
+            "seconds_since_ulog_header": 12.536905
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 362652952,
+            "seconds_since_ulog_header": 14.764902
+          },
+          "duration_s": 2.227997,
+          "arming_states": [
+            1,
+            2
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 146,
+          "finite_samples": 146,
+          "nonfinite_samples": 0,
+          "min": -1.5591528415679932,
+          "max": 0.7590845227241516,
+          "span": 2.3182373642921448,
+          "mean": -0.25332821530532346,
+          "std": 0.8958632566093656,
+          "median": -0.10551035031676292,
+          "p05": -1.5264143645763397,
+          "p95": 0.7545163631439209,
+          "first": 0.7270510196685791,
+          "last": -1.129891037940979
+        },
+        "vz": {
+          "samples": 146,
+          "finite_samples": 146,
+          "nonfinite_samples": 0,
+          "min": -0.5227567553520203,
+          "max": 0.03219986334443092,
+          "span": 0.5549566186964512,
+          "mean": -0.22360641530663897,
+          "std": 0.20123089117379234,
+          "median": -0.24456137418746948,
+          "p05": -0.5065993666648865,
+          "p95": 0.02998734498396516,
+          "first": 0.021124042570590973,
+          "last": -0.2112876921892166
+        },
+        "z_deriv": {
+          "samples": 146,
+          "finite_samples": 146,
+          "nonfinite_samples": 0,
+          "min": -0.4307103455066681,
+          "max": 0.2898036241531372,
+          "span": 0.7205139696598053,
+          "mean": -0.16757201714929965,
+          "std": 0.19434926629695404,
+          "median": -0.19512134045362473,
+          "p05": -0.42511580884456635,
+          "p95": 0.15801383927464485,
+          "first": -0.0007193915662355721,
+          "last": 0.2898036241531372
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 146
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 348206414,
+              "seconds_since_ulog_header": 0.318364,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 146
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 348206414,
+              "seconds_since_ulog_header": 0.318364,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 146
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 348206414,
+              "seconds_since_ulog_header": 0.318364,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 146
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 348206414,
+              "seconds_since_ulog_header": 0.318364,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 290
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 348211648,
+              "seconds_since_ulog_header": 0.323598,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 30
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 347883079,
+            "seconds_since_ulog_header": -0.004971,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      }
+    },
+    {
+      "source": "/home/jikl62/桌面/log_4_2026-10-20-11-23-54.ulg",
+      "sha256": "6de756522288ccf57df545ec9f7f98b5e9437bb9861b7c03e39bb3c7c81f5b0f",
+      "size_bytes": 857825,
+      "ulog_duration_s": 19.29309,
+      "evidence_json": "desktop_log_4_2026-10-20-11-23-54.json",
+      "firmware_and_hardware": {
+        "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+        "ver_sw_release": 17825792,
+        "ver_hw": "DAMIAO_DM_FC01",
+        "sys_name": "PX4",
+        "sys_os_name": "NuttX",
+        "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+        "sys_os_ver_release": 202113279,
+        "sys_toolchain": "GNU GCC",
+        "sys_toolchain_ver": "10.3.1 20210621 (release)",
+        "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+        "ver_data_format": 2,
+        "sys_uuid": "0006000000003638373135335105003a0036",
+        "time_ref_utc": 0,
+        "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+      },
+      "classification": {
+        "observed_nav_states": [
+          1,
+          14
+        ],
+        "position_nav_state_2_observed": false,
+        "offboard_nav_state_14_observed": true,
+        "offboard_heartbeat_samples_observed": true,
+        "position_stable_height_baseline_demonstrated": false,
+        "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+      },
+      "offboard_heartbeat": {
+        "topic": "offboard_control_mode",
+        "present": true,
+        "last_timestamp_us": 449878727,
+        "last_seconds_since_ulog_header": 12.401526,
+        "instance": 0,
+        "samples": 123,
+        "first": {
+          "timestamp_us": 437755189,
+          "seconds_since_ulog_header": 0.277988
+        },
+        "last": {
+          "timestamp_us": 449878727,
+          "seconds_since_ulog_header": 12.401526
+        },
+        "timestamp_span_s": 12.123538,
+        "sample_intervals_s": {
+          "samples": 122,
+          "finite_samples": 122,
+          "nonfinite_samples": 0,
+          "min": 0.05013,
+          "max": 0.100417,
+          "span": 0.050287000000000005,
+          "mean": 0.09937326229508198,
+          "std": 0.006354212837453614,
+          "median": 0.100173,
+          "p05": 0.1000602,
+          "p95": 0.10035374999999999,
+          "first": 0.050187,
+          "last": 0.100082
+        },
+        "nonpositive_intervals": 0,
+        "observed_logger_samples_per_s": 10.063069047995723,
+        "ulog_end_minus_last_heartbeat_s": 6.891564,
+        "fields": {
+          "position": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 123
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 437755189,
+                "seconds_since_ulog_header": 0.277988,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "velocity": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 123
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 437755189,
+                "seconds_since_ulog_header": 0.277988,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "acceleration": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 123
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 437755189,
+                "seconds_since_ulog_header": 0.277988,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "attitude": {
+            "present": true,
+            "counts": [
+              {
+                "value": 1,
+                "samples": 123
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 437755189,
+                "seconds_since_ulog_header": 0.277988,
+                "sample_index": 0,
+                "value": 1,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "body_rate": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 123
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 437755189,
+                "seconds_since_ulog_header": 0.277988,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "thrust_and_torque": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 123
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 437755189,
+                "seconds_since_ulog_header": 0.277988,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          },
+          "direct_actuator": {
+            "present": true,
+            "counts": [
+              {
+                "value": 0,
+                "samples": 123
+              }
+            ],
+            "changes": [
+              {
+                "timestamp_us": 437755189,
+                "seconds_since_ulog_header": 0.277988,
+                "sample_index": 0,
+                "value": 0,
+                "initial": true
+              }
+            ],
+            "observed_change_count": 0
+          }
+        }
+      },
+      "nav_segments": [
+        {
+          "nav_state": 14,
+          "name": "OFFBOARD",
+          "start": {
+            "timestamp_us": 437471664,
+            "seconds_since_ulog_header": -0.005537
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 450906580,
+            "seconds_since_ulog_header": 13.429379
+          },
+          "duration_s": 13.434916,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 1,
+          "name": "ALTCTL",
+          "start": {
+            "timestamp_us": 450906580,
+            "seconds_since_ulog_header": 13.429379
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 455771495,
+            "seconds_since_ulog_header": 18.294294
+          },
+          "duration_s": 4.864915,
+          "arming_states": [
+            2
+          ]
+        },
+        {
+          "nav_state": 14,
+          "name": "OFFBOARD",
+          "start": {
+            "timestamp_us": 455771495,
+            "seconds_since_ulog_header": 18.294294
+          },
+          "end_exclusive_or_ulog_last": {
+            "timestamp_us": 456770291,
+            "seconds_since_ulog_header": 19.29309
+          },
+          "duration_s": 0.998796,
+          "arming_states": [
+            1
+          ]
+        }
+      ],
+      "local_vertical": {
+        "z": {
+          "samples": 191,
+          "finite_samples": 191,
+          "nonfinite_samples": 0,
+          "min": -2.511939525604248,
+          "max": 0.8812134265899658,
+          "span": 3.393152952194214,
+          "mean": -0.38327840270952407,
+          "std": 1.0462540451665048,
+          "median": -0.4283314347267151,
+          "p05": -2.31259286403656,
+          "p95": 0.8730292022228241,
+          "first": 0.8129370808601379,
+          "last": -2.428323984146118
+        },
+        "vz": {
+          "samples": 191,
+          "finite_samples": 191,
+          "nonfinite_samples": 0,
+          "min": -1.079813838005066,
+          "max": 0.04688398167490959,
+          "span": 1.1266978196799755,
+          "mean": -0.22270112741523404,
+          "std": 0.22138558417849694,
+          "median": -0.2087325006723404,
+          "p05": -0.603898286819458,
+          "p95": 0.040195975452661514,
+          "first": 0.023601533845067024,
+          "last": -0.2660348415374756
+        },
+        "z_deriv": {
+          "samples": 191,
+          "finite_samples": 191,
+          "nonfinite_samples": 0,
+          "min": -0.7962169051170349,
+          "max": 0.1981818526983261,
+          "span": 0.994398757815361,
+          "mean": -0.1806891267699877,
+          "std": 0.16539496348955657,
+          "median": -0.19745229184627533,
+          "p05": -0.40613073110580444,
+          "p95": 0.031633615493774414,
+          "first": 0.00614630151540041,
+          "last": -0.11286023259162903
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 191
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 437796483,
+              "seconds_since_ulog_header": 0.319282,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 191
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 437796483,
+              "seconds_since_ulog_header": 0.319282,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 191
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 437796483,
+              "seconds_since_ulog_header": 0.319282,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 191
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 437796483,
+              "seconds_since_ulog_header": 0.319282,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      },
+      "attitude_reset": [
+        {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 381
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 437795663,
+              "seconds_since_ulog_header": 0.318462,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      ],
+      "status_failsafe": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 31
+          },
+          {
+            "value": 1,
+            "samples": 11
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 437471664,
+            "seconds_since_ulog_header": -0.005537,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          },
+          {
+            "timestamp_us": 450906580,
+            "seconds_since_ulog_header": 13.429379,
+            "sample_index": 29,
+            "value": 1,
+            "initial": false
+          },
+          {
+            "timestamp_us": 455771495,
+            "seconds_since_ulog_header": 18.294294,
+            "sample_index": 40,
+            "value": 0,
+            "initial": false
+          }
+        ],
+        "observed_change_count": 2
+      }
+    }
+  ]
+}

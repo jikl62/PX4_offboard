@@ -1,0 +1,1 @@
+STAGE1_REPRO_PASS: normal hold, active reset latch/no further commits, landed gate, ascent timeout, queued failsafe/stick latch, raw freshness/regression

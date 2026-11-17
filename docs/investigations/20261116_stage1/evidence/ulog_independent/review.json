@@ -1,0 +1,26 @@
+{
+  "result": "No blocking discrepancy in checked outputs",
+  "source_audit": "/tmp/fc01-stage1-ulog-audit/audit.json",
+  "independent_evidence": "/tmp/fc01-stage1-ulog-independent/independent_crosscheck.json",
+  "logs_checked": 12,
+  "matching_fields": [
+    "sha256",
+    "duration",
+    "firmware_hash",
+    "nav_state_set",
+    "offboard_heartbeat_last_timestamp",
+    "z_vz_z_deriv_min_max",
+    "vertical_reset_transitions",
+    "dropout_count"
+  ],
+  "observations": [
+    {
+      "severity": "low",
+      "location": "inspect_ulogs.py local_summary(mask)",
+      "detail": "Per-nav interval summaries initially included whole-log reset transitions; filter or explicitly label their global scope."
+    }
+  ],
+  "position_nav2_logs": 0,
+  "offboard_nav14_logs": 6,
+  "current_position_baseline_proven": false
+}
