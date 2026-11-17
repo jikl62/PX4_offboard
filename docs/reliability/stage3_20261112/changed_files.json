@@ -1,0 +1,181 @@
+{
+  "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+  "files": [
+    {
+      "path": "FC01_RELEASE.json",
+      "reason": "刷新精确源/载荷摘要；保留旧验收记录、版本和部署身份，不生成正式dist。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/CMakeLists.txt",
+      "reason": "安装共享预算模块，或仅为日志故障注入测试提供独立链接参数。",
+      "sha256": "43d4deaece7d9153028a9c788e19495fbbfc70d349e4383a51eebbf02b41e2b8"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
+      "reason": "构造失败恢复进程设置；内存不足时有界丢弃、准确计数，避免析构分配异常终止。",
+      "sha256": "044eda56a75ddd7ebaae9da94dd47fa35cf087f77f5a236d478a18f8cc8d4f64"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp",
+      "reason": "输入复制/缓存/序列化前执行共享资源门；拒绝撤销资格并保留可信历史/序号。",
+      "sha256": "8a91b56d51740979ba0cc53f4824136d2239793397fcd916b10d011c529bf563"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "reason": "输入复制/缓存/序列化前执行共享资源门；拒绝撤销资格并保留可信历史/序号。",
+      "sha256": "7a6ae9a7f32681e0edd2376bc1be808e13ed362f6d2b50eb31e08e309f7e082e"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_resource_budget.hpp",
+      "reason": "统一256 UTF-8字节身份合同；边界、撤销、序号水位和无大复制回归。",
+      "sha256": "04a87f7dfe99fd9c96dde1eb0d8b3ca2344095c59d43fa6da5f11ed56285135c"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp",
+      "reason": "输入复制/缓存/序列化前执行共享资源门；拒绝撤销资格并保留可信历史/序号。",
+      "sha256": "c16f81a93fe753378d2a8b28401dbdbc14685fd7d12dda7e1df3647d732c4b6c"
+    },
+    {
+      "path": "native/tests/CMakeLists.txt",
+      "reason": "安装共享预算模块，或仅为日志故障注入测试提供独立链接参数。",
+      "sha256": "be2a68c448d7c3c79cc22838778f158a7bc2f3b375eb99551757508af2ac086a"
+    },
+    {
+      "path": "native/tests/test_stage3_async_log_resources.cpp",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "3a78722231922a9b95c353c6fb03b9cb9ed0b4f09064fce006b274144d50bfe0"
+    },
+    {
+      "path": "native/tests/test_stage3_publication_combinations.cpp",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "6b174e3e079533dd1452b55fe70fa2a78d485650d58ae15f6af34576ef43eafc"
+    },
+    {
+      "path": "native/tests/test_stage3_state_invariants.cpp",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "969cc4104dd12b86602a8f1eae8dd4643331cbbe9316fbf62a0ecfb2c0d84ff8"
+    },
+    {
+      "path": "native/tests/test_stage3_vision_resource_budget.cpp",
+      "reason": "统一256 UTF-8字节身份合同；边界、撤销、序号水位和无大复制回归。",
+      "sha256": "a757bb9553d3d7c0c10d3cfae76c411ada3d60955002d40fc1aa4632f1799eb7"
+    },
+    {
+      "path": "native/tools/velocity_command_diagnostic.py",
+      "reason": "输入复制/缓存/序列化前执行共享资源门；拒绝撤销资格并保留可信历史/序号。",
+      "sha256": "96b74fa8452da8b4faeafa0439d0af7f92a384b51bfb5470f44faf081009b578"
+    },
+    {
+      "path": "native/tools/vision_odometry_adapter.py",
+      "reason": "两阶段Node初始化、主线程信号/清理所有权、异常链保留；身份预算在转换和半包缓存前检查。",
+      "sha256": "5378771c2bcfc7eb284ce125c99b5b059a7045958bf3699d381b996a9a461416"
+    },
+    {
+      "path": "native/tools/vision_resource_budget.py",
+      "reason": "统一256 UTF-8字节身份合同；边界、撤销、序号水位和无大复制回归。",
+      "sha256": "c479c97b6b84686fba0ff3443592c757d9a2c35425b7e0db7a521f06d9c28927"
+    },
+    {
+      "path": "native/tools/vision_state_validation.py",
+      "reason": "输入复制/缓存/序列化前执行共享资源门；拒绝撤销资格并保留可信历史/序号。",
+      "sha256": "f15c4604ba242d8b1263075f813c7f1787c073d33942783a75d4adc5c1a0e0ca"
+    },
+    {
+      "path": "navigation_probe.py",
+      "reason": "分离证据写入及资源终结，显式本轮异常/Context所有权，原错误与所有后续清理错误可见。",
+      "sha256": "49cbe25644307fdc2f0300d963b19c424f81af590b1336a2a4e14a31c9949f4b"
+    },
+    {
+      "path": "tests/ros_vision_smoke.py",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "bf7e307087ca2e8d2cade15e752c8642c9d23cf3ad000f687c49fc1ae2d9f067"
+    },
+    {
+      "path": "tests/run_native_cpp.py",
+      "reason": "让Python原生测试入口与CMake使用相同故障注入链接参数，并计入缓存键。",
+      "sha256": "efa523b49b4a782c9b1d2d3798c911a0852e9706a6cab002fc902212028ef6e9"
+    },
+    {
+      "path": "tests/stage2_python_trace.py",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "0886f00cc2c56a0d377641a306a84bb56af8ebaf79dd4f8ef04485ed2a444930"
+    },
+    {
+      "path": "tests/test_native_install_layout.py",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "37bdd71b68abdd23d85597f9f53983f137f4bf75e7a5f0a645ad4349a3569ffd"
+    },
+    {
+      "path": "tests/test_stage2_python_equivalence.py",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "10a90779c1ea41d78b7a3c34d86f970ba210911bd04aa85e7da5db6342b0335e"
+    },
+    {
+      "path": "tests/test_stage2_vision_equivalence.py",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "0d7dacbbaa9979575fb95a34b8d2e1fc0fe39e5cacd948d0c5cb36d1fa053aee"
+    },
+    {
+      "path": "tests/test_stage3_adapter_budget.py",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "7c1ede474eb3fe8f938d8287932e8ce7ac6d3671e37699ee7ea6a3958d3367ce"
+    },
+    {
+      "path": "tests/test_stage3_control_equivalence.py",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "48382e06af3f7a4b479a3e0ab5c6322320f47b78fa18617c39347f1d9c1387e5"
+    },
+    {
+      "path": "tests/test_stage3_probe_lifecycle.py",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "91f7c54ed8bc99c987d7e60a3912f92ed31f47ebff2a28b5db0dc88b3c8ad2f7"
+    },
+    {
+      "path": "tests/test_stage3_vision_lifecycle.py",
+      "reason": "对应修复的故障注入、明确预期差异或安装/真实ROS/控制状态回归；不替换生产算法。",
+      "sha256": "09bb86f4125961fd354c3bcf6d82922a3b3d8e5f0610c3afed1a23fee6e63268"
+    },
+    {
+      "path": "tests/test_stage3_vision_resource_budget.py",
+      "reason": "统一256 UTF-8字节身份合同；边界、撤销、序号水位和无大复制回归。",
+      "sha256": "5462f7c73edc011abedb540725eef3c6b0dc4f312f7f29ff906466cf9b5ca293"
+    },
+    {
+      "path": "docs/reliability/stage3_20261112/REVIEW_zh.md",
+      "reason": "本轮复现、测试、独立审查、配置不变量、结构债或精确证据索引；最终字节SHA由发布清单记录。"
+    },
+    {
+      "path": "docs/reliability/stage3_20261112/VISION_RESOURCE_CONTRACT_zh.md",
+      "reason": "本轮复现、测试、独立审查、配置不变量、结构债或精确证据索引；最终字节SHA由发布清单记录。"
+    },
+    {
+      "path": "docs/reliability/stage3_20261112/ARM64_NO_POWER_zh.md",
+      "reason": "本轮复现、测试、独立审查、配置不变量、结构债或精确证据索引；最终字节SHA由发布清单记录。"
+    },
+    {
+      "path": "docs/reliability/stage3_20261112/changed_files.json",
+      "reason": "本轮复现、测试、独立审查、配置不变量、结构债或精确证据索引；最终字节SHA由发布清单记录。"
+    },
+    {
+      "path": "docs/reliability/stage3_20261112/configuration_invariants.json",
+      "reason": "本轮复现、测试、独立审查、配置不变量、结构债或精确证据索引；最终字节SHA由发布清单记录。"
+    },
+    {
+      "path": "docs/reliability/stage3_20261112/structural_debt.json",
+      "reason": "本轮复现、测试、独立审查、配置不变量、结构债或精确证据索引；最终字节SHA由发布清单记录。"
+    },
+    {
+      "path": "docs/reliability/stage3_20261112/verification.json",
+      "reason": "本轮复现、测试、独立审查、配置不变量、结构债或精确证据索引；最终字节SHA由发布清单记录。"
+    },
+    {
+      "path": "docs/reliability/stage3_20261112/evidence_index.json",
+      "reason": "本轮复现、测试、独立审查、配置不变量、结构债或精确证据索引；最终字节SHA由发布清单记录。"
+    },
+    {
+      "path": "docs/reliability/stage3_20261112/evidence_curated.zip",
+      "reason": "本轮复现、测试、独立审查、配置不变量、结构债或精确证据索引；最终字节SHA由发布清单记录。"
+    }
+  ],
+  "hash_policy": "Exact source hashes below. Delivery metadata hashes are recorded in FC01_RELEASE.json to avoid self-referential metadata hashes."
+}

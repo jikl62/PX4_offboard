@@ -1,0 +1,17 @@
+{
+  "results": {
+    "height_matrix": {
+      "source_log_bytes": 10313341,
+      "source_log_sha256": "e048e6e5b3ee8ee6a9b5d6274cd4436a9d73d75742a6ccedb7bf14c29880d696",
+      "summary_lines": 75,
+      "summary_sha256": "77308f50d2d85ecee7b55bc8416cdc934bd1837e2f0444b1e8c1524186d4da1a"
+    },
+    "receive_matrix": {
+      "source_log_bytes": 95685796,
+      "source_log_sha256": "2c7e16fc7ab21ae3766fb5bd456b2730b8c7af1a023e491c3e40e8c47c10fd0f",
+      "summary_lines": 46,
+      "summary_sha256": "10dbdc8ad197ca867f65fcc83f9aac31f066e7532db59aa194b1be35d770e39a"
+    }
+  },
+  "scope": "actual node/Core paths with synthetic ROS API, clocks and DDS queues; native control code identical to V5 apart from release marker"
+}

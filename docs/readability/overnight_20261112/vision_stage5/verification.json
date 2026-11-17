@@ -1,0 +1,882 @@
+{
+  "baseline": "68b3221ac297699e1dfed8fd773358bb26789207",
+  "source_commit": "15310f8776d182e668cc846f97ff23c5753995da",
+  "branch": "readability/fc01-chinese-20261111",
+  "functional_commits": [
+    "1124daf076596a2c49a857cbaaa3c883b6bd0d0f",
+    "44632a18f5ef403ca09c5a84844f1fc52925595e"
+  ],
+  "readability_and_test_commit": "15310f8776d182e668cc846f97ff23c5753995da",
+  "checks": {
+    "root_python": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "cwd": "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+      "env_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "returncode": 1,
+      "seconds": 140.72005576100491,
+      "log": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/root_final.log",
+      "tests_run": 612,
+      "errors": [
+        "test_candidate_directory_and_development_experiment_exclusion (test_navigation_install.BundleTests)",
+        "test_exact_self_extraction_repeat_and_conflict (test_navigation_install.BundleTests)",
+        "test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests)"
+      ],
+      "failures": [],
+      "skips": [],
+      "native_cpp_current_top_level_sources": 81,
+      "native_cpp_wrapper_test_passed": true,
+      "raw_log_sha256": "aff7ed734197c0b71e212fa80da312aef4833739d3fd48c8dd5c2504e0ecd079",
+      "parse_note": "Raw subprocess log contains a non-UTF8 byte. Initial UTF8 report parsing failed only; final summary parses ASCII unittest markers after backslash escaping undecodable bytes. Raw bytes retained unchanged.",
+      "passed_methods": 609
+    },
+    "visual_python": {
+      "modules": [
+        "test_vision_adapter",
+        "test_vision_state_validation",
+        "test_velocity_command_diagnostic",
+        "test_stage3_vision_resource_budget",
+        "test_stage3_vision_lifecycle",
+        "test_stage_overnight_velocity_lifecycle"
+      ],
+      "tests_run": 148,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "successful": true,
+      "duration_seconds": 0.49125576300139073,
+      "scope": "offline Python and host C++ mapping only; no ROS graph or flight controller"
+    },
+    "cpp": {
+      "verification": "evidence.zip:cpp/verification.json",
+      "targeted_programs": 5,
+      "new_scenarios": 4,
+      "new_assertions": 39,
+      "asan_ubsan_new_contract_passed": true,
+      "raw_tokens_identical": 9684,
+      "message_declarations_identical": 99
+    },
+    "fresh_humble_build": {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/build.command.sh"
+      ],
+      "exit": 0,
+      "seconds": 46.93822056999488,
+      "log": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/build.log"
+    },
+    "generated_types": {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/generated_interfaces_retry2.command.sh"
+      ],
+      "returncode": 0,
+      "duration_seconds": 0.6296979920007288,
+      "stdout": "{\"passed\": true, \"messages\": 5, \"report\": \"/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/generated_interfaces_retry2.report.json\"}\n",
+      "stderr": "",
+      "checker_sha256": "d520e78938f1310945542df9d923064bf896301dc4d754701b187c33a973c9cf",
+      "ros_init_or_nodes_created": false,
+      "initial_and_retry1_failure_preserved": true
+    },
+    "vision_communication": {
+      "run": {
+        "argv": [
+          "bash",
+          "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/vision.command.sh"
+        ],
+        "exit": 0,
+        "seconds": 4.619124483004271,
+        "log": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/vision.log"
+      },
+      "report": {
+        "passed": true,
+        "domain_id": 220,
+        "localhost_only": true,
+        "adapter_path": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/lib/jikl_fc01_system/vision_odometry_adapter.py",
+        "checks": [
+          "read_only_startup_parameters",
+          "valid_conversion",
+          "raw_conflict_revoked",
+          "no_fmu_publishers",
+          "sigint_clean_exit",
+          "utf8_identity_budget_revoked",
+          "fresh_pair_after_resource_rejection"
+        ],
+        "publisher_endpoints": [
+          [
+            "/fc01_demo/state",
+            [
+              "jikl_fc01_system/msg/VisionState"
+            ]
+          ],
+          [
+            "/parameter_events",
+            [
+              "rcl_interfaces/msg/ParameterEvent"
+            ]
+          ],
+          [
+            "/rosout",
+            [
+              "rcl_interfaces/msg/Log"
+            ]
+          ]
+        ],
+        "shutdown_exit_code": 0
+      }
+    },
+    "velocity_communication": {
+      "run": {
+        "argv": [
+          "bash",
+          "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/velocity.command.sh"
+        ],
+        "exit": 0,
+        "seconds": 9.81322753999848,
+        "log": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/velocity.log"
+      },
+      "report": {
+        "domain_id": 221,
+        "localhost_only": true,
+        "control_authority": false,
+        "interface": {
+          "type": "jikl_fc01_system/msg/VelocityCommand",
+          "fields": {
+            "schema_version": "uint16",
+            "sequence": "uint64",
+            "stamp": "builtin_interfaces/Time",
+            "reset_counter": "uint32",
+            "source_id": "string",
+            "frame_id": "string",
+            "valid": "boolean",
+            "vx": "double",
+            "vy": "double",
+            "vz": "double"
+          },
+          "default_frame_id": "",
+          "serialization_round_trip": true
+        },
+        "checks": [
+          "startup_overrides_and_read_only_runtime_parameters",
+          "best_effort_type_and_payload",
+          "unconfigured_policy_does_not_qualify_cache",
+          "duplicate_and_out_of_order",
+          "invalid_and_retained_anomaly",
+          "reset_and_source_changes",
+          "source_count_and_reliable_to_best_effort",
+          "explicit_test_timeout",
+          "diagnostic_has_no_fmu_publishers",
+          "reliable_to_reliable",
+          "sigint_final_snapshot_and_forced_anomaly_flush"
+        ],
+        "test_timeout_sec": 1.0,
+        "timeout_is_test_fixture": true,
+        "diagnostic_publishers": [
+          [
+            "/parameter_events",
+            [
+              "rcl_interfaces/msg/ParameterEvent"
+            ]
+          ],
+          [
+            "/rosout",
+            [
+              "rcl_interfaces/msg/Log"
+            ]
+          ]
+        ],
+        "passed": true
+      }
+    },
+    "static": {
+      "python_compiled_count": 126,
+      "python_compiled_paths": [
+        "autostart.py",
+        "build_autostart_bundle.py",
+        "build_bundle.py",
+        "build_navigation_bundle.py",
+        "fc01_control.py",
+        "feedback_age_probe.py",
+        "launcher.py",
+        "native/scripts/r62_failure_replay.py",
+        "native/tests/adapter_compile_check.py",
+        "native/tests/c_s10_independent/C_S10_ULOG_EVIDENCE.py",
+        "native/tests/c_s10_independent/C_S10_VERIFY_INPUT.py",
+        "native/tests/replay_c11_c12.py",
+        "native/tests/ros_receive_ab/probe_smoke.py",
+        "native/tests/ros_receive_ab/run.py",
+        "native/tests/test_authority_harness.py",
+        "native/tests/test_authority_tools.py",
+        "native/tests/test_land_event_adapter.py",
+        "native/tests/test_r62c_review_console.py",
+        "native/tests/test_r62c_review_package.py",
+        "native/tests/test_r62c_review_supervisor.py",
+        "native/tests/test_r6_preflight_audit.py",
+        "native/tests/test_r6_process_failures.py",
+        "native/tests/test_rc_recovery_adapter.py",
+        "native/tests/test_receive_event_adapter.py",
+        "native/tests/test_s10_timeline.py",
+        "native/tests/test_safety_receive_adapter.py",
+        "native/tests/test_socket_safety.py",
+        "native/tests/test_tools.py",
+        "native/tools/deploy.py",
+        "native/tools/fcctl.py",
+        "native/tools/pc.py",
+        "native/tools/r632_ack176_summary.py",
+        "native/tools/r63_config_check.py",
+        "native/tools/r6_preflight_audit.py",
+        "native/tools/replay_vertical_feedback.py",
+        "native/tools/replay_vertical_refinement.py",
+        "native/tools/s10_timeline.py",
+        "native/tools/socket_safety.py",
+        "native/tools/source_readability_audit.py",
+        "native/tools/start.py",
+        "native/tools/update.py",
+        "native/tools/velocity_command_diagnostic.py",
+        "native/tools/vision_odometry_adapter.py",
+        "native/tools/vision_resource_budget.py",
+        "native/tools/vision_state_validation.py",
+        "navigation.py",
+        "navigation_build_evidence.py",
+        "navigation_collect.py",
+        "navigation_deploy.py",
+        "navigation_install.py",
+        "navigation_probe.py",
+        "navigation_report.py",
+        "navigation_restore.py",
+        "navigation_service.py",
+        "navigation_status.py",
+        "standby.py",
+        "tests/benchmark_vision_interfaces.py",
+        "tests/native_fixture.py",
+        "tests/navigation_peer.py",
+        "tests/readability_equivalence.py",
+        "tests/ros_generated_interface_check.py",
+        "tests/ros_offline_timing_smoke.py",
+        "tests/ros_velocity_command_smoke.py",
+        "tests/ros_vision_smoke.py",
+        "tests/run_native_cpp.py",
+        "tests/stage2_python_trace.py",
+        "tests/stage2_vision_trace.py",
+        "tests/standby_native.py",
+        "tests/standby_peer.py",
+        "tests/test_autostart.py",
+        "tests/test_control.py",
+        "tests/test_feedback_age_probe.py",
+        "tests/test_installer.py",
+        "tests/test_integration.py",
+        "tests/test_launcher.py",
+        "tests/test_legacy_cpp_runner_links.py",
+        "tests/test_native_install_layout.py",
+        "tests/test_native_log_records.py",
+        "tests/test_native_profile.py",
+        "tests/test_navigation_build_evidence.py",
+        "tests/test_navigation_collect.py",
+        "tests/test_navigation_deploy.py",
+        "tests/test_navigation_deployment_activation.py",
+        "tests/test_navigation_diagnostics.py",
+        "tests/test_navigation_feedback_freshness.py",
+        "tests/test_navigation_install.py",
+        "tests/test_navigation_native.py",
+        "tests/test_navigation_report.py",
+        "tests/test_navigation_restore.py",
+        "tests/test_navigation_service.py",
+        "tests/test_overnight_service_readability.py",
+        "tests/test_overnight_stage4_deployment.py",
+        "tests/test_overnight_stage4_launcher_readability.py",
+        "tests/test_overnight_stage4_launcher_resources.py",
+        "tests/test_overnight_stage4_reporting.py",
+        "tests/test_overnight_stage4_tools.py",
+        "tests/test_overnight_stage5_config.py",
+        "tests/test_overnight_stage5_ros_contract.py",
+        "tests/test_parameter_mapping.py",
+        "tests/test_readability_equivalence.py",
+        "tests/test_source_readability_audit.py",
+        "tests/test_stage2_core_equivalence.py",
+        "tests/test_stage2_powered_node_equivalence.py",
+        "tests/test_stage2_python_equivalence.py",
+        "tests/test_stage2_vision_equivalence.py",
+        "tests/test_stage2_vision_shutdown.py",
+        "tests/test_stage3_adapter_budget.py",
+        "tests/test_stage3_control_equivalence.py",
+        "tests/test_stage3_probe_lifecycle.py",
+        "tests/test_stage3_vision_lifecycle.py",
+        "tests/test_stage3_vision_resource_budget.py",
+        "tests/test_stage_overnight_velocity_lifecycle.py",
+        "tests/test_standby.py",
+        "tests/test_standby_writer.py",
+        "tests/test_takeoff_configuration.py",
+        "tests/test_uart_preflight.py",
+        "tests/test_velocity_command_diagnostic.py",
+        "tests/test_vertical_diagnostic_bundle.py",
+        "tests/test_vision_adapter.py",
+        "tests/test_vision_replay.py",
+        "tests/test_vision_settings.py",
+        "tests/test_vision_state_validation.py",
+        "uart_preflight.py",
+        "vision_config.py",
+        "vision_replay.py",
+        "vision_settings.py"
+      ],
+      "format_results": [
+        {
+          "argv": [
+            "python3",
+            "-m",
+            "black",
+            "--check",
+            "native/tools/velocity_command_diagnostic.py",
+            "native/tools/vision_odometry_adapter.py",
+            "native/tools/vision_state_validation.py",
+            "tests/ros_generated_interface_check.py",
+            "tests/test_overnight_stage5_config.py",
+            "tests/test_overnight_stage5_ros_contract.py",
+            "tests/test_vision_adapter.py",
+            "vision_config.py",
+            "vision_settings.py"
+          ],
+          "returncode": 0,
+          "seconds": 0.11183278099633753,
+          "log": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/root_static_0.log"
+        },
+        {
+          "argv": [
+            "git",
+            "diff",
+            "--check"
+          ],
+          "returncode": 0,
+          "seconds": 0.009361166004964616,
+          "log": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/root_static_1.log"
+        }
+      ],
+      "all_passed": true,
+      "generated_checker_sha256": "d520e78938f1310945542df9d923064bf896301dc4d754701b187c33a973c9cf"
+    },
+    "integrity": {
+      "baseline": "68b3221ac297699e1dfed8fd773358bb26789207",
+      "protected_files": [
+        {
+          "path": "dist/DEPLOY_zh.md",
+          "sha256": "864067f964744d7b887d731894eca5c1d9cd46396bd5448cedce198f845ca98a",
+          "baseline_sha256": "864067f964744d7b887d731894eca5c1d9cd46396bd5448cedce198f845ca98a",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic.sh",
+          "sha256": "94388dba6f251bd5c6ad017144342a699dfc96202dc8920b1a507b539c6f0a0a",
+          "baseline_sha256": "94388dba6f251bd5c6ad017144342a699dfc96202dc8920b1a507b539c6f0a0a",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic.sh.sha256",
+          "sha256": "25f514b9accb4dc0072f439cd0a3923172d950cdfc191a87784d8aa0af25c402",
+          "baseline_sha256": "25f514b9accb4dc0072f439cd0a3923172d950cdfc191a87784d8aa0af25c402",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v2.sh",
+          "sha256": "9ea0f9a0a5b49bf2111513252dc10f6b901ea51cc260796f111ef2724eb7ebd8",
+          "baseline_sha256": "9ea0f9a0a5b49bf2111513252dc10f6b901ea51cc260796f111ef2724eb7ebd8",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v2.sh.sha256",
+          "sha256": "1f6f76cd79b987113b61d657b85ba2abc9b8651a1d9b0bc8cb3641debc125324",
+          "baseline_sha256": "1f6f76cd79b987113b61d657b85ba2abc9b8651a1d9b0bc8cb3641debc125324",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v3.sh",
+          "sha256": "aab36e458a1a4e9b66a89bde471f930b13bf128ec3daa9b87b619b2f2ac1fccc",
+          "baseline_sha256": "aab36e458a1a4e9b66a89bde471f930b13bf128ec3daa9b87b619b2f2ac1fccc",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v3.sh.sha256",
+          "sha256": "26af6b35b7c85007202370f1e82313d615d331fa34cb098efdf1c61b753eba3a",
+          "baseline_sha256": "26af6b35b7c85007202370f1e82313d615d331fa34cb098efdf1c61b753eba3a",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v4.sh",
+          "sha256": "477850dd60a3c66c2e05b4b52f7e7ddf79944100bf1974cd56e6a9c3ee19faeb",
+          "baseline_sha256": "477850dd60a3c66c2e05b4b52f7e7ddf79944100bf1974cd56e6a9c3ee19faeb",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v4.sh.sha256",
+          "sha256": "39637603efe79925362c51506483d3c3c9d74d7f15f9bbe83de9eb0f05b90065",
+          "baseline_sha256": "39637603efe79925362c51506483d3c3c9d74d7f15f9bbe83de9eb0f05b90065",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v5.sh",
+          "sha256": "eb40daf4547facac1133509ded7d3c3aee9505590fc74516d990944d8e5b6b48",
+          "baseline_sha256": "eb40daf4547facac1133509ded7d3c3aee9505590fc74516d990944d8e5b6b48",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_recovery_diagnostic_v5.sh.sha256",
+          "sha256": "9c5bffc19ebd8570862b51febd9ff2af8bb96bb5fc73310e89cdfb572a2bb916",
+          "baseline_sha256": "9c5bffc19ebd8570862b51febd9ff2af8bb96bb5fc73310e89cdfb572a2bb916",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_vertical_diagnostic.sh",
+          "sha256": "dec5451f90a807d10ebe98a9f46186e88bba1da6b54635c6215bf427ea6c0011",
+          "baseline_sha256": "dec5451f90a807d10ebe98a9f46186e88bba1da6b54635c6215bf427ea6c0011",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_OrangePi_Navigation_20261110_vertical_diagnostic.sh.sha256",
+          "sha256": "fb49f521bf6b3d218b3efacd018ca30af647c1c77c09cf43d8bb9d2442d6e685",
+          "baseline_sha256": "fb49f521bf6b3d218b3efacd018ca30af647c1c77c09cf43d8bb9d2442d6e685",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/FC01_RELEASE.json",
+          "sha256": "edf1c2ea6bef37a83bbc266a99fd37e6dcd684fb59d62b9275859cb1faa7ebc6",
+          "baseline_sha256": "edf1c2ea6bef37a83bbc266a99fd37e6dcd684fb59d62b9275859cb1faa7ebc6",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/HOST_VERIFICATION.json",
+          "sha256": "b4d89ef3607d69773bec799ecc4e2f87feaeed2951f662fa073a0ee995239fdb",
+          "baseline_sha256": "b4d89ef3607d69773bec799ecc4e2f87feaeed2951f662fa073a0ee995239fdb",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/PACKAGE_VERIFICATION.json",
+          "sha256": "2e22402f2385bd20ad67d0a501a29c6a0cb2485742afab60f84be2d8394980ef",
+          "baseline_sha256": "2e22402f2385bd20ad67d0a501a29c6a0cb2485742afab60f84be2d8394980ef",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/TEST_REPORT_ANALYSIS_20261110_152318_zh.md",
+          "sha256": "1315fcff4a077b772156c37953dfacde52ed09f00d3199f25adbcec7411ec0b4",
+          "baseline_sha256": "1315fcff4a077b772156c37953dfacde52ed09f00d3199f25adbcec7411ec0b4",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/TEST_REPORT_ANALYSIS_20261110_zh.md",
+          "sha256": "0b3c79ec82d06de376f44b07fbc0a376509f4b968277328759f51bf5b3daacc0",
+          "baseline_sha256": "0b3c79ec82d06de376f44b07fbc0a376509f4b968277328759f51bf5b3daacc0",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/SUMMARY.json",
+          "sha256": "c817b620205a16b9a97642bc632f26ce436e2ec5eff405ba5ca17b4b153808f7",
+          "baseline_sha256": "c817b620205a16b9a97642bc632f26ce436e2ec5eff405ba5ca17b4b153808f7",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/final_release_contracts.log",
+          "sha256": "a0489ea646b41ca5a6f453f3b5d0eae7dfcfba5c8410c2e2f2edf23f9e4e5124",
+          "baseline_sha256": "a0489ea646b41ca5a6f453f3b5d0eae7dfcfba5c8410c2e2f2edf23f9e4e5124",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/height_matrix.log",
+          "sha256": "77308f50d2d85ecee7b55bc8416cdc934bd1837e2f0444b1e8c1524186d4da1a",
+          "baseline_sha256": "77308f50d2d85ecee7b55bc8416cdc934bd1837e2f0444b1e8c1524186d4da1a",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/land_matrix.json",
+          "sha256": "e2fd8e9b2717b552c2e4cff828c42abf197d0ab545b06d44009dd201ff48ae22",
+          "baseline_sha256": "e2fd8e9b2717b552c2e4cff828c42abf197d0ab545b06d44009dd201ff48ae22",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/matrix_provenance.json",
+          "sha256": "86c8754732be772e6db727be3c6249770da7725cc43232c7ccc2ab2bda40f266",
+          "baseline_sha256": "86c8754732be772e6db727be3c6249770da7725cc43232c7ccc2ab2bda40f266",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/native_python.log",
+          "sha256": "77e3135ad76d0ad7185d318ba5cd2878f5ae48a8fc424201e05c0d67455a7432",
+          "baseline_sha256": "77e3135ad76d0ad7185d318ba5cd2878f5ae48a8fc424201e05c0d67455a7432",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/normal_baseline_provenance.json",
+          "sha256": "d02f11cda33cbaf7d0e3e1ab2061db482c1b5b557c9f75f3467908a1b73b89ad",
+          "baseline_sha256": "d02f11cda33cbaf7d0e3e1ab2061db482c1b5b557c9f75f3467908a1b73b89ad",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/normal_behavior.json",
+          "sha256": "7e50dc4760ec06c8af3e38077336a0f0d9ca22d1d3e3c90b408bb50816122889",
+          "baseline_sha256": "7e50dc4760ec06c8af3e38077336a0f0d9ca22d1d3e3c90b408bb50816122889",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/python.log",
+          "sha256": "32d91b63f330071cf0ae57f4569ba53f5773a35ddaef208e2cb9474bcc70a5b4",
+          "baseline_sha256": "32d91b63f330071cf0ae57f4569ba53f5773a35ddaef208e2cb9474bcc70a5b4",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/receive_matrix.log",
+          "sha256": "10dbdc8ad197ca867f65fcc83f9aac31f066e7532db59aa194b1be35d770e39a",
+          "baseline_sha256": "10dbdc8ad197ca867f65fcc83f9aac31f066e7532db59aa194b1be35d770e39a",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/ubsan.json",
+          "sha256": "11fa5ace2e604c67e73fe3962152392af4a1f870ee48ee9d3b6ff9350147e6ee",
+          "baseline_sha256": "11fa5ace2e604c67e73fe3962152392af4a1f870ee48ee9d3b6ff9350147e6ee",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "dist/validation_v5/ubsan_compile_inputs.sha256",
+          "sha256": "e533571acff630b1cb4582a18e8908f29fbcfb635ea4bde353a3d59210dd5017",
+          "baseline_sha256": "e533571acff630b1cb4582a18e8908f29fbcfb635ea4bde353a3d59210dd5017",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/R6_OFFLINE_DEV.yaml",
+          "sha256": "1d223c9a0884df619595605c62d276b8db07fa037ec41dc11753f65f719f6898",
+          "baseline_sha256": "1d223c9a0884df619595605c62d276b8db07fa037ec41dc11753f65f719f6898",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/R6_REAL_FC01_PENDING_REVIEW.yaml",
+          "sha256": "f098f9d530111aabd396067af9c64fb6056a9ae701dab4f46802e3a4353a75f9",
+          "baseline_sha256": "f098f9d530111aabd396067af9c64fb6056a9ae701dab4f46802e3a4353a75f9",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/S10_1HZ_EXPERIMENTAL_SIM_ONLY.yaml",
+          "sha256": "c98e291e8684e9544847d9e68b85bb1af715f8ed0f1b2998c34e1a679ef10fbc",
+          "baseline_sha256": "c98e291e8684e9544847d9e68b85bb1af715f8ed0f1b2998c34e1a679ef10fbc",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/attitude_altitude.yaml",
+          "sha256": "01fec7e4388f948c77847ef9ccfc116c3b83f3a2add3a4a1f08de3d1606ce692",
+          "baseline_sha256": "01fec7e4388f948c77847ef9ccfc116c3b83f3a2add3a4a1f08de3d1606ce692",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/attitude_altitude.yaml.bak",
+          "sha256": "dee48d6374ef73330993c4fecc5f52711eca35b9458b68ed9bff0560d63c093f",
+          "baseline_sha256": "dee48d6374ef73330993c4fecc5f52711eca35b9458b68ed9bff0560d63c093f",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/attitude_altitude.yaml.before_flight_params",
+          "sha256": "8abd5b7c32660f4e9594db71a9fe5e3a68719d0ce131ba03c99245fe44473a24",
+          "baseline_sha256": "8abd5b7c32660f4e9594db71a9fe5e3a68719d0ce131ba03c99245fe44473a24",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/attitude_altitude.yaml.before_rc_confirm",
+          "sha256": "68813188937743c469d67c7f8c7ecf4666ad6d67319fb64f8a7d7ee5f0d404fa",
+          "baseline_sha256": "68813188937743c469d67c7f8c7ecf4666ad6d67319fb64f8a7d7ee5f0d404fa",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/diagnostic.yaml",
+          "sha256": "ee965f34b33c9be7d46900ba2dfc32a8c8181e68efecb893b86179e96a28023d",
+          "baseline_sha256": "ee965f34b33c9be7d46900ba2dfc32a8c8181e68efecb893b86179e96a28023d",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/flight.yaml",
+          "sha256": "7bb138448112e272e05a8e50c08a1eb260f892167614ef91a29c1e902e892188",
+          "baseline_sha256": "7bb138448112e272e05a8e50c08a1eb260f892167614ef91a29c1e902e892188",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/flight_test.yaml",
+          "sha256": "1ddce8549bcd9f9b6eaacf532ad9f00d04b70706a54245f51eddbce6cdc5ff2b",
+          "baseline_sha256": "1ddce8549bcd9f9b6eaacf532ad9f00d04b70706a54245f51eddbce6cdc5ff2b",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/ground.yaml",
+          "sha256": "8947013b855967b91d1a4d6493b6c280054aa88deab264a67f4de3dfeea4387a",
+          "baseline_sha256": "8947013b855967b91d1a4d6493b6c280054aa88deab264a67f4de3dfeea4387a",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/historical/R5_CANDIDATES_GATES_CLOSED.yaml",
+          "sha256": "57f336de2cf7caacc217faf5192f438b7a7e303f361fbd163dd04f3ae652495b",
+          "baseline_sha256": "57f336de2cf7caacc217faf5192f438b7a7e303f361fbd163dd04f3ae652495b",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/config/sim.yaml",
+          "sha256": "49df2f1ab02f3785e5ec6d76a2762443b84b005c944af27ddaa0c9f22e667474",
+          "baseline_sha256": "49df2f1ab02f3785e5ec6d76a2762443b84b005c944af27ddaa0c9f22e667474",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+          "sha256": "c7e9b9951f02cc7380d7d06e62b889ac22a1ba349871c952718f529a77820d26",
+          "baseline_sha256": "c7e9b9951f02cc7380d7d06e62b889ac22a1ba349871c952718f529a77820d26",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+          "sha256": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+          "baseline_sha256": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+          "sha256": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+          "baseline_sha256": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+          "sha256": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+          "baseline_sha256": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+          "sha256": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+          "baseline_sha256": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+          "sha256": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+          "baseline_sha256": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+          "sha256": "ce6536cbbd115996a42ccdd8097fe33ed89e7460a4d3baba2f5cb1bf6e29a51c",
+          "baseline_sha256": "ce6536cbbd115996a42ccdd8097fe33ed89e7460a4d3baba2f5cb1bf6e29a51c",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "navigation_restore.py",
+          "sha256": "bc97282e0b5b42a8049975202f81ab1a9bd54adcfa73dd58e935de0a3ca9bc4a",
+          "baseline_sha256": "bc97282e0b5b42a8049975202f81ab1a9bd54adcfa73dd58e935de0a3ca9bc4a",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "navigation_service.py",
+          "sha256": "dcdc64abc435ede5617f323a4aa0df30c0c4230190847ba1097c0309dc350940",
+          "baseline_sha256": "dcdc64abc435ede5617f323a4aa0df30c0c4230190847ba1097c0309dc350940",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "standby.py",
+          "sha256": "51d8d6e761e21f10ec01398de274ebbadeb4a44e87b0a40713ab4ea144ee4614",
+          "baseline_sha256": "51d8d6e761e21f10ec01398de274ebbadeb4a44e87b0a40713ab4ea144ee4614",
+          "exactly_unchanged": true
+        },
+        {
+          "path": "vision_settings.json",
+          "sha256": "64eb13852f432ac1f39142f7daff13d04e4edd20c1abdc4dae3c5722e5f6e361",
+          "baseline_sha256": "64eb13852f432ac1f39142f7daff13d04e4edd20c1abdc4dae3c5722e5f6e361",
+          "exactly_unchanged": true
+        }
+      ],
+      "comment_ast": [
+        {
+          "path": "vision_config.py",
+          "reference": "68b3221ac297699e1dfed8fd773358bb26789207",
+          "full_ast_equal_including_docstrings": true
+        },
+        {
+          "path": "vision_settings.py",
+          "reference": "44632a18f5ef403ca09c5a84844f1fc52925595e",
+          "full_ast_equal_including_docstrings": true
+        }
+      ],
+      "native_build_inputs": {
+        "count": 239,
+        "before_after_and_current_equal": true
+      },
+      "installed_sources": [
+        {
+          "source": "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+          "installed": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+          "sha256": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf",
+          "identical": true
+        },
+        {
+          "source": "native/src/jikl_fc01_system/msg/NavigationCommand.msg",
+          "installed": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/NavigationCommand.msg",
+          "sha256": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117",
+          "identical": true
+        },
+        {
+          "source": "native/src/jikl_fc01_system/msg/VelocityCommand.msg",
+          "installed": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/VelocityCommand.msg",
+          "sha256": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46",
+          "identical": true
+        },
+        {
+          "source": "native/src/jikl_fc01_system/msg/VisionHealth.msg",
+          "installed": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/VisionHealth.msg",
+          "sha256": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb",
+          "identical": true
+        },
+        {
+          "source": "native/src/jikl_fc01_system/msg/VisionState.msg",
+          "installed": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/share/jikl_fc01_system/msg/VisionState.msg",
+          "sha256": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05",
+          "identical": true
+        },
+        {
+          "source": "native/tools/vision_odometry_adapter.py",
+          "installed": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/lib/jikl_fc01_system/vision_odometry_adapter.py",
+          "sha256": "89dd21c97be568889313b0d59d1c9e1a8bf6400d82d0e3b0d77ca4bfa709c9c0",
+          "identical": true
+        },
+        {
+          "source": "native/tools/vision_state_validation.py",
+          "installed": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/lib/jikl_fc01_system/vision_state_validation.py",
+          "sha256": "743b72147559d214e0e6d2c0fefd8d32a8e7096c4ad98eb4c1d370992bcf22be",
+          "identical": true
+        },
+        {
+          "source": "native/tools/vision_resource_budget.py",
+          "installed": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/lib/jikl_fc01_system/vision_resource_budget.py",
+          "sha256": "c479c97b6b84686fba0ff3443592c757d9a2c35425b7e0db7a521f06d9c28927",
+          "identical": true
+        },
+        {
+          "source": "native/tools/velocity_command_diagnostic.py",
+          "installed": "/home/jikl62/.cache/fc01-vision-stage5-20261112-een8twou/ros/install/jikl_fc01_system/lib/jikl_fc01_system/velocity_command_diagnostic.py",
+          "sha256": "d5b7f470d37e2a89870283dde9f48c35406a05bcd9e16b665efbf5ea257cdb68",
+          "identical": true
+        }
+      ],
+      "smoke_manifest_changed_files": [
+        "tests/ros_generated_interface_check.py"
+      ],
+      "smoke_manifest_note": "Generated checker is a new isolated tool being corrected after first manifest; installed tools and smoke drivers stay unchanged. Per retry tool identity is recorded independently."
+    },
+    "cd_r_checker_first_failures": "Preserved generated_interfaces and generated_interfaces_retry results; SLOT_TYPES and padding assertion errors in the new tool only. See engineering/generated_checker_final_verification.json.",
+    "not_rerun": [
+      "native Python 41 methods unchanged since Stage 4",
+      "TSan",
+      "ARM64 build/performance",
+      "real camera/SLAM performance",
+      "production flight controller/Agent/service/motor paths"
+    ]
+  },
+  "other_local_and_tracking_refs": [
+    {
+      "ref": "refs/heads/audit/fc01-engineering-20261111",
+      "before": "053eb2c3be90240e6ed5521714efdcc0113c2b33",
+      "after": "053eb2c3be90240e6ed5521714efdcc0113c2b33",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/dev/feedback-drain-20261107",
+      "before": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "after": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/dev/offline-control-stability-20261107",
+      "before": "97eb691b9b4809451b3d8ce70ecdc9e462c712b7",
+      "after": "97eb691b9b4809451b3d8ce70ecdc9e462c712b7",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/dev/uart-topology-20261105",
+      "before": "fcc35162536da75a00e0ae995e8ef50cf2244d96",
+      "after": "fcc35162536da75a00e0ae995e8ef50cf2244d96",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/feature/vision-navigation",
+      "before": "28bdf958abddc29200319b5877d617f856b96c14",
+      "after": "28bdf958abddc29200319b5877d617f856b96c14",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/fix/takeoff-readiness-20261103",
+      "before": "6c5b185526b7ac194138d05ec9698fccadf288c0",
+      "after": "6c5b185526b7ac194138d05ec9698fccadf288c0",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/navigation-repair-20261031",
+      "before": "6b440ab71af66536ddbcd17e90bd16e693a1667c",
+      "after": "6b440ab71af66536ddbcd17e90bd16e693a1667c",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/release/fc01-recovery-v5-20261110",
+      "before": "89bbc9f0988e0b1d42111ab418800147069df2aa",
+      "after": "89bbc9f0988e0b1d42111ab418800147069df2aa",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/dev/feedback-drain-20261107",
+      "before": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "after": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/feature/vision-navigation",
+      "before": "28bdf958abddc29200319b5877d617f856b96c14",
+      "after": "28bdf958abddc29200319b5877d617f856b96c14",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/main",
+      "before": "377a945d9cd1147baad8871cd5387b9e63cd774d",
+      "after": "377a945d9cd1147baad8871cd5387b9e63cd774d",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/r62c-review3-bench-20261016",
+      "before": "cdd6223470e919190fbfc466f943404fcee81294",
+      "after": "cdd6223470e919190fbfc466f943404fcee81294",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/readability/fc01-chinese-20261111",
+      "before": "5198d33f25aaaf2abc7e4b078169ae84d5c4b2c4",
+      "after": "5198d33f25aaaf2abc7e4b078169ae84d5c4b2c4",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/remotes/origin/release/fc01-recovery-v5-20261110",
+      "before": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "after": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "unchanged": true
+    }
+  ],
+  "merges_added": false,
+  "remote_queried_or_pushed": false,
+  "deployment_or_hardware_operations": false,
+  "visual_navigation_enabled": false,
+  "velocity_command_production_connection": false,
+  "root_regression_known_errors": "3 existing extractor payload bound errors retained; no new deployable installer produced. Stage4 independently reproduced on its immutable baseline.",
+  "candidate": "P2 API quality history gap reproduced; concrete default Humble single-threaded/ordinary DDS scheduling mitigation verified by source and installed library control flow. Production bypass not established; no safety behavior patch. See cpp/candidate_quality.json and cpp/candidate_integration_review.json.",
+  "evidence_archive_policy": "Small raw text/JSON/source/commands only; no binaries, build or installation cache. Relative archive member paths index original cache artifacts; absolute paths in logs are provenance, not shipped build trees.",
+  "post_test_changes": "Documentation only after source regression. New isolated CDR checker corrected during root unittest; it is not auto-discovered by unittest. Smoke tools and drivers unchanged.",
+  "independent_reviews": [
+    "python/final_cross_review.json",
+    "engineering/final_delivery_review.json",
+    "cpp/candidate_integration_review.json",
+    "cpp/config_cross_review.json",
+    "python/cpp_contract_cross_review.json"
+  ],
+  "evidence_review_note": "Independent archive review records the 131-member snapshot before its own review and integrity records were appended. Final evidence_index.json is authoritative; all final members rechecked by archive_evidence.py."
+}

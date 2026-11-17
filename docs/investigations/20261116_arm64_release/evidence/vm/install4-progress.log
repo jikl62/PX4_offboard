@@ -1,0 +1,6 @@
+    ELAPSED %CPU COMMAND
+      01:40 40.6 /usr/bin/python3 - /home/orangepi/FC01_OrangePi_20261116_stage3_arm64.tar.gz
+   1910    1895       00:00 bash -c ps -p 1618 -o etime,pcpu,args; ps -eo pid,ppid,etime,args | grep -E "fc01-prebuilt|ldd|fc01_config_check|systemd-analyze" | head -8; systemctl show fc01-navigation.service -p MainPID -p ActiveState
+   1914    1910       00:00 grep -E fc01-prebuilt|ldd|fc01_config_check|systemd-analyze
+MainPID=808
+ActiveState=active

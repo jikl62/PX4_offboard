@@ -1,0 +1,19 @@
+normal IDLE IDLE_NO_AUTOMATIC_ARM h= 0.0
+normal RC_PRESTREAM RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE h= 0.0
+normal RC_READY_WAIT_ARM RC_READY_WAIT_CH5_MANUAL_ARM h= 0.0
+normal RC_ARMED_WAIT_NAVIGATION RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS h= 0.0
+normal ARMED_GROUND RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED h= 0.0
+normal THRUST_RAMP THRUST_RAMP h= 0.0
+normal ASCEND ASCEND h= 0.204
+normal HEIGHT_HOLD HEIGHT_HOLD h= 1.599
+normal DESCENT LAND_ACCEPTED h= 1.639
+normal RECOVERY_DESCENT DESCENT_TIMEOUT_CONTROLLED_RECOVERY_ACTIVE_HANDOFF_UNVERIFIED h= 0.259
+normal LANDED LANDED h= 0.0
+normal REQUEST_DISARM REQUEST_DISARM h= 0.0
+normal SAFE_DISARMED DISARM_ACK_AND_NEW_DISARMED_LANDED_STATUS h= 0.0
+normal RELEASE_OFFBOARD RELEASE_OFFBOARD h= 0.0
+normal SAFETY OPERATOR_TAKEOVER_LATCHED h= 0.0
+normal IDLE RC_REPREPARE_NEW_DISARMED_GROUND_AND_CONTROLS_RESET h= 0.0
+normal RC_PRESTREAM RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE h= 0.0
+normal RC_READY_WAIT_ARM RC_READY_WAIT_CH5_MANUAL_ARM h= 0.0
+{"result": "PASS", "error": null, "scenario": "normal", "motion": "plant", "metrics": {"target_m": 1.5, "overshoot_m": 0.13894397224030208, "settling_entry_from_ramp_s": 7.930717729001117, "height_hold_from_ramp_s": 10.123315259001174, "hold_observation_s": 2.0014176450004015, "hold_max_abs_error_m": 0.13894397224030208, "hold_rms_error_m": 0.1265746102041856, "horizontal_drift_m": 0.0, "horizontal_drift_interpretation": "fixed XY input, not measured capability", "max_heartbeat_receive_gap_s": 0.0519152299984853, "max_heartbeat_wire_gap_s": 0.05033, "max_heartbeat_gap_including_window_edges_s": 0.0519152299984853, "max_target_gap_including_window_edges_s": 0.052125326999885147, "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"}}

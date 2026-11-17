@@ -1,0 +1,730 @@
+{
+  "stage": "queue 4/7 Python service/install readability and resource checks",
+  "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+  "branch": "readability/fc01-chinese-20261111",
+  "source_commit": "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+  "commits": [
+    {
+      "commit": "d66b9057073b4fea82baefa7cf259ef2a9c7b12f",
+      "subject": "fix(build): preserve pre-existing temporary evidence and install links"
+    },
+    {
+      "commit": "8abc77b11dee5c754272b79618da455e482aba15",
+      "subject": "fix(launcher): release rejected IPC directory allocations"
+    },
+    {
+      "commit": "9d0d4bccb15b0ad08eb77ffcee086bfc27c32e02",
+      "subject": "fix(reports): contain implicit runtime evidence within home"
+    },
+    {
+      "commit": "7ebe9263e547325b9794bc32c5fba371e007cfa3",
+      "subject": "fix(diagnostics): preserve probe errors while releasing owned ROS resources"
+    },
+    {
+      "commit": "79c53cb6cd1006ae24da01e8daef1587d06fa025",
+      "subject": "fix(diagnostics): reject oversized integer observations without overflow"
+    },
+    {
+      "commit": "c666d7797c216a60b8c2bc031ec77ae1aa89fadc",
+      "subject": "fix(diagnostics): report malformed local snapshot timestamp overflow"
+    },
+    {
+      "commit": "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+      "subject": "refactor(readability): clarify Python ownership and extract pure evidence helpers"
+    }
+  ],
+  "source_frozen_matches_tested_python": {
+    "root": true,
+    "native": true,
+    "targeted": true
+  },
+  "results": {
+    "root": {
+      "suite": "root",
+      "duration_seconds": 144.28020394199848,
+      "test_methods": 604,
+      "failures": [],
+      "errors": [
+        {
+          "test": "test_candidate_directory_and_development_experiment_exclusion (test_navigation_install.BundleTests)",
+          "traceback": "Traceback (most recent call last):\n  File \"/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/test_navigation_install.py\", line 682, in test_candidate_directory_and_development_experiment_exclusion\n    any(name.startswith('native/tests/ros_receive_ab/') for name in b.names(ROOT))\n  File \"/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py\", line 213, in names\n    raise RuntimeError('Curated source payload exceeds extractor bounds')\nRuntimeError: Curated source payload exceeds extractor bounds\n"
+        },
+        {
+          "test": "test_exact_self_extraction_repeat_and_conflict (test_navigation_install.BundleTests)",
+          "traceback": "Traceback (most recent call last):\n  File \"/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/test_navigation_install.py\", line 709, in test_exact_self_extraction_repeat_and_conflict\n    script = b.build(folder / 'navigation.sh', ROOT)\n  File \"/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py\", line 285, in build\n    files = {name: (root / name).read_bytes() for name in names(root)}\n  File \"/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py\", line 213, in names\n    raise RuntimeError('Curated source payload exceeds extractor bounds')\nRuntimeError: Curated source payload exceeds extractor bounds\n"
+        },
+        {
+          "test": "test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests)",
+          "traceback": "Traceback (most recent call last):\n  File \"/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/test_vertical_diagnostic_bundle.py\", line 79, in test_current_checkout_sources_and_local_edit_are_exact\n    manifest = bundle.make_manifest(ROOT)\n  File \"/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py\", line 224, in make_manifest\n    hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names(root)}\n  File \"/home/jikl62/FC01_OrangePi_Navigation_20261028/build_navigation_bundle.py\", line 213, in names\n    raise RuntimeError('Curated source payload exceeds extractor bounds')\nRuntimeError: Curated source payload exceeds extractor bounds\n"
+        }
+      ],
+      "skipped": [],
+      "expected_failures": 0,
+      "unexpected_successes": 0,
+      "success": false,
+      "unchanged_tested_python_sources": true
+    },
+    "native": {
+      "suite": "native",
+      "duration_seconds": 33.665141580000636,
+      "test_methods": 41,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "expected_failures": 0,
+      "unexpected_successes": 0,
+      "success": true,
+      "unchanged_tested_python_sources": true
+    },
+    "targeted": {
+      "suite": "targeted",
+      "duration_seconds": 2.4384550910035614,
+      "test_methods": 71,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "expected_failures": 0,
+      "unexpected_successes": 0,
+      "success": true,
+      "unchanged_tested_python_sources": true
+    }
+  },
+  "new_test_methods": 48,
+  "counts_overlap": true,
+  "deterministic_stage_baseline_differential": {
+    "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+    "baseline_archive_sha256": "b7115c702dfd967347f532b33f2edc992520cd85040ad7699b467ea582eebff0",
+    "driver_sha256": "0886f00cc2c56a0d377641a306a84bb56af8ebaf79dd4f8ef04485ed2a444930",
+    "normalization": "none beyond the existing driver; exact canonical JSON stdout bytes",
+    "probe_both_cleanup_fixed": true,
+    "trace_driver_fixture_marker": "legacy ownership schema only; actual source is Git archive above",
+    "scenarios": [
+      {
+        "scenario": "render",
+        "equal_bytes": true,
+        "bytes": [
+          81984,
+          81984
+        ],
+        "sha256": [
+          "ebedca3d72cd37f94fb017a869fe14975afc335afbe80d7afd68273b4a0da6e5",
+          "ebedca3d72cd37f94fb017a869fe14975afc335afbe80d7afd68273b4a0da6e5"
+        ],
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/baseline",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "render"
+            ],
+            "exit": 0
+          },
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "render"
+            ],
+            "exit": 0
+          }
+        ]
+      },
+      {
+        "scenario": "report",
+        "equal_bytes": true,
+        "bytes": [
+          1409,
+          1409
+        ],
+        "sha256": [
+          "312874591cf7ffa287e02d579b648fbc5cf94cd32cb73910f5bf0062a63ba7cb",
+          "312874591cf7ffa287e02d579b648fbc5cf94cd32cb73910f5bf0062a63ba7cb"
+        ],
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/baseline",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "report"
+            ],
+            "exit": 0
+          },
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "report"
+            ],
+            "exit": 0
+          }
+        ]
+      },
+      {
+        "scenario": "service",
+        "equal_bytes": true,
+        "bytes": [
+          5032,
+          5032
+        ],
+        "sha256": [
+          "76a646a2ce81fd2a3353880dde0f3786bc72d6a140a6fe14443b4c92c91c0f53",
+          "76a646a2ce81fd2a3353880dde0f3786bc72d6a140a6fe14443b4c92c91c0f53"
+        ],
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/baseline",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "service"
+            ],
+            "exit": 0
+          },
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "service"
+            ],
+            "exit": 0
+          }
+        ]
+      },
+      {
+        "scenario": "activation",
+        "equal_bytes": true,
+        "bytes": [
+          26540,
+          26540
+        ],
+        "sha256": [
+          "35828b0d0fd029bef7a4e47da3bb06cc6d6685a30b3363c3bd5824d6257c400d",
+          "35828b0d0fd029bef7a4e47da3bb06cc6d6685a30b3363c3bd5824d6257c400d"
+        ],
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/baseline",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "activation"
+            ],
+            "exit": 0
+          },
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "activation"
+            ],
+            "exit": 0
+          }
+        ]
+      },
+      {
+        "scenario": "standby",
+        "equal_bytes": true,
+        "bytes": [
+          16755,
+          16755
+        ],
+        "sha256": [
+          "1ec237aef169c3bc596f3bb8bf3cbfb03a5276cba31e5077f91ba4890398847d",
+          "1ec237aef169c3bc596f3bb8bf3cbfb03a5276cba31e5077f91ba4890398847d"
+        ],
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/baseline",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "standby"
+            ],
+            "exit": 0
+          },
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "standby"
+            ],
+            "exit": 0
+          }
+        ]
+      },
+      {
+        "scenario": "launcher",
+        "equal_bytes": true,
+        "bytes": [
+          4436,
+          4436
+        ],
+        "sha256": [
+          "0766133c85695e34ac01c810f8475eaf604a665462d53560ae1902bd26bfe39b",
+          "0766133c85695e34ac01c810f8475eaf604a665462d53560ae1902bd26bfe39b"
+        ],
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/baseline",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "launcher"
+            ],
+            "exit": 0
+          },
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "launcher"
+            ],
+            "exit": 0
+          }
+        ]
+      },
+      {
+        "scenario": "launcher_entry",
+        "equal_bytes": true,
+        "bytes": [
+          21848,
+          21848
+        ],
+        "sha256": [
+          "7d409f10d2a6a2e00790c051848fdfb5757283752b638c3b9ee39fe6d2f5ef1f",
+          "7d409f10d2a6a2e00790c051848fdfb5757283752b638c3b9ee39fe6d2f5ef1f"
+        ],
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/baseline",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "launcher_entry"
+            ],
+            "exit": 0
+          },
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "launcher_entry"
+            ],
+            "exit": 0
+          }
+        ]
+      },
+      {
+        "scenario": "fcctl",
+        "equal_bytes": true,
+        "bytes": [
+          2813,
+          2813
+        ],
+        "sha256": [
+          "15d141b843069a1d65a9f41630bcdff3c0e0dc15237e60981047ac3ffdf05ff8",
+          "15d141b843069a1d65a9f41630bcdff3c0e0dc15237e60981047ac3ffdf05ff8"
+        ],
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/baseline",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "fcctl"
+            ],
+            "exit": 0
+          },
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "fcctl"
+            ],
+            "exit": 0
+          }
+        ]
+      },
+      {
+        "scenario": "probe",
+        "equal_bytes": true,
+        "bytes": [
+          3790,
+          3790
+        ],
+        "sha256": [
+          "1f30bbdf088e1068f1a638573d9c57c2570b6f50e3494d1e38f5b605ef3d00cc",
+          "1f30bbdf088e1068f1a638573d9c57c2570b6f50e3494d1e38f5b605ef3d00cc"
+        ],
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/baseline",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "probe",
+              "--probe-cleanup-fixed"
+            ],
+            "exit": 0
+          },
+          {
+            "argv": [
+              "/usr/bin/python3",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028/tests/stage2_python_trace.py",
+              "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+              "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fixture",
+              "probe",
+              "--probe-cleanup-fixed"
+            ],
+            "exit": 0
+          }
+        ]
+      }
+    ],
+    "all_equal": true
+  },
+  "format_and_static": {
+    "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+    "compiled_python_count": 123,
+    "python_complete_ast_checks": [
+      {
+        "path": "feedback_age_probe.py",
+        "baseline": "c666d7797c216a60b8c2bc031ec77ae1aa89fadc",
+        "complete_ast_equal": true,
+        "sha256": "d8dbb09dca98a851b98f961e805b31b8565b98246209cf11fc1604f347b00539"
+      },
+      {
+        "path": "native/tools/deploy.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "b50b5dd9a9fe46ba2cecedf30eeca11f5b0f105cea0fb85ca1dc46c53aa349f0"
+      },
+      {
+        "path": "native/tools/fcctl.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "6cd697ba3046bff32cb1bef792265d8721ca2e5925a9f2b3216cb9c0652cbbf6"
+      },
+      {
+        "path": "native/tools/socket_safety.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "92e000bfb7e449e9a85dd36e1f8b79f1307ee970af2b25a1c8ffd0ce2eca95a2"
+      },
+      {
+        "path": "native/tools/start.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "fe5aa1d0cf09a091a5df8255b2eedfb685e1954a5dae2eebb53c1c144233525f"
+      },
+      {
+        "path": "native/tools/update.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "4ef80c4131f821f41cc563080aae6b24f8a542bc86746840b7fc322908a2f438"
+      },
+      {
+        "path": "navigation.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "3b112dd67ca3759a67ec4283b8d24124f94300e8b3757c91f8f652b5354f36d2"
+      },
+      {
+        "path": "navigation_deploy.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "b8fb776755ea946ed43d7a53abbfe8357979e775ccf67699183a67422f32791b"
+      },
+      {
+        "path": "navigation_install.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "ef6b80d0d8fcf83f440ef7026b9e60f9bcaed01718fa6b1be372169c09dfda7b"
+      },
+      {
+        "path": "navigation_probe.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "d5e853669bf2d8e8fbc8744d99e79851c765d4205bc4be2e05c339ce5f645994"
+      },
+      {
+        "path": "navigation_status.py",
+        "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+        "complete_ast_equal": true,
+        "sha256": "082ba9aa602e98c637a1af755397a7321cd80c7cd0b1d1a7dc6ccc6bfae40612"
+      }
+    ],
+    "all_complete_ast_equal": true,
+    "helper_extractions_checked_by": [
+      "test_overnight_stage4_deployment",
+      "test_overnight_stage4_launcher_readability",
+      "test_overnight_stage4_reporting"
+    ],
+    "protected_file_count": 230,
+    "all_protected_bytes_equal": true,
+    "other_local_heads_and_remote_tracking_refs_unchanged": true,
+    "preserved_refs": {
+      "refs/heads/audit/fc01-engineering-20261111": "053eb2c3be90240e6ed5521714efdcc0113c2b33",
+      "refs/heads/dev/feedback-drain-20261107": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "refs/heads/dev/offline-control-stability-20261107": "97eb691b9b4809451b3d8ce70ecdc9e462c712b7",
+      "refs/heads/dev/uart-topology-20261105": "fcc35162536da75a00e0ae995e8ef50cf2244d96",
+      "refs/heads/feature/vision-navigation": "28bdf958abddc29200319b5877d617f856b96c14",
+      "refs/heads/fix/takeoff-readiness-20261103": "6c5b185526b7ac194138d05ec9698fccadf288c0",
+      "refs/heads/navigation-repair-20261031": "6b440ab71af66536ddbcd17e90bd16e693a1667c",
+      "refs/heads/release/fc01-recovery-v5-20261110": "89bbc9f0988e0b1d42111ab418800147069df2aa",
+      "refs/remotes/origin/dev/feedback-drain-20261107": "950ac04df5305fe94e901ea8239d6fd153247444",
+      "refs/remotes/origin/feature/vision-navigation": "28bdf958abddc29200319b5877d617f856b96c14",
+      "refs/remotes/origin/main": "377a945d9cd1147baad8871cd5387b9e63cd774d",
+      "refs/remotes/origin/r62c-review3-bench-20261016": "cdd6223470e919190fbfc466f943404fcee81294",
+      "refs/remotes/origin/readability/fc01-chinese-20261111": "5198d33f25aaaf2abc7e4b078169ae84d5c4b2c4",
+      "refs/remotes/origin/release/fc01-recovery-v5-20261110": "950ac04df5305fe94e901ea8239d6fd153247444"
+    },
+    "changed_python": [
+      "feedback_age_probe.py",
+      "launcher.py",
+      "native/tools/deploy.py",
+      "native/tools/fcctl.py",
+      "native/tools/socket_safety.py",
+      "native/tools/start.py",
+      "native/tools/update.py",
+      "navigation.py",
+      "navigation_build_evidence.py",
+      "navigation_deploy.py",
+      "navigation_install.py",
+      "navigation_probe.py",
+      "navigation_report.py",
+      "navigation_status.py",
+      "tests/test_feedback_age_probe.py",
+      "tests/test_overnight_stage4_deployment.py",
+      "tests/test_overnight_stage4_launcher_readability.py",
+      "tests/test_overnight_stage4_launcher_resources.py",
+      "tests/test_overnight_stage4_reporting.py",
+      "tests/test_overnight_stage4_tools.py"
+    ],
+    "unchanged_critical_source": [
+      "navigation_service.py",
+      "navigation_restore.py",
+      "standby.py"
+    ],
+    "critical_source_equal": {
+      "navigation_service.py": true,
+      "navigation_restore.py": true,
+      "standby.py": true
+    },
+    "black_check_exit": 0,
+    "diff_check_exit": 0
+  },
+  "baseline_packaging": {
+    "immutable_export": {
+      "commit": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+      "git_tree_oid": "8d6aa2b56101e6d3e21c42603122b4aa26c53aa5",
+      "export_root": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package",
+      "archive": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package_f46468c.tar",
+      "archive_sha256": "b7115c702dfd967347f532b33f2edc992520cd85040ad7699b467ea582eebff0",
+      "canonical_export_manifest_sha256": "419369ef639f69afec8765c102c3ff37ef20d2b442d2d15f3c8c3871491c2050",
+      "exported_files_or_symlinks": 495
+    },
+    "tests": [
+      {
+        "test": "test_navigation_install.BundleTests.test_candidate_directory_and_development_experiment_exclusion",
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "test_navigation_install.BundleTests.test_candidate_directory_and_development_experiment_exclusion",
+          "-v"
+        ],
+        "cwd": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package",
+        "env_overrides": {
+          "PYTHONPATH": ".:tests",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "returncode": 1,
+        "elapsed_seconds": 0.116,
+        "stdout": "",
+        "stderr": "test_candidate_directory_and_development_experiment_exclusion (test_navigation_install.BundleTests) ... ERROR\n\n======================================================================\nERROR: test_candidate_directory_and_development_experiment_exclusion (test_navigation_install.BundleTests)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package/tests/test_navigation_install.py\", line 682, in test_candidate_directory_and_development_experiment_exclusion\n    any(name.startswith('native/tests/ros_receive_ab/') for name in b.names(ROOT))\n  File \"/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package/build_navigation_bundle.py\", line 213, in names\n    raise RuntimeError('Curated source payload exceeds extractor bounds')\nRuntimeError: Curated source payload exceeds extractor bounds\n\n----------------------------------------------------------------------\nRan 1 test in 0.025s\n\nFAILED (errors=1)\n"
+      },
+      {
+        "test": "test_navigation_install.BundleTests.test_exact_self_extraction_repeat_and_conflict",
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "test_navigation_install.BundleTests.test_exact_self_extraction_repeat_and_conflict",
+          "-v"
+        ],
+        "cwd": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package",
+        "env_overrides": {
+          "PYTHONPATH": ".:tests",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "returncode": 1,
+        "elapsed_seconds": 0.122,
+        "stdout": "",
+        "stderr": "test_exact_self_extraction_repeat_and_conflict (test_navigation_install.BundleTests) ... ERROR\n\n======================================================================\nERROR: test_exact_self_extraction_repeat_and_conflict (test_navigation_install.BundleTests)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package/tests/test_navigation_install.py\", line 709, in test_exact_self_extraction_repeat_and_conflict\n    script = b.build(folder / 'navigation.sh', ROOT)\n  File \"/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package/build_navigation_bundle.py\", line 285, in build\n    files = {name: (root / name).read_bytes() for name in names(root)}\n  File \"/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package/build_navigation_bundle.py\", line 213, in names\n    raise RuntimeError('Curated source payload exceeds extractor bounds')\nRuntimeError: Curated source payload exceeds extractor bounds\n\n----------------------------------------------------------------------\nRan 1 test in 0.025s\n\nFAILED (errors=1)\n"
+      },
+      {
+        "test": "test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests.test_current_checkout_sources_and_local_edit_are_exact",
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "unittest",
+          "test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests.test_current_checkout_sources_and_local_edit_are_exact",
+          "-v"
+        ],
+        "cwd": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package",
+        "env_overrides": {
+          "PYTHONPATH": ".:tests",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "returncode": 1,
+        "elapsed_seconds": 0.095,
+        "stdout": "",
+        "stderr": "test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ERROR\n\n======================================================================\nERROR: test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package/tests/test_vertical_diagnostic_bundle.py\", line 79, in test_current_checkout_sources_and_local_edit_are_exact\n    manifest = bundle.make_manifest(ROOT)\n  File \"/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package/build_navigation_bundle.py\", line 224, in make_manifest\n    hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names(root)}\n  File \"/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package/build_navigation_bundle.py\", line 213, in names\n    raise RuntimeError('Curated source payload exceeds extractor bounds')\nRuntimeError: Curated source payload exceeds extractor bounds\n\n----------------------------------------------------------------------\nRan 1 test in 0.021s\n\nFAILED (errors=1)\n"
+      }
+    ],
+    "passed": 0,
+    "failed": 3,
+    "budget": {
+      "MAX_FILES": 512,
+      "MAX_BYTES": 8388608,
+      "MAX_BYTES_MiB": 8.0,
+      "curated_source_files_without_new_manifest": 456,
+      "curated_files_including_new_manifest": 457,
+      "curated_source_bytes_without_new_manifest": 9096500,
+      "curated_source_MiB": 8.675098419189453,
+      "source_bytes_exceeding_8MiB": 707892,
+      "file_count_limit_exceeded": false,
+      "source_bytes_limit_exceeded": true,
+      "single_file_1MiB_limit_exceeded": [],
+      "largest_files": [
+        {
+          "path": "docs/readability/stage2_20261111/evidence.zip",
+          "bytes": 831654
+        },
+        {
+          "path": "docs/readability/source_coverage_20261111.json",
+          "bytes": 776309
+        },
+        {
+          "path": "docs/readability/verification_logs_20261111.zip",
+          "bytes": 350981
+        },
+        {
+          "path": "docs/readability/manual_review_20261111.json",
+          "bytes": 334755
+        },
+        {
+          "path": "docs/evidence/20261103_synthetic_takeoff_trace.json",
+          "bytes": 312225
+        },
+        {
+          "path": "docs/readability/overnight_20261112/cpp_stage2/evidence.zip",
+          "bytes": 304235
+        },
+        {
+          "path": "docs/readability/stage2_20261111/evidence_traces_01.zip",
+          "bytes": 278545
+        },
+        {
+          "path": "docs/evidence/20261111_engineering_verification.json",
+          "bytes": 261865
+        },
+        {
+          "path": "docs/readability/overnight_20261112/interfaces_stage3/evidence.zip",
+          "bytes": 257336
+        },
+        {
+          "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+          "bytes": 158609
+        }
+      ],
+      "exact_protection": {
+        "type": "RuntimeError",
+        "message": "Curated source payload exceeds extractor bounds"
+      },
+      "measurement_method": "Read-only Python trace captures names() local result at its real budget exception; constants and tests unchanged."
+    },
+    "limits_unchanged": true,
+    "tests_unchanged": true,
+    "no_worktree_checkout_or_mutation": true,
+    "no_deployment_or_controller": true,
+    "generated_installer_in_real_repo_dist": false,
+    "export_tree_all_original_file_bytes_and_modes_verified_after_tests": true,
+    "instrumentation_generated_bytecode_removed": [
+      "__pycache__/build_navigation_bundle.cpython-310.pyc"
+    ]
+  },
+  "real_ros": {
+    "passed": true,
+    "source_sha256": "0543d8d3d325bafe812142202209e215051ce3cd71c6cd107b383da09f25e7ef",
+    "domain": 189,
+    "localhost_only": true,
+    "callback_attitude": 199,
+    "callback_local": 198,
+    "control_publishers": false,
+    "only_probe_publishers": [
+      "/parameter_events"
+    ],
+    "final_feedback_source_sha256": "d8dbb09dca98a851b98f961e805b31b8565b98246209cf11fc1604f347b00539",
+    "later_changes": "only local snapshot OverflowError catch plus equivalent comments; main/ROS sampling/serialization/cleanup execution AST equal to smoke point; final bytes did not rerun smoke"
+  },
+  "commands": {
+    "root": "python3 /home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/run_regressions.py root",
+    "native": "python3 /home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/run_regressions.py native",
+    "targeted": "python3 /home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/run_regressions.py targeted",
+    "baseline_differential": "python3 /home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/run_current_baseline_traces.py",
+    "static": "python3 /home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/check_static.py",
+    "equivalent_root_reproduction": "PYTHONPATH=tests python3 -m unittest discover -s tests -v",
+    "equivalent_native_reproduction": "PYTHONPATH=.:native/tests python3 -m unittest discover -s native/tests -v"
+  },
+  "not_rerun": [
+    "full CMake/CTest",
+    "ASan/UBSan",
+    "TSan",
+    "ARM64 board build/performance"
+  ],
+  "boundaries": {
+    "real_ros_passive_probe_only": true,
+    "real_static_systemd_analyze": true,
+    "real_systemctl_management": false,
+    "real_native_control_node": false,
+    "real_agent": false,
+    "opened_uart": false,
+    "flight_or_motor": false,
+    "push": false,
+    "deployment": false,
+    "main_changed": false,
+    "new_merges": false,
+    "no_remote_network_verification": true
+  },
+  "cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p",
+  "remaining": "README_zh.md retained debts/candidates; package blocked; no certified new installer"
+}

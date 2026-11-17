@@ -1,0 +1,5 @@
+FC01_PREBUILT_SERVICE version=20261116.stage3-abcdef source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa inherited_config=/tmp/tmpjukyf1qe/release/deployment/runtime.yaml
+----------------------------------------------------------------------
+Ran 43 tests in 17.710s
+
+OK

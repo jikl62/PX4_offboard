@@ -1,0 +1,10 @@
+{
+  "same_bytes_after_full_regression": true,
+  "sha256": "f2726cfe18923c2e8783f19f81a536658dd9a99e28f9398b6ac05c5de5534927",
+  "payload_groups": {
+    "native/src/": 46,
+    "native/config/": 10,
+    "native/tools/": 6,
+    "docs/": 3
+  }
+}

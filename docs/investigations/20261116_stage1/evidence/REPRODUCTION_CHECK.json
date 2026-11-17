@@ -1,0 +1,9 @@
+{
+  "final_driver_rows": 449,
+  "repeat_byte_equal": true,
+  "second_exit": 0,
+  "independent_review_scope": "Initial 447-row driver independently reviewed; final 449-row driver independently compiled and rerun in INDEPENDENT_REVIEW_final_zh.md.",
+  "stderr": "STAGE1_REPRO_PASS: normal hold, active reset latch/no further commits, landed gate, ascent timeout, queued failsafe/stick latch, raw freshness/regression\n",
+  "final_independent_repeat_byte_equal": true,
+  "final_independent_exit": 0
+}

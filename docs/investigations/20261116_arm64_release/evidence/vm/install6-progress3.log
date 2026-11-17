@@ -1,0 +1,10 @@
+    PID    PPID     ELAPSED %CPU COMMAND
+   2442    2441       02:35 35.9 /usr/bin/python3 - /home/orangepi/FC01_OrangePi_20261116_stage3_arm64.tar.gz
+    PID    PPID     ELAPSED %CPU COMMAND
+MainPID=3001
+ActiveState=active
+SubState=running
+Nov 16 13:44:28 fc01-arm64-test-vm systemd[1]: fc01-navigation.service: Deactivated successfully.
+Nov 16 13:44:29 fc01-arm64-test-vm systemd[1]: Stopped FC01 manual RC navigation controller.
+Nov 16 13:44:29 fc01-arm64-test-vm systemd[1]: fc01-navigation.service: Consumed 5min 14.572s CPU time.
+Nov 16 13:44:33 fc01-arm64-test-vm systemd[1]: Started FC01 manual RC navigation controller.

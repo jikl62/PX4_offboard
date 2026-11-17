@@ -1,0 +1,21 @@
+--- a/native/tools/vision_odometry_adapter.py
++++ b/native/tools/vision_odometry_adapter.py
+@@ -530,6 +530,7 @@
+     import rclpy
+     from rclpy.node import Node
+     from rclpy.executors import ExternalShutdownException
++    from rclpy.signals import SignalHandlerOptions
+     from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+     from rcl_interfaces.msg import ParameterDescriptor, ParameterType
+     from nav_msgs.msg import Odometry
+@@ -700,7 +701,9 @@
+                     )
+                     self.last_reason = converted.reason
+ 
+-    rclpy.init(args=args)
++    # 保留 Python 的 SIGINT → KeyboardInterrupt，先离开 spin 再按 finally 顺序销毁节点和上下文。
++    # SIGTERM 仍沿用 ROS 默认关闭处理；不捕获或掩盖运行中的 RuntimeError。
++    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.SIGTERM)
+     node = None
+     try:
+         node = OdometryAdapterNode()

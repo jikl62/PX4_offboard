@@ -1,0 +1,213 @@
+{
+  "passed": true,
+  "package": "/home/jikl62/FC01_OrangePi_Navigation_20261028/dist/FC01_OrangePi_Navigation_20261112_release.sh",
+  "package_sha256": "f2726cfe18923c2e8783f19f81a536658dd9a99e28f9398b6ac05c5de5534927",
+  "actual_unpacked_entry": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+  "source_commit": "32990e599a68fde377daadbb89710b77fda1fb82",
+  "source_manifest_working_tree_dirty": false,
+  "manifest_sha256": "2b6eeb197e0b5c49696c1d23bf7ce19bc0b62ac928e22696b2834c63e4231c9e",
+  "architecture": "x86_64",
+  "payload_identity": {
+    "files_including_manifest": 95,
+    "manifest_payload_files": 94,
+    "total_bytes_with_manifest": 1543406,
+    "before_after_all_bytes_equal": true,
+    "frozen_git_object_matches": 94,
+    "git_comparison_scope": "provenance only; never used as test/build fallback"
+  },
+  "fresh_build": {
+    "packages": 1,
+    "returncode": 0,
+    "seconds": 61.98283634799736,
+    "build_testing": false,
+    "actual_cmake_home_directory": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release/native/src/jikl_fc01_system",
+    "external_px4_underlay": "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/install_r632/px4_msgs",
+    "external_px4_msgs_rebuilt": false
+  },
+  "generated_interfaces": {
+    "message_classes": 5,
+    "passed": true,
+    "seconds": 0.5294290490055573,
+    "ros_init_called": false
+  },
+  "imports_and_pure_profiles": {
+    "imports": 25,
+    "root_modules": 19,
+    "native_tools": 6,
+    "syntax_files": 25,
+    "passed": true,
+    "seconds": 0.5780748379984288,
+    "profile": {
+      "visual_navigation_enabled": false,
+      "arm_enabled": false,
+      "rc_target_height": 1.5,
+      "rc_navigation_mode_slot": 1
+    }
+  },
+  "shell_syntax": {
+    "files": 7,
+    "passed": true
+  },
+  "cpp_local_quoted_include_closure": {
+    "missing": 0,
+    "passed": true
+  },
+  "installed_identity": {
+    "byte_identical_files": 9,
+    "python_tools": 4,
+    "messages": 5
+  },
+  "compiled_elf_identity": [
+    {
+      "name": "fc01_system_node",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node",
+      "sha256": "e57f2983314bf56f0fa705d5502047f6082b938de4a5dc652132e3a6f9962acc",
+      "bytes": 4271408,
+      "elf_machine": 62,
+      "architecture": "x86_64",
+      "executed": false,
+      "readelf_returncode": 0,
+      "manifest_marker_present": "FC01_RECOVERY_DIAGNOSTIC_V5_20261110"
+    },
+    {
+      "name": "fc01_config_check",
+      "path": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/install/jikl_fc01_system/lib/jikl_fc01_system/fc01_config_check",
+      "sha256": "67fdc70f49442f67bc9e02c39642319ab0854e503282fa873ee54ccfb7366941",
+      "bytes": 73416,
+      "elf_machine": 62,
+      "architecture": "x86_64",
+      "executed": false,
+      "readelf_returncode": 0
+    }
+  ],
+  "real_ros_vision_smoke": {
+    "checks": 7,
+    "passed": true,
+    "domain": 223,
+    "localhost_only": true,
+    "seconds": 5.080918560997816,
+    "checks_names": [
+      "read_only_startup_parameters",
+      "valid_conversion",
+      "raw_conflict_revoked",
+      "no_fmu_publishers",
+      "sigint_clean_exit",
+      "utf8_identity_budget_revoked",
+      "fresh_pair_after_resource_rejection"
+    ]
+  },
+  "real_ros_velocity_smoke": {
+    "checks": 11,
+    "passed": true,
+    "domain": 224,
+    "localhost_only": true,
+    "seconds": 10.188892987003783,
+    "control_authority": false,
+    "check_names": [
+      "startup_overrides_and_read_only_runtime_parameters",
+      "best_effort_type_and_payload",
+      "unconfigured_policy_does_not_qualify_cache",
+      "duplicate_and_out_of_order",
+      "invalid_and_retained_anomaly",
+      "reset_and_source_changes",
+      "source_count_and_reliable_to_best_effort",
+      "explicit_test_timeout",
+      "diagnostic_has_no_fmu_publishers",
+      "reliable_to_reliable",
+      "sigint_final_snapshot_and_forced_anomaly_flush"
+    ]
+  },
+  "collector_lifecycle": {
+    "normal_cycles": 3,
+    "passed": true,
+    "domain": 225,
+    "seconds": 5.087008758004231,
+    "all_contexts_shutdown": true
+  },
+  "graph_pre_post_checks": {
+    "checks": 6,
+    "passed": true,
+    "domains": [
+      223,
+      224,
+      225
+    ],
+    "no_existing_or_remaining_production_endpoint": true
+  },
+  "all_command_results": {
+    "build": {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/build.command.sh"
+      ],
+      "cwd": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+      "returncode": 0,
+      "seconds": 61.98283634799736,
+      "log": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/build.log"
+    },
+    "generated_interfaces": {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/generated_interfaces.command.sh"
+      ],
+      "cwd": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+      "returncode": 0,
+      "seconds": 0.5294290490055573,
+      "log": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/generated_interfaces.log"
+    },
+    "imports": {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/imports.command.sh"
+      ],
+      "cwd": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+      "returncode": 0,
+      "seconds": 0.5780748379984288,
+      "log": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/imports.log"
+    },
+    "vision": {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/vision.command.sh"
+      ],
+      "cwd": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+      "returncode": 0,
+      "seconds": 5.080918560997816,
+      "log": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/vision.log"
+    },
+    "velocity": {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/velocity.command.sh"
+      ],
+      "cwd": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+      "returncode": 0,
+      "seconds": 10.188892987003783,
+      "log": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/velocity.log"
+    },
+    "collect": {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/collect.command.sh"
+      ],
+      "cwd": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+      "returncode": 0,
+      "seconds": 5.087008758004231,
+      "log": "/home/jikl62/.cache/fc01-release-20261112-ros-706_0cxh/collect.log"
+    }
+  },
+  "production_controller_executed": false,
+  "config_checker_executed": false,
+  "agent_service_hardware_or_deployment_started": false,
+  "runtime_source_modified": false,
+  "limits": [
+    "All build/import/ROS inputs came from the actual extracted release or its fresh install; acceptance drivers are external cached test tools.",
+    "x86_64 Humble acceptance only, not ARM64 build/performance or target device preflight.",
+    "External SDK px4_msgs underlay reused; firmware/message compatibility remains a real PX4 validation task.",
+    "BUILD_TESTING=OFF: successful package build is not a unit-test count.",
+    "5 message classes, 7 vision checks, 11 velocity checks, 3 collector cycles, 6 graph checks, 25 imports, 25 syntax files and 7 shell files use separate units and must not be summed as unittest methods.",
+    "No real camera/SLAM accuracy, latency under load, covariance transform readiness or flight stability claim.",
+    "Collector tests cover three normal lifecycle cycles; error branches rely on prior deterministic tests and were not newly exercised here.",
+    "No production binaries, Agent, UART, systemd service, deployment, unlock or motors were run."
+  ]
+}

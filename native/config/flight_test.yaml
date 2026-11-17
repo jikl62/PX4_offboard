@@ -1,83 +1,154 @@
+# 正式 RC 起飞候选源：高度 1.5 m，视觉关闭、程序解锁关闭；部署时仍需显式 flight-test 确认。
 # Flight Test candidate. Gates remain closed in the source file; the operator
 # must select --mode flight-test --confirm-flight-test to enable the RC route.
 fc01_system:
   ros__parameters:
+    # 使用系统实测时间；当前生产节点拒绝模拟时间，不能混用回放时钟。
     use_sim_time: false
+    # 选择控制路径；attitude_altitude 使用姿态+推力定高，flight/sim 是另一通用速度路径。
     profile: attitude_altitude
+    # 通用速度飞行入口的独立门；false 不等于其它姿态动作门自动获得权限。
     flight_enabled: false
+    # 姿态定高动作总门；还须满足解锁/起飞/参数/控制权各自合同。
     flight_actions_enabled: false
+    # 程序发送解锁的许可；正式 RC 起飞路线由遥控器人工解锁，此门保持 false。
     arm_enabled: false
+    # 姿态定高起飞门；打开此布尔量本身不能代替新鲜状态和 RC 导航边沿。
     takeoff_enabled: false
+    # 允许使用 RC 档位路线；这是候选源文件的门，部署配置生成后还需实际状态验证。
     rc_navigation_enabled: false
+    # 候选动力/包络已由操作者确认的独立门，不代表真实飞行验收完成。
     flight_parameters_confirmed: false
+    # 仅固定拆桨台架的 ARM_ONLY 特许路径，不授予离地或起飞权限。
     bench_arm_only_enabled: false
+    # 允许使用 RC 档位路线；这是候选源文件的门，部署配置生成后还需实际状态验证。
     rc_navigation_enabled: false
+    # 视觉生产外环开关；当前正式候选保持关闭，诊断节点不靠它取得飞行权限。
     visual_navigation_enabled: false
+    # 导航模式槽位编号，对应 PX4/遥控映射，不能当成 PX4 nav_state 数字。
     rc_navigation_mode_slot: 1
     # Separate reviewed contracts. Selecting an authority never confirms these.
+    # 声明人工接管合同已确认；选择控制权类型不会自动替你确认此项。
     rc_takeover_confirmed: false
+    # 声明自主失效处置合同已确认；缺少真实验证时不能以该布尔量冒充证据。
     autonomous_failsafe_confirmed: false
+    # 视觉生产外环开关；当前正式候选保持关闭，诊断节点不靠它取得飞行权限。
     visual_navigation_enabled: false
+    # 供部署身份与报告识别的运行模式标签，不是额外动作授权。
     fc01_runtime_mode: flight-test
+    # 入口配置版本标签；只能配合源码/二进制摘要确认实际运行身份。
     fc01_entry_version: "20261108.2"
+    # 主控制循环目标频率，单位 Hz；定时器频率不证明调度抖动或最坏延迟。
     control_loop_hz: 20.0
     # Initial platform above the current task's ground anchor; NED height=z0-z.
+    # 相对本次地面锚点的起飞平台，单位 m，向上为正：height=z0-z_NED。
     rc_target_height: 1.5
+    # 请求 Offboard 前持续预发送心跳/安全目标的时间，单位 s。
     aa_prestream_seconds: 1.2
+    # 准备/恢复所需的连续安全地面观测窗口，单位 s，不是固定 sleep。
     aa_ground_seconds: 2.0
+    # 控制循环停顿拒绝阈值，单位 s；超时不能继续发布旧上下文目标。
     aa_stall_seconds: 0.3
+    # 姿态测量接收新鲜度上限，单位 s；还须通过源时间与有效性检查。
     aa_attitude_timeout: 0.5
+    # 局部位置/速度反馈新鲜度上限，单位 s；仅接收心跳不能刷新旧测量。
     aa_local_timeout: 0.5
+    # vehicle_status 状态新鲜度上限，单位 s，用于模式/解锁/预检证据。
     aa_status_timeout: 2.5
+    # 接地检测反馈的新鲜度上限，单位 s；未知状态不能当作已经落地。
     aa_land_timeout: 2.5
+    # failsafe_flags 新鲜度上限，单位 s，缺失不能按无故障处理。
     aa_flags_timeout: 2.5
+    # 本地控制台租约上限，单位 s；失联处置由既有生命周期执行。
     aa_console_timeout: 3.0
+    # 命令等待期限，单位 s，超时不等于盲目重复解锁或模式命令。
     aa_command_timeout: 5.0
+    # 地面 NED vz 绝对值容差，单位 m/s；NED 向下为正，向上为负。
     aa_ground_vz_tolerance: 0.1
     # Arm-only bench grace for downward estimator drift; upward height stays
     # min(aa_height_tolerance, aa_liftoff_height_m) = 0.12 m. Not flight tuning.
+    # 仅 ARM_ONLY 台架允许的估计器向下漂移容差，单位 m，不扩大向上离地边界。
     aa_bench_ground_down_tolerance_m: 0.50
+    # 仅 ARM_ONLY 台架的 NED vz 绝对值容差，单位 m/s，不用作飞行调参。
     aa_bench_ground_vz_tolerance_mps: 0.25
     # Flight-only values are unvalidated engineering candidates, not permission to fly.
     # Three action gates and parameter confirmation remain false; no autonomous Arm is enabled.
+    # 已解锁地面持续确认时间，单位 s；不会仅凭一次 armed 反馈进入爬升。
     aa_armed_dwell_seconds: 1.0 # s, powered ground observation
+    # 接地检测与高度/速度联合离地证据的去抖窗口，单位 s。
     aa_liftoff_dwell_seconds: 0.20 # s, joint detector and Z/VZ evidence
+    # 离地高度阈值，单位 m，相对锚点向上为正。
     aa_liftoff_height_m: 0.12 # m relative to z0
+    # 离地上升速度阈值，单位 m/s，使用上升正值，原 PX4 NED vz 上升为负。
     aa_liftoff_speed_mps: 0.08 # m/s upwards (NED vz negative)
+    # 落地接触连续确认时间，单位 s，避免检测抖动直接解除控制。
     aa_touchdown_dwell_seconds: 0.30 # s, contact debounce
+    # 低于地面锚点的允许余量，单位 m，用于负高度包络检查。
     aa_height_lower_margin_m: 0.25 # m below z0, negative height envelope
+    # 相邻有效样本 NED z 跳变量上限，单位 m/样本，识别估计器突变。
     aa_z_jump_limit_m: 0.45 # m/sample, structural estimator check
+    # 相邻有效样本 NED vz 跳变量上限，单位 m/s/样本，不是加速度参数。
     aa_vz_jump_limit_mps: 1.5 # m/s per sample
     # Candidate dynamic consistency guard; these are engineering thresholds.
     # Agreement is not proof of true altitude. No replacement height source.
+    # 保留垂直动态监测；速度差诊断不能恢复为未经验证的独立停机条件。
     aa_vertical_feedback_guard_enabled: true
+    # 位置差分速率一致性容差，单位 m/s；vz/z_deriv 差另作诊断，不能证明真实高度。
     aa_feedback_rate_tolerance_mps: 0.20
+    # 垂直位置与差分速率监测持续窗口，单位 s，需新样本累积。
     aa_feedback_dwell_seconds: 0.50
     # Airframe dynamics remain deliberately UNSET; R5 candidate values are archived.
+    # 归一化悬停推力 0～1；-1 表示未标定，不能把未知量当作飞行默认值。
     aa_hover_thrust: 0.50 # Offline candidate; NOT flight-calibrated
+    # 离地前允许叠加到悬停候选上的有限推力储备，归一化量，不放宽总推力上限。
     aa_takeoff_reserve_thrust: 0.04 # OFFLINE candidate only: max pre-liftoff thrust 0.54, NOT flight-approved
+    # 归一化推力下限；最终 FRD z 推力为负号向上。-1 表示未标定。
     aa_thrust_min: 0.12 # UNKNOWN: actual airframe calibration required
+    # 归一化推力上限；只限制控制输出，不证明动力足以承载当前飞机。
     aa_thrust_max: 0.80 # UNKNOWN: actual airframe calibration required
+    # 归一化推力每秒最大变化率，限制斜坡速度，不能因格式修改改变计算顺序。
     aa_thrust_slew: 0.40 # UNKNOWN: actual airframe calibration required
+    # 高度误差到目标上升速度的比例增益，量纲 1/s，仍受爬升/下降速度限幅。
     aa_height_gain: 0.50 # UNKNOWN: actual airframe calibration required
+    # 上升速度误差到归一化推力修正的增益，量纲 s/m；反馈符号先由 NED 转为向上正。
     aa_velocity_gain: 0.15 # UNKNOWN: actual airframe calibration required
+    # 速度误差积分的增益，归一化推力/(m)；仅既有有效控制路径累积。
     aa_integral_gain: 0.03 # UNKNOWN: actual airframe calibration required
+    # 归一化积分项绝对值上限，配合 anti-windup 防止饱和继续积累。
     aa_integral_limit: 0.08 # UNKNOWN: actual airframe calibration required
+    # 相对锚点向上的最大高度，单位 m，是包络上限而非目标平台。
     aa_max_height: 5.0
+    # 目标上升速度上限，单位 m/s，控制器内部向上为正。
     aa_max_climb: 0.3
+    # 目标下降速度绝对值上限，单位 m/s，不能与 NED vz 符号混淆。
     aa_max_descent: 0.2
+    # 原起飞推力/参考的斜坡时长，单位 s，沿用原控制时序。
     aa_ramp_seconds: 2.0
+    # 高度与速度同时满足容差的连续稳定窗口，单位 s。
     aa_settle_seconds: 2.0
+    # 既有着陆阶段使用的时长参数，单位 s；不能替代新鲜落地检测证据。
     aa_landing_seconds: 3.0
+    # 目标高度绝对误差容差，单位 m。
     aa_height_tolerance: 0.15
+    # 稳定保持时上升速度绝对值容差，单位 m/s。
     aa_speed_tolerance: 0.15
+    # 爬升阶段完成期限，单位 s；超时进入既有安全处置，不能盲目加推力。
     aa_ascent_timeout: 10.0
+    # 下降阶段完成期限，单位 s，超时不等于确认已接地。
     aa_descent_timeout: 10.0
+    # 推力饱和持续监测窗口，单位 s。
     aa_saturation_seconds: 1.5
+    # 单次控制任务总时长上限，单位 s，不由新消息刷新为无限任务。
     aa_max_flight_seconds: 30.0
+    # 相对水平的最大姿态倾角，单位 deg，来自姿态四元数而非遥控杆量。
     aa_max_tilt_deg: 10.0
+    # 允许累积落地去抖证据的相邻新样本最大间隔，单位 s。
     aa_land_sample_max_gap: 1.25
+    # 恢复完成期限，单位 s；到期不撤销仍然健康的空中控制托管。
     aa_recovery_seconds: 15.0 # completion deadline; expiry does not revoke healthy airborne custody
+    # 等待 PX4 LAND 合同 ACK 的期限，单位 s；ACK 本身不是落地证明。
     aa_px4_land_ack_seconds: 5.0
+    # PX4 LAND 回退合同显式确认门；没有实机证据不能自动置真。
     px4_land_fallback_confirmed: false
+    # 对应回退合同的可追溯证据标识，空字符串表示未提供。
     px4_land_evidence_id: ""

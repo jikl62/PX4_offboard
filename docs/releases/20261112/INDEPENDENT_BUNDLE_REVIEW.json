@@ -1,0 +1,197 @@
+{
+  "header_unchanged_from_HEAD": true,
+  "extract_only_aliases": [
+    "--install-only",
+    "--extract-only",
+    "extract-only"
+  ],
+  "selected_files_without_manifest": 95,
+  "files_with_manifest": 96,
+  "source_bytes": 1528175,
+  "manifest_bytes": 23531,
+  "bytes_with_manifest": 1551706,
+  "max_member_bytes_with_manifest": 158609,
+  "max_files": 512,
+  "max_bytes": 8388608,
+  "missing_repo_imports": [],
+  "shell_edges": {
+    "navigation.sh": [
+      "navigation.py"
+    ],
+    "navigation_boot.sh": [
+      "navigation_environment.sh",
+      "navigation_service.py"
+    ],
+    "navigation_build_fresh.sh": [
+      "navigation_build_evidence.py",
+      "navigation_environment.sh"
+    ],
+    "navigation_deploy.sh": [
+      "navigation_deploy.py"
+    ],
+    "navigation_environment.sh": [],
+    "navigation_restore.sh": [
+      "navigation_environment.sh",
+      "navigation_restore.py"
+    ],
+    "standby.sh": [
+      "standby.py"
+    ]
+  },
+  "missing_shell_paths": [],
+  "cmake_tools": [
+    "velocity_command_diagnostic.py",
+    "vision_odometry_adapter.py",
+    "vision_resource_budget.py",
+    "vision_state_validation.py"
+  ],
+  "missing_cmake_tools": [],
+  "explicit_whitelist_absence_is_not_rejected_fixture": [
+    "navigation.sh"
+  ],
+  "selected_broken_symlink": "Source payload cannot contain a symlink: navigation_service.py",
+  "final_snapshot_source_commit": "32990e599a68fde377daadbb89710b77fda1fb82",
+  "final_package_sha256": "f2726cfe18923c2e8783f19f81a536658dd9a99e28f9398b6ac05c5de5534927",
+  "final_archive_files": 95,
+  "final_uncompressed_bytes": 1543406,
+  "final_manifest_bytes": 23334,
+  "final_max_member_bytes": 158609,
+  "final_document_bash_checks": {
+    "docs/FC01_ORANGEPI_RELEASE_20261112_zh.md": [
+      {
+        "block": 1,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 2,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 3,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 4,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 5,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 6,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 7,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 8,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 9,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 10,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 11,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 12,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 13,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 14,
+        "exit_code": 0,
+        "stderr": ""
+      }
+    ],
+    "dist/FC01_OrangePi_Navigation_20261112_DEPLOY_zh.md": [
+      {
+        "block": 1,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 2,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 3,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 4,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 5,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 6,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 7,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 8,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 9,
+        "exit_code": 0,
+        "stderr": ""
+      },
+      {
+        "block": 10,
+        "exit_code": 0,
+        "stderr": ""
+      }
+    ]
+  },
+  "agent_command": [
+    "/home/orangepi/fc01_agent_build_offline/MicroXRCEAgent",
+    "serial",
+    "-D",
+    "/dev/ttyS2",
+    "-b",
+    "115200",
+    "-v",
+    "0"
+  ],
+  "agent_command_matches_choose_agent_and_supervisor": true,
+  "agent_and_service_commands_executed": false
+}

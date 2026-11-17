@@ -1,0 +1,7 @@
+{
+  "entry": "/home/orangepi/FC01_versions/20261116_stage3",
+  "backup": "/home/orangepi/FC01_navigation/prebuilt-backups/20261116T135220_254940Z-3669",
+  "already_active": true,
+  "version": "20261116_stage3"
+}
+FC01_ROLLBACK_COMMAND=bash ./install_fc01.sh --rollback /home/orangepi/FC01_navigation/prebuilt-backups/20261116T135220_254940Z-3669

@@ -1,0 +1,36 @@
+{
+  "package_sha256": "3c876f6f98d45df994658ad3f68691c12dee0cf14befa18f2824a52f58d2a123",
+  "installer_sha256": "7b35de4b7e498d46c56ac7b9abbf032c2ba64d1a76ab11177f9391bc4fc4e956",
+  "adjacent_sha256_files": "PASS",
+  "installer_bash_syntax": "PASS",
+  "python_ast_inputs": [
+    "build_arm64_bundle.py",
+    "navigation_prebuilt_service.py",
+    "navigation_prebuilt_install.py",
+    "tests/ros_arm64_ground_peer.py"
+  ],
+  "python_ast": "PASS",
+  "git_diff_check": "PASS",
+  "control_candidate_commit": "adc55d0b7c67e80bf9d77b1082208c898f95b756",
+  "unchanged_paths": [
+    "native/src",
+    "native/config",
+    "native/tools",
+    "launcher.py",
+    "standby.py",
+    "navigation_service.py"
+  ],
+  "secret_pattern_scan": {
+    "ordinary_files_and_archive_members": 5141,
+    "findings": [],
+    "patterns": [
+      "PEM private key header",
+      "GitHub PAT prefixes",
+      "AWS access key ID",
+      "Slack token prefixes"
+    ],
+    "scope": "release reports/evidence including nested tar members; final installer and tar payload",
+    "limit": "pattern checks are evidence of this scan, not a proof that every possible secret format is absent"
+  },
+  "target_board_accessed": false
+}

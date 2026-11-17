@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "reviewer": "chinese_cpp_support",
+  "review_round": "第三轮只读独立复核",
+  "baseline": "053eb2c",
+  "snapshot": "root统一clang-format后；后续仅注释修正可能使行号移动",
+  "mutation_policy": "第三轮未编辑任何工程源码，只写cache报告。",
+  "scope": {
+    "previous_full_file_review_record": "cpp_support_review.json",
+    "previous_full_file_count": 113,
+    "previous_full_breakdown": {
+      "support_headers": 27,
+      "cpp_tests": 85,
+      "cpp_tools": 1
+    },
+    "current_round": "按符号定向复核九核心及生产支持的长函数、关键时序与中文准确性；不声称第三次全文扫描全部工程。",
+    "historical_excluded": [
+      "dist/**",
+      "docs/evidence/**",
+      "native/tests/c_independent_repro/**",
+      "native/tests/c_s10_independent/**"
+    ]
+  },
+  "outcome": {
+    "executable_defect_introduced_by_readability_changes": "本轮定向阅读未发现；最终以root完整结构/token等价、编译和回归为证据。",
+    "long_function_refactoring_claim": "未完成、未声称完成；保留技术债如下。",
+    "flight_contracts": [
+      "visual_navigation_enabled保持false；VelocityCommand只读诊断不授予运动权。",
+      "原RC人工解锁/切导航后1.5m起飞、参数/公式顺序未在本分工中改变。",
+      "本地sink、ACK、独立状态与实机效果明确分开，不用本地计数冒充PX4执行。"
+    ]
+  },
+  "comment_accuracy_findings": [
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
+      "symbol": "文件头/析构",
+      "status": "root已修正并已复核",
+      "issue": "100ms仅名义排空截止，不是线程调度/join的硬上界。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp",
+      "symbol": "文件头",
+      "status": "root已修正并已复核",
+      "issue": "完全静默Safety有界追赶是停额外补读的一项例外；危险载荷仍全部保留。"
+    },
+    {
+      "path": "native/tests/vertical_feedback_replay.cpp",
+      "symbol": "main",
+      "status": "root已修正并已复核",
+      "issue": "0.5明确为允许最大采样间隔0.5s。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "symbol": "SystemNode::tick",
+      "status": "已报告root，建议仅精确范围",
+      "issue": "配套目标/心跳批准后才发动作的注释应说明publish=true时；attitude_sent初值为!publish。",
+      "behavior_change_required": false
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "symbol": "Runtime::ack",
+      "status": "已报告root，建议仅精确措辞",
+      "issue": "“不会授权完成、拒绝重试或新任务”建议改“不会用于认定接受/拒绝，也不授权重试或新任务”。",
+      "behavior_change_required": false
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+      "symbol": "Config::validate",
+      "status": "已报告root，建议仅移动注释",
+      "issue": "既有长行尾注释使vertical.validate()被排成vertical和.validate两行；说明移到调用前即可保持token并改善阅读。",
+      "behavior_change_required": false
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+      "symbol": "Config::max_tilt_deg",
+      "status": "已报告root，建议补用途",
+      "issue": "除输出目标倾角之外，该值还用于RC地面/待证零流桥接倾角准入，字段注释应包含这一点。",
+      "behavior_change_required": false
+    }
+  ],
+  "retained_complexity": [
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "symbol": "Core::step",
+      "start_line": 1145,
+      "end_line": 2077,
+      "formatted_line_count": 933,
+      "remaining_complexity": "Safety/RC汇合/时钟/接管/健康/权限/重置/离地/闭环/触地/上锁/释放共处。",
+      "refactor_risk": "最高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "保留早返回、同tick下降输出和事务确认先后顺序；未拆分主状态机。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "symbol": "Core::observe_safety_event",
+      "start_line": 1015,
+      "end_line": 1142,
+      "formatted_line_count": 128,
+      "remaining_complexity": "不同来源危险载荷与故障水位、本轮恢复否决交织。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "保留逐事件观察，不能只检查最新快照；同周期A→B→A必须可见。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "symbol": "Core::observe_rc_recovery",
+      "start_line": 2166,
+      "end_line": 2287,
+      "formatted_line_count": 122,
+      "remaining_complexity": "多个独立来源新样本、窗口/reset/输出静默/开关复位证据串联。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "保留独立计数、首个拒绝原因与窗口清零顺序。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "symbol": "Runtime::request",
+      "start_line": 660,
+      "end_line": 864,
+      "formatted_line_count": 205,
+      "remaining_complexity": "profile、维护/关闭、控制台权限及事务历史仲裁集中。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "RC控制台只读门必须先于其他动作分支，arity/有限数与错误优先级不变。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "symbol": "Runtime::ack",
+      "start_line": 866,
+      "end_line": 1015,
+      "formatted_line_count": 150,
+      "remaining_complexity": "176偏斜候选、400复用歧义、源时钟与事务终态过滤共处。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "ACK接受不等于物理状态，迟到/复用ACK不能归属新事务。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "symbol": "Runtime::step",
+      "start_line": 1031,
+      "end_line": 1289,
+      "formatted_line_count": 259,
+      "remaining_complexity": "三路线调度、Core调用、独立状态取证和pending事务归档集中。",
+      "refactor_risk": "最高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "候选证据必须同tick通过Core健康/参考/权限后才锁定事务完成。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "symbol": "SystemNode::SystemNode",
+      "start_line": 108,
+      "end_line": 304,
+      "formatted_line_count": 197,
+      "remaining_complexity": "配置、各订阅和消息接收/事件锁存回调集中于构造函数。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "保持按profile创建订阅/发布者的条件和QoS，不扩展视觉权限。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "symbol": "SystemNode::tick",
+      "start_line": 367,
+      "end_line": 745,
+      "formatted_line_count": 379,
+      "remaining_complexity": "快照、地面计时、危险队列、IPC、计划、双sink、命令、日志、重准备、停机集中。",
+      "refactor_risk": "最高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "首sink前拒绝与目标已发后异常必须分开，动作不能越过配套目标边界。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "symbol": "SystemNode::snapshot",
+      "start_line": 1307,
+      "end_line": 1477,
+      "formatted_line_count": 171,
+      "remaining_complexity": "图唯一性、接收寿命、源时钟/raw进展、arming枚举和profile字段映射集中。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "区分validated/valid、状态布尔/原始枚举、源微秒/主机秒及默认值/真实状态。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "symbol": "SystemNode::state",
+      "start_line": 1833,
+      "end_line": 2023,
+      "formatted_line_count": 191,
+      "remaining_complexity": "大量诊断字段的JSON序列化仍在长函数内。",
+      "refactor_risk": "中",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "未来按字段分组时比较结构、null与既有键；本轮保留序列化顺序。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+      "symbol": "Config::validate",
+      "start_line": 68,
+      "end_line": 134,
+      "formatted_line_count": 67,
+      "remaining_complexity": "视觉/RC/准备/bench/动力包络跨字段校验较多。",
+      "refactor_risk": "中",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "不改跨字段关系、短路和异常优先级；未改为表驱动。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "symbol": "RcNavigationStart::step",
+      "start_line": 202,
+      "end_line": 402,
+      "formatted_line_count": 201,
+      "remaining_complexity": "READY前窗口、新开关边沿、人工Arm与实际Offboard独立消息配对集中。",
+      "refactor_risk": "最高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "过期先拒绝再配对，授权撤销不复活，armed_time不跨域。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "symbol": "RcNavigationStart::observe_ground_reference",
+      "start_line": 414,
+      "end_line": 500,
+      "formatted_line_count": 87,
+      "remaining_complexity": "未解锁地面、新样本计数、reset/重复/大间隔与缓慢漂移参考更新共处。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "保留每源独立推进，不能强求每个回调成对计数；armed时不重建地面参考。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
+      "symbol": "jikl_velocity::Core::step",
+      "start_line": 275,
+      "end_line": 432,
+      "formatted_line_count": 158,
+      "remaining_complexity": "历史通用/仿真路线的准备、Arm未决、起飞、制动、降落集中。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "不属于当前RC 1.5m主链；保留迟到Arm的恢复顺序，不迁移默认参数。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+      "symbol": "VerticalController::step",
+      "start_line": 101,
+      "end_line": 183,
+      "formatted_line_count": 83,
+      "remaining_complexity": "高度P/速度PI、起飞ceiling、抗积分饱和与slew的公式关联紧密。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "trial→reachable→接受/退积分→重算raw→slew的浮点与状态顺序保留。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+      "symbol": "VerticalFeedbackGuard::observe",
+      "start_line": 59,
+      "end_line": 139,
+      "formatted_line_count": 81,
+      "remaining_complexity": "源戳进展、硬数据故障、速度差诊断和位置积分窗口共处。",
+      "refactor_risk": "中",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "健康与疑似分开；rate_warning不能恢复成独立停机，重复戳不累计积分时间。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "symbol": "vision::Controller::step",
+      "start_line": 219,
+      "end_line": 380,
+      "formatted_line_count": 162,
+      "remaining_complexity": "实际状态/命令双租约、身份/参考、模式目标、外环与中间非有限拒绝集中。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "保持状态与目标分离、撤权代数优先、活动错误锁存下降且不被健康尾帧清除。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+      "symbol": "attitude_publication_policy",
+      "start_line": 459,
+      "end_line": 649,
+      "formatted_line_count": 191,
+      "remaining_complexity": "阶段白名单/目标绑定/RC待证零流/释放/动作门/非零包络集中。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "第一拒绝原因、阶段例外和double精确非零具有语义，未抽成简单布尔合取。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+      "symbol": "publish_attitude_resampled",
+      "start_line": 83,
+      "end_line": 132,
+      "formatted_line_count": 50,
+      "remaining_complexity": "长度适中但三次上下文、两次非原子sink及部分提交异常构成关键复杂度。",
+      "refactor_risk": "高",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "不合并上下文；首sink前拒绝返回与目标提交后异常继续分开。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp",
+      "symbol": "AuthorityTelemetry::manual",
+      "start_line": 36,
+      "end_line": 102,
+      "formatted_line_count": 67,
+      "remaining_complexity": "选中RC源失效撤销、raw预检查、两帧进展与轴安全集中。",
+      "refactor_risk": "中",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "重复样本不续期，缺轴/非有限值不能补成中杆低油门。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp",
+      "symbol": "AuthorityTelemetry::switches",
+      "start_line": 105,
+      "end_line": 156,
+      "formatted_line_count": 52,
+      "remaining_complexity": "开关双时间戳、代数和Kill锁存共处。",
+      "refactor_risk": "中",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "时钟无效ON可否决，OFF不能擦除已知Kill；保留此不对称性。"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
+      "symbol": "UnixServer::poll",
+      "start_line": 72,
+      "end_line": 132,
+      "formatted_line_count": 61,
+      "remaining_complexity": "非阻塞接入、发送背压、接收分帧、序号与回调异常处理集中。",
+      "refactor_risk": "中",
+      "status": "技术债保留，未拆分",
+      "reason_for_preserving": "保留每轮有限接收量与清连接后再通知断连的顺序。"
+    }
+  ],
+  "validation": {
+    "own_scope_before_format": "113记录均reviewed_full=true/comment_status=completed；git diff --check通过。",
+    "post_format": "只读人工复核；root统一完成122 C++ token等价/404清单/回归，不重复全量测试。"
+  }
+}

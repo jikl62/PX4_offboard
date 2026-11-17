@@ -1,0 +1,7 @@
+2442 /usr/bin/python3 - /home/orangepi/FC01_OrangePi_20261116_stage3_arm64.tar.gz
+2827 bash -c pgrep -af "python3 -|fc01_config_check|ldd|systemd-analyze" | head -6; systemctl show fc01-navigation.service -p MainPID -p ActiveState -p DropInPaths; ls -t /home/orangepi/FC01_navigation/prebuilt-backups | head -3
+MainPID=808
+ActiveState=active
+DropInPaths=
+20261116T134337_654157Z-2442
+20261116T133447_182191Z-1618

@@ -1,0 +1,10 @@
+{
+  "counts": {
+    "setpoint": 42083,
+    "heartbeat": 42083
+  },
+  "nonzero_thrust_messages": 0,
+  "vehicle_commands": 0,
+  "maximum_heartbeat_gap_s_including_intentional_service_stops": 78.70793424000021,
+  "note": "Contains deliberate installation/rollback shutdown gaps, not a flight heartbeat performance bound."
+}

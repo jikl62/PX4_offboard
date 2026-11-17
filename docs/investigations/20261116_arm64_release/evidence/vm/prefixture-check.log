@@ -1,0 +1,6 @@
+Mon Nov 16 13:12:00 UTC 2026
+○ fc01-navigation.service - FC01 manual RC navigation controller
+     Loaded: loaded (/etc/systemd/system/fc01-navigation.service; enabled; vendor preset: enabled)
+     Active: inactive (dead)
+lrwxrwxrwx 1 root root 10 Oct 12 07:47 /dev/ttyS2 -> /dev/pts/0
+388 python3 /root/fc01-arm64-vm-pty.py

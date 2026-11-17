@@ -1,0 +1,16 @@
+test_bad_frame_and_missing_valid_velocity_latch_native_descent (test_vision_replay.VisionReplay) ... ok
+test_command_timeout_is_independent_of_new_state_samples (test_vision_replay.VisionReplay) ... ok
+test_duplicate_state_sequence_does_not_renew_receiver_freshness (test_vision_replay.VisionReplay) ... ok
+test_expired_state_enters_native_descent_and_cannot_reactivate (test_vision_replay.VisionReplay) ... ok
+test_follow_axes_and_modes_are_real_motion_requests (test_vision_replay.VisionReplay) ... ok
+test_ideal_closed_loop_changes_real_attitude_and_reduces_point_error (test_vision_replay.VisionReplay) ... ok
+test_invalid_mode_type_is_reported_as_an_input_error (test_vision_replay.VisionReplay) ... ok
+test_invalid_record_is_rejected_before_host_driver (test_vision_replay.VisionReplay) ... ok
+test_missing_state_waits_without_fabricating_valid_zero (test_vision_replay.VisionReplay) ... ok
+test_target_height_changes_original_vertical_controller_thrust (test_vision_replay.VisionReplay) ... ok
+test_velocity_feedback_changes_attitude_at_same_position (test_vision_replay.VisionReplay) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 3.398s
+
+OK

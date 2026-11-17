@@ -1,14 +1,19 @@
+# 排队事件安全扫描回归：真实节点回调谓词、保留事件扫描、Runtime/Core与最终发布sink。
+# API、输入和时钟是替身，主机进程不运行ROS/DDS，不连接电机或串口。
 """Run the actual SystemNode safety scan against the narrow ROS API fixture.
 
 This exercises production adapter code without DDS, motors or ROS execution.
 """
 from pathlib import Path
 import os
+import re
 import subprocess
 import tempfile
 import unittest
 import adapter_compile_check as fixture
 
+# C++夹具逐字保留：40Hz源样本每两个送入20Hz扫描，核对诊断分段、持续告警及积分仍更新。
+# 其他组覆盖图查询缓存/冲突、事件溢出、各反馈坏样本、RC接管请求、落地反跳与下一轮重准备。
 HARNESS = r'''
 #include "adapter_under_test.cpp"
 #include "authority_test_support.hpp"
@@ -158,6 +163,25 @@ static void rate_diagnostics_preserve_fatal_feedback_checks(){
   assert(blocked);
 }
 int main(){
+  {Fixture f;Local l;l.timestamp=l.timestamp_sample=1000000;l.z_valid=true;
+   l.z=2;l.dist_bottom=.1f;l.dist_bottom_var=.01f;l.dist_bottom_valid=true;
+   // 只有RANGE参与位才用于测距趋势；FLOW单独有效不认证测距。
+   l.dist_bottom_sensor_bitfield=2;
+   f.node.receive_sampled(l,f.node.local_,f.node.local_stamp_,f.node.local_sample_,
+     fc01::SourceSlot::Local,rclcpp::MessageInfo{});
+   assert(!f.node.range_trend_.evidence(true).available);
+   l.timestamp+=250000;l.timestamp_sample=l.timestamp;l.dist_bottom_sensor_bitfield=Local::DIST_BOTTOM_SENSOR_RANGE;
+   f.node.receive_sampled(l,f.node.local_,f.node.local_stamp_,f.node.local_sample_,
+     fc01::SourceSlot::Local,rclcpp::MessageInfo{});
+   auto s=f.s;s.attitude.source_host_stamp=l.timestamp;
+   s.attitude.source_clock_validated=s.attitude.source_clock_valid=true;
+   auto fields=f.node.vertical_feedback_fields(s,steady());
+   assert(fields.find("\"range_available\":true")!=std::string::npos);
+   s.attitude.source_host_stamp+=600000;
+   fields=f.node.vertical_feedback_fields(s,steady());
+   assert(fields.find("\"range_available\":false")!=std::string::npos);
+   assert(f.node.runtime_->attitude_core().phase()==fc01::attitude::Phase::ThrustRamp);
+  }
   alternating_rate_samples_keep_separate_diagnostic_episodes();
   persistent_rate_difference_warns_without_cutting_publication();
   rate_diagnostics_do_not_freeze_vertical_integration();
@@ -254,30 +278,84 @@ int main(){
 '''
 
 
+# 为真实适配器创建临时编译环境，用C++断言验证事件保留与诊断不干预控制。
 class ReceiveEventAdapterTest(unittest.TestCase):
+    # 好坏好队列中的致命样本不能被覆盖；速度差只诊断，时间/复位/非有限值和位置残差保护仍有效。
     def test_pending_unsafe_payload_cannot_be_hidden_by_benign_head(self):
         with tempfile.TemporaryDirectory(prefix='fc01_safety_adapter_') as directory:
             root = Path(directory)
-            (root/'rclcpp').mkdir()
-            (root/'rclcpp/rclcpp.hpp').write_text(fixture.RCLCPP)
-            msg=root/'px4_msgs/msg';msg.mkdir(parents=True)
-            for filename,(name,version,fields) in fixture.MESSAGES.items():
-                const='' if version is None else f'static constexpr int MESSAGE_VERSION={version};'
-                (msg/(filename+'.hpp')).write_text('#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\nnamespace px4_msgs::msg {struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;std::uint64_t timestamp{};'+const+fields+'};}\n')
-            vision=root/'jikl_fc01_system/msg';vision.mkdir(parents=True)
-            (vision/'stamp.hpp').write_text('#pragma once\n#include <cstdint>\nnamespace jikl_fc01_system::msg {struct Stamp{std::int32_t sec{};std::uint32_t nanosec{};};}\n')
-            for filename,(name,fields) in fixture.VISION_MESSAGES.items():
-                (vision/(filename+'.hpp')).write_text('#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\n#include <string>\n#include "jikl_fc01_system/msg/stamp.hpp"\nnamespace jikl_fc01_system::msg {struct '+name+'{using ConstSharedPtr=std::shared_ptr<const '+name+'>;std::uint16_t schema_version{1};'+fields+'};}\n')
-            source=(fixture.ROOT/'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
-            source=source.replace(' private:', ' public:', 1).replace('int main(', 'int adapter_program_main(', 1)
-            (root/'adapter_under_test.cpp').write_text(source)
-            (root/'test.cpp').write_text(HARNESS)
-            executable=root/'test'
-            subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-pthread',
-                '-I',str(root),'-I',str(fixture.ROOT/'src/jikl_fc01_system/include'),
-                '-I',str(fixture.ROOT/'tests'),str(root/'test.cpp'),'-o',str(executable)],check=True)
-            env=os.environ.copy();env['FC01_SOCKET']=str(root/'control.sock')
-            result=subprocess.run([str(executable)],env=env,capture_output=True,text=True)
-            self.assertEqual(result.returncode,0,result.stderr+'\n'+result.stdout)
+            (root / 'rclcpp').mkdir()
+            (root / 'rclcpp/rclcpp.hpp').write_text(fixture.RCLCPP)
+            msg = root / 'px4_msgs/msg'
+            msg.mkdir(parents=True)
+            for filename, (name, version, fields) in fixture.MESSAGES.items():
+                const = (
+                    '' if version is None else f'static constexpr int MESSAGE_VERSION={version};'
+                )
+                (msg / (filename + '.hpp')).write_text(
+                    '#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\nnamespace px4_msgs::msg {struct '
+                    + name
+                    + '{using ConstSharedPtr=std::shared_ptr<const '
+                    + name
+                    + '>;std::uint64_t timestamp{};'
+                    + const
+                    + fields
+                    + '};}\n'
+                )
+            vision = root / 'jikl_fc01_system/msg'
+            vision.mkdir(parents=True)
+            (vision / 'stamp.hpp').write_text(
+                '#pragma once\n#include <cstdint>\nnamespace jikl_fc01_system::msg {struct Stamp{std::int32_t sec{};std::uint32_t nanosec{};};}\n'
+            )
+            for filename, (name, fields) in fixture.VISION_MESSAGES.items():
+                (vision / (filename + '.hpp')).write_text(
+                    '#pragma once\n#include <array>\n#include <cstdint>\n#include <memory>\n#include <string>\n#include "jikl_fc01_system/msg/stamp.hpp"\nnamespace jikl_fc01_system::msg {struct '
+                    + name
+                    + '{using ConstSharedPtr=std::shared_ptr<const '
+                    + name
+                    + '>;std::uint16_t schema_version{1};'
+                    + fields
+                    + '};}\n'
+                )
+            source = (fixture.ROOT / 'src/jikl_fc01_system/src/fc01_system_node.cpp').read_text()
+            # 仅允许访问标签和入口 token 之间的空白变化；每个插桩必须恰好匹配一处。
+            # 改动只落在临时副本，不放宽任何飞行断言，也不修改生产源码的访问权限。
+            source, private_count = re.subn(r'(?m)^([ \t]*)private[ \t]*:', r'\1public:', source)
+            self.assertEqual(private_count, 1, 'Expected exactly one SystemNode private section')
+            source, main_count = re.subn(
+                r'(?m)^([ \t]*)int\s+main\s*\(', r'\1int adapter_program_main(', source
+            )
+            self.assertEqual(main_count, 1, 'Expected exactly one native main entry')
+            (root / 'adapter_under_test.cpp').write_text(source)
+            (root / 'test.cpp').write_text(HARNESS)
+            executable = root / 'test'
+            subprocess.run(
+                [
+                    'g++',
+                    '-std=c++17',
+                    '-Wall',
+                    '-Wextra',
+                    '-Werror',
+                    '-pedantic',
+                    '-pthread',
+                    '-I',
+                    str(root),
+                    '-I',
+                    str(fixture.ROOT / 'src/jikl_fc01_system/include'),
+                    '-I',
+                    str(fixture.ROOT / 'tests'),
+                    str(root / 'test.cpp'),
+                    '-o',
+                    str(executable),
+                ],
+                check=True,
+            )
+            # IPC socket置于同一临时目录；测试进程退出后不留下控制通道或二进制。
+            env = os.environ.copy()
+            env['FC01_SOCKET'] = str(root / 'control.sock')
+            result = subprocess.run([str(executable)], env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr + '\n' + result.stdout)
 
-if __name__=='__main__':unittest.main()
+
+if __name__ == '__main__':
+    unittest.main()

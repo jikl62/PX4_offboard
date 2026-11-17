@@ -1,0 +1,6 @@
+FC01_RC_NAVIGATION_CONFIG_VALID manual_arm_only=true target=1.5
+VisionState type support loaded
+NavigationCommand type support loaded
+VelocityCommand type support loaded
+VisionHealth type support loaded
+AttitudeThrustPreview type support loaded

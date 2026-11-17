@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "source_head_at_review": "87fa7c15092d4d3638e32c0e4380dab01faf4cb2",
+  "scope": "static deployment entry and doc review; no production process started",
+  "doc": "docs/FC01_ORANGEPI_RELEASE_20261112_zh.md",
+  "bash_syntax_blocks": [
+    {
+      "block": 1,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 2,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 3,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 4,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 5,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 6,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 7,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 8,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 9,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 10,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 11,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 12,
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "block": 13,
+      "returncode": 0,
+      "stderr": ""
+    }
+  ],
+  "root_python_import_closure": [
+    "autostart.py",
+    "fc01_control.py",
+    "launcher.py",
+    "navigation.py",
+    "navigation_build_evidence.py",
+    "navigation_deploy.py",
+    "navigation_install.py",
+    "navigation_probe.py",
+    "navigation_report.py",
+    "navigation_restore.py",
+    "navigation_service.py",
+    "navigation_status.py",
+    "standby.py"
+  ],
+  "formal_routes": {
+    "offline": "navigation_deploy.sh offline",
+    "configure": "navigation_restore.sh configure --confirm-flight-test --boot-policy preserve",
+    "activate": "navigation_deploy.sh activate --confirm-flight-test --boot-policy preserve",
+    "rollback": "navigation_restore.sh rollback --backup <printed backup>"
+  },
+  "limitations": [
+    "configure requires stopped managed services and rejects unknown controllers; no implicit stop/start",
+    "configure does not call verify_build or check OFFLINE_DEPLOYMENT",
+    "configure probe is default diagnostic, without require-existing-agent or require-rc-safe flags",
+    "stop of old service can close its owned Agent if fresh ground evidence allows",
+    "preserve retains original boot policy, including enabled",
+    "native ARM64 and PX4 hardware unverified on x86 review host"
+  ]
+}

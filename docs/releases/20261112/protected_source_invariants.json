@@ -1,0 +1,9 @@
+{
+  "baseline": "87fa7c15092d4d3638e32c0e4380dab01faf4cb2",
+  "compared_native_source_and_config_files": 59,
+  "changed": [],
+  "added": [],
+  "service_AST_equal_except_explicit_ENTRY_VERSION": true,
+  "extractor_header_unchanged": true,
+  "extractor_header_sha256": "e2149e6c789c438d8bda47fc0c7c68ea01d927850408380e717cb4cce2d48c98"
+}

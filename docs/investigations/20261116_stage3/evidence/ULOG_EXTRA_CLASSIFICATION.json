@@ -1,0 +1,367 @@
+[
+  {
+    "source": "/home/jikl62/DroneProjects/05_飞行日志与测试证据/原下载目录/FC01_M1_S10_failure.ulg",
+    "sha256": "21397a1b4e313a63a6b8401f5632218aa785a0c4212a88dbe8a30612a0b4b9d1",
+    "nav_states": [
+      2,
+      4,
+      14
+    ],
+    "position_intervals": [
+      {
+        "start_us": 155632000,
+        "end_us": 160636000,
+        "samples": 10
+      }
+    ],
+    "firmware": "8714f2442ae63e47c9f23fd924a7106f09a9f634",
+    "hardware": "PX4_SITL",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/05_飞行日志与测试证据/原下载目录/log_6_UnknownDate(2).ulg",
+    "sha256": "bc166ebd505fbe976ddfbaf57db82b907851e49b9fc2553d4a92bff682b9f5c8",
+    "nav_states": [
+      1,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/05_飞行日志与测试证据/原主目录/FC01_SITL_OFFBOARD_LOSS.ulg",
+    "sha256": "036f07e041335a4d928655b87ba8ec74af94a3e1d7622718f42fd4f7694c29c1",
+    "nav_states": [
+      4,
+      14,
+      18
+    ],
+    "position_intervals": [],
+    "firmware": "de8158101c96ad6b04170dc91f087148104c58eb",
+    "hardware": "PX4_SITL",
+    "is_sitl_label": true
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_0_UnknownDate.ulg",
+    "sha256": "dead944da7746f783d5ff2b8fd46a15878195de2e4c70acddccfd0ca0079256b",
+    "nav_states": [
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "78a512995e73dad88051707b5bee3df07eed4d78",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_1_UnknownDate.ulg",
+    "sha256": "49a43695cd617544839c296e775cd317bcda0bffdc4ff72406dd18c2e9bb795d",
+    "nav_states": [
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "78a512995e73dad88051707b5bee3df07eed4d78",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_2_UnknownDate.ulg",
+    "sha256": "4b2af77bf0d778b9095a6fa91c2f611201bb362ab267edc3341f4e6b9af105f8",
+    "nav_states": [
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "78a512995e73dad88051707b5bee3df07eed4d78",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_3_UnknownDate.ulg",
+    "sha256": "e3f1bf0db184f49c4fce42eefe00b45904bc2b60bc22c37eaa0701c5e14e1bd7",
+    "nav_states": [
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "78a512995e73dad88051707b5bee3df07eed4d78",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_4_UnknownDate.ulg",
+    "sha256": "250291000bbaf0755b483f867bc8e37a4cb9912bd3ec522d31be32333fb09346",
+    "nav_states": [
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "78a512995e73dad88051707b5bee3df07eed4d78",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_5_UnknownDate.ulg",
+    "sha256": "6cba8203609ced57827a2d5eb615f533e3a9cca48d32a9b829de729d38d03e23",
+    "nav_states": [
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "78a512995e73dad88051707b5bee3df07eed4d78",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_6_UnknownDate.ulg",
+    "sha256": "7451c4ddb2004be8500d5f70877aa9387ff63911d4c2369542397562331996c8",
+    "nav_states": [
+      1
+    ],
+    "position_intervals": [],
+    "firmware": "78a512995e73dad88051707b5bee3df07eed4d78",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_7_UnknownDate.ulg",
+    "sha256": "e76ec533e5911a01debacc9b8e4b6b25ac52ade2ecb56386c9289c402360a272",
+    "nav_states": [
+      1
+    ],
+    "position_intervals": [],
+    "firmware": "78a512995e73dad88051707b5bee3df07eed4d78",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/DroneProjects/FC01_Originals_Quarantine_20261006_150219/桌面/log_8_UnknownDate.ulg",
+    "sha256": "4a26ea1edbb37daa88b49943182e05812294799e26e451077f17e21ebd095051",
+    "nav_states": [
+      1
+    ],
+    "position_intervals": [],
+    "firmware": "78a512995e73dad88051707b5bee3df07eed4d78",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_0_2026-10-18-15-38-22.ulg",
+    "sha256": "284761ddb04bff95d2d984e6fa87aaa5344f502bc8e1aed07ad6beba47c1610b",
+    "nav_states": [
+      1,
+      14,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_1_2026-10-18-15-40-08.ulg",
+    "sha256": "29df600a5bc8beab26b3a0dda08216961197c4431c9151c1178a6b681737ae75",
+    "nav_states": [
+      1,
+      14,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_2_2026-10-18-15-40-56.ulg",
+    "sha256": "2f3af9d4ada81c98e99e84cd6a9b2956fe44ace7c99fe76f2904fbb38799eb3a",
+    "nav_states": [
+      1,
+      14,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_3_2026-10-18-15-43-28.ulg",
+    "sha256": "ea1bce1e49bd30ba6de277bbdde9dc2ff7d5f505172fb89bb69a597a6d39ac8d",
+    "nav_states": [
+      1,
+      14,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/FC01_R632_HEIGHT_FEEDBACK_GUARD_CANDIDATE/verification/height_feedback_guard/inputs/log_4_2026-10-18-15-44-46.ulg",
+    "sha256": "599a78fc05d796a3bb67b4e517f6420db3049eb925cbed9f7bf5bcbfa62353df",
+    "nav_states": [
+      1,
+      14,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/verification/vertical_refinement/inputs/log_0_2026-10-18-21-02-18.ulg",
+    "sha256": "7e22d939c5a5faae6395cbcb54e73b96bd15c1f7c1188cce21a4f4519e5455f2",
+    "nav_states": [
+      1,
+      14,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE/verification/vertical_refinement/inputs/log_1_2026-10-18-21-00-40.ulg",
+    "sha256": "d9a26f0ba31179ed07a3f937e347e1d9ffb891513113948ea829311f008fc677",
+    "nav_states": [
+      1,
+      14,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/log_0_2026-10-20-10-02-06.ulg",
+    "sha256": "a197766716e5331f59cdddecb53538fc393818b6417f6041c1f701de6364251c",
+    "nav_states": [
+      1,
+      14
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/log_0_2026-10-20-11-12-26_1.ulg",
+    "sha256": "33ea8241ad1adc7cdddb43765aff762973e598d0ff64acd6a229e1e4e1910a7b",
+    "nav_states": [
+      1,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/log_2_2026-10-16-11-57-46_1.ulg",
+    "sha256": "5bf44997346c403676483dfb2334a559c83c4275b7a4fbec2c27d3af14e5ef84",
+    "nav_states": [
+      1,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/log_4_2026-10-16-11-58-42_1.ulg",
+    "sha256": "4e0b00619fcc5b9d9be2924810732a1cd03cc034e976e2fa2a9f2a78595f7608",
+    "nav_states": [
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/log_5_2026-10-16-12-00-18_1.ulg",
+    "sha256": "071817b2234aba68f299ebfffb07fbf5ad73c3a333629bd9712e59d349d27455",
+    "nav_states": [
+      1,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/桌面/log_0_2026-10-20-11-19-52.ulg",
+    "sha256": "6aba5c784d2728f050a551375dbc9d8715dbbd386b60f5f68907233d3135f1d0",
+    "nav_states": [
+      1,
+      14
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/桌面/log_10_2026-11-15-16-47-56.ulg",
+    "sha256": "8d510d25fbea1e6473939765532ca051705f18cbf967a740fbe05f992490ee11",
+    "nav_states": [
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/桌面/log_1_2026-10-20-11-20-32.ulg",
+    "sha256": "a426241fb8985a2dfed617bc9f86f19e3e4c1a44608e12532f1e05f4409efb9c",
+    "nav_states": [
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/桌面/log_2_2026-10-20-11-21-14.ulg",
+    "sha256": "3dbc919761a11325846c75dd804249b3c477317d8e8b13d9a9ea681f8c44d3c1",
+    "nav_states": [
+      1,
+      14,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/桌面/log_3_2026-10-20-11-22-20.ulg",
+    "sha256": "a68c79168746d1d99fc0f980e0852c5d5a71ed01e117c2b2c9c316bd05c0f8ed",
+    "nav_states": [
+      1,
+      14,
+      15
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  },
+  {
+    "source": "/home/jikl62/桌面/log_4_2026-10-20-11-23-54.ulg",
+    "sha256": "6de756522288ccf57df545ec9f7f98b5e9437bb9861b7c03e39bb3c7c81f5b0f",
+    "nav_states": [
+      1,
+      14
+    ],
+    "position_intervals": [],
+    "firmware": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "hardware": "DAMIAO_DM_FC01",
+    "is_sitl_label": false
+  }
+]

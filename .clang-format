@@ -1,0 +1,15 @@
+# 只整理布局，不排序头文件、不重写字面量、不插入花括号。
+# 保留注释段落和表达式次序；格式化后仍须运行 token 等价检查与回归。
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 100
+SortIncludes: false
+IncludeBlocks: Preserve
+ReflowComments: false
+BreakStringLiterals: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+PointerAlignment: Left

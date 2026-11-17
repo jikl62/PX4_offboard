@@ -1,0 +1,52 @@
+{
+  "domain_id": 224,
+  "localhost_only": true,
+  "control_authority": false,
+  "interface": {
+    "type": "jikl_fc01_system/msg/VelocityCommand",
+    "fields": {
+      "schema_version": "uint16",
+      "sequence": "uint64",
+      "stamp": "builtin_interfaces/Time",
+      "reset_counter": "uint32",
+      "source_id": "string",
+      "frame_id": "string",
+      "valid": "boolean",
+      "vx": "double",
+      "vy": "double",
+      "vz": "double"
+    },
+    "default_frame_id": "",
+    "serialization_round_trip": true
+  },
+  "checks": [
+    "startup_overrides_and_read_only_runtime_parameters",
+    "best_effort_type_and_payload",
+    "unconfigured_policy_does_not_qualify_cache",
+    "duplicate_and_out_of_order",
+    "invalid_and_retained_anomaly",
+    "reset_and_source_changes",
+    "source_count_and_reliable_to_best_effort",
+    "explicit_test_timeout",
+    "diagnostic_has_no_fmu_publishers",
+    "reliable_to_reliable",
+    "sigint_final_snapshot_and_forced_anomaly_flush"
+  ],
+  "test_timeout_sec": 1.0,
+  "timeout_is_test_fixture": true,
+  "diagnostic_publishers": [
+    [
+      "/parameter_events",
+      [
+        "rcl_interfaces/msg/ParameterEvent"
+      ]
+    ],
+    [
+      "/rosout",
+      [
+        "rcl_interfaces/msg/Log"
+      ]
+    ]
+  ],
+  "passed": true
+}

@@ -1,0 +1,8 @@
+{
+  "verified_source_commit": "e8652ad686c52502ea877fd23b5805d6b64e0da6",
+  "regression_head_before_commits": "3677b9dd1f35e092e43501d26164c6263545c947",
+  "regression_content_mismatches": [],
+  "ros_build_content_mismatches": [],
+  "all_match": true,
+  "notes": "Tests ran before local commits; committed source content is unchanged."
+}

@@ -1,0 +1,6 @@
+# 仅供开发阶段统一 Python 排版；不改公开名称、字符串内容或运行参数。
+# Black 的结果仍须通过完整 AST 等价核对，不能仅凭格式化器的成功退出判定行为不变。
+[tool.black]
+line-length = 100
+target-version = ['py310']
+skip-string-normalization = true

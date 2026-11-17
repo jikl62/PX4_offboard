@@ -1,0 +1,6 @@
+test_pending_unsafe_payload_cannot_be_hidden_by_benign_head (test_receive_event_adapter.ReceiveEventAdapterTest) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.595s
+
+OK

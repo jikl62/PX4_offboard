@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "baseline": "d8d14ff30be6bc89dce805205f6489795a5efa5e",
+  "branch": "readability/fc01-chinese-20261111",
+  "source_commit": "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb",
+  "commits": [
+    {
+      "commit": "59c49b2dc9a35eebdabdb8e6af55d43a1ec00d79",
+      "subject": "fix(tests): preserve per-test logging injection links in legacy runners"
+    },
+    {
+      "commit": "8d2bfd8a26aaf229bed24d130ccff89e58c76e80",
+      "subject": "fix(diagnostics): release ROS resources across startup and shutdown failures"
+    },
+    {
+      "commit": "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb",
+      "subject": "refactor(readability): explain vision interfaces and resource ownership in Chinese"
+    }
+  ],
+  "scope": "Readability and two isolated non-flight fixes; no push/main/deploy/production node/Agent/serial/propulsion.",
+  "git_protection": {
+    "other_local_or_tracking_refs_changed": {},
+    "origin_main_local_tracking_before": "377a945d9cd1147baad8871cd5387b9e63cd774d",
+    "origin_main_local_tracking_after": "377a945d9cd1147baad8871cd5387b9e63cd774d",
+    "remote_contact_performed": false,
+    "local_main_existed": false,
+    "new_merge_commits": [],
+    "source_worktree_clean_at_commit": true
+  },
+  "structure": {
+    "passed": true,
+    "changed_equivalence_files": 23,
+    "cpp_headers": 16,
+    "cpp_tokens": 22436,
+    "msg_files": 5,
+    "message_declarations": 99,
+    "unchanged_baseline_files_bytes_equal": 459,
+    "diagnostic_full_ast_equal_to_functional_fix": true,
+    "native_config_and_dist_bytes_equal": {
+      "native/config/": true,
+      "dist/": true
+    },
+    "release_manifest_bytes_equal": true,
+    "initial_core_stage_files_changed": [],
+    "exceptions": {
+      "native/scripts/test.sh": "OVN-01: per-test fault injection link flags; functional commit 59c49b2",
+      "native/scripts/r62_cpp_regressions.sh": "OVN-01: per-test fault injection link flags; functional commit 59c49b2",
+      "native/tools/velocity_command_diagnostic.py": "OVN-08: explicit resources and exception propagation; functional commit 8d2bfd8; comments compared separately",
+      "navigation_service.py": "named profile factory, normalized AST and deterministic differential tests"
+    }
+  },
+  "results": {
+    "root_python_full": {
+      "executed": 556,
+      "passed": 553,
+      "errors": 3,
+      "failures": 0,
+      "skipped": 0,
+      "exit": 1,
+      "log": "host/python-full.log",
+      "unresolved": "existing 8MiB curated source payload guard; same 3 actual tests reproduced as errors at immutable baseline"
+    },
+    "final_targeted": {
+      "executed": 74,
+      "passed": 74,
+      "skipped": 0,
+      "exit": 0,
+      "log": "host/final_targeted.log"
+    },
+    "cpp_debug": {
+      "programs": 80,
+      "passed": 80,
+      "exit": 0,
+      "junit": "host/ctest-junit.xml"
+    },
+    "legacy_native": {
+      "command": [
+        "bash",
+        "native/scripts/test.sh"
+      ],
+      "exit": 0,
+      "seconds": 109.43527165400155,
+      "log": "legacy-native-runner.log",
+      "native_python_methods": 41,
+      "native_python_passed": 41
+    },
+    "control_differential": {
+      "baseline": "d8d14ff30be6bc89dce805205f6489795a5efa5e",
+      "test_methods": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": true,
+      "seconds": 28.35260182699858,
+      "drivers_unchanged": true,
+      "scope": "Pure host Core, Runtime and production SystemNode with fake ROS and sinks; no flight or real node."
+    },
+    "service_factory_differential": {
+      "methods": 5,
+      "passed": 5,
+      "normalization": "Only named factory; complete other AST preserved; restore/standby entire AST equal"
+    },
+    "sanitizers": {
+      "programs": 5,
+      "passed": 5,
+      "details": "host/sanitizers_result.json",
+      "asan_ubsan": true,
+      "tsan_rerun": false,
+      "tsan_status": "NOT_PASSED; previous initialization error remains"
+    },
+    "ros": {
+      "fresh_build_exit": 0,
+      "final_incremental_build_exit": 0,
+      "native_source_count_stable": 238,
+      "vision_checks": 7,
+      "vision_domain": 218,
+      "velocity_stable_checks": 11,
+      "velocity_domain": 219,
+      "details": "ros/verification.json",
+      "final_sha_vs_smoke": "Final diagnostic full AST equals 8d2bfd8; tested snapshot archived. Last comment/docstring-only changes not separately smoked."
+    },
+    "package_bounds": {
+      "baseline": {
+        "kind": "git",
+        "revision": "d8d14ff30be6bc89dce805205f6489795a5efa5e",
+        "commit": "d8d14ff30be6bc89dce805205f6489795a5efa5e"
+      },
+      "baseline_measurement": {
+        "curated_files_without_manifest": 447,
+        "curated_bytes_without_manifest": 8684164,
+        "including_historical_manifest_bytes": 8791022,
+        "max_file_bytes": 831654,
+        "limits": {
+          "files_including_manifest": 512,
+          "bytes": 8388608,
+          "per_file_bytes": 1048576
+        },
+        "files_larger_than_1MiB": []
+      },
+      "current_measurement_before_new_stage_docs": {
+        "curated_files_without_manifest": 450,
+        "curated_bytes_without_manifest": 8768498,
+        "including_historical_manifest_bytes": 8875356,
+        "max_file_bytes": 831654,
+        "limits": {
+          "files_including_manifest": 512,
+          "bytes": 8388608,
+          "per_file_bytes": 1048576
+        },
+        "files_larger_than_1MiB": []
+      },
+      "actual_builder_guard_refusal": "Curated source payload exceeds extractor bounds",
+      "builder_unchanged": true,
+      "limits_unchanged": true,
+      "dist_and_manifest_regenerated": false,
+      "readiness": "BLOCKED_BY_EXISTING_8MiB_PAYLOAD_BUDGET_AND_STALE_MANIFEST"
+    },
+    "baseline_three_package_tests": {
+      "baseline": {
+        "kind": "git",
+        "revision": "d8d14ff30be6bc89dce805205f6489795a5efa5e",
+        "commit": "d8d14ff30be6bc89dce805205f6489795a5efa5e"
+      },
+      "all_blobs_from_git": true,
+      "folder": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/baseline-packaging-source",
+      "command": [
+        "/usr/bin/python3",
+        "-m",
+        "unittest",
+        "-v",
+        "test_navigation_install.BundleTests.test_candidate_directory_and_development_experiment_exclusion",
+        "test_navigation_install.BundleTests.test_exact_self_extraction_repeat_and_conflict",
+        "test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests.test_current_checkout_sources_and_local_edit_are_exact"
+      ],
+      "exit": 1,
+      "expected_exit": 1,
+      "seconds": 0.1577057020040229,
+      "log": "baseline-package-three-tests.log",
+      "scope": "three existing package tests using unchanged original files; no installer/deployment reached"
+    }
+  },
+  "review": {
+    "independent_lifecycle_methods_passed": 15,
+    "independent_factory_methods_passed": 5,
+    "issues_corrected": [
+      "exception catch range and nominal poll timeout",
+      "read_ros_config propagates, not handles",
+      "actual vs target velocity wording",
+      "string allocation ownership comment location",
+      "cleanup/rollback promises reflect branches",
+      "writer bool only refers to current event; false may flush an older anomaly",
+      "receive/base-constructor exception scope",
+      "new docstrings restored and new contracts use comments"
+    ],
+    "no_new_confirmed_p0_p1": true,
+    "candidate_only": "supervisor cleanup exceptions may skip later releases; requires isolated reproduction and safety process plan"
+  },
+  "limitations": [
+    "x86_64 only; no ARM64 build/performance or hardware",
+    "finite traces and synthetic ROS do not prove all state spaces or PX4 adoption",
+    "DDS allocation before application budget remains",
+    "full R62 replay missing historical CSV",
+    "source package unavailable until separate payload strategy and current manifest validation"
+  ],
+  "evidence_cache": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap",
+  "evidence_index": "evidence_index.json",
+  "evidence_archive": "evidence.zip",
+  "overall_all_tests_passed": false,
+  "source_changes_ready_for_local_review": true,
+  "new_source_installer_ready": false
+}

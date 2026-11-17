@@ -1,0 +1,161 @@
+{
+  "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+  "source_yaml": {
+    "native/config/R6_OFFLINE_DEV.yaml": {
+      "byte_unchanged": true,
+      "sha256": "1d223c9a0884df619595605c62d276b8db07fa037ec41dc11753f65f719f6898"
+    },
+    "native/config/R6_REAL_FC01_PENDING_REVIEW.yaml": {
+      "byte_unchanged": true,
+      "sha256": "f098f9d530111aabd396067af9c64fb6056a9ae701dab4f46802e3a4353a75f9"
+    },
+    "native/config/S10_1HZ_EXPERIMENTAL_SIM_ONLY.yaml": {
+      "byte_unchanged": true,
+      "sha256": "c98e291e8684e9544847d9e68b85bb1af715f8ed0f1b2998c34e1a679ef10fbc"
+    },
+    "native/config/attitude_altitude.yaml": {
+      "byte_unchanged": true,
+      "sha256": "01fec7e4388f948c77847ef9ccfc116c3b83f3a2add3a4a1f08de3d1606ce692"
+    },
+    "native/config/diagnostic.yaml": {
+      "byte_unchanged": true,
+      "sha256": "ee965f34b33c9be7d46900ba2dfc32a8c8181e68efecb893b86179e96a28023d"
+    },
+    "native/config/flight.yaml": {
+      "byte_unchanged": true,
+      "sha256": "7bb138448112e272e05a8e50c08a1eb260f892167614ef91a29c1e902e892188"
+    },
+    "native/config/flight_test.yaml": {
+      "byte_unchanged": true,
+      "sha256": "1ddce8549bcd9f9b6eaacf532ad9f00d04b70706a54245f51eddbce6cdc5ff2b"
+    },
+    "native/config/ground.yaml": {
+      "byte_unchanged": true,
+      "sha256": "8947013b855967b91d1a4d6493b6c280054aa88deab264a67f4de3dfeea4387a"
+    },
+    "native/config/historical/R5_CANDIDATES_GATES_CLOSED.yaml": {
+      "byte_unchanged": true,
+      "sha256": "57f336de2cf7caacc217faf5192f438b7a7e303f361fbd163dd04f3ae652495b"
+    },
+    "native/config/sim.yaml": {
+      "byte_unchanged": true,
+      "sha256": "49df2f1ab02f3785e5ec6d76a2762443b84b005c944af27ddaa0c9f22e667474"
+    },
+    "tests/fixtures/base.yaml": {
+      "byte_unchanged": true,
+      "sha256": "d74f286f220c032c5845881c2e07649722bcb3758eacb4159e0e2cce6a6d7b05"
+    }
+  },
+  "generated_navigation_profile": {
+    "aa_hover_thrust": 0.5,
+    "aa_takeoff_reserve_thrust": 0.04,
+    "aa_thrust_max": 0.8,
+    "rc_target_height": 1.5,
+    "visual_navigation_enabled": false,
+    "arm_enabled": false
+  },
+  "generated_values_verified_in": "live navigation_service.navigation_profile(yaml.safe_load(native/config/attitude_altitude.yaml), target=1.5, mode_slot=6, mode=flight-test)",
+  "messages_byte_unchanged": true,
+  "protected_sources": {
+    "native/config/R6_OFFLINE_DEV.yaml": {
+      "byte_unchanged": true,
+      "sha256": "1d223c9a0884df619595605c62d276b8db07fa037ec41dc11753f65f719f6898"
+    },
+    "native/config/R6_REAL_FC01_PENDING_REVIEW.yaml": {
+      "byte_unchanged": true,
+      "sha256": "f098f9d530111aabd396067af9c64fb6056a9ae701dab4f46802e3a4353a75f9"
+    },
+    "native/config/S10_1HZ_EXPERIMENTAL_SIM_ONLY.yaml": {
+      "byte_unchanged": true,
+      "sha256": "c98e291e8684e9544847d9e68b85bb1af715f8ed0f1b2998c34e1a679ef10fbc"
+    },
+    "native/config/attitude_altitude.yaml": {
+      "byte_unchanged": true,
+      "sha256": "01fec7e4388f948c77847ef9ccfc116c3b83f3a2add3a4a1f08de3d1606ce692"
+    },
+    "native/config/diagnostic.yaml": {
+      "byte_unchanged": true,
+      "sha256": "ee965f34b33c9be7d46900ba2dfc32a8c8181e68efecb893b86179e96a28023d"
+    },
+    "native/config/flight.yaml": {
+      "byte_unchanged": true,
+      "sha256": "7bb138448112e272e05a8e50c08a1eb260f892167614ef91a29c1e902e892188"
+    },
+    "native/config/flight_test.yaml": {
+      "byte_unchanged": true,
+      "sha256": "1ddce8549bcd9f9b6eaacf532ad9f00d04b70706a54245f51eddbce6cdc5ff2b"
+    },
+    "native/config/ground.yaml": {
+      "byte_unchanged": true,
+      "sha256": "8947013b855967b91d1a4d6493b6c280054aa88deab264a67f4de3dfeea4387a"
+    },
+    "native/config/historical/R5_CANDIDATES_GATES_CLOSED.yaml": {
+      "byte_unchanged": true,
+      "sha256": "57f336de2cf7caacc217faf5192f438b7a7e303f361fbd163dd04f3ae652495b"
+    },
+    "native/config/sim.yaml": {
+      "byte_unchanged": true,
+      "sha256": "49df2f1ab02f3785e5ec6d76a2762443b84b005c944af27ddaa0c9f22e667474"
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp": {
+      "byte_unchanged": true,
+      "sha256": "e53fdf955b4923a0cb17f8c5feba22cd3cbb1436c09b167654c13c8f80f78108"
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp": {
+      "byte_unchanged": true,
+      "sha256": "32236143b48192825626d20cfd5a9eebc1402a70ab4312fade0ef12ea0362b7b"
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp": {
+      "byte_unchanged": true,
+      "sha256": "4b21d5ebdc7bac69351686e0a2255722ccf8e232cd1c176edb3dbf0a13958e94"
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp": {
+      "byte_unchanged": true,
+      "sha256": "b973a96663a6c0485f859d82ec8c85d326a95c0c074fc254ea3dee6635ab681b"
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp": {
+      "byte_unchanged": true,
+      "sha256": "4cb467ea2c288484a94157c6820be30b213616a1800ee946c4cca1699cd9c9f9"
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp": {
+      "byte_unchanged": true,
+      "sha256": "a0bc3838b62fbc496c90cca4866d860c4155e3322fafb8ad956fa1791bc3f1a5"
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp": {
+      "byte_unchanged": true,
+      "sha256": "69b86aabeb6715775e89aefe1bba4eeea3b4f00a17accf4bc27553edcb3b5b9a"
+    },
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp": {
+      "byte_unchanged": true,
+      "sha256": "caf94bf879a3115e5214c841fa2fb2749d0ae206f067a4981c3f1e656bbde15e"
+    },
+    "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg": {
+      "byte_unchanged": true,
+      "sha256": "ecc7e270d65445ac5549f8fec45e96cbaac97d7cabe430864c2fef1c0992587e"
+    },
+    "native/src/jikl_fc01_system/msg/NavigationCommand.msg": {
+      "byte_unchanged": true,
+      "sha256": "c739a7305fe4646c7fc4d745dff226943911392dcdfb8c5e9772fcd16e4a5aab"
+    },
+    "native/src/jikl_fc01_system/msg/VelocityCommand.msg": {
+      "byte_unchanged": true,
+      "sha256": "76912af6e16e33129f890d32445c5e4364531a34abcaebf906511297034e20b1"
+    },
+    "native/src/jikl_fc01_system/msg/VisionHealth.msg": {
+      "byte_unchanged": true,
+      "sha256": "a8a0d18ff39b550396f9959e9b30e3a45b1325d70e3ec815812370c3b7c89a57"
+    },
+    "native/src/jikl_fc01_system/msg/VisionState.msg": {
+      "byte_unchanged": true,
+      "sha256": "54a6e643faa62f31ccd8cf84b9483188bdf72935f7ce78c04227a2bce136f776"
+    },
+    "native/src/jikl_fc01_system/src/fc01_system_node.cpp": {
+      "byte_unchanged": true,
+      "sha256": "535aa142fb718c28371b3b35b9b637c8ce1bf078891575e542940f9f6d2cf47f"
+    },
+    "tests/fixtures/base.yaml": {
+      "byte_unchanged": true,
+      "sha256": "d74f286f220c032c5845881c2e07649722bcb3758eacb4159e0e2cce6a6d7b05"
+    }
+  }
+}

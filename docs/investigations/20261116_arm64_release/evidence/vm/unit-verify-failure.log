@@ -1,0 +1,3 @@
+/tmp/fc01-verify-debug/fc01-navigation.service:34: WorkingDirectory= path is not absolute: "/home/orangepi/FC01_versions/20261116_stage3"
+fc01-navigation.service: Unit configuration has fatal error, unit will not be started.
+Unit fc01-navigation.service has a bad unit file setting.

@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "stage": "overnight queue 2/7 core C++ readability",
+  "initial_head": "5b86eeb4094ada009903c0140f66289cfe89411e",
+  "branch": "readability/fc01-chinese-20261111",
+  "audit_archive_commit": "ef71c46b026009bafb95b69de7a16628fe5a509f",
+  "source_commit": "39a7c8f844bb66655735bf41e8b33f5b1044d862",
+  "delivery_commit_identity": "Use Git history of this report; no recursive self-commit field.",
+  "scope": {
+    "changed_production_cpp_files": 18,
+    "function_extractions": 0,
+    "behavior_fixes": 0,
+    "variable_or_protocol_renames": 0,
+    "original_nonchanged_files_byte_identical": 457,
+    "previous_six_audit_artifacts_byte_identical": true,
+    "method": "Detailed Chinese code comments, translation/consolidation, existing clang-format layout; current executable tokens preserved."
+  },
+  "checks": {
+    "cpp_tokens_literals_and_preprocessor_boundaries": {
+      "passed": true,
+      "files": 18,
+      "evidence": "evidence.zip:cpp_equivalence.json"
+    },
+    "clang_format_and_diff_check": true,
+    "ctest": {
+      "programs": 80,
+      "passed": true,
+      "asserts": "Debug, enabled",
+      "evidence": "evidence.zip:ctest-junit.xml and ctest.log"
+    },
+    "python_native": {
+      "test_methods": 41,
+      "passed": true
+    },
+    "lexical_checker_tests": {
+      "test_methods": 26,
+      "passed": true
+    },
+    "current_baseline_dynamic": {
+      "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+      "test_methods": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": true,
+      "seconds": 21.102945605998684,
+      "drivers_unchanged": true,
+      "scope": "Pure host Core, Runtime and production SystemNode with fake ROS and sinks; no flight or real node."
+    },
+    "strict_traces": {
+      "node": {
+        "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+        "comparison": "strict-byte-identical",
+        "controlled_fixture_input": {
+          "diagnostic_controller_pid": 4242
+        },
+        "state_samples": 1350,
+        "lines": 1908,
+        "sha256": "5f968a9e84f787e3cbc6dd03939cb965a1c62303688d3190f88ad9df80803c2d"
+      },
+      "powered-node": {
+        "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+        "comparison": "strict-byte-identical",
+        "driver_sha256": "fd0d83488b03c66f5734b72b9f1f9c9c1ecd5ab4dad4e474c9fe547fd901415d",
+        "state_samples": 707,
+        "phase_counts": {
+          "IDLE": 41,
+          "RC_PRESTREAM": 80,
+          "RC_READY_WAIT_ARM": 11,
+          "RC_ARMED_WAIT_NAVIGATION": 3,
+          "ARMED_GROUND": 21,
+          "THRUST_RAMP": 117,
+          "ASCEND": 131,
+          "HEIGHT_HOLD": 6,
+          "DESCENT": 155,
+          "LANDED": 61,
+          "REQUEST_DISARM": 3,
+          "SAFE_DISARMED": 1,
+          "SAFETY": 77
+        },
+        "sink_order_counts": {
+          "TARGET,HEARTBEAT": 587,
+          "TARGET,HEARTBEAT,COMMAND": 1
+        },
+        "trace_sha256": "f47d3a0f1fc2258afd2f7a18b0bcbb8758b77aeb93a9b3279817262376512790",
+        "normalization": {
+          "diagnostic_controller_pid": 4242
+        },
+        "float_sink_encoding": "hexfloat exact for all target/command floating fields",
+        "scope": "Synthetic 20Hz source feedback and fake ROS; production node/control/publish code.",
+        "hardware_or_flight_validation": false
+      },
+      "test_stage2_control_trace": {
+        "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+        "source_sha256": "4b8f684b367f210b31c84195e605e874550b376125e5f30a187e763a144f86c5",
+        "comparison": "strict-byte-identical",
+        "lines": 14626,
+        "bytes": 2485479,
+        "sha256": "82efd1071b1affe0feb8a62c164989d6616d7471af068a1ef6be585fa2838675"
+      },
+      "test_stage2_publication_trace": {
+        "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+        "source_sha256": "0e0ee079fdaf5e9569189beeae28cfcbea1d41d095ec53bd4ec830709ba1c1ca",
+        "comparison": "strict-byte-identical",
+        "lines": 10779,
+        "bytes": 466537,
+        "sha256": "4a9a25a5511b6156a9539bcfa55f67429af8bb425b54e1133d595ebf91c1605a"
+      },
+      "test_stage2_runtime_trace": {
+        "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+        "source_sha256": "69ba8fb940af92194a521eef394401ddd12f8a8eadfd32965ca492a4af0ac0b7",
+        "comparison": "strict-byte-identical",
+        "lines": 966,
+        "bytes": 256454,
+        "sha256": "dfe14871bca040c800d1062a5e5f0349c0ea51a48276a40030d4b31984ca6408"
+      },
+      "test_stage3_publication_combinations": {
+        "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+        "source_sha256": "6b174e3e079533dd1452b55fe70fa2a78d485650d58ae15f6af34576ef43eafc",
+        "comparison": "strict-byte-identical",
+        "lines": 523,
+        "bytes": 29506,
+        "sha256": "6b07bec0d8e633fd3c11ec1378bc8d9464541917deb225ad4507c6ea7dbf8dfb"
+      },
+      "test_stage3_state_invariants": {
+        "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+        "source_sha256": "969cc4104dd12b86602a8f1eae8dd4643331cbbe9316fbf62a0ecfb2c0d84ff8",
+        "comparison": "strict-byte-identical",
+        "lines": 282,
+        "bytes": 15709,
+        "sha256": "63d41e4ef9729995b729aeb1ec01a268e093072270283bcfb9bb8d0a18d2e269"
+      }
+    },
+    "asan_ubsan": {
+      "programs": 5,
+      "passed": true,
+      "program_names": [
+        "test_rc_navigation",
+        "test_vertical_integral_reversal",
+        "test_vertical_feedback_regression",
+        "test_stage3_publication_combinations",
+        "test_stage3_state_invariants"
+      ],
+      "evidence": "evidence.zip:sanitizers_result.json and sanitizer logs"
+    },
+    "ros_humble_fresh_build": {
+      "command": [
+        "bash",
+        "/home/jikl62/.cache/fc01-cpp-stage2-cahrkf5n/ros_build.command.sh"
+      ],
+      "exit": 0,
+      "seconds": 40.30771529699996,
+      "real_node_started": false,
+      "hardware_used": false,
+      "fresh_build_directory": true
+    },
+    "independent_review": {
+      "performed": true,
+      "corrected_comment_topics": 9,
+      "control_logic_changes_requested": false,
+      "notes": "README lists every corrected topic. Some reviewer source hashes precede comment-only corrections; final integrated tokens and SHA checked independently."
+    },
+    "test_driver_source_bytes_unchanged": true,
+    "timing_of_wording_corrections": "Final review wording corrections are covered by final token equality; dynamic/host tests used identical executable tokens. No runtime differences waived.",
+    "not_rerun": [
+      "534-method root Python full suite",
+      "real ROS message smokes",
+      "TSan",
+      "ARM64",
+      "physical hardware or flight"
+    ],
+    "counting": "Do not add sanitizer reruns to 80 independent C++ programs; 7/41/26 are Python method counts, with many generated inputs in the dynamic drivers."
+  },
+  "configuration": {
+    "all_original_configuration_files_byte_identical": true,
+    "profile_from_previous_pure_derivation_unchanged_sources": {
+      "rc_target_height": 1.5,
+      "rc_navigation_mode_slot": 1,
+      "aa_hover_thrust": 0.5,
+      "aa_takeoff_reserve_thrust": 0.04,
+      "aa_thrust_max": 0.8,
+      "arm_enabled": false,
+      "flight_enabled": false,
+      "flight_actions_enabled": true,
+      "takeoff_enabled": true,
+      "visual_navigation_enabled": false,
+      "aa_max_tilt_deg": 10.0,
+      "aa_max_flight_seconds": 30.0
+    },
+    "actual_vehicle_or_deployment_state_not_verified": true
+  },
+  "remaining": {
+    "new_confirmed_flight_P0_P1": [],
+    "existing_P2": [
+      "OVN-01 legacy Shell test linker flags, deferred to Shell/tool stage"
+    ],
+    "unconfirmed_candidate": [
+      "OVN-08 velocity diagnostic partial-constructor lifecycle, not reproduced here"
+    ],
+    "structure_debt": [
+      "Core::step length",
+      "Runtime dispatch/transaction/diagnostic responsibilities",
+      "SystemNode constructor/tick/JSON length",
+      "PoweredGround repeated bench condition retained"
+    ],
+    "delivery_blocker": "Current recursive source bundle exceeds original 8MiB guard and old release identity excludes new sources; subsequent packaging stage must address without weakening bounds."
+  },
+  "operations": {
+    "main_or_other_refs_modified": false,
+    "remote_queried_or_written": false,
+    "merged": false,
+    "rebased": false,
+    "force_pushed": false,
+    "deployed": false,
+    "production_controller_started": false,
+    "agent_or_serial_used": false,
+    "arm_or_motors_or_flight": false,
+    "px4_parameters_modified": false,
+    "local_commits_only": true,
+    "git_identity": "existing HEAD author reused via per-command -c, no persistent/global identity changes"
+  },
+  "artifacts_except_self": {
+    "CPP_READING_zh.md": {
+      "bytes": 6019,
+      "sha256": "498664ccdf45eebcb6563c9dd85c1ec930d5c67e79c0d0b9652e472aaa82b2a3"
+    },
+    "README_zh.md": {
+      "bytes": 9569,
+      "sha256": "e6aab11f4846d7d54f2a02343c3467a794bfe58f068b68cba150d2eccbc996da"
+    },
+    "changed_files.json": {
+      "bytes": 9559,
+      "sha256": "8a517198862ed1e3fbcee95ae237a44fa04fe802cf22d490d7d0f3464fa3b8fe"
+    },
+    "evidence.zip": {
+      "bytes": 304235,
+      "sha256": "26f7534f5a0e47703d8e77f5186280fe26812fe879d2eb261645d3cd2fce7299"
+    }
+  },
+  "cache_full_evidence": "/home/jikl62/.cache/fc01-cpp-stage2-cahrkf5n",
+  "package": {
+    "guard_refusal": "Curated source payload exceeds extractor bounds",
+    "selected_files_with_old_manifest": 448,
+    "actual_bytes_with_old_manifest": 8791022,
+    "limit_total_bytes": 8388608,
+    "excess_bytes_with_old_manifest": 402414,
+    "limit_files": 512,
+    "limit_item_bytes": 1048576,
+    "largest_selected_file_bytes": 831654,
+    "release_manifest_updated": false,
+    "dist_updated": false,
+    "current_package_built_or_accepted": false,
+    "note": "Actual read-only size with preserved historical manifest; refreshing hashes and future evidence changes size further. No limit weakened."
+  },
+  "limits": [
+    "Finite deterministic tests are not exhaustive state-space or flight proof.",
+    "C++ token equality does not assert equal debug/source-location/assertion line text.",
+    "Humble build and fake ROS/sinks do not prove PX4 receipt or adoption.",
+    "TSan historical runtime initialization failed; no new TSan pass claim."
+  ]
+}

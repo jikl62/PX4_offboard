@@ -1,0 +1,15 @@
+MainPID=3187
+WorkingDirectory=/home/orangepi/fc01-old
+ActiveState=active
+DropInPaths=
+Nov 16 13:45:04 fc01-arm64-test-vm systemd[1]: fc01-navigation.service: Consumed 27.274s CPU time.
+Nov 16 13:45:09 fc01-arm64-test-vm systemd[1]: Started FC01 manual RC navigation controller.
+Nov 16 13:45:16 fc01-arm64-test-vm fc01-navigation[3187]: FC01 导航启动 version=20261112.1 mode=flight-test hover_thrust=0.500 reserve=0.040 target=1.230 permissions=flight_actions_enabled=True,arm_enabled=False,takeoff_enabled=True,rc_navigation_enabled=True visual=False config=/home/orangepi/FC01_navigation/runtime.yaml
+Nov 16 13:45:17 fc01-arm64-test-vm fc01-navigation[3187]: Agent transport CONNECTED: UART /dev/ttyS2 115200; PID=671
+Nov 16 13:45:17 fc01-arm64-test-vm fc01-navigation[3187]: WAITING: 控制器已启动，等待飞控反馈
+Nov 16 13:45:17 fc01-arm64-test-vm fc01-navigation[3187]: WAITING: 等待飞控新鲜状态和本地位置
+Nov 16 13:45:18 fc01-arm64-test-vm fc01-navigation[3187]: WAITING: RC_QUEUED_SAFETY_CONDITION
+Nov 16 13:45:18 fc01-arm64-test-vm fc01-navigation[3187]: WAITING: RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND
+Nov 16 13:45:20 fc01-arm64-test-vm fc01-navigation[3187]: PRESTREAM: RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE
+Nov 16 13:45:22 fc01-arm64-test-vm fc01-navigation[3187]: READY_WAIT_ARM: RC_READY_WAIT_CH5_MANUAL_ARM
+3231 /home/orangepi/fc01-old/install/lib/jikl_fc01_system/fc01_system_node --ros-args --disable-external-lib-logs --params-file /home/orangepi/FC01_navigation/runtime.yaml -p socket_path:=/home/orangepi/.cache/fc01_operator/ipc/s_nls516t4/control.sock

@@ -1,0 +1,72 @@
+tar: install/_local_setup_util_sh.py: time stamp 2026-11-16 13:20:21 is 110.990943968 s in the future
+tar: install/_local_setup_util_ps1.py: time stamp 2026-11-16 13:20:21 is 110.98447896 s in the future
+tar: install/local_setup.bash: time stamp 2026-11-16 13:20:21 is 110.983349936 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system-0.4.6-py3.10.egg-info: time stamp 2026-11-16 13:20:20 is 109.969598208 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/__pycache__/_navigation_command.cpython-310.pyc: time stamp 2026-11-16 13:20:21 is 110.945453968 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/__pycache__/_vision_state.cpython-310.pyc: time stamp 2026-11-16 13:20:21 is 110.72572936 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/__pycache__/_attitude_thrust_preview.cpython-310.pyc: time stamp 2026-11-16 13:20:21 is 110.72351624 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/__pycache__/_velocity_command.cpython-310.pyc: time stamp 2026-11-16 13:20:21 is 110.72199632 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/__pycache__/_vision_health.cpython-310.pyc: time stamp 2026-11-16 13:20:21 is 110.720249616 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/__pycache__/__init__.cpython-310.pyc: time stamp 2026-11-16 13:20:21 is 110.475620208 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/msg/__pycache__: time stamp 2026-11-16 13:20:21 is 110.474755008 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/msg: time stamp 2026-11-16 13:20:21 is 109.822724288 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/__pycache__/__init__.cpython-310.pyc: time stamp 2026-11-16 13:20:21 is 109.54248968 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system/__pycache__: time stamp 2026-11-16 13:20:21 is 109.541641056 s in the future
+tar: install/local/lib/python3.10/dist-packages/jikl_fc01_system: time stamp 2026-11-16 13:20:21 is 109.300212944 s in the future
+tar: install/local/lib/python3.10/dist-packages: time stamp 2026-11-16 13:20:20 is 104.268887984 s in the future
+tar: install/local_setup.zsh: time stamp 2026-11-16 13:20:21 is 105.265842112 s in the future
+tar: install/local_setup.ps1: time stamp 2026-11-16 13:20:21 is 105.264702656 s in the future
+tar: install/include/jikl_fc01_system/jikl_fc01_system/msg/detail/dds_fastrtps: time stamp 2026-11-16 13:20:20 is 104.18590008 s in the future
+tar: install/include/jikl_fc01_system/jikl_fc01_system/msg/detail: time stamp 2026-11-16 13:20:20 is 104.147772064 s in the future
+tar: install/include/jikl_fc01_system/jikl_fc01_system/msg: time stamp 2026-11-16 13:20:20 is 104.136588208 s in the future
+tar: install/include/jikl_fc01_system/jikl_fc01_system: time stamp 2026-11-16 13:20:20 is 104.135581632 s in the future
+tar: install/include/jikl_fc01_system: time stamp 2026-11-16 13:20:21 is 105.122474352 s in the future
+tar: install/include: time stamp 2026-11-16 13:20:20 is 98.644089328 s in the future
+tar: install/local_setup.sh: time stamp 2026-11-16 13:20:21 is 99.642645984 s in the future
+tar: install/setup.ps1: time stamp 2026-11-16 13:20:21 is 99.641661248 s in the future
+tar: install/setup.sh: time stamp 2026-11-16 13:20:21 is 99.640586336 s in the future
+tar: install/lib/jikl_fc01_system/fc01_system_node: time stamp 2026-11-16 13:20:20 is 98.168783664 s in the future
+tar: install/lib/jikl_fc01_system: time stamp 2026-11-16 13:20:21 is 99.164680816 s in the future
+tar: install/lib: time stamp 2026-11-16 13:20:21 is 99.1387028 s in the future
+tar: install/setup.bash: time stamp 2026-11-16 13:20:21 is 99.13746528 s in the future
+tar: install/setup.zsh: time stamp 2026-11-16 13:20:21 is 99.135013536 s in the future
+tar: install/share/colcon-core/packages/jikl_fc01_system: time stamp 2026-11-16 13:20:21 is 99.133445664 s in the future
+tar: install/share/colcon-core/packages: time stamp 2026-11-16 13:20:21 is 99.131422096 s in the future
+tar: install/share/ament_index/resource_index/parent_prefix_path: time stamp 2026-11-16 13:20:21 is 99.128003664 s in the future
+tar: install/share/ament_index/resource_index/package_run_dependencies: time stamp 2026-11-16 13:20:21 is 99.125004576 s in the future
+tar: install/share/ament_index/resource_index/rosidl_interfaces: time stamp 2026-11-16 13:20:20 is 98.121811984 s in the future
+tar: install/share/ament_index/resource_index/packages: time stamp 2026-11-16 13:20:21 is 99.119308816 s in the future
+tar: install/share/jikl_fc01_system/msg: time stamp 2026-11-16 13:20:21 is 99.10864552 s in the future
+tar: install/share/jikl_fc01_system/environment: time stamp 2026-11-16 13:20:21 is 99.100493152 s in the future
+tar: install/share/jikl_fc01_system/rust/src/msg: time stamp 2026-11-16 13:20:21 is 99.094105776 s in the future
+tar: install/share/jikl_fc01_system/rust/src: time stamp 2026-11-16 13:20:21 is 99.0905772 s in the future
+tar: install/share/jikl_fc01_system/rust: time stamp 2026-11-16 13:20:21 is 99.088830208 s in the future
+tar: install/share/jikl_fc01_system/cmake: time stamp 2026-11-16 13:20:21 is 99.065172912 s in the future
+tar: install/share/jikl_fc01_system/package.bash: time stamp 2026-11-16 13:20:21 is 99.063838864 s in the future
+tar: install/share/jikl_fc01_system/package.sh: time stamp 2026-11-16 13:20:21 is 99.061873888 s in the future
+tar: install/share/jikl_fc01_system/package.zsh: time stamp 2026-11-16 13:20:21 is 99.059914032 s in the future
+tar: install/share/jikl_fc01_system/hook/ld_library_path_lib.sh: time stamp 2026-11-16 13:20:21 is 99.05845768 s in the future
+tar: install/share/jikl_fc01_system/hook/ld_library_path_lib.dsv: time stamp 2026-11-16 13:20:21 is 99.0575 s in the future
+tar: install/share/jikl_fc01_system/hook/cmake_prefix_path.ps1: time stamp 2026-11-16 13:20:21 is 99.056405808 s in the future
+tar: install/share/jikl_fc01_system/hook/ld_library_path_lib.ps1: time stamp 2026-11-16 13:20:21 is 99.055446256 s in the future
+tar: install/share/jikl_fc01_system/hook/cmake_prefix_path.sh: time stamp 2026-11-16 13:20:21 is 99.054450368 s in the future
+tar: install/share/jikl_fc01_system/hook/cmake_prefix_path.dsv: time stamp 2026-11-16 13:20:21 is 99.05345064 s in the future
+tar: install/share/jikl_fc01_system/hook: time stamp 2026-11-16 13:20:21 is 99.052533968 s in the future
+tar: install/share/jikl_fc01_system/package.ps1: time stamp 2026-11-16 13:20:21 is 99.051286096 s in the future
+tar: install/share/jikl_fc01_system/package.dsv: time stamp 2026-11-16 13:20:21 is 99.050260688 s in the future
+tar: install/share/jikl_fc01_system: time stamp 2026-11-16 13:20:21 is 99.049634672 s in the future
+tar: install/share: time stamp 2026-11-16 13:20:20 is 97.338612928 s in the future
+tar: install: time stamp 2026-11-16 13:20:21 is 98.338093488 s in the future
+● fc01-navigation.service - FC01 manual RC navigation controller
+     Loaded: loaded (/etc/systemd/system/fc01-navigation.service; enabled; vendor preset: enabled)
+     Active: active (running) since Mon 2026-11-16 13:18:43 UTC; 181ms ago
+   Main PID: 808 (bash)
+      Tasks: 3 (limit: 2290)
+     Memory: 712.0K
+        CPU: 87ms
+     CGroup: /system.slice/fc01-navigation.service
+             ├─808 /bin/bash /home/orangepi/fc01-old/navigation_boot.sh run --mode flight-test --confirm-flight-test
+             ├─811 /bin/bash /home/orangepi/fc01-old/navigation_boot.sh run --mode flight-test --confirm-flight-test
+             └─812 dirname -- /home/orangepi/fc01-old/navigation_boot.sh
+
+Nov 16 13:18:43 fc01-arm64-test-vm systemd[1]: Started FC01 manual RC navigation controller.

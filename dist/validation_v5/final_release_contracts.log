@@ -1,0 +1,144 @@
+RELEASE_SOURCES {'source_commit': '1a208dddba92a05b26f9dba4759f99b553fd5b1c', 'controller_build': 'FC01_RECOVERY_DIAGNOSTIC_V5_20261110', 'release_manifest_sha256': 'edf1c2ea6bef37a83bbc266a99fd37e6dcd684fb59d62b9275859cb1faa7ebc6', 'source_sha256': 'f8c72d9c09f1615f49ac4f6379046ac80979c43e92e371c12b1442ad0f997287'}
+test_candidate_directory_and_development_experiment_exclusion (test_navigation_install.BundleTests) ... ok
+test_exact_self_extraction_repeat_and_conflict (test_navigation_install.BundleTests) ... ok
+test_authentication_delay_cannot_reuse_prior_ground_evidence (test_navigation_install.InstallTests) ... ok
+test_build_is_offline_single_job_and_staged (test_navigation_install.InstallTests) ... ok
+test_compiler_access_time_does_not_force_a_new_live_binary (test_navigation_install.InstallTests) ... ok
+test_configuration_only_change_restarts_then_identical_config_does_not (test_navigation_install.InstallTests) ... 导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+ok
+test_foreign_unit_dropin_or_foreign_desktop_refuses_before_mutation (test_navigation_install.InstallTests) ... ok
+test_ground_evidence_expiry_reprobes_before_next_service_mutation (test_navigation_install.InstallTests) ... ok
+test_ground_failure_happens_after_build_validation_before_service_mutation (test_navigation_install.InstallTests) ... 正在离线编译 ARM64 原生控制器；单任务构建，首次需要等待。
+编译和实际 YAML 检查通过；正在被动确认未解锁、接地、静止。
+ok
+test_live_unknown_controller_and_unmanaged_install_link_are_preserved (test_navigation_install.InstallTests) ... ok
+test_managed_upgrade_and_repeat_preserve_existing_candidate (test_navigation_install.InstallTests) ... 导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+导航服务已启用；当前终端显示状态，桌面登录后也会显示只读状态窗口。
+ok
+test_partial_install_prefix_is_retained_and_retry_selects_a_new_stage (test_navigation_install.InstallTests) ... ok
+test_pending_link_conflict_is_detected_before_disabling_old_service (test_navigation_install.InstallTests) ... ok
+test_rollback_authenticates_then_observes_and_uses_noninteractive_mutations (test_navigation_install.InstallTests) ... ok
+test_rollback_checks_ground_before_stop_and_restores_only_managed_standby (test_navigation_install.InstallTests) ... 已回到原关闭动作门待命服务；导航自动起飞已停用。
+ok
+test_service_defaults_to_diagnostic_and_flight_test_is_explicit (test_navigation_install.InstallTests) ... ok
+test_units_and_desktop_paths_support_space_dollar_percent_without_shell (test_navigation_install.InstallTests) ... ok
+test_armed_observation_latches_even_with_invalid_clock (test_navigation_install.ProbeTests) ... ok
+test_duplicates_unsynchronized_and_unrest_are_not_ground_proof (test_navigation_install.ProbeTests) ... ok
+test_live_probe_is_subscription_only_and_retains_matching_agent (test_navigation_install.ProbeTests) ... 已观察到新鲜、单一来源的未解锁接地静止反馈
+ok
+test_probe_requires_advancing_clock_and_exclusive_fresh_ground (test_navigation_install.ProbeTests) ... ok
+test_current_checkout_sources_and_local_edit_are_exact (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_default_offline_repeat_skips_unpack_and_preserves_generated_outputs (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_existing_different_or_incomplete_directory_is_never_overwritten (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_extract_only_compatibility_and_action_forwarding (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_manifest_checks_actual_disk_and_rejects_stale_content (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_new_default_directory_preserves_previous_unpacked_release (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_no_sidecar_uses_embedded_hash_and_rebuild_is_reproducible (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_unsafe_archive_paths_are_rejected_before_creating_target (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_whole_package_sidecar_and_archive_hash_fail_before_extract (test_vertical_diagnostic_bundle.VerticalDiagnosticBundleTests) ... ok
+test_build_entry_refuses_host_without_executing_hardware (test_navigation_build_evidence.DependencyAndEnvironmentTests) ... ok
+test_dependency_hashes_follow_sdk_symlinks_and_actual_bytes (test_navigation_build_evidence.DependencyAndEnvironmentTests) ... ok
+test_sdk_resolution_environment_then_config_then_existing_home (test_navigation_build_evidence.DependencyAndEnvironmentTests) ... ok
+test_changed_cmake_dependency_cannot_pass_verification (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp7ktmmm4h/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=CMake selected an unexpected dependency: px4_msgs
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_changed_generated_support_file_cannot_be_reused (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpzxekglff/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=installed generated library or support files differ from build evidence
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_changed_runtime_library_or_binary_cannot_be_reused (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp7jaryeg9/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=binary or runtime library content differs from build evidence
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=binary or runtime library content differs from build evidence
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_dependency_content_change_requires_new_build (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmpduyp6mdq/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_foreign_install_directory_and_symlink_are_retained (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp39dtoeuw/release/ARM64_BUILD_EVIDENCE.json'
+FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp39dtoeuw/release/ARM64_BUILD_EVIDENCE.json'
+ok
+test_interrupted_rebuild_preserves_existing_install_and_complete_evidence (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp1_dsi7z3/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_matching_provenance_reuses_without_compilation_and_verify_is_read_only (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp9rcie1qg/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_BUILD_REUSED input_sha256=f9df26e0a883fa235fca94efb98801eda2b12f68b51cc83d4749ff2c61bc82b9
+ok
+test_modified_source_refuses_stale_manifest_and_updated_manifest_rebuilds (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... FC01_ARM64_REBUILD_REQUIRED reason=[Errno 2] No such file or directory: '/tmp/tmp882mfqhy/release/ARM64_BUILD_EVIDENCE.json'
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FC01_ARM64_REBUILD_REQUIRED reason=build evidence does not match the current release or dependencies
+FC01_OFFLINE_BUILD_STEP -S
+FC01_OFFLINE_BUILD_STEP --build
+FC01_OFFLINE_BUILD_STEP --install
+FC01_ARM64_FRESH_BUILD_VERIFIED source_commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok
+test_unlisted_source_or_traversal_is_rejected (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... ok
+test_wrong_elf_architecture_or_old_marker_is_rejected (test_navigation_build_evidence.NavigationBuildEvidenceTests) ... ok
+test_activation_keeps_boot_policy_and_rollback_uses_saved_backup (test_navigation_deploy.DeploymentTests) ... FC01_ROLLBACK_PATH=/tmp/tmpnvi37x0r/backup
+FC01_ROLLBACK_PATH=/tmp/tmpnvi37x0r/backup
+FC01_ROLLBACK_PATH=/tmp/tmpnvi37x0r/backup
+ok
+test_activation_needs_confirmation_and_current_offline_evidence (test_navigation_deploy.DeploymentTests) ... ok
+test_build_failure_never_reaches_config_or_ready (test_navigation_deploy.DeploymentTests) ... ok
+test_mutated_source_is_refused_before_any_action (test_navigation_deploy.DeploymentTests) ... ok
+test_offline_only_builds_and_checks_release_local_config (test_navigation_deploy.DeploymentTests) ... FC01_OFFLINE_READY evidence=/tmp/tmp6hbizty2/release/ARM64_BUILD_EVIDENCE.json
+离线部署完成；尚未正式启用。原服务配置和 Agent 未变更。
+ok
+
+----------------------------------------------------------------------
+Ran 48 tests in 2.018s
+
+OK

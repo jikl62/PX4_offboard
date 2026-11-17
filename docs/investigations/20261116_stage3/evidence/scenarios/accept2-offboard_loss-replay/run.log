@@ -1,0 +1,10 @@
+offboard_loss IDLE IDLE_NO_AUTOMATIC_ARM h= 0.0
+offboard_loss RC_PRESTREAM RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE h= 0.0
+offboard_loss RC_READY_WAIT_ARM RC_READY_WAIT_CH5_MANUAL_ARM h= 0.0
+offboard_loss RC_ARMED_WAIT_NAVIGATION RC_WAIT_MATCHED_SWITCH_AND_NEW_ARMED_STATUS h= 0.0
+offboard_loss ARMED_GROUND RC_MANUAL_ARM_AND_NEW_OFFBOARD_CONFIRMED h= 0.0
+offboard_loss THRUST_RAMP THRUST_RAMP h= 0.0
+offboard_loss ASCEND ASCEND h= 0.227
+offboard_loss HEIGHT_HOLD HEIGHT_HOLD h= 1.5
+offboard_loss SAFETY OPERATOR_TAKEOVER_LATCHED h= 1.5
+{"result": "PASS", "error": null, "scenario": "offboard_loss", "motion": "replay", "metrics": {"target_m": 1.5, "overshoot_m": 0.0, "settling_entry_from_ramp_s": 7.52366663200155, "height_hold_from_ramp_s": 9.670916742001282, "hold_observation_s": 2.000539810000191, "hold_max_abs_error_m": 0.0, "hold_rms_error_m": 0.0, "horizontal_drift_m": 0.0, "horizontal_drift_interpretation": "fixed XY input, not measured capability", "max_heartbeat_receive_gap_s": 0.05113937900023302, "max_heartbeat_wire_gap_s": 0.050317, "max_heartbeat_gap_including_window_edges_s": 0.05113937900023302, "max_target_gap_including_window_edges_s": 0.05142638200049987, "heartbeat_window": "Offboard confirmed through Disarm command (includes descent), or fault injection; excludes deliberate stop/reprepare"}}

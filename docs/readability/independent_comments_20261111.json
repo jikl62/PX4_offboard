@@ -1,0 +1,215 @@
+{
+  "scope": "第二轮独立只读审查：九份root核心文件及async_log、receive_events、vision_navigation、publication_boundary、source_clock",
+  "policy": "仅核对新增注释与现有实现，不直接编辑root文件，不修改任何控制逻辑/参数/消息字符串。行号是审查时快照；格式化后请按comment定位。",
+  "review_method": "读取新增中文注释及关联实现；重点交叉核对本地提交/PX4执行、steady秒/ROS ns/PX4微秒、名义合作预算/硬实时上限、RC恢复与重放证据。",
+  "findings": [
+    {
+      "id": "COMMENT-01",
+      "severity": "medium_documentation",
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
+      "comment": "构造时接管 cout/cerr 的缓冲区，析构时恢复它们，并给后台线程最多约 100 ms 的排空窗口。",
+      "issue": "最多约100ms容易被理解为析构/排空的硬上界；实现只有100ms名义停止截止，不能保证join耗时。",
+      "implementation_basis": [
+        "析构设deadline_=clock_ns()+100000000，然后无超时worker_.join()。",
+        "consume只在下一次写前检查deadline；EAGAIN/EWOULDBLOCK/EINTR后poll(...,20)可跨过截止，另有线程调度/锁等待。",
+        "O_NONBLOCK也不是任何目标文件描述符写调用耗时的硬实时证明。"
+      ],
+      "suggested_comment": "构造时接管cout/cerr；析构设置100ms名义排空截止并等待后台线程结束。poll、调度和join可能使实际退出更晚，不保证硬实时上界。",
+      "line_at_review": 4,
+      "status_at_save": "parent_updated_during_review",
+      "current_line_at_original_location": "// 构造时接管 cout/cerr 的缓冲区，析构时恢复它们，并设置约 100 ms 的名义排空截止时间。"
+    },
+    {
+      "id": "COMMENT-02",
+      "severity": "medium_documentation",
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp",
+      "comment": "普通推进的连续数值可以追到最新值；离散变化、无效值和跳变必须先停补读，不能被后一正常帧覆盖。",
+      "issue": "没有交代停止输出的Safety可继续有界追赶队列；这正是修复故障后DDS积压卡死的现有行为。",
+      "implementation_basis": [
+        "SystemNode::stop_receive_on_events在profile=attitude_altitude、phase=Safety、last_attitude_output_.publish=false时返回false。",
+        "ReceivePassSchedule::next_pass仅在stop_on_events_为true时才因events变化停止。",
+        "危险payload另存在DiscreteEventLatch，并在本轮observe_pending_safety逐条扫描；可继续补读不等于丢危险事件。"
+      ],
+      "suggested_comment": "连续数值可追新；离散/无效/跳变须保留给控制步骤。活动控制通常先停补读，完全静默的Safety可保留全部事件后继续有界追赶。",
+      "line_at_review": 3,
+      "status_at_save": "parent_updated_during_review",
+      "current_line_at_original_location": "// 普通推进的连续数值可以追到最新值；可输出任务遇离散/无效/跳变事件先停额外补读。"
+    },
+    {
+      "id": "COMMENT-03",
+      "severity": "medium_documentation",
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "comment": "控制台请求和断连均在本线程交给 Runtime 权限仲裁；PING 只读，STOP 成功才锁存停机请求。",
+      "issue": "PING虽不直接发布飞行动作，但不是只读；它推进操作员租约，通用路线还可能重置为零命令。",
+      "implementation_basis": [
+        "Runtime::request在attitude_altitude的PING分支调用attitude_core_.ping(now)，改变租约时间。",
+        "通用PING分支写last_ping_=now，且now>=velocity_until_时调用core_.receive({},now)。",
+        "Core::ping在已启用interactive时写ping_=now。"
+      ],
+      "suggested_comment": "控制台请求和断连在本线程仲裁；PING续期操作员租约但不直接发送动作，STOP获准后才锁存停机请求。",
+      "line_at_review": 262,
+      "status_at_save": "parent_updated_during_review",
+      "current_line_at_original_location": "        });"
+    },
+    {
+      "id": "COMMENT-04",
+      "severity": "medium_documentation",
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "comment": "姿态原始测量必须同时推进 envelope 与 timestamp_sample；四元数变化/重置事件另存队列。",
+      "issue": "普通有效四元数的连续变化不会触发attitude_receive_event；留队列的是reset变化或无效四元数。原始sample也不是每包必须推进：合法重复包不续鲜、在原TTL内仍可能有效。",
+      "implementation_basis": [
+        "attitude_receive_event先比较quat_reset_counter，再计算attitude_diagnostics(q,{1,0,0,0})并return !diagnostic.valid；没有比较a.q与b.q，c也被(void)c忽略。",
+        "SourceSampleProgress::observe对相等sample不更新received，fresh在原接收TTL和源TTL内仍可通过。"
+      ],
+      "suggested_comment": "姿态信封与原始采样分别跟踪；原始sample不推进不续鲜。reset变化或无效四元数另存事件队列，普通有效姿态数值由最新缓存提供。",
+      "line_at_review": 119,
+      "status_at_save": "parent_updated_during_review",
+      "current_line_at_original_location": "    if (lstat(parent.c_str(), &parent_stat) != 0 || !S_ISDIR(parent_stat.st_mode) ||",
+      "remaining_precision_note": "父agent已修正普通有效四元数与事件的区别；开头“必须同时推进”可进一步精确为两者独立跟踪，重复sample不续鲜。"
+    },
+    {
+      "id": "COMMENT-05",
+      "severity": "low_documentation",
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "comment": "出现健康失败时，有解锁意图则Blocked；尚无解锁意图才回到等待地面重新积累。",
+      "issue": "此处intent具体是arm_since_>=0，不等于上方刚锁存的arm_intent_observed_；首次观察arm_switch=ON但还未设arm_since_且armed=false时，健康失败仍走reset，不直接Blocked。",
+      "implementation_basis": [
+        "const bool intent=arm_since_>=0;",
+        "健康失败分支只有if(intent||s.armed)return block(why); 否则reset(why)。",
+        "arm_intent_observed_此前可因s.rc_arm_switch==1置true，reset不清该历史，外层no_arm_intent_observed仍能约束窄重试。"
+      ],
+      "suggested_comment": "健康失败时，已进入解锁配对窗口或实际armed则Blocked；此前仍可退回WaitGround，但已观察的解锁意图历史继续保留。",
+      "line_at_review": 242,
+      "status_at_save": "open"
+    },
+    {
+      "id": "COMMENT-06",
+      "severity": "low_documentation",
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "comment": "RC准入汇合到原ArmedGround：只在开关/真实解锁/真实Offboard同轮证据全部成立后配置1.5m目标。",
+      "issue": "1.5m是当前配置值，不是该代码的硬编码目标；rc_navigation.hpp文件头也作相同简写。",
+      "implementation_basis": [
+        "rc_startup实际赋值target_=c_.rc_target_height。",
+        "attitude::Config::rc_target_height默认1.5，但配置可在合法包络内覆盖；Runtime也明确目标来自该字段。"
+      ],
+      "suggested_comment": "RC准入汇合到ArmedGround后采用已校验rc_target_height；当前生产候选配置为1.5m。",
+      "line_at_review": 2617,
+      "status_at_save": "open"
+    },
+    {
+      "id": "COMMENT-07",
+      "severity": "optional_precision",
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "comment": "ROS纳秒转正的同步微秒供PX4接口；HostClockMonitor同时用steady对照检测跳变，回退锁存。",
+      "issue": "这行本身只换单位，不执行Agent/PX4同步；建议明确这是预期同步域，避免读者误以为除1000即可完成同步。",
+      "implementation_basis": [
+        "timestamp()读取get_clock()->now().nanoseconds()，ns>0时除1000。",
+        "HostClockMonitor使用stamp与steady观测跳变，不建立与PX4 boot clock的偏移估计。",
+        "source_stamp_in_clock随后通过源/host差值及TTL核对预期域；实机Agent同步仍为外部前提。"
+      ],
+      "suggested_comment": "ROS正纳秒换算为微秒，按与Agent同步后的PX4消息预期同域使用；换单位本身不建立同步。HostClockMonitor用steady对照检测跳变。",
+      "line_at_review": 1113,
+      "status_at_save": "open"
+    },
+    {
+      "id": "COMMENT-08",
+      "severity": "medium_documentation",
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp",
+      "comment": "姿态 reset 或无效四元数须停补读；有效大倾角仍由独立控制健康检查处理，不阻断其它反馈追新。",
+      "issue": "后半句容易误称存在按实测倾角触发的通用健康停机门；当前自主主链没有此项，只有数值有效性/reset保护，RC地面和视觉目标另有倾角约束。",
+      "implementation_basis": [
+        "attitude_receive_event在reset不变时仅return !attitude_diagnostics(q,{1,0,0,0}).valid，配置c未参与计算。",
+        "Core::health仅检查attitude_fresh与normalized(s.q)，不比较实测tilt与max_tilt_deg。",
+        "max_tilt_deg的实测检查位于RC地面准入与准备延期；publication_guard中的acos上限用于commanded视觉目标q，不是飞机实测q。"
+      ],
+      "suggested_comment": "姿态reset或无效四元数须保留事件；有效实测姿态（含大倾角）按连续反馈处理，便于继续追赶其他反馈。不在此新增实测倾角停机条件。",
+      "line_at_review": 98,
+      "status_at_save": "open"
+    }
+  ],
+  "checked_correct_examples": [
+    "publication_boundary.hpp明确target_committed/heartbeat_committed仅为本地sink返回；第二sink拒绝抛异常保留部分提交事实。",
+    "vision_navigation.hpp正确区分状态/命令、NED/FRD与两类时钟；协方差函数只检查有限/对角非负，没有虚称PSD。",
+    "vertical_controller.hpp高度z0-z、速度-vz、速度误差/PI/抗饱和/slew公式注释与原计算相符。",
+    "vertical_feedback_guard.hpp正确区分vz-z_deriv纯诊断与位置积分残差硬故障；重复源sample不累计持续证据。",
+    "runtime.hpp正确区分planned、本地sink、ACK和独立状态，并明确400复用ACK无法归属与进程历史不可清。",
+    "fc01_config_check.cpp只读参数检查、无飞行发布、不spin及返回码注释与实现相符。"
+  ],
+  "limitations": [
+    "本轮是静态注释准确性复核，不新增功能证明或实飞通过结论。",
+    "不证明Orange Pi ARM64实时性能、真实PX4采用推力、起飞稳定性或视觉控制飞行安全。",
+    "父agent正在排版，缓存行号可能改变；以原注释和关联函数名定位。"
+  ],
+  "reviewed_files": [
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+      "sha256": "3d1cd34925a754078ce3b4ba49f45d8852b03b4571181cd401e95969ad9be576",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+      "sha256": "e739fb87381a4c58440a1c72ab1b2eb94e0933b723e3f4f0c3f3bbbe6b1cfaa3",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+      "sha256": "7e63192d46ff491e2cdc3df39f6e2db754884436f9b38d784acc92237ffe7385",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
+      "sha256": "6f411d990663ec0d585fb9bfed5c87c53869f87bf8e36f5cd98b0dd0dd78e334",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "sha256": "dbde950b78736f6b46a328a79c2f1cf4dbd3f1d840ebabbaaa1fc61fe8b1dce2",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "sha256": "5580b4254b00a10d52fa987e1b135847c47f4935ac45b53bc157a74820c4341b",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "sha256": "5b5a9c90793f65c9ccec2e5134fdceff83025e6fd6beab65d9f57c6531516030",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "sha256": "fc93e3dd649ca7bb067d5b9f198f628a4854634f7e0b8f75814f3c572b60aff3",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_config_check.cpp",
+      "sha256": "888fbd8a1f34cd0eb4412428f9e510799b236cd6cbadc0854ae08d9b3e915005",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
+      "sha256": "897d64eba9d872ffb2e45b1542599171fc63fc4cc745a34abb0a57c74fb5825a",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp",
+      "sha256": "26d95b720c98c7eb414858d370f199fe5cc256c3915f7e027bf2bbcd6abb5ff2",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "sha256": "2fffdae319ac177cf420194381ee5829a5926bf5d4a28344998b1fa4a3b4959f",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+      "sha256": "4b21d5ebdc7bac69351686e0a2255722ccf8e232cd1c176edb3dbf0a13958e94",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp",
+      "sha256": "3bb7a0b3ab46ad368a22b7d62de4254e36b314bb8a19f8acb909b1a03b3ecb92",
+      "method": "new Chinese comment survey and targeted implementation cross-check"
+    }
+  ]
+}

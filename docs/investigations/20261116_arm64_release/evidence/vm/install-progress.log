@@ -1,0 +1,7 @@
+1241 /usr/bin/python3 - /home/orangepi/FC01_OrangePi_20261116_stage3_arm64.tar.gz
+1258 bash -c pgrep -af "python3 -|fc01_config_check|ldd"; systemctl show fc01-navigation.service -p MainPID -p ActiveState; journalctl -u fc01-navigation.service -n 3 --no-pager
+MainPID=808
+ActiveState=active
+Nov 16 13:21:49 fc01-arm64-test-vm fc01-navigation[808]: WAITING: RC_WAIT_DISARMED_STABILIZED_ARM_OFF_NAV_OFF_GROUND
+Nov 16 13:21:51 fc01-arm64-test-vm fc01-navigation[808]: PRESTREAM: RC_PRESTREAM_WAIT_NEW_GROUND_REFERENCE
+Nov 16 13:21:53 fc01-arm64-test-vm fc01-navigation[808]: READY_WAIT_ARM: RC_READY_WAIT_CH5_MANUAL_ARM

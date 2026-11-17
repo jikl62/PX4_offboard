@@ -1,0 +1,60 @@
+--- a/navigation_probe.py
++++ b/navigation_probe.py
+@@ -304,28 +304,32 @@
+         return 0
+     # 无论成功失败都保存本次探针身份/原因；销毁本节点，不结束既有Agent或改变服务。
+     finally:
+-        evidence_path.write_text(
+-            json.dumps(
+-                dict(
+-                    ok=ok,
+-                    reason=evidence.reason,
+-                    armed_seen=evidence.armed_seen,
+-                    samples=evidence.counts,
+-                    rc_samples=rc.counts if rc else None,
+-                    rc_safe=ok if rc else None,
+-                    agent_pid=agent_pid,
+-                    agent_created=created,
+-                    agent_retained=not created,
+-                    updated_unix=time.time(),
+-                    updated_monotonic=verified_at,
+-                    boot_id=Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
+-                ),
+-                ensure_ascii=False,
+-                indent=2,
+-            )
+-            + '\n'
+-        )
+-        if node is not None:
+-            node.destroy_node()
+-        if rclpy.ok():
+-            rclpy.shutdown()
++        try:
++            evidence_path.write_text(
++                json.dumps(
++                    dict(
++                        ok=ok,
++                        reason=evidence.reason,
++                        armed_seen=evidence.armed_seen,
++                        samples=evidence.counts,
++                        rc_samples=rc.counts if rc else None,
++                        rc_safe=ok if rc else None,
++                        agent_pid=agent_pid,
++                        agent_created=created,
++                        agent_retained=not created,
++                        updated_unix=time.time(),
++                        updated_monotonic=verified_at,
++                        boot_id=Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
++                    ),
++                    ensure_ascii=False,
++                    indent=2,
++                )
++                + '\n'
++            )
++        finally:
++            try:
++                if node is not None:
++                    node.destroy_node()
++            finally:
++                if rclpy.ok():
++                    rclpy.shutdown()

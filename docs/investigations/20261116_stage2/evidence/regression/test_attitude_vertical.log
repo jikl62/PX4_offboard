@@ -1,0 +1,1 @@
+attitude/vertical/ownership tests: PASS (quaternion, resets, signs, feed-forward, limits, anti-windup, faults)

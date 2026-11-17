@@ -1,0 +1,8 @@
+{
+  "baseline": "3677b9dd1f35e092e43501d26164c6263545c947",
+  "source_sha256": "4b8f684b367f210b31c84195e605e874550b376125e5f30a187e763a144f86c5",
+  "comparison": "strict-byte-identical",
+  "lines": 14626,
+  "bytes": 2485479,
+  "sha256": "82efd1071b1affe0feb8a62c164989d6616d7471af068a1ef6be585fa2838675"
+}

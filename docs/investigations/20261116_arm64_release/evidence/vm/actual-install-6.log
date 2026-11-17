@@ -1,0 +1,1 @@
+FC01_PREBUILT_INSTALL_FAILED: 安装失败，原版配置和运行状态已恢复。备份=/home/orangepi/FC01_navigation/prebuilt-backups/20261116T134337_654157Z-2442；新版启动验收失败：安装/回退需当前受管服务 active 且恰好一个控制器

@@ -1,0 +1,83 @@
+{
+  "package": "/home/jikl62/FC01_OrangePi_Navigation_20261028/dist/FC01_OrangePi_Navigation_20261112_release.sh",
+  "package_bytes": 767820,
+  "package_sha256": "f2726cfe18923c2e8783f19f81a536658dd9a99e28f9398b6ac05c5de5534927",
+  "archive_sha256": "c8529f917f05dd93b41308a8ec7b74160fbb9a2c8bf48078677b0aa51e7df08c",
+  "source_commit": "32990e599a68fde377daadbb89710b77fda1fb82",
+  "working_tree_dirty_at_source_freeze": false,
+  "members": 95,
+  "uncompressed_bytes": 1543406,
+  "required_files_checked": 86,
+  "all_payload_bytes_match_git_source_commit": true,
+  "independent_zip_crc_manifest_sha_ok": true,
+  "actual_extracted_entry": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release",
+  "commands": [
+    {
+      "argv": [
+        "bash",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/dist/FC01_OrangePi_Navigation_20261112_release.sh",
+        "--install-only"
+      ],
+      "target": null,
+      "returncode": 0,
+      "stdout": "FC01_PACKAGE_LOG=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_navigation/deploy-logs/FC01_OrangePi_Navigation_20261112_release/20261112T105650-152868-extract.log\nFC01_PAYLOAD_INSTALLED entry=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release\nFC01_EXTRACT_ONLY_COMPLETE entry=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/dist/FC01_OrangePi_Navigation_20261112_release.sh",
+        "--extract-only"
+      ],
+      "target": null,
+      "returncode": 0,
+      "stdout": "FC01_PACKAGE_LOG=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_navigation/deploy-logs/FC01_OrangePi_Navigation_20261112_release/20261112T105650-152870-extract.log\nFC01_PAYLOAD_VERIFIED_REUSED entry=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release\nFC01_EXTRACT_ONLY_COMPLETE entry=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_OrangePi_Navigation_20261112_release\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/dist/FC01_OrangePi_Navigation_20261112_release.sh",
+        "--install-only"
+      ],
+      "target": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/custom installation",
+      "returncode": 0,
+      "stdout": "FC01_PACKAGE_LOG=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_navigation/deploy-logs/FC01_OrangePi_Navigation_20261112_release/20261112T105650-152872-extract.log\nFC01_PAYLOAD_INSTALLED entry=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/custom installation\nFC01_EXTRACT_ONLY_COMPLETE entry=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/custom installation\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/dist/FC01_OrangePi_Navigation_20261112_release.sh",
+        "--install-only"
+      ],
+      "target": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/custom installation",
+      "returncode": 1,
+      "stdout": "FC01_PACKAGE_LOG=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_navigation/deploy-logs/FC01_OrangePi_Navigation_20261112_release/20261112T105651-152874-extract.log\n",
+      "stderr": "FC01_PACKAGE_FAILED stage=integrity_or_extract exit=1 error=现有目录与本包不一致，未覆盖: /home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/custom installation/navigation_settings.json log=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_navigation/deploy-logs/FC01_OrangePi_Navigation_20261112_release/20261112T105651-152874-extract.log\n"
+    },
+    {
+      "argv": [
+        "bash",
+        "/home/jikl62/FC01_OrangePi_Navigation_20261028/dist/FC01_OrangePi_Navigation_20261112_release.sh",
+        "--install-only"
+      ],
+      "target": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/link/blocked",
+      "returncode": 1,
+      "stdout": "FC01_PACKAGE_LOG=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_navigation/deploy-logs/FC01_OrangePi_Navigation_20261112_release/20261112T105651-152876-extract.log\n",
+      "stderr": "FC01_PACKAGE_FAILED stage=integrity_or_extract exit=1 error=安装路径包含符号链接，未写入: /home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/link log=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_navigation/deploy-logs/FC01_OrangePi_Navigation_20261112_release/20261112T105651-152876-extract.log\n"
+    },
+    {
+      "argv": [
+        "bash",
+        "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/tampered-release.sh",
+        "--install-only"
+      ],
+      "target": "/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/tampered-target",
+      "returncode": 1,
+      "stdout": "FC01_PACKAGE_LOG=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_navigation/deploy-logs/FC01_OrangePi_Navigation_20261112_release/20261112T105651-152878-extract.log\n",
+      "stderr": "FC01_PACKAGE_FAILED stage=integrity_or_extract exit=1 error=安装包文件 SHA256 不匹配，未写入 log=/home/jikl62/.cache/fc01-release-20261112-8r2k_twx/actual-package/actual-release-home-ry9c6qhj/FC01_navigation/deploy-logs/FC01_OrangePi_Navigation_20261112_release/20261112T105651-152878-extract.log\n"
+    }
+  ],
+  "hardware_accessed": false
+}

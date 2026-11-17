@@ -1,0 +1,8 @@
+MainPID=4161
+WorkingDirectory=/home/orangepi/FC01_versions/20261116_stage3
+ActiveState=active
+Nov 16 13:53:06 fc01-arm64-test-vm fc01-navigation[3187]: STOPPED: 后台待命已停止
+Nov 16 13:53:06 fc01-arm64-test-vm systemd[1]: fc01-navigation.service: Deactivated successfully.
+Nov 16 13:53:06 fc01-arm64-test-vm systemd[1]: Stopped FC01 manual RC navigation controller.
+Nov 16 13:53:06 fc01-arm64-test-vm systemd[1]: fc01-navigation.service: Consumed 1min 44.018s CPU time.
+Nov 16 13:53:10 fc01-arm64-test-vm systemd[1]: Started FC01 manual RC navigation controller.

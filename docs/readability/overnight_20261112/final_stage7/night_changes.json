@@ -1,0 +1,1540 @@
+{
+  "baseline": "5b86eeb4094ada009903c0140f66289cfe89411e",
+  "source_head": "4c3c360941575049ebac78dbbf4ce58f098d93b6",
+  "commits": [
+    {
+      "commit": "ef71c46b026009bafb95b69de7a16628fe5a509f",
+      "subject": "docs(readability): archive overnight audit baseline and next-stage checklist",
+      "files": [
+        "docs/readability/overnight_20261112/BASELINE.json",
+        "docs/readability/overnight_20261112/README_zh.md",
+        "docs/readability/overnight_20261112/TASKS_2_TO_7_zh.md",
+        "docs/readability/overnight_20261112/file_index.tsv",
+        "docs/readability/overnight_20261112/review_evidence.zip",
+        "docs/readability/overnight_20261112/verification.json"
+      ]
+    },
+    {
+      "commit": "39a7c8f844bb66655735bf41e8b33f5b1044d862",
+      "subject": "docs(cpp): explain control state machines and safety boundaries in Chinese",
+      "files": [
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/authority.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_audit.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+        "native/src/jikl_fc01_system/src/fc01_system_node.cpp"
+      ]
+    },
+    {
+      "commit": "d8d14ff30be6bc89dce805205f6489795a5efa5e",
+      "subject": "docs(readability): record core C++ guide and exact baseline verification",
+      "files": [
+        "docs/readability/overnight_20261112/cpp_stage2/CPP_READING_zh.md",
+        "docs/readability/overnight_20261112/cpp_stage2/README_zh.md",
+        "docs/readability/overnight_20261112/cpp_stage2/changed_files.json",
+        "docs/readability/overnight_20261112/cpp_stage2/evidence.zip",
+        "docs/readability/overnight_20261112/cpp_stage2/verification.json"
+      ]
+    },
+    {
+      "commit": "59c49b2dc9a35eebdabdb8e6af55d43a1ec00d79",
+      "subject": "fix(tests): preserve per-test logging injection links in legacy runners",
+      "files": [
+        "native/scripts/r62_cpp_regressions.sh",
+        "native/scripts/test.sh",
+        "tests/test_legacy_cpp_runner_links.py"
+      ]
+    },
+    {
+      "commit": "8d2bfd8a26aaf229bed24d130ccff89e58c76e80",
+      "subject": "fix(diagnostics): release ROS resources across startup and shutdown failures",
+      "files": [
+        "native/tools/velocity_command_diagnostic.py",
+        "tests/test_stage_overnight_velocity_lifecycle.py"
+      ]
+    },
+    {
+      "commit": "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb",
+      "subject": "refactor(readability): explain vision interfaces and resource ownership in Chinese",
+      "files": [
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/ros_config.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/source_diagnostics.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_resource_budget.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp",
+        "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+        "native/src/jikl_fc01_system/msg/NavigationCommand.msg",
+        "native/src/jikl_fc01_system/msg/VelocityCommand.msg",
+        "native/src/jikl_fc01_system/msg/VisionHealth.msg",
+        "native/src/jikl_fc01_system/msg/VisionState.msg",
+        "native/tools/velocity_command_diagnostic.py",
+        "navigation_restore.py",
+        "navigation_service.py",
+        "standby.py",
+        "tests/test_legacy_cpp_runner_links.py",
+        "tests/test_overnight_service_readability.py"
+      ]
+    },
+    {
+      "commit": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+      "subject": "docs(readability): archive interface contracts, regressions and packaging blocker",
+      "files": [
+        "docs/readability/overnight_20261112/interfaces_stage3/INTERFACES_READING_zh.md",
+        "docs/readability/overnight_20261112/interfaces_stage3/README_zh.md",
+        "docs/readability/overnight_20261112/interfaces_stage3/changed_files.json",
+        "docs/readability/overnight_20261112/interfaces_stage3/evidence.zip",
+        "docs/readability/overnight_20261112/interfaces_stage3/evidence_index.json",
+        "docs/readability/overnight_20261112/interfaces_stage3/verification.json"
+      ]
+    },
+    {
+      "commit": "d66b9057073b4fea82baefa7cf259ef2a9c7b12f",
+      "subject": "fix(build): preserve pre-existing temporary evidence and install links",
+      "files": [
+        "navigation_build_evidence.py",
+        "tests/test_overnight_stage4_deployment.py"
+      ]
+    },
+    {
+      "commit": "8abc77b11dee5c754272b79618da455e482aba15",
+      "subject": "fix(launcher): release rejected IPC directory allocations",
+      "files": [
+        "launcher.py",
+        "tests/test_overnight_stage4_launcher_resources.py"
+      ]
+    },
+    {
+      "commit": "9d0d4bccb15b0ad08eb77ffcee086bfc27c32e02",
+      "subject": "fix(reports): contain implicit runtime evidence within home",
+      "files": [
+        "navigation_report.py",
+        "tests/test_overnight_stage4_reporting.py"
+      ]
+    },
+    {
+      "commit": "7ebe9263e547325b9794bc32c5fba371e007cfa3",
+      "subject": "fix(diagnostics): preserve probe errors while releasing owned ROS resources",
+      "files": [
+        "feedback_age_probe.py",
+        "tests/test_overnight_stage4_tools.py"
+      ]
+    },
+    {
+      "commit": "79c53cb6cd1006ae24da01e8daef1587d06fa025",
+      "subject": "fix(diagnostics): reject oversized integer observations without overflow",
+      "files": [
+        "feedback_age_probe.py",
+        "tests/test_feedback_age_probe.py"
+      ]
+    },
+    {
+      "commit": "c666d7797c216a60b8c2bc031ec77ae1aa89fadc",
+      "subject": "fix(diagnostics): report malformed local snapshot timestamp overflow",
+      "files": [
+        "feedback_age_probe.py",
+        "tests/test_feedback_age_probe.py"
+      ]
+    },
+    {
+      "commit": "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+      "subject": "refactor(readability): clarify Python ownership and extract pure evidence helpers",
+      "files": [
+        "feedback_age_probe.py",
+        "launcher.py",
+        "native/tools/deploy.py",
+        "native/tools/fcctl.py",
+        "native/tools/socket_safety.py",
+        "native/tools/start.py",
+        "native/tools/update.py",
+        "navigation.py",
+        "navigation_build_evidence.py",
+        "navigation_deploy.py",
+        "navigation_install.py",
+        "navigation_probe.py",
+        "navigation_report.py",
+        "navigation_status.py",
+        "tests/test_overnight_stage4_deployment.py",
+        "tests/test_overnight_stage4_launcher_readability.py",
+        "tests/test_overnight_stage4_reporting.py"
+      ]
+    },
+    {
+      "commit": "68b3221ac297699e1dfed8fd773358bb26789207",
+      "subject": "docs(readability): archive Python ownership review and Stage 4 regression evidence",
+      "files": [
+        "docs/readability/overnight_20261112/python_stage4/PYTHON_READING_zh.md",
+        "docs/readability/overnight_20261112/python_stage4/README_zh.md",
+        "docs/readability/overnight_20261112/python_stage4/changed_files.json",
+        "docs/readability/overnight_20261112/python_stage4/evidence.zip",
+        "docs/readability/overnight_20261112/python_stage4/evidence_index.json",
+        "docs/readability/overnight_20261112/python_stage4/review_ledger.json",
+        "docs/readability/overnight_20261112/python_stage4/verification.json"
+      ]
+    },
+    {
+      "commit": "1124daf076596a2c49a857cbaaa3c883b6bd0d0f",
+      "subject": "fix(vision): reject oversized numeric settings through configuration errors",
+      "files": [
+        "tests/test_overnight_stage5_config.py",
+        "vision_settings.py"
+      ]
+    },
+    {
+      "commit": "44632a18f5ef403ca09c5a84844f1fc52925595e",
+      "subject": "fix(vision): reject conflicting enabled input topics before candidate export",
+      "files": [
+        "tests/test_overnight_stage5_config.py",
+        "vision_settings.py"
+      ]
+    },
+    {
+      "commit": "15310f8776d182e668cc846f97ff23c5753995da",
+      "subject": "docs(vision): clarify ROS contracts and verify isolated Humble interfaces",
+      "files": [
+        "native/src/jikl_fc01_system/CMakeLists.txt",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+        "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp",
+        "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+        "native/src/jikl_fc01_system/msg/NavigationCommand.msg",
+        "native/src/jikl_fc01_system/msg/VelocityCommand.msg",
+        "native/src/jikl_fc01_system/msg/VisionHealth.msg",
+        "native/src/jikl_fc01_system/msg/VisionState.msg",
+        "native/src/jikl_fc01_system/package.xml",
+        "native/tests/test_overnight_stage5_vision_contract.cpp",
+        "native/tools/velocity_command_diagnostic.py",
+        "native/tools/vision_odometry_adapter.py",
+        "native/tools/vision_state_validation.py",
+        "navigation_environment.sh",
+        "tests/ros_generated_interface_check.py",
+        "tests/test_overnight_stage5_config.py",
+        "tests/test_overnight_stage5_ros_contract.py",
+        "tests/test_vision_adapter.py",
+        "vision_config.py",
+        "vision_settings.py"
+      ]
+    },
+    {
+      "commit": "1e824f883fe6255f8d265b1cece339a83594b059",
+      "subject": "docs(readability): archive Stage 5 vision handoff and verification evidence",
+      "files": [
+        "docs/readability/overnight_20261112/vision_stage5/README_zh.md",
+        "docs/readability/overnight_20261112/vision_stage5/VISION_HANDOFF_zh.md",
+        "docs/readability/overnight_20261112/vision_stage5/changed_files.json",
+        "docs/readability/overnight_20261112/vision_stage5/evidence.zip",
+        "docs/readability/overnight_20261112/vision_stage5/evidence_index.json",
+        "docs/readability/overnight_20261112/vision_stage5/review_ledger.json",
+        "docs/readability/overnight_20261112/vision_stage5/verification.json"
+      ]
+    },
+    {
+      "commit": "0c59198a50f3db97c191a9c1dab45dcb0418fa6b",
+      "subject": "fix(collect): preserve owned ROS cleanup and primary errors",
+      "files": [
+        "navigation_collect.py",
+        "tests/test_overnight_stage6_lifecycle.py"
+      ]
+    },
+    {
+      "commit": "6c4cc7d2782342f211a667d59dc53dcca250d3b1",
+      "subject": "fix(deploy): close owned logs after initialization and final write failures",
+      "files": [
+        "navigation_deploy.py",
+        "tests/test_overnight_stage6_deployment_logs.py"
+      ]
+    },
+    {
+      "commit": "212f477c67a036f302a604099a492f8be80c7f17",
+      "subject": "test(reliability): exercise IPC failures and retain explicit behavior baselines",
+      "files": [
+        "native/tests/test_overnight_stage6_ipc.cpp",
+        "tests/test_overnight_stage4_deployment.py"
+      ]
+    },
+    {
+      "commit": "4c3c360941575049ebac78dbbf4ce58f098d93b6",
+      "subject": "docs(reliability): archive Stage 6 failures and isolated safety candidates",
+      "files": [
+        "docs/readability/overnight_20261112/logic_stage6/README_zh.md",
+        "docs/readability/overnight_20261112/logic_stage6/candidate_index.json",
+        "docs/readability/overnight_20261112/logic_stage6/changed_files.json",
+        "docs/readability/overnight_20261112/logic_stage6/evidence.zip",
+        "docs/readability/overnight_20261112/logic_stage6/evidence_index.json",
+        "docs/readability/overnight_20261112/logic_stage6/review_ledger.json",
+        "docs/readability/overnight_20261112/logic_stage6/verification.json"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/readability/overnight_20261112/BASELINE.json",
+      "status": "A",
+      "sha256": "de229768813262354392f58e4375b89b80c1b241f4d799f5e580d334f7a4152f",
+      "bytes": 11947,
+      "category": "report/evidence",
+      "touching_commits": [
+        "ef71c46b026009bafb95b69de7a16628fe5a509f"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/README_zh.md",
+      "status": "A",
+      "sha256": "730a469be41947103082214ada01bdca8c9e43012d57a1711d47b9242ac97505",
+      "bytes": 10396,
+      "category": "report/evidence",
+      "touching_commits": [
+        "ef71c46b026009bafb95b69de7a16628fe5a509f"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/TASKS_2_TO_7_zh.md",
+      "status": "A",
+      "sha256": "975ce2021f8d43b2e1933d7d1c125c48260386285b685e8d07733bb6fed245a8",
+      "bytes": 11160,
+      "category": "report/evidence",
+      "touching_commits": [
+        "ef71c46b026009bafb95b69de7a16628fe5a509f"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/cpp_stage2/CPP_READING_zh.md",
+      "status": "A",
+      "sha256": "498664ccdf45eebcb6563c9dd85c1ec930d5c67e79c0d0b9652e472aaa82b2a3",
+      "bytes": 6019,
+      "category": "report/evidence",
+      "touching_commits": [
+        "d8d14ff30be6bc89dce805205f6489795a5efa5e"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/cpp_stage2/README_zh.md",
+      "status": "A",
+      "sha256": "e6aab11f4846d7d54f2a02343c3467a794bfe58f068b68cba150d2eccbc996da",
+      "bytes": 9569,
+      "category": "report/evidence",
+      "touching_commits": [
+        "d8d14ff30be6bc89dce805205f6489795a5efa5e"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/cpp_stage2/changed_files.json",
+      "status": "A",
+      "sha256": "8a517198862ed1e3fbcee95ae237a44fa04fe802cf22d490d7d0f3464fa3b8fe",
+      "bytes": 9559,
+      "category": "report/evidence",
+      "touching_commits": [
+        "d8d14ff30be6bc89dce805205f6489795a5efa5e"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/cpp_stage2/evidence.zip",
+      "status": "A",
+      "sha256": "26f7534f5a0e47703d8e77f5186280fe26812fe879d2eb261645d3cd2fce7299",
+      "bytes": 304235,
+      "category": "report/evidence",
+      "touching_commits": [
+        "d8d14ff30be6bc89dce805205f6489795a5efa5e"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/cpp_stage2/verification.json",
+      "status": "A",
+      "sha256": "10137ade9228725129b7b829fe82d3f61afeb3caba9e55eb9aee6bbebd818b41",
+      "bytes": 10344,
+      "category": "report/evidence",
+      "touching_commits": [
+        "d8d14ff30be6bc89dce805205f6489795a5efa5e"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/file_index.tsv",
+      "status": "A",
+      "sha256": "e4df84c9a97e198233ffd30dca1fa11032912bfc73033f3561ff2220af888e94",
+      "bytes": 19317,
+      "category": "report/evidence",
+      "touching_commits": [
+        "ef71c46b026009bafb95b69de7a16628fe5a509f"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/interfaces_stage3/INTERFACES_READING_zh.md",
+      "status": "A",
+      "sha256": "e74f630a4ce902c743bb7b4865256d761cc92accab97f7d4dfce380e91d36dc0",
+      "bytes": 8710,
+      "category": "report/evidence",
+      "touching_commits": [
+        "f46468c21cac677dec0a3b300eb779de2fca44fd"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/interfaces_stage3/README_zh.md",
+      "status": "A",
+      "sha256": "2c005964163d4981b3d16f81276d0d6bf01c48520a1c3c6dadcafb01ba3982c2",
+      "bytes": 9790,
+      "category": "report/evidence",
+      "touching_commits": [
+        "f46468c21cac677dec0a3b300eb779de2fca44fd"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/interfaces_stage3/changed_files.json",
+      "status": "A",
+      "sha256": "07abf18e7752af661370f38629ae5f8523d09b7868e20e3fd9fcd8d1b8f92751",
+      "bytes": 10924,
+      "category": "report/evidence",
+      "touching_commits": [
+        "f46468c21cac677dec0a3b300eb779de2fca44fd"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/interfaces_stage3/evidence.zip",
+      "status": "A",
+      "sha256": "08c4343bc03bccdfac17397f2d305c30b34d0b23742441b7b9915cb9a8e30350",
+      "bytes": 257336,
+      "category": "report/evidence",
+      "touching_commits": [
+        "f46468c21cac677dec0a3b300eb779de2fca44fd"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/interfaces_stage3/evidence_index.json",
+      "status": "A",
+      "sha256": "943e9a767b7e90420d3c3fd6cc2bb6c24d9953ffa35ebcb6d7040223dc234239",
+      "bytes": 33097,
+      "category": "report/evidence",
+      "touching_commits": [
+        "f46468c21cac677dec0a3b300eb779de2fca44fd"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/interfaces_stage3/verification.json",
+      "status": "A",
+      "sha256": "d6f8ebd2fef5461d3f1599364b7f07e8de7581b52c7476b6a8945f90a7b86b78",
+      "bytes": 8145,
+      "category": "report/evidence",
+      "touching_commits": [
+        "f46468c21cac677dec0a3b300eb779de2fca44fd"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/logic_stage6/README_zh.md",
+      "status": "A",
+      "sha256": "1609925d39699c8ad96d241aa29f9e548a789c2b0b3e57027bf9d595369420c7",
+      "bytes": 13299,
+      "category": "report/evidence",
+      "touching_commits": [
+        "4c3c360941575049ebac78dbbf4ce58f098d93b6"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/logic_stage6/candidate_index.json",
+      "status": "A",
+      "sha256": "68e5b35d64829c4b05da3d4a18a01cfc5779ae5bd7e938b1f2497893416af3e4",
+      "bytes": 3958,
+      "category": "report/evidence",
+      "touching_commits": [
+        "4c3c360941575049ebac78dbbf4ce58f098d93b6"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/logic_stage6/changed_files.json",
+      "status": "A",
+      "sha256": "2e6ac5c97df3d83adc2adcc19b847571fba951165bcbb52f8d713c69fdb513b2",
+      "bytes": 2592,
+      "category": "report/evidence",
+      "touching_commits": [
+        "4c3c360941575049ebac78dbbf4ce58f098d93b6"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/logic_stage6/evidence.zip",
+      "status": "A",
+      "sha256": "dfc5a856f2d01a37dcfc0db7cf8a95e4be9b7a934fead259203173d3101c8890",
+      "bytes": 280029,
+      "category": "report/evidence",
+      "touching_commits": [
+        "4c3c360941575049ebac78dbbf4ce58f098d93b6"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/logic_stage6/evidence_index.json",
+      "status": "A",
+      "sha256": "8b612c98110f1a2f3ea3304b5bf6b55f1485b52f9468ea441c3ff38394ce9b3f",
+      "bytes": 30788,
+      "category": "report/evidence",
+      "touching_commits": [
+        "4c3c360941575049ebac78dbbf4ce58f098d93b6"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/logic_stage6/review_ledger.json",
+      "status": "A",
+      "sha256": "a643e4a431d85ee9c018f7e0caef4795b440554f5c76d655ad37a21ef8aac516",
+      "bytes": 38199,
+      "category": "report/evidence",
+      "touching_commits": [
+        "4c3c360941575049ebac78dbbf4ce58f098d93b6"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/logic_stage6/verification.json",
+      "status": "A",
+      "sha256": "637065dd408d54dd0e7f6134cf00f8fba6a291c0ba2b330f452efa59e277ec48",
+      "bytes": 50065,
+      "category": "report/evidence",
+      "touching_commits": [
+        "4c3c360941575049ebac78dbbf4ce58f098d93b6"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/python_stage4/PYTHON_READING_zh.md",
+      "status": "A",
+      "sha256": "1495edb3262fe90d1085946ce5514e97cb1ce008a6245d20452c3f0bdd4ef943",
+      "bytes": 10486,
+      "category": "report/evidence",
+      "touching_commits": [
+        "68b3221ac297699e1dfed8fd773358bb26789207"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/python_stage4/README_zh.md",
+      "status": "A",
+      "sha256": "fba93a6c55c4c70d4368c539a0629bcc1750be711d177c11b1fa52740f05a990",
+      "bytes": 11612,
+      "category": "report/evidence",
+      "touching_commits": [
+        "68b3221ac297699e1dfed8fd773358bb26789207"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/python_stage4/changed_files.json",
+      "status": "A",
+      "sha256": "381128af856fcf0e755c648f44fbea5bfbf5ac48b962522d5f059186d0ff11c7",
+      "bytes": 7111,
+      "category": "report/evidence",
+      "touching_commits": [
+        "68b3221ac297699e1dfed8fd773358bb26789207"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/python_stage4/evidence.zip",
+      "status": "A",
+      "sha256": "a269770c2caf65061df21e2e8f2068e4d748a32b28fcbecd1e73fca5eca6f8cb",
+      "bytes": 276032,
+      "category": "report/evidence",
+      "touching_commits": [
+        "68b3221ac297699e1dfed8fd773358bb26789207"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/python_stage4/evidence_index.json",
+      "status": "A",
+      "sha256": "d0d71ea66ec24c8aa1b9d90dd22463cb3ac801164f3fad675e8875d44dc77875",
+      "bytes": 42811,
+      "category": "report/evidence",
+      "touching_commits": [
+        "68b3221ac297699e1dfed8fd773358bb26789207"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/python_stage4/review_ledger.json",
+      "status": "A",
+      "sha256": "748f3e7d815463266b43987106565c0fb6595c02eef7d7d96c11798d24131988",
+      "bytes": 23449,
+      "category": "report/evidence",
+      "touching_commits": [
+        "68b3221ac297699e1dfed8fd773358bb26789207"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/python_stage4/verification.json",
+      "status": "A",
+      "sha256": "5d271e7975ff518d9e7d488219fb2bda747cef291a4504ef82812003f58c367d",
+      "bytes": 32965,
+      "category": "report/evidence",
+      "touching_commits": [
+        "68b3221ac297699e1dfed8fd773358bb26789207"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/review_evidence.zip",
+      "status": "A",
+      "sha256": "f9190b3d1c654327491a2d865baa80127d56c3fd49385889783e8dfafbb6a3db",
+      "bytes": 78133,
+      "category": "report/evidence",
+      "touching_commits": [
+        "ef71c46b026009bafb95b69de7a16628fe5a509f"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/verification.json",
+      "status": "A",
+      "sha256": "51577247eed55fd7cca400fc392b99f45e0b29ee4966db0f27d7bb742e947ff0",
+      "bytes": 3758,
+      "category": "report/evidence",
+      "touching_commits": [
+        "ef71c46b026009bafb95b69de7a16628fe5a509f"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/vision_stage5/README_zh.md",
+      "status": "A",
+      "sha256": "6691e392906f9385edb7dfdbd7ed83caa0f28d0eae14216020715d210c40e385",
+      "bytes": 10335,
+      "category": "report/evidence",
+      "touching_commits": [
+        "1e824f883fe6255f8d265b1cece339a83594b059"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/vision_stage5/VISION_HANDOFF_zh.md",
+      "status": "A",
+      "sha256": "b1b659f9b0c2475bfc6e8cb88f2674904776ca3afcf47dacc2775c27e6bd2370",
+      "bytes": 10338,
+      "category": "report/evidence",
+      "touching_commits": [
+        "1e824f883fe6255f8d265b1cece339a83594b059"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/vision_stage5/changed_files.json",
+      "status": "A",
+      "sha256": "f1c9b2233b809178489fec891266eb3000ef5c864832745e7e392cf3579e8449",
+      "bytes": 9739,
+      "category": "report/evidence",
+      "touching_commits": [
+        "1e824f883fe6255f8d265b1cece339a83594b059"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/vision_stage5/evidence.zip",
+      "status": "A",
+      "sha256": "8cda1dc90e38202777dcaf3c2477815de5e814a2ba3132becd2344c0e8cd6d62",
+      "bytes": 304428,
+      "category": "report/evidence",
+      "touching_commits": [
+        "1e824f883fe6255f8d265b1cece339a83594b059"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/vision_stage5/evidence_index.json",
+      "status": "A",
+      "sha256": "310c2af58ecbc4b925ef19e573568713d8540dd48377c14fc7bd5d331e8f858e",
+      "bytes": 22567,
+      "category": "report/evidence",
+      "touching_commits": [
+        "1e824f883fe6255f8d265b1cece339a83594b059"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/vision_stage5/review_ledger.json",
+      "status": "A",
+      "sha256": "e9aca6a683aac396f6f37f10fdaada8b3b8c05ff06e301f8a429c97b095b1917",
+      "bytes": 28469,
+      "category": "report/evidence",
+      "touching_commits": [
+        "1e824f883fe6255f8d265b1cece339a83594b059"
+      ]
+    },
+    {
+      "path": "docs/readability/overnight_20261112/vision_stage5/verification.json",
+      "status": "A",
+      "sha256": "457f52fcf5816e17ac92dbae9f9405e5a23c70b686921591ca742d7554ce6a07",
+      "bytes": 39794,
+      "category": "report/evidence",
+      "touching_commits": [
+        "1e824f883fe6255f8d265b1cece339a83594b059"
+      ]
+    },
+    {
+      "path": "feedback_age_probe.py",
+      "status": "M",
+      "sha256": "d8dbb09dca98a851b98f961e805b31b8565b98246209cf11fc1604f347b00539",
+      "bytes": 23098,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+        "c666d7797c216a60b8c2bc031ec77ae1aa89fadc",
+        "79c53cb6cd1006ae24da01e8daef1587d06fa025",
+        "7ebe9263e547325b9794bc32c5fba371e007cfa3"
+      ]
+    },
+    {
+      "path": "launcher.py",
+      "status": "M",
+      "sha256": "9089f43f4346643f968dbb9ca1f53bf8302e63f3e4b963df35f20d175b8374ce",
+      "bytes": 44318,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+        "8abc77b11dee5c754272b79618da455e482aba15"
+      ]
+    },
+    {
+      "path": "native/scripts/r62_cpp_regressions.sh",
+      "status": "M",
+      "sha256": "21d6b2b703582b3f27b57d9beff42f82f12dd1a424c372667cb2c3da3e580069",
+      "bytes": 1248,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "59c49b2dc9a35eebdabdb8e6af55d43a1ec00d79"
+      ]
+    },
+    {
+      "path": "native/scripts/test.sh",
+      "status": "M",
+      "sha256": "c4fc9bbf52765fa7e40fd4d9349996cb6f49e7a75280ccaa7feac70911a3fa6d",
+      "bytes": 2120,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "59c49b2dc9a35eebdabdb8e6af55d43a1ec00d79"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/CMakeLists.txt",
+      "status": "M",
+      "sha256": "dae3e59d46e65ad5ab9d9d785915d36693da8a4240d31212d270d2d7207a9503",
+      "bytes": 3689,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/async_log.hpp",
+      "status": "M",
+      "sha256": "6ad57d9dbcb7665eec10027d71db8c82a9cdabaa24f6a74340ceaeea93478842",
+      "bytes": 8189,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "status": "M",
+      "sha256": "c7e9b9951f02cc7380d7d06e62b889ac22a1ba349871c952718f529a77820d26",
+      "bytes": 158609,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp",
+      "status": "M",
+      "sha256": "6b583b4db3477b13aee41112761dbf0f89fe8378d6d4bd636491e3d12a49b43c",
+      "bytes": 3614,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_ros_parameters.hpp",
+      "status": "M",
+      "sha256": "9f69a4cdd11822782a9cf9a1dc2eded00f0ac5b9138cd34fb5f0be6407cc2485",
+      "bytes": 7315,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+      "status": "M",
+      "sha256": "d857a1e0c585dba543fb72c9cecfd168c9888685b489167afa30bad2d136a8aa",
+      "bytes": 24879,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_wire.hpp",
+      "status": "M",
+      "sha256": "207c609b1484a0fbe3816dcdc9cfe8181d2440714cd5a3769fe66728100df92a",
+      "bytes": 2914,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority.hpp",
+      "status": "M",
+      "sha256": "76149d4ccda64d63c3d3e13dadd62e3095143f4287f7427e0d9e7914eeaa26d1",
+      "bytes": 3825,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp",
+      "status": "M",
+      "sha256": "ff66a32c79ce4d585a7ad7e524b2ee76444b02e0d2cbc6547e9b617c08a00793",
+      "bytes": 12108,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/discrete_event_latch.hpp",
+      "status": "M",
+      "sha256": "98677753de1b5c5e1097777aee54307acdedf60ed6ab7ae57673155155789d04",
+      "bytes": 2608,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/ground_link.hpp",
+      "status": "M",
+      "sha256": "0967384b3cbd9245bc5df20d7213938be455eae75fe2defa10a697507e8372f6",
+      "bytes": 8159,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/parent_lifetime.hpp",
+      "status": "M",
+      "sha256": "c7e489825229facb6c7c8fe508257974da6e8a1a7ea8b9ac7d4c43e9378ee102",
+      "bytes": 1167,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/protocol.hpp",
+      "status": "M",
+      "sha256": "ad5a429800cfe414e0068804085b27f1ddaf8ffb057a862e32a895f5030b197c",
+      "bytes": 2833,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_audit.hpp",
+      "status": "M",
+      "sha256": "00fe894691b8676a9b8a43dc2e6ced36a3e2f2c6196107cb152e764ef4ddfcf2",
+      "bytes": 2239,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_boundary.hpp",
+      "status": "M",
+      "sha256": "937669a33fdb2bcf205824cfd23784c2367f7e924a8d4ce30e8feb5de245be23",
+      "bytes": 7178,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+      "status": "M",
+      "sha256": "242d7d64d137d835fae4e682ead34e71998d6aaa90fd80860235e67eb8389ab6",
+      "bytes": 36978,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "status": "M",
+      "sha256": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+      "bytes": 33087,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_events.hpp",
+      "status": "M",
+      "sha256": "4757cd5a450ff4e6ff883c480ab5bfc3a10e9e8496e385fec76c9edf3ab171b9",
+      "bytes": 7081,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/receive_schedule.hpp",
+      "status": "M",
+      "sha256": "0ac823c9daaa1d001db0908dc4d5a5bc9d0f823f655eede874421e7b06250253",
+      "bytes": 5946,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/ros_config.hpp",
+      "status": "M",
+      "sha256": "69bb79f935101170ff708904515ed48b78575dde92bfeaf1b85391cbfe8927b8",
+      "bytes": 2572,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "status": "M",
+      "sha256": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+      "bytes": 100438,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/setpoint_ownership.hpp",
+      "status": "M",
+      "sha256": "f1702f22bb214b2c16ad31c17dd0a242719450d7b04df396896ea09dbf612c82",
+      "bytes": 1685,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/socket_lease.hpp",
+      "status": "M",
+      "sha256": "dd7795a21c651f7c7bf5f7045e512f27a9c885543ad0e3fdc178731be82bfbc3",
+      "bytes": 3150,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp",
+      "status": "M",
+      "sha256": "35d3c0b30c77d22c3598be88b2555eafd4b71bdd01ee386f9db66b3f26e55a18",
+      "bytes": 6508,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/source_diagnostics.hpp",
+      "status": "M",
+      "sha256": "b2a9865e4721df8e216255e01d7af619b0d598d6124eaf2f0e09ed667f3f570d",
+      "bytes": 12475,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp",
+      "status": "M",
+      "sha256": "4be400538893b36756edb8a2da0f81d6130772f1f9eb9f8832176c61a2017645",
+      "bytes": 8095,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
+      "status": "M",
+      "sha256": "4886efd0342aad2040a6f94c3d075578d44a5ace728169f4f6a08ba43269595e",
+      "bytes": 9256,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_command_input.hpp",
+      "status": "M",
+      "sha256": "bbe999b2481515b25d592607b758134cfb828c973794e3e342f2ba12cca11dbd",
+      "bytes": 26770,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
+      "status": "M",
+      "sha256": "ec05018b92a5c0e05698c12d8ec4c590db96ffb11b6626ba5654f5072e3cf1b7",
+      "bytes": 26195,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+      "status": "M",
+      "sha256": "0ba964f8cfcd8a88ab0bc7c3a08a0b313db12d315921ace909239f974aee8b93",
+      "bytes": 15219,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+      "status": "M",
+      "sha256": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+      "bytes": 10344,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "status": "M",
+      "sha256": "e607d9d2abb0510abf9a9ec8cb4e44df48d9d82fe4dd511b3825ccc0a497ddb1",
+      "bytes": 42899,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_resource_budget.hpp",
+      "status": "M",
+      "sha256": "f30e9ebd55af5c98a03ddb20511efdfa341262424a9f035b6b8dae56bee647c7",
+      "bytes": 3214,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_ros_adapter.hpp",
+      "status": "M",
+      "sha256": "f9c0d0cc57f1f356ded97a841838203c4e940f374b8035d433061e440c793cad",
+      "bytes": 5660,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/AttitudeThrustPreview.msg",
+      "status": "M",
+      "sha256": "533a78baee2d9747c002cf9b6306fcd2a52fc7904d3be33ad1f18af0c5fcffbf",
+      "bytes": 2820,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/NavigationCommand.msg",
+      "status": "M",
+      "sha256": "43473da90f15baaa85b1aaf2dd55998dfa54919d892f65b42276e81d20b3a117",
+      "bytes": 2870,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VelocityCommand.msg",
+      "status": "M",
+      "sha256": "78259efb214aec78c93aec4a03c1ade1ac569fe0107aba5e5aacef760869eb46",
+      "bytes": 2297,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VisionHealth.msg",
+      "status": "M",
+      "sha256": "cd3b3b4dc996a60aa601e985703eb818d187bb843dc5c76beac572e25f539dbb",
+      "bytes": 3575,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/msg/VisionState.msg",
+      "status": "M",
+      "sha256": "6a2822685da2e51eef509f2a93c8025a3a02f40039ef4eea609f08520d55ac05",
+      "bytes": 4151,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/package.xml",
+      "status": "M",
+      "sha256": "d10f583c111190224c62d6508dd2dfb8671a0e83ff7d6d61766360fd50fd4a0b",
+      "bytes": 1539,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "status": "M",
+      "sha256": "ce6536cbbd115996a42ccdd8097fe33ed89e7460a4d3baba2f5cb1bf6e29a51c",
+      "bytes": 142504,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "39a7c8f844bb66655735bf41e8b33f5b1044d862"
+      ]
+    },
+    {
+      "path": "native/tests/test_overnight_stage5_vision_contract.cpp",
+      "status": "A",
+      "sha256": "55fb358dd42b20d9e7f4151fd947e29c6c390d63af0fad0bfd4ba025ab65de93",
+      "bytes": 8444,
+      "category": "test",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "native/tests/test_overnight_stage6_ipc.cpp",
+      "status": "A",
+      "sha256": "d63ececb0fab67cd19e808759d00409cb20242577a3d1c618f3243901e69c2e6",
+      "bytes": 7144,
+      "category": "test",
+      "touching_commits": [
+        "212f477c67a036f302a604099a492f8be80c7f17"
+      ]
+    },
+    {
+      "path": "native/tools/deploy.py",
+      "status": "M",
+      "sha256": "b50b5dd9a9fe46ba2cecedf30eeca11f5b0f105cea0fb85ca1dc46c53aa349f0",
+      "bytes": 8836,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "native/tools/fcctl.py",
+      "status": "M",
+      "sha256": "6cd697ba3046bff32cb1bef792265d8721ca2e5925a9f2b3216cb9c0652cbbf6",
+      "bytes": 23084,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "native/tools/socket_safety.py",
+      "status": "M",
+      "sha256": "92e000bfb7e449e9a85dd36e1f8b79f1307ee970af2b25a1c8ffd0ce2eca95a2",
+      "bytes": 6578,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "native/tools/start.py",
+      "status": "M",
+      "sha256": "fe5aa1d0cf09a091a5df8255b2eedfb685e1954a5dae2eebb53c1c144233525f",
+      "bytes": 5513,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "native/tools/update.py",
+      "status": "M",
+      "sha256": "4ef80c4131f821f41cc563080aae6b24f8a542bc86746840b7fc322908a2f438",
+      "bytes": 4135,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "native/tools/velocity_command_diagnostic.py",
+      "status": "M",
+      "sha256": "d5b7f470d37e2a89870283dde9f48c35406a05bcd9e16b665efbf5ea257cdb68",
+      "bytes": 50291,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb",
+        "8d2bfd8a26aaf229bed24d130ccff89e58c76e80"
+      ]
+    },
+    {
+      "path": "native/tools/vision_odometry_adapter.py",
+      "status": "M",
+      "sha256": "89dd21c97be568889313b0d59d1c9e1a8bf6400d82d0e3b0d77ca4bfa709c9c0",
+      "bytes": 45310,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "native/tools/vision_state_validation.py",
+      "status": "M",
+      "sha256": "743b72147559d214e0e6d2c0fefd8d32a8e7096c4ad98eb4c1d370992bcf22be",
+      "bytes": 35092,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "navigation.py",
+      "status": "M",
+      "sha256": "3b112dd67ca3759a67ec4283b8d24124f94300e8b3757c91f8f652b5354f36d2",
+      "bytes": 19868,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "navigation_build_evidence.py",
+      "status": "M",
+      "sha256": "95d5bb59dde4da51f3b886aeb9e6c8a76ee79eff58fb7d33a22d184ad959f5a8",
+      "bytes": 28790,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+        "d66b9057073b4fea82baefa7cf259ef2a9c7b12f"
+      ]
+    },
+    {
+      "path": "navigation_collect.py",
+      "status": "M",
+      "sha256": "489879af68ba34ed20a29cf16f419dbfc9245c13666977c79f1bb85400a3aa55",
+      "bytes": 26578,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c59198a50f3db97c191a9c1dab45dcb0418fa6b"
+      ]
+    },
+    {
+      "path": "navigation_deploy.py",
+      "status": "M",
+      "sha256": "fdc11f8bae767a17ec8c3f17e53a9839714df472aa760b2b5303da82bad23a95",
+      "bytes": 17433,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "6c4cc7d2782342f211a667d59dc53dcca250d3b1",
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "navigation_environment.sh",
+      "status": "M",
+      "sha256": "3acbafe897ed12f2cb1ce996b60d38a94ddf871699fdc42270e9b2dd7b654327",
+      "bytes": 3005,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "navigation_install.py",
+      "status": "M",
+      "sha256": "ef6b80d0d8fcf83f440ef7026b9e60f9bcaed01718fa6b1be372169c09dfda7b",
+      "bytes": 24742,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "navigation_probe.py",
+      "status": "M",
+      "sha256": "d5e853669bf2d8e8fbc8744d99e79851c765d4205bc4be2e05c339ce5f645994",
+      "bytes": 18115,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "navigation_report.py",
+      "status": "M",
+      "sha256": "7ccf3b01fe9b536bfdc5e701457bc703bd7d4bc1a8853cae3a920b8401e8ce68",
+      "bytes": 12571,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+        "9d0d4bccb15b0ad08eb77ffcee086bfc27c32e02"
+      ]
+    },
+    {
+      "path": "navigation_restore.py",
+      "status": "M",
+      "sha256": "bc97282e0b5b42a8049975202f81ab1a9bd54adcfa73dd58e935de0a3ca9bc4a",
+      "bytes": 43946,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "navigation_service.py",
+      "status": "M",
+      "sha256": "dcdc64abc435ede5617f323a4aa0df30c0c4230190847ba1097c0309dc350940",
+      "bytes": 19366,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "navigation_status.py",
+      "status": "M",
+      "sha256": "082ba9aa602e98c637a1af755397a7321cd80c7cd0b1d1a7dc6ccc6bfae40612",
+      "bytes": 11519,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "standby.py",
+      "status": "M",
+      "sha256": "51d8d6e761e21f10ec01398de274ebbadeb4a44e87b0a40713ab4ea144ee4614",
+      "bytes": 43497,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "tests/ros_generated_interface_check.py",
+      "status": "A",
+      "sha256": "d520e78938f1310945542df9d923064bf896301dc4d754701b187c33a973c9cf",
+      "bytes": 15283,
+      "category": "test",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "tests/test_feedback_age_probe.py",
+      "status": "M",
+      "sha256": "ba1fa84e78455714c40c270d9d2ad9878ad343e77265bb7e51cee85668fcc691",
+      "bytes": 9579,
+      "category": "test",
+      "touching_commits": [
+        "c666d7797c216a60b8c2bc031ec77ae1aa89fadc",
+        "79c53cb6cd1006ae24da01e8daef1587d06fa025"
+      ]
+    },
+    {
+      "path": "tests/test_legacy_cpp_runner_links.py",
+      "status": "A",
+      "sha256": "d131a13b55ce6f98ac1aa23cb8c546f1a65319c6136c26fb9d67b8ddb02e1488",
+      "bytes": 5488,
+      "category": "test",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb",
+        "59c49b2dc9a35eebdabdb8e6af55d43a1ec00d79"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_service_readability.py",
+      "status": "A",
+      "sha256": "96726a44d35d2c19c5dd271817c7dd441d8b24baa4581354ec35fada07f2915d",
+      "bytes": 10911,
+      "category": "test",
+      "touching_commits": [
+        "0c90e59ab31b7efa6bfc1d921ab0c11ca164dceb"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_stage4_deployment.py",
+      "status": "A",
+      "sha256": "b41cf1a8f4501f983e15ded1b98cf2366aa4a08518b9ae79f046de698149401e",
+      "bytes": 16051,
+      "category": "test",
+      "touching_commits": [
+        "212f477c67a036f302a604099a492f8be80c7f17",
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+        "d66b9057073b4fea82baefa7cf259ef2a9c7b12f"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_stage4_launcher_readability.py",
+      "status": "A",
+      "sha256": "b2a7386663056d875cc5b223ae4f4fb68d4fe0a69c4dfa2e95bad33d3203a7cb",
+      "bytes": 6729,
+      "category": "test",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_stage4_launcher_resources.py",
+      "status": "A",
+      "sha256": "42d819932108634f63ea5e5041f55fb73ca4cdb83a3c3ce6b94baeccbe634b4c",
+      "bytes": 2546,
+      "category": "test",
+      "touching_commits": [
+        "8abc77b11dee5c754272b79618da455e482aba15"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_stage4_reporting.py",
+      "status": "A",
+      "sha256": "71ae4ce0b31f71b1c7b6baefec1c8d1e7409effb7e76e369ced9be58fc3047dd",
+      "bytes": 14365,
+      "category": "test",
+      "touching_commits": [
+        "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+        "9d0d4bccb15b0ad08eb77ffcee086bfc27c32e02"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_stage4_tools.py",
+      "status": "A",
+      "sha256": "59034d2f7f7814aa32422d335c648f38c88e84fd89687aa9acd210d485e5fbe2",
+      "bytes": 16771,
+      "category": "test",
+      "touching_commits": [
+        "7ebe9263e547325b9794bc32c5fba371e007cfa3"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_stage5_config.py",
+      "status": "A",
+      "sha256": "5da2cd484fd27a7f38baa81c19fca30c8e244088c18c793cae08e837bde2c5d7",
+      "bytes": 8404,
+      "category": "test",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "44632a18f5ef403ca09c5a84844f1fc52925595e",
+        "1124daf076596a2c49a857cbaaa3c883b6bd0d0f"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_stage5_ros_contract.py",
+      "status": "A",
+      "sha256": "a9786c27524524a0bd9e4a9924ee540fcda6b653068d5a3bd03bd319700c0d91",
+      "bytes": 4460,
+      "category": "test",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_stage6_deployment_logs.py",
+      "status": "A",
+      "sha256": "82f868906644879c3a56af56fbd0ecaf20f184eb47ec1f51ec8cffa568e30e0b",
+      "bytes": 6825,
+      "category": "test",
+      "touching_commits": [
+        "6c4cc7d2782342f211a667d59dc53dcca250d3b1"
+      ]
+    },
+    {
+      "path": "tests/test_overnight_stage6_lifecycle.py",
+      "status": "A",
+      "sha256": "8b6fd92f4c0cb2025dd728db328a73fa85fec1fda2d1342b2399cec59016a4b6",
+      "bytes": 12085,
+      "category": "test",
+      "touching_commits": [
+        "0c59198a50f3db97c191a9c1dab45dcb0418fa6b"
+      ]
+    },
+    {
+      "path": "tests/test_stage_overnight_velocity_lifecycle.py",
+      "status": "A",
+      "sha256": "54309f93c5400968598ae03cf8af85bd4985320c861e24d42b00f5daf7a2012b",
+      "bytes": 17226,
+      "category": "test",
+      "touching_commits": [
+        "8d2bfd8a26aaf229bed24d130ccff89e58c76e80"
+      ]
+    },
+    {
+      "path": "tests/test_vision_adapter.py",
+      "status": "M",
+      "sha256": "ac796fdcc5a1804a30c34ba80e96ae1a056bd5b6d412f0ef72bc0253678f0c12",
+      "bytes": 26050,
+      "category": "test",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "vision_config.py",
+      "status": "M",
+      "sha256": "8fc727992055774f1fa699fcc279a407e448e3ee6b4790830709937cbf88a5b5",
+      "bytes": 2928,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da"
+      ]
+    },
+    {
+      "path": "vision_settings.py",
+      "status": "M",
+      "sha256": "25f77a5c09ba3f68b335d7278b14a567bd64bc9288f2403ca9520168483a5877",
+      "bytes": 5371,
+      "category": "production/tool/interface",
+      "touching_commits": [
+        "15310f8776d182e668cc846f97ff23c5753995da",
+        "44632a18f5ef403ca09c5a84844f1fc52925595e",
+        "1124daf076596a2c49a857cbaaa3c883b6bd0d0f"
+      ]
+    }
+  ]
+}

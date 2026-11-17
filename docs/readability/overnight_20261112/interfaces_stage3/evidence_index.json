@@ -1,0 +1,714 @@
+{
+  "archive": "evidence.zip",
+  "sha256": "08c4343bc03bccdfac17397f2d305c30b34d0b23742441b7b9915cb9a8e30350",
+  "bytes": 257336,
+  "files": 96,
+  "compression": "ZIP_LZMA",
+  "cache": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap",
+  "entries": [
+    {
+      "archive_path": "host/baseline-package-three-tests.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/baseline-package-three-tests.log",
+      "bytes": 3314,
+      "sha256": "4825dfe84e3831abbf8d47838df3af3654c2ca731542c6823de7091b81628e78"
+    },
+    {
+      "archive_path": "host/baseline_package_reproduction.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/baseline_package_reproduction.json",
+      "bytes": 901,
+      "sha256": "493355b5551b10b01786d4a3207de989904b202aecde60a3c7d2f5442d0ea372"
+    },
+    {
+      "archive_path": "host/clang-format-check.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/clang-format-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "host/cmake-build.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/cmake-build.log",
+      "bytes": 15952,
+      "sha256": "0eff2c0a57e91f20bcbb5e2eb61ede9ae6b486e291c50bb175be28fd8c12778a"
+    },
+    {
+      "archive_path": "host/cmake-configure.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/cmake-configure.log",
+      "bytes": 399,
+      "sha256": "6a57e611bf0d7429d5979c943a264fbc2119bc41cc1210f3ef7355a90426042d"
+    },
+    {
+      "archive_path": "host/control_differential.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/control_differential.log",
+      "bytes": 1485,
+      "sha256": "9283f60c549eb491dce6ae16095911ca7bdae7267c9ad61d7e286289ec0efc4e"
+    },
+    {
+      "archive_path": "host/ctest-junit.xml",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ctest-junit.xml",
+      "bytes": 34372,
+      "sha256": "2e3555aee70ef727533873a0db3923afb26824e9524da4f453d9b4c50bf31c2a"
+    },
+    {
+      "archive_path": "host/ctest.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ctest.log",
+      "bytes": 9811,
+      "sha256": "6296306f80f37e446cd69090e407ff95cda2aa0c2e437bd271b3b6b1708dca7b"
+    },
+    {
+      "archive_path": "host/dynamic_result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/dynamic_result.json",
+      "bytes": 322,
+      "sha256": "a44b82ebe3909c3e4b4bb4a937b293fac54ee740753edd3112f388968d63dc49"
+    },
+    {
+      "archive_path": "host/final_targeted.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/final_targeted.log",
+      "bytes": 11019,
+      "sha256": "d32122f30afac2c8a734470841bf37f331e426a650661e0b236b5cb906821fd6"
+    },
+    {
+      "archive_path": "host/host_tests_result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/host_tests_result.json",
+      "bytes": 1000,
+      "sha256": "9082aa2089ce8312433c6c2729ca126074c7d21cdb4a1877ce04a0eac4e92cf2"
+    },
+    {
+      "archive_path": "host/initial.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/initial.json",
+      "bytes": 59214,
+      "sha256": "37437d077216d40f93139f3274a24a7742d6388fc929360d96b9e827e24f098a"
+    },
+    {
+      "archive_path": "host/legacy-native-runner.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/legacy-native-runner.log",
+      "bytes": 3287678,
+      "sha256": "bdb5cbcfafe445e7dd71f98b82c2ca796a4b3633932ead54918e0be7e87f6ab5"
+    },
+    {
+      "archive_path": "host/legacy-regression-after.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/legacy-regression-after.log",
+      "bytes": 519,
+      "sha256": "112e8957c51bc9e12f66b9379d8036a66c23d02e04620ae57f975e674a2ce84d"
+    },
+    {
+      "archive_path": "host/legacy-regression-before.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/legacy-regression-before.log",
+      "bytes": 2782,
+      "sha256": "787f1b7a010b200a03cba334ea7583362fb6faeb82c09dc3037e56fc4bc2c676"
+    },
+    {
+      "archive_path": "host/legacy_before.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/legacy_before.json",
+      "bytes": 562,
+      "sha256": "fca468f60fbfae825fc040b6440b7fe6857f4012a069668b82cdf70687f44098"
+    },
+    {
+      "archive_path": "host/legacy_before.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/legacy_before.log",
+      "bytes": 442,
+      "sha256": "b318d0bd6a077f72acfcd479622094a029a09eda3a7b60ed9595ac25b5ee821f"
+    },
+    {
+      "archive_path": "host/legacy_native_result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/legacy_native_result.json",
+      "bytes": 147,
+      "sha256": "29433af92f8710e5cc94f4e10546dbb4b8d2897f26a69e586495d2c5eea65be4"
+    },
+    {
+      "archive_path": "host/package_bounds.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/package_bounds.json",
+      "bytes": 1154,
+      "sha256": "900c6c655fec22a1c17c6f6e69c64ae581bbde36c664e850004c3aaa9f8c2201"
+    },
+    {
+      "archive_path": "host/python-full.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/python-full.log",
+      "bytes": 85089,
+      "sha256": "bc3c7e6f4cf1cb0af0a8af83b33c014b2f27ce49a4a4029d1c19e286042dc329"
+    },
+    {
+      "archive_path": "host/python_legacy_result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/python_legacy_result.json",
+      "bytes": 286,
+      "sha256": "bca1ecd691412b9e8cf45a606ecbe3458b35ce2650a8d3f877abcce10e22f0a9"
+    },
+    {
+      "archive_path": "host/run_current_baseline_equivalence.py",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/run_current_baseline_equivalence.py",
+      "bytes": 1200,
+      "sha256": "d75e21b7ca13f51a9fa2c0b17727681d42b39ae37ba36ae572e7fcd65e0b0d17"
+    },
+    {
+      "archive_path": "host/run_host_tests.py",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/run_host_tests.py",
+      "bytes": 914,
+      "sha256": "136bd3c699bef653d1f470d8a0a433a53ce92f9889f40a686ff482f5077c4d1e"
+    },
+    {
+      "archive_path": "host/run_python_and_legacy.py",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/run_python_and_legacy.py",
+      "bytes": 857,
+      "sha256": "716c4908869551b56884e8e7ce37cc97fc36145723b4c5107387ed3d8f3efeeb"
+    },
+    {
+      "archive_path": "host/run_sanitizers.py",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/run_sanitizers.py",
+      "bytes": 1573,
+      "sha256": "68e6cd98fe51510be1b4f34706a1fb4f7c937d385f36fe944cbafc564b6c540d"
+    },
+    {
+      "archive_path": "host/run_structure_verification.py",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/run_structure_verification.py",
+      "bytes": 3051,
+      "sha256": "998305bdb861a07ff2ef0a1cbd36589ae13167f18043a09f04517f198949e3a7"
+    },
+    {
+      "archive_path": "host/sanitizers_result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers_result.json",
+      "bytes": 4675,
+      "sha256": "a72158007c43210f6d14fd7967639f2842fb11e6162665a48734ad13fc99aedb"
+    },
+    {
+      "archive_path": "host/source_commit.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/source_commit.json",
+      "bytes": 1898,
+      "sha256": "6c185b89019dde1df5441e7a6be873d4752c2d64916ad1da9854d0f0355c0820"
+    },
+    {
+      "archive_path": "host/structure_result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/structure_result.json",
+      "bytes": 13833,
+      "sha256": "23ba747e476c4ea811bf03ec072b7a62d4ce1e0156ea421185c4e49118af52ec"
+    },
+    {
+      "archive_path": "lifecycle/readability_equivalence.json",
+      "source_path": "/home/jikl62/.cache/fc01-overnight-velocity-lifecycle/readability_equivalence.json",
+      "bytes": 1109,
+      "sha256": "e3098ae503547c6d10875e272672b0d0cb97cde674170bf98726a9004ae41f5d"
+    },
+    {
+      "archive_path": "lifecycle/readability_targeted.log",
+      "source_path": "/home/jikl62/.cache/fc01-overnight-velocity-lifecycle/readability_targeted.log",
+      "bytes": 166,
+      "sha256": "7e1fcdf60dd856dc2ffb192ba6175a677db3feea8066407f1f5fcb8060535df4"
+    },
+    {
+      "archive_path": "lifecycle/repair_evidence.json",
+      "source_path": "/home/jikl62/.cache/fc01-overnight-velocity-lifecycle/repair_evidence.json",
+      "bytes": 1824,
+      "sha256": "94d3024064bb88257bbe594d95e096bfe14d21c3e5f3bc2460ad40a6cbf45ac0"
+    },
+    {
+      "archive_path": "lifecycle/repaired_lifecycle.log",
+      "source_path": "/home/jikl62/.cache/fc01-overnight-velocity-lifecycle/repaired_lifecycle.log",
+      "bytes": 109,
+      "sha256": "cdd2173eba220c80ceb6deb3ed8af6e5c715dafccc8ec86a8944266788f29646"
+    },
+    {
+      "archive_path": "lifecycle/repaired_targeted.log",
+      "source_path": "/home/jikl62/.cache/fc01-overnight-velocity-lifecycle/repaired_targeted.log",
+      "bytes": 166,
+      "sha256": "ec0a5f386a35d56ab719ef64354a6fce96dcb7b7b8d8478a57f74ffd41e795fc"
+    },
+    {
+      "archive_path": "lifecycle/reproduction_original.log",
+      "source_path": "/home/jikl62/.cache/fc01-overnight-velocity-lifecycle/reproduction_original.log",
+      "bytes": 1230,
+      "sha256": "fa7e58e2029ed14df4b53a0d7d8ca86a39ceee714f2f947afd16f92714cb168a"
+    },
+    {
+      "archive_path": "lifecycle/reproduction_original_acquisition.log",
+      "source_path": "/home/jikl62/.cache/fc01-overnight-velocity-lifecycle/reproduction_original_acquisition.log",
+      "bytes": 4989,
+      "sha256": "5efc8a94fe322af1e0a3db84278ac52be6397619b3f9c71cee1bcd54298914cb"
+    },
+    {
+      "archive_path": "lifecycle/ros_velocity_smoke.json",
+      "source_path": "/home/jikl62/.cache/fc01-overnight-velocity-lifecycle/ros_velocity_smoke.json",
+      "bytes": 1281,
+      "sha256": "d211005876e56d8d3b39885c5c7a98d9563fb51433f956a310b8b45102726026"
+    },
+    {
+      "archive_path": "lifecycle/ros_velocity_smoke.log",
+      "source_path": "/home/jikl62/.cache/fc01-overnight-velocity-lifecycle/ros_velocity_smoke.log",
+      "bytes": 1078,
+      "sha256": "4f9dce51107454fe6a5bca0c8ef3e701d1517f13f26bdd327855117bc624f567"
+    },
+    {
+      "archive_path": "ros/build.command.sh",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/build.command.sh",
+      "bytes": 786,
+      "sha256": "0f9046b7bd9a31ac12e620c6d3e7410a3e16576f37a68c853df258637181cb6e"
+    },
+    {
+      "archive_path": "ros/build.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/build.log",
+      "bytes": 59704,
+      "sha256": "e2df876918c4b7d10a9837e107f4b1334348697996bb732264eaac21f76378a1"
+    },
+    {
+      "archive_path": "ros/build.result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/build.result.json",
+      "bytes": 249,
+      "sha256": "85f6bfe279019286c2241c56151ba70af6c04800cbb331f3e3d04c5862c09bc6"
+    },
+    {
+      "archive_path": "ros/final_build.command.sh",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/final_build.command.sh",
+      "bytes": 786,
+      "sha256": "0f9046b7bd9a31ac12e620c6d3e7410a3e16576f37a68c853df258637181cb6e"
+    },
+    {
+      "archive_path": "ros/final_build.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/final_build.log",
+      "bytes": 59399,
+      "sha256": "9cab85c78671d0d09cae90d2f74e50a0b66000907c7e2d0c446b6d11ef360e17"
+    },
+    {
+      "archive_path": "ros/final_build.result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/final_build.result.json",
+      "bytes": 260,
+      "sha256": "66cea6f796829c6d7073c7a42f876ef7f98a4f8a08892443d38c940c07c1297a"
+    },
+    {
+      "archive_path": "ros/final_build.source_after.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/final_build.source_after.json",
+      "bytes": 36097,
+      "sha256": "95f9fe1f117c3066c775c820cf6d22e9d008e9d2a63f763e1e9d839974c49d60"
+    },
+    {
+      "archive_path": "ros/final_build.source_before.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/final_build.source_before.json",
+      "bytes": 36337,
+      "sha256": "ed5453ccc1d0dd7e99e6d3bd23b4514f01a402b75aa5d3f30b7c2580c3b391f5"
+    },
+    {
+      "archive_path": "ros/final_snapshot_equivalence.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/final_snapshot_equivalence.json",
+      "bytes": 1586,
+      "sha256": "66998330d9f44ebb4a154415bd93345adcbf6adfaded299c835ddc1b5ae2ec64"
+    },
+    {
+      "archive_path": "ros/postflight.command.sh",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/postflight.command.sh",
+      "bytes": 1468,
+      "sha256": "2d9ce402dd4ccb3487d3a96615f610a6459c225c20c8cd85741889c81249f66d"
+    },
+    {
+      "archive_path": "ros/postflight.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/postflight.log",
+      "bytes": 990,
+      "sha256": "84bf178ad9b2b43308882de8e39f28932cd44f662fca8c48be94497c9b6f0b28"
+    },
+    {
+      "archive_path": "ros/preflight_domain.py",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/preflight_domain.py",
+      "bytes": 1046,
+      "sha256": "f5d04cb991e3e1a54bddf515f4de7ef0a44fdfc8f5e9d5e34d7d13059ab994b7"
+    },
+    {
+      "archive_path": "ros/runtime_identity.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/runtime_identity.json",
+      "bytes": 560,
+      "sha256": "7c691fcd883647e15927f78499336e1cb91fa9d0f04d49d97281bcaafbcf4bb7"
+    },
+    {
+      "archive_path": "ros/source_after.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/source_after.json",
+      "bytes": 7258,
+      "sha256": "620b964943b2bc8b6adce52c28a34042637ca2f6665d4443dc9dec966ee94edd"
+    },
+    {
+      "archive_path": "ros/source_before.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/source_before.json",
+      "bytes": 7280,
+      "sha256": "da97a62f5bdbf57bcd09d0326a72b45288ead249a627662cfaa18d752b53f134"
+    },
+    {
+      "archive_path": "ros/velocity_command_diagnostic.tested.py",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_command_diagnostic.tested.py",
+      "bytes": 48796,
+      "sha256": "35dfca0fb961dccd8b8da267b7a0908d7600136693207cce876ad68742fcad7c"
+    },
+    {
+      "archive_path": "ros/velocity_domain_postflight.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_domain_postflight.json",
+      "bytes": 322,
+      "sha256": "da9a1e481ab3efa1b4c272eda599fb2bf7216bb38f4494039de23700db3aeeb2"
+    },
+    {
+      "archive_path": "ros/velocity_domain_preflight.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_domain_preflight.json",
+      "bytes": 322,
+      "sha256": "da9a1e481ab3efa1b4c272eda599fb2bf7216bb38f4494039de23700db3aeeb2"
+    },
+    {
+      "archive_path": "ros/velocity_retry.command.sh",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_retry.command.sh",
+      "bytes": 963,
+      "sha256": "d91885f8de24e4324a15d199c7e3f9234e6092cf269ac105576352c0219b8a4f"
+    },
+    {
+      "archive_path": "ros/velocity_retry.domain_preflight.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_retry.domain_preflight.json",
+      "bytes": 322,
+      "sha256": "da9a1e481ab3efa1b4c272eda599fb2bf7216bb38f4494039de23700db3aeeb2"
+    },
+    {
+      "archive_path": "ros/velocity_retry.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_retry.log",
+      "bytes": 1300,
+      "sha256": "18c5f2b268781d670ccc71a875284d63b1665799803cae552b2dc0d56e8c0dde"
+    },
+    {
+      "archive_path": "ros/velocity_retry.report.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_retry.report.json",
+      "bytes": 1281,
+      "sha256": "d211005876e56d8d3b39885c5c7a98d9563fb51433f956a310b8b45102726026"
+    },
+    {
+      "archive_path": "ros/velocity_retry.result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_retry.result.json",
+      "bytes": 2372,
+      "sha256": "76cad6d071bb3ba8bf8f71d3af07d448adea5fa062a5e505b146fbf5644dcde8"
+    },
+    {
+      "archive_path": "ros/velocity_retry.source_before.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_retry.source_before.json",
+      "bytes": 1913,
+      "sha256": "ac3f442fc0a8478073f1086d57109e1242a014ea072552e3d174d8df562c70f5"
+    },
+    {
+      "archive_path": "ros/velocity_smoke.command.sh",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_smoke.command.sh",
+      "bytes": 957,
+      "sha256": "732bbf41432fadf5b3c76665e1555c644d5d57a081a416a75009e1ddf8f3defc"
+    },
+    {
+      "archive_path": "ros/velocity_smoke.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_smoke.log",
+      "bytes": 1300,
+      "sha256": "18c5f2b268781d670ccc71a875284d63b1665799803cae552b2dc0d56e8c0dde"
+    },
+    {
+      "archive_path": "ros/velocity_smoke.report.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_smoke.report.json",
+      "bytes": 1281,
+      "sha256": "d211005876e56d8d3b39885c5c7a98d9563fb51433f956a310b8b45102726026"
+    },
+    {
+      "archive_path": "ros/velocity_smoke.result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/velocity_smoke.result.json",
+      "bytes": 364,
+      "sha256": "a41ddd84a4a62370de9279c703563e78ca388cc3df9f943d01b9f9e54fd45004"
+    },
+    {
+      "archive_path": "ros/verification.initial_drift.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/verification.initial_drift.json",
+      "bytes": 4882,
+      "sha256": "e7977ffb2590c1ea0616b9d2105e542ff8de6dc40260e58da76b193dae93d1d4"
+    },
+    {
+      "archive_path": "ros/verification.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/verification.json",
+      "bytes": 14726,
+      "sha256": "0b4b1bfac322ae9488d437ef0d2d00ccb837b53f48b4ff24caa3b0dd166f54d3"
+    },
+    {
+      "archive_path": "ros/vision_domain_postflight.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/vision_domain_postflight.json",
+      "bytes": 322,
+      "sha256": "01ac18292ebf070008c897c250ebb61cf200d134db692b2af12e68853e28cbbc"
+    },
+    {
+      "archive_path": "ros/vision_domain_preflight.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/vision_domain_preflight.json",
+      "bytes": 322,
+      "sha256": "01ac18292ebf070008c897c250ebb61cf200d134db692b2af12e68853e28cbbc"
+    },
+    {
+      "archive_path": "ros/vision_smoke.command.sh",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/vision_smoke.command.sh",
+      "bytes": 863,
+      "sha256": "b748168da36e2371f70438f57f66dc0ae9d2be5e7faabf4b86c77abcbb3ff406"
+    },
+    {
+      "archive_path": "ros/vision_smoke.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/vision_smoke.log",
+      "bytes": 353,
+      "sha256": "c60d899bc0c196a8bac79943c475e60e87d9c7980c82544da865717cff9b1d23"
+    },
+    {
+      "archive_path": "ros/vision_smoke.report.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/vision_smoke.report.json",
+      "bytes": 745,
+      "sha256": "48e5cf6205c804ba570c3b54413b5108dde62140b6c4ef83b275a3c9a8a9e4a0"
+    },
+    {
+      "archive_path": "ros/vision_smoke.result.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/ros/vision_smoke.result.json",
+      "bytes": 359,
+      "sha256": "bdcf69f2637c1744263873b414579aff2d4f0bae36fd03018d00da30fe1aaab5"
+    },
+    {
+      "archive_path": "sanitizers/test_rc_navigation.build.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_rc_navigation.build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "sanitizers/test_rc_navigation.run.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_rc_navigation.run.log",
+      "bytes": 237,
+      "sha256": "9b0cd96d61ef55b9c893b1abebc2fa273c251ab9dcff89fff44fda0f7c35ed26"
+    },
+    {
+      "archive_path": "sanitizers/test_stage3_publication_combinations.build.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_stage3_publication_combinations.build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "sanitizers/test_stage3_publication_combinations.run.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_stage3_publication_combinations.run.log",
+      "bytes": 29506,
+      "sha256": "6b07bec0d8e633fd3c11ec1378bc8d9464541917deb225ad4507c6ea7dbf8dfb"
+    },
+    {
+      "archive_path": "sanitizers/test_stage3_state_invariants.build.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_stage3_state_invariants.build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "sanitizers/test_stage3_state_invariants.run.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_stage3_state_invariants.run.log",
+      "bytes": 15709,
+      "sha256": "63d41e4ef9729995b729aeb1ec01a268e093072270283bcfb9bb8d0a18d2e269"
+    },
+    {
+      "archive_path": "sanitizers/test_vertical_feedback_regression.build.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_vertical_feedback_regression.build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "sanitizers/test_vertical_feedback_regression.run.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_vertical_feedback_regression.run.log",
+      "bytes": 34,
+      "sha256": "9956662e949ddf603151ee2fb46ee193456358a8f640196c05a861309b32ada9"
+    },
+    {
+      "archive_path": "sanitizers/test_vertical_integral_reversal.build.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_vertical_integral_reversal.build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "sanitizers/test_vertical_integral_reversal.run.log",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/sanitizers/test_vertical_integral_reversal.run.log",
+      "bytes": 32,
+      "sha256": "6f47953b7a0dbebf8cfaf155c1668d3c55fb670e963767837c6c68402f0fca35"
+    },
+    {
+      "archive_path": "services/affected_service_tests.log",
+      "source_path": "/home/jikl62/.cache/fc01-python-service-stage3-xf_e0b87/affected_service_tests.log",
+      "bytes": 15122,
+      "sha256": "7dc1d63b483d6080c8375862b64223bf089c70be15521f9a26542522c564f6e4"
+    },
+    {
+      "archive_path": "services/baseline.json",
+      "source_path": "/home/jikl62/.cache/fc01-python-service-stage3-xf_e0b87/baseline.json",
+      "bytes": 486,
+      "sha256": "aae5cf8df97b2084e171087cf0b068370e1887000067d88bcc16e2d21a279a43"
+    },
+    {
+      "archive_path": "services/final_verification.json",
+      "source_path": "/home/jikl62/.cache/fc01-python-service-stage3-xf_e0b87/final_verification.json",
+      "bytes": 2444,
+      "sha256": "d52984e352978b9b35245aedca99cfe07b2a96c65049a85f7dddb49d3cf3e146"
+    },
+    {
+      "archive_path": "services/service_factory_differential.log",
+      "source_path": "/home/jikl62/.cache/fc01-python-service-stage3-xf_e0b87/service_factory_differential.log",
+      "bytes": 710,
+      "sha256": "ce5bb62c40497dbf2ddf1bfcdcf6104fa954c5ef15a22bb74ed7c9ce103f57fb"
+    },
+    {
+      "archive_path": "traces/full_trace_index.json",
+      "source_path": "generated from complete cached trace bytes",
+      "bytes": 6209,
+      "sha256": "a68b55249c2b6d5e56d0022f6a90cf104796302c6b41b7c52233ce5642eb9bda"
+    },
+    {
+      "archive_path": "traces/node.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/node.json",
+      "bytes": 299,
+      "sha256": "1e6dc64ed52a00dca11a4d0a6164f72eff57dbe6a7c9b0b9e7fa380906dbb909"
+    },
+    {
+      "archive_path": "traces/powered-node.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/powered-node.json",
+      "bytes": 999,
+      "sha256": "17694638802c9fad146fac5a5f3fa013fd4b11d9d0d9043daa7af81e0fba4376"
+    },
+    {
+      "archive_path": "traces/test_stage2_control_trace.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage2_control_trace.json",
+      "bytes": 307,
+      "sha256": "699868a288fd08aca86243c6300d75f5940a28317a6843e5d564f29ccf221422"
+    },
+    {
+      "archive_path": "traces/test_stage2_publication_trace.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage2_publication_trace.json",
+      "bytes": 306,
+      "sha256": "800ee47745aff5ebee15a3331d45f8c3f081ae817d1c894e0c584970c474b5c5"
+    },
+    {
+      "archive_path": "traces/test_stage2_runtime_trace.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage2_runtime_trace.json",
+      "bytes": 304,
+      "sha256": "98461943f83037e4634f7b5c25a93538dd2e79e6bda53dd2cc17ec06f7091fbb"
+    },
+    {
+      "archive_path": "traces/test_stage3_publication_combinations.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage3_publication_combinations.json",
+      "bytes": 303,
+      "sha256": "e637ed2965bafc37dd2b77cb60588e514100811867130106474cf35ff2a49e88"
+    },
+    {
+      "archive_path": "traces/test_stage3_state_invariants.json",
+      "source_path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage3_state_invariants.json",
+      "bytes": 303,
+      "sha256": "f4fed44443673271f3db4146e8280dd42ee1e31a385c0d0c8fd3b8ba38c9ad1b"
+    }
+  ],
+  "full_traces_not_archived": [
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/node-baseline.log",
+      "bytes": 16162534,
+      "sha256": "5f968a9e84f787e3cbc6dd03939cb965a1c62303688d3190f88ad9df80803c2d",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/node-current.log",
+      "bytes": 16162534,
+      "sha256": "5f968a9e84f787e3cbc6dd03939cb965a1c62303688d3190f88ad9df80803c2d",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/powered-node-baseline-full.log",
+      "bytes": 10211619,
+      "sha256": "a18035e3f243c060cb2bb4b7031fe82b9d636c59daa0440ef79023d8fab751cb",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/powered-node-baseline-stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/powered-node-baseline.log",
+      "bytes": 9032313,
+      "sha256": "f47d3a0f1fc2258afd2f7a18b0bcbb8758b77aeb93a9b3279817262376512790",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/powered-node-current-full.log",
+      "bytes": 10211618,
+      "sha256": "a46263a3d4176fd009936f8800cae6393d7640905883aca278549384e5df7221",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/powered-node-current-stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/powered-node-current.log",
+      "bytes": 9032313,
+      "sha256": "f47d3a0f1fc2258afd2f7a18b0bcbb8758b77aeb93a9b3279817262376512790",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage2_control_trace-baseline.log",
+      "bytes": 2485479,
+      "sha256": "82efd1071b1affe0feb8a62c164989d6616d7471af068a1ef6be585fa2838675",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage2_control_trace-current.log",
+      "bytes": 2485479,
+      "sha256": "82efd1071b1affe0feb8a62c164989d6616d7471af068a1ef6be585fa2838675",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage2_publication_trace-baseline.log",
+      "bytes": 466537,
+      "sha256": "4a9a25a5511b6156a9539bcfa55f67429af8bb425b54e1133d595ebf91c1605a",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage2_publication_trace-current.log",
+      "bytes": 466537,
+      "sha256": "4a9a25a5511b6156a9539bcfa55f67429af8bb425b54e1133d595ebf91c1605a",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage2_runtime_trace-baseline.log",
+      "bytes": 256454,
+      "sha256": "dfe14871bca040c800d1062a5e5f0349c0ea51a48276a40030d4b31984ca6408",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage2_runtime_trace-current.log",
+      "bytes": 256454,
+      "sha256": "dfe14871bca040c800d1062a5e5f0349c0ea51a48276a40030d4b31984ca6408",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage3_publication_combinations-baseline.log",
+      "bytes": 29506,
+      "sha256": "6b07bec0d8e633fd3c11ec1378bc8d9464541917deb225ad4507c6ea7dbf8dfb",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage3_publication_combinations-current.log",
+      "bytes": 29506,
+      "sha256": "6b07bec0d8e633fd3c11ec1378bc8d9464541917deb225ad4507c6ea7dbf8dfb",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage3_state_invariants-baseline.log",
+      "bytes": 15709,
+      "sha256": "63d41e4ef9729995b729aeb1ec01a268e093072270283bcfb9bb8d0a18d2e269",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    },
+    {
+      "path": "/home/jikl62/.cache/fc01-interfaces-stage3-irwed8ap/traces/test_stage3_state_invariants-current.log",
+      "bytes": 15709,
+      "sha256": "63d41e4ef9729995b729aeb1ec01a268e093072270283bcfb9bb8d0a18d2e269",
+      "archived": false,
+      "reason": "full trace is retained in cache; summaries and hashes archived"
+    }
+  ]
+}

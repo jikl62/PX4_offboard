@@ -1,0 +1,1789 @@
+{
+  "method": "Clang 14 JSON AST; physical source range lines; control nesting counts nested If/For/RangeFor/While/Do/Switch/Try/Catch, including else-if AST nesting. Node uses existing deterministic fixture with only clock/access/main test substitutions.",
+  "files": [
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp",
+      "scope": "fc01::Runtime",
+      "before": {
+        "sha256": "d3be1089c35e3c8a61538069f736469d6589f018ef14bcce5505aae9911edabf",
+        "methods": {
+          "Runtime": {
+            "physical_lines": 4,
+            "start": 256,
+            "end": 259,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "phase": {
+            "physical_lines": 3,
+            "start": 260,
+            "end": 262,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "active": {
+            "physical_lines": 4,
+            "start": 264,
+            "end": 267,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "shutting_down": {
+            "physical_lines": 3,
+            "start": 268,
+            "end": 270,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "begin_shutdown": {
+            "physical_lines": 6,
+            "start": 272,
+            "end": 277,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "abort_attitude": {
+            "physical_lines": 4,
+            "start": 279,
+            "end": 282,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "abort_rc_preparation_timing": {
+            "physical_lines": 25,
+            "start": 284,
+            "end": 308,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          },
+          "begin_attitude_safety_observation": {
+            "physical_lines": 4,
+            "start": 310,
+            "end": 313,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_attitude_safety_event": {
+            "physical_lines": 8,
+            "start": 315,
+            "end": 322,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "visual_output_current": {
+            "physical_lines": 3,
+            "start": 324,
+            "end": 326,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "request_visual_land": {
+            "physical_lines": 4,
+            "start": 328,
+            "end": 331,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "attitude_core": {
+            "physical_lines": 3,
+            "start": 333,
+            "end": 335,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "phase_name": {
+            "physical_lines": 4,
+            "start": 336,
+            "end": 339,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_state": {
+            "physical_lines": 3,
+            "start": 340,
+            "end": 342,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "message": {
+            "physical_lines": 3,
+            "start": 343,
+            "end": 345,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "flight_core": {
+            "physical_lines": 3,
+            "start": 346,
+            "end": 348,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "pending": {
+            "physical_lines": 3,
+            "start": 349,
+            "end": 351,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "command400_history": {
+            "physical_lines": 3,
+            "start": 352,
+            "end": 354,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "last_rc_attempt_reason": {
+            "physical_lines": 3,
+            "start": 355,
+            "end": 357,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_attempts_completed": {
+            "physical_lines": 3,
+            "start": 358,
+            "end": 360,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "require_attitude_sink_commit": {
+            "physical_lines": 4,
+            "start": 364,
+            "end": 367,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "confirm_rc_output": {
+            "physical_lines": 3,
+            "start": 369,
+            "end": 371,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_restart_allowed": {
+            "physical_lines": 3,
+            "start": 372,
+            "end": 374,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "defer_rc_preparation": {
+            "physical_lines": 17,
+            "start": 376,
+            "end": 392,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "rc_reprepare_block_reason": {
+            "physical_lines": 36,
+            "start": 396,
+            "end": 431,
+            "max_control_nesting": 2,
+            "control_statement_count": 13
+          },
+          "reprepare_rc": {
+            "physical_lines": 28,
+            "start": 433,
+            "end": 460,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "confirm_attitude_command_publication": {
+            "physical_lines": 61,
+            "start": 462,
+            "end": 522,
+            "max_control_nesting": 2,
+            "control_statement_count": 7
+          },
+          "publication_context": {
+            "physical_lines": 57,
+            "start": 525,
+            "end": 581,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "authority_json": {
+            "physical_lines": 69,
+            "start": 583,
+            "end": 651,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_name": {
+            "physical_lines": 3,
+            "start": 653,
+            "end": 655,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reason": {
+            "physical_lines": 3,
+            "start": 656,
+            "end": 658,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "request": {
+            "physical_lines": 205,
+            "start": 660,
+            "end": 864,
+            "max_control_nesting": 10,
+            "control_statement_count": 64
+          },
+          "ack": {
+            "physical_lines": 150,
+            "start": 866,
+            "end": 1015,
+            "max_control_nesting": 3,
+            "control_statement_count": 24
+          },
+          "disconnect": {
+            "physical_lines": 13,
+            "start": 1017,
+            "end": 1029,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "step": {
+            "physical_lines": 259,
+            "start": 1031,
+            "end": 1289,
+            "max_control_nesting": 4,
+            "control_statement_count": 39
+          },
+          "archive_command400": {
+            "physical_lines": 11,
+            "start": 1293,
+            "end": 1303,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "ended_rc_disarm_terminal": {
+            "physical_lines": 7,
+            "start": 1305,
+            "end": 1311,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "normal_offboard_candidate_scope": {
+            "physical_lines": 7,
+            "start": 1313,
+            "end": 1319,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "offboard_candidate_state_evidence": {
+            "physical_lines": 17,
+            "start": 1321,
+            "end": 1337,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "normal_takeoff_arm_state_evidence": {
+            "physical_lines": 22,
+            "start": 1349,
+            "end": 1370,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "disarm_state_evidence": {
+            "physical_lines": 21,
+            "start": 1372,
+            "end": 1392,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "record400_commit": {
+            "physical_lines": 6,
+            "start": 1394,
+            "end": 1399,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "attitude_snapshot": {
+            "physical_lines": 29,
+            "start": 1401,
+            "end": 1429,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "index": {
+            "physical_lines": 3,
+            "start": 1431,
+            "end": 1433,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "land_handshake_failure": {
+            "physical_lines": 14,
+            "start": 1435,
+            "end": 1448,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "track": {
+            "physical_lines": 24,
+            "start": 1450,
+            "end": 1473,
+            "max_control_nesting": 2,
+            "control_statement_count": 3
+          },
+          "refuse": {
+            "physical_lines": 4,
+            "start": 1475,
+            "end": 1478,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "hardware_gate": {
+            "physical_lines": 13,
+            "start": 1480,
+            "end": 1492,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          }
+        }
+      },
+      "after": {
+        "sha256": "a0bc3838b62fbc496c90cca4866d860c4155e3322fafb8ad956fa1791bc3f1a5",
+        "methods": {
+          "Runtime": {
+            "physical_lines": 4,
+            "start": 256,
+            "end": 259,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "phase": {
+            "physical_lines": 3,
+            "start": 260,
+            "end": 262,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "active": {
+            "physical_lines": 4,
+            "start": 264,
+            "end": 267,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "shutting_down": {
+            "physical_lines": 3,
+            "start": 268,
+            "end": 270,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "begin_shutdown": {
+            "physical_lines": 6,
+            "start": 272,
+            "end": 277,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "abort_attitude": {
+            "physical_lines": 4,
+            "start": 279,
+            "end": 282,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "abort_rc_preparation_timing": {
+            "physical_lines": 25,
+            "start": 284,
+            "end": 308,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          },
+          "begin_attitude_safety_observation": {
+            "physical_lines": 4,
+            "start": 310,
+            "end": 313,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_attitude_safety_event": {
+            "physical_lines": 8,
+            "start": 315,
+            "end": 322,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "visual_output_current": {
+            "physical_lines": 3,
+            "start": 324,
+            "end": 326,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "request_visual_land": {
+            "physical_lines": 4,
+            "start": 328,
+            "end": 331,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "attitude_core": {
+            "physical_lines": 3,
+            "start": 333,
+            "end": 335,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "phase_name": {
+            "physical_lines": 4,
+            "start": 336,
+            "end": 339,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_state": {
+            "physical_lines": 3,
+            "start": 340,
+            "end": 342,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "message": {
+            "physical_lines": 3,
+            "start": 343,
+            "end": 345,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "flight_core": {
+            "physical_lines": 3,
+            "start": 346,
+            "end": 348,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "pending": {
+            "physical_lines": 3,
+            "start": 349,
+            "end": 351,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "command400_history": {
+            "physical_lines": 3,
+            "start": 352,
+            "end": 354,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "last_rc_attempt_reason": {
+            "physical_lines": 3,
+            "start": 355,
+            "end": 357,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_attempts_completed": {
+            "physical_lines": 3,
+            "start": 358,
+            "end": 360,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "require_attitude_sink_commit": {
+            "physical_lines": 4,
+            "start": 364,
+            "end": 367,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "confirm_rc_output": {
+            "physical_lines": 3,
+            "start": 369,
+            "end": 371,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_restart_allowed": {
+            "physical_lines": 3,
+            "start": 372,
+            "end": 374,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "defer_rc_preparation": {
+            "physical_lines": 17,
+            "start": 376,
+            "end": 392,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "rc_reprepare_block_reason": {
+            "physical_lines": 36,
+            "start": 396,
+            "end": 431,
+            "max_control_nesting": 2,
+            "control_statement_count": 13
+          },
+          "reprepare_rc": {
+            "physical_lines": 28,
+            "start": 433,
+            "end": 460,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "confirm_attitude_command_publication": {
+            "physical_lines": 61,
+            "start": 462,
+            "end": 522,
+            "max_control_nesting": 2,
+            "control_statement_count": 7
+          },
+          "publication_context": {
+            "physical_lines": 57,
+            "start": 525,
+            "end": 581,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "authority_json": {
+            "physical_lines": 69,
+            "start": 583,
+            "end": 651,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_name": {
+            "physical_lines": 3,
+            "start": 653,
+            "end": 655,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reason": {
+            "physical_lines": 3,
+            "start": 656,
+            "end": 658,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "request": {
+            "physical_lines": 137,
+            "start": 660,
+            "end": 796,
+            "max_control_nesting": 3,
+            "control_statement_count": 44
+          },
+          "ack": {
+            "physical_lines": 112,
+            "start": 798,
+            "end": 909,
+            "max_control_nesting": 2,
+            "control_statement_count": 19
+          },
+          "disconnect": {
+            "physical_lines": 13,
+            "start": 911,
+            "end": 923,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "step": {
+            "physical_lines": 151,
+            "start": 925,
+            "end": 1075,
+            "max_control_nesting": 3,
+            "control_statement_count": 30
+          },
+          "request_attitude": {
+            "physical_lines": 71,
+            "start": 1081,
+            "end": 1151,
+            "max_control_nesting": 9,
+            "control_statement_count": 20
+          },
+          "classify_ack_result": {
+            "physical_lines": 45,
+            "start": 1155,
+            "end": 1199,
+            "max_control_nesting": 3,
+            "control_statement_count": 7
+          },
+          "step_ground": {
+            "physical_lines": 20,
+            "start": 1203,
+            "end": 1222,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "complete_attitude_transactions": {
+            "physical_lines": 71,
+            "start": 1226,
+            "end": 1296,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "track_attitude_request": {
+            "physical_lines": 29,
+            "start": 1300,
+            "end": 1328,
+            "max_control_nesting": 3,
+            "control_statement_count": 3
+          },
+          "archive_command400": {
+            "physical_lines": 11,
+            "start": 1330,
+            "end": 1340,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "ended_rc_disarm_terminal": {
+            "physical_lines": 7,
+            "start": 1342,
+            "end": 1348,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "normal_offboard_candidate_scope": {
+            "physical_lines": 7,
+            "start": 1350,
+            "end": 1356,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "offboard_candidate_state_evidence": {
+            "physical_lines": 17,
+            "start": 1358,
+            "end": 1374,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "normal_takeoff_arm_state_evidence": {
+            "physical_lines": 22,
+            "start": 1386,
+            "end": 1407,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "disarm_state_evidence": {
+            "physical_lines": 21,
+            "start": 1409,
+            "end": 1429,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "record400_commit": {
+            "physical_lines": 6,
+            "start": 1431,
+            "end": 1436,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "attitude_snapshot": {
+            "physical_lines": 29,
+            "start": 1438,
+            "end": 1466,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "index": {
+            "physical_lines": 3,
+            "start": 1468,
+            "end": 1470,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "land_handshake_failure": {
+            "physical_lines": 14,
+            "start": 1472,
+            "end": 1485,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "track": {
+            "physical_lines": 24,
+            "start": 1487,
+            "end": 1510,
+            "max_control_nesting": 2,
+            "control_statement_count": 3
+          },
+          "refuse": {
+            "physical_lines": 4,
+            "start": 1512,
+            "end": 1515,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "hardware_gate": {
+            "physical_lines": 13,
+            "start": 1517,
+            "end": 1529,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          }
+        }
+      },
+      "targets": {
+        "request": {
+          "before": {
+            "physical_lines": 205,
+            "start": 660,
+            "end": 864,
+            "max_control_nesting": 10,
+            "control_statement_count": 64
+          },
+          "after": {
+            "physical_lines": 137,
+            "start": 660,
+            "end": 796,
+            "max_control_nesting": 3,
+            "control_statement_count": 44
+          }
+        },
+        "ack": {
+          "before": {
+            "physical_lines": 150,
+            "start": 866,
+            "end": 1015,
+            "max_control_nesting": 3,
+            "control_statement_count": 24
+          },
+          "after": {
+            "physical_lines": 112,
+            "start": 798,
+            "end": 909,
+            "max_control_nesting": 2,
+            "control_statement_count": 19
+          }
+        },
+        "step": {
+          "before": {
+            "physical_lines": 259,
+            "start": 1031,
+            "end": 1289,
+            "max_control_nesting": 4,
+            "control_statement_count": 39
+          },
+          "after": {
+            "physical_lines": 151,
+            "start": 925,
+            "end": 1075,
+            "max_control_nesting": 3,
+            "control_statement_count": 30
+          }
+        }
+      },
+      "new_helpers": [
+        "classify_ack_result",
+        "complete_attitude_transactions",
+        "request_attitude",
+        "step_ground",
+        "track_attitude_request"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/unix_server.hpp",
+      "scope": "fc01::UnixServer",
+      "before": {
+        "sha256": "32531d631afb244c7ca2af178cfad469eda062e5fcfe7d15210d744b30a1ce26",
+        "methods": {
+          "UnixServer": {
+            "physical_lines": 34,
+            "start": 19,
+            "end": 52,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "connected": {
+            "physical_lines": 3,
+            "start": 63,
+            "end": 65,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "publish": {
+            "physical_lines": 4,
+            "start": 67,
+            "end": 70,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "poll": {
+            "physical_lines": 61,
+            "start": 72,
+            "end": 132,
+            "max_control_nesting": 3,
+            "control_statement_count": 15
+          },
+          "remove_owned_socket": {
+            "physical_lines": 7,
+            "start": 136,
+            "end": 142,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "address": {
+            "physical_lines": 6,
+            "start": 143,
+            "end": 148,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "drop": {
+            "physical_lines": 8,
+            "start": 150,
+            "end": 157,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          }
+        }
+      },
+      "after": {
+        "sha256": "1be20877970a5f26ed1972e3205d3d713c6f3bb7a61c4134bbf4bd21f656016a",
+        "methods": {
+          "UnixServer": {
+            "physical_lines": 34,
+            "start": 19,
+            "end": 52,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "connected": {
+            "physical_lines": 3,
+            "start": 63,
+            "end": 65,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "publish": {
+            "physical_lines": 4,
+            "start": 67,
+            "end": 70,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "poll": {
+            "physical_lines": 9,
+            "start": 72,
+            "end": 80,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "accept_client": {
+            "physical_lines": 15,
+            "start": 85,
+            "end": 99,
+            "max_control_nesting": 2,
+            "control_statement_count": 2
+          },
+          "flush_output": {
+            "physical_lines": 17,
+            "start": 103,
+            "end": 119,
+            "max_control_nesting": 3,
+            "control_statement_count": 4
+          },
+          "receive_requests": {
+            "physical_lines": 32,
+            "start": 123,
+            "end": 154,
+            "max_control_nesting": 3,
+            "control_statement_count": 8
+          },
+          "remove_owned_socket": {
+            "physical_lines": 7,
+            "start": 156,
+            "end": 162,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "address": {
+            "physical_lines": 6,
+            "start": 163,
+            "end": 168,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "drop": {
+            "physical_lines": 8,
+            "start": 170,
+            "end": 177,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          }
+        }
+      },
+      "targets": {
+        "poll": {
+          "before": {
+            "physical_lines": 61,
+            "start": 72,
+            "end": 132,
+            "max_control_nesting": 3,
+            "control_statement_count": 15
+          },
+          "after": {
+            "physical_lines": 9,
+            "start": 72,
+            "end": 80,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          }
+        }
+      },
+      "new_helpers": [
+        "accept_client",
+        "flush_output",
+        "receive_requests"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/publication_guard.hpp",
+      "scope": "fc01::attitude::attitude_publication_policy",
+      "before": {
+        "sha256": "920ba240275b89716dd1b4f2217634aa0ede08fe8cf74fbcdb852a98701b70ea",
+        "methods": {
+          "attitude_publication_policy": {
+            "physical_lines": 191,
+            "start": 459,
+            "end": 649,
+            "max_control_nesting": 2,
+            "control_statement_count": 49
+          }
+        }
+      },
+      "after": {
+        "sha256": "5eaed14da1a55806d4cb63440ea5073b0d198839802cec4e386a2051f12de300",
+        "methods": {
+          "attitude_publication_policy": {
+            "physical_lines": 125,
+            "start": 539,
+            "end": 663,
+            "max_control_nesting": 2,
+            "control_statement_count": 31
+          },
+          "attitude_target_policy": {
+            "physical_lines": 31,
+            "start": 461,
+            "end": 491,
+            "max_control_nesting": 2,
+            "control_statement_count": 7
+          },
+          "rc_preparation_output_policy": {
+            "physical_lines": 43,
+            "start": 495,
+            "end": 537,
+            "max_control_nesting": 1,
+            "control_statement_count": 12
+          }
+        }
+      },
+      "targets": {
+        "attitude_publication_policy": {
+          "before": {
+            "physical_lines": 191,
+            "start": 459,
+            "end": 649,
+            "max_control_nesting": 2,
+            "control_statement_count": 49
+          },
+          "after": {
+            "physical_lines": 125,
+            "start": 539,
+            "end": 663,
+            "max_control_nesting": 2,
+            "control_statement_count": 31
+          }
+        }
+      },
+      "new_helpers": [
+        "attitude_target_policy",
+        "rc_preparation_output_policy"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/src/fc01_system_node.cpp",
+      "scope": "SystemNode",
+      "before": {
+        "sha256": "e8437494ea3955d556ca2e6c7855d1a6d4df8d526152d1040b6e58b2a79382ee",
+        "methods": {
+          "SystemNode": {
+            "physical_lines": 197,
+            "start": 106,
+            "end": 302,
+            "max_control_nesting": 2,
+            "control_statement_count": 19
+          },
+          "loop_period": {
+            "physical_lines": 3,
+            "start": 304,
+            "end": 306,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "begin_cycle": {
+            "physical_lines": 12,
+            "start": 308,
+            "end": 319,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "received_callbacks": {
+            "physical_lines": 3,
+            "start": 320,
+            "end": 322,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_events": {
+            "physical_lines": 3,
+            "start": 323,
+            "end": 325,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_budget_seconds": {
+            "physical_lines": 3,
+            "start": 327,
+            "end": 329,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "stop_receive_on_events": {
+            "physical_lines": 8,
+            "start": 331,
+            "end": 338,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_pass_done": {
+            "physical_lines": 3,
+            "start": 339,
+            "end": 341,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_stopped": {
+            "physical_lines": 3,
+            "start": 342,
+            "end": 344,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "callbacks_done": {
+            "physical_lines": 4,
+            "start": 346,
+            "end": 349,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_cycle": {
+            "physical_lines": 12,
+            "start": 351,
+            "end": 362,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "tick": {
+            "physical_lines": 379,
+            "start": 365,
+            "end": 743,
+            "max_control_nesting": 6,
+            "control_statement_count": 55
+          },
+          "current_graph": {
+            "physical_lines": 19,
+            "start": 768,
+            "end": 786,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "query_graph": {
+            "physical_lines": 42,
+            "start": 788,
+            "end": 829,
+            "max_control_nesting": 1,
+            "control_statement_count": 4
+          },
+          "reference_ready": {
+            "physical_lines": 4,
+            "start": 831,
+            "end": 834,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_z": {
+            "physical_lines": 4,
+            "start": 836,
+            "end": 839,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "begin_shutdown": {
+            "physical_lines": 7,
+            "start": 841,
+            "end": 847,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "source_timeout": {
+            "physical_lines": 19,
+            "start": 849,
+            "end": 867,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "record_receipt": {
+            "physical_lines": 29,
+            "start": 869,
+            "end": 897,
+            "max_control_nesting": 2,
+            "control_statement_count": 3
+          },
+          "receive": {
+            "physical_lines": 12,
+            "start": 900,
+            "end": 911,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "receive_sampled": {
+            "physical_lines": 12,
+            "start": 914,
+            "end": 925,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "latch_event": {
+            "physical_lines": 4,
+            "start": 927,
+            "end": 930,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "observe_pending_safety": {
+            "physical_lines": 108,
+            "start": 932,
+            "end": 1039,
+            "max_control_nesting": 1,
+            "control_statement_count": 8
+          },
+          "latch_event_for_slot": {
+            "physical_lines": 4,
+            "start": 1052,
+            "end": 1055,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "end_latched_events": {
+            "physical_lines": 13,
+            "start": 1057,
+            "end": 1069,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_event": {
+            "physical_lines": 9,
+            "start": 1072,
+            "end": 1080,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "receive_manual": {
+            "physical_lines": 14,
+            "start": 1082,
+            "end": 1095,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "receive_switches": {
+            "physical_lines": 14,
+            "start": 1097,
+            "end": 1110,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "timestamp": {
+            "physical_lines": 16,
+            "start": 1113,
+            "end": 1128,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "boundary_context": {
+            "physical_lines": 44,
+            "start": 1130,
+            "end": 1173,
+            "max_control_nesting": 2,
+            "control_statement_count": 3
+          },
+          "abort_preparation_timing": {
+            "physical_lines": 8,
+            "start": 1175,
+            "end": 1182,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "refuse_publication": {
+            "physical_lines": 10,
+            "start": 1184,
+            "end": 1193,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "defer_unarmed_source_expiry": {
+            "physical_lines": 37,
+            "start": 1195,
+            "end": 1231,
+            "max_control_nesting": 1,
+            "control_statement_count": 5
+          },
+          "report_publication_failure": {
+            "physical_lines": 11,
+            "start": 1233,
+            "end": 1243,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "publish_command": {
+            "physical_lines": 58,
+            "start": 1246,
+            "end": 1303,
+            "max_control_nesting": 5,
+            "control_statement_count": 9
+          },
+          "snapshot": {
+            "physical_lines": 171,
+            "start": 1305,
+            "end": 1475,
+            "max_control_nesting": 2,
+            "control_statement_count": 6
+          },
+          "vertical_feedback_fields": {
+            "physical_lines": 20,
+            "start": 1477,
+            "end": 1496,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "vertical_control_fields": {
+            "physical_lines": 13,
+            "start": 1498,
+            "end": 1510,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "write_phase_event": {
+            "physical_lines": 82,
+            "start": 1512,
+            "end": 1593,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_recovery_fields": {
+            "physical_lines": 24,
+            "start": 1595,
+            "end": 1618,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "progress_fields": {
+            "physical_lines": 25,
+            "start": 1620,
+            "end": 1644,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_fields": {
+            "physical_lines": 17,
+            "start": 1646,
+            "end": 1662,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "work_fields": {
+            "physical_lines": 11,
+            "start": 1664,
+            "end": 1674,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "source_timings": {
+            "physical_lines": 19,
+            "start": 1676,
+            "end": 1694,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "timing_evidence": {
+            "physical_lines": 106,
+            "start": 1696,
+            "end": 1801,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          },
+          "feedback_timing_fields": {
+            "physical_lines": 27,
+            "start": 1803,
+            "end": 1829,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "state": {
+            "physical_lines": 191,
+            "start": 1831,
+            "end": 2021,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "write_csv": {
+            "physical_lines": 39,
+            "start": 2023,
+            "end": 2061,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          }
+        }
+      },
+      "after": {
+        "sha256": "535aa142fb718c28371b3b35b9b637c8ce1bf078891575e542940f9f6d2cf47f",
+        "methods": {
+          "SystemNode": {
+            "physical_lines": 197,
+            "start": 106,
+            "end": 302,
+            "max_control_nesting": 2,
+            "control_statement_count": 19
+          },
+          "loop_period": {
+            "physical_lines": 3,
+            "start": 304,
+            "end": 306,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "begin_cycle": {
+            "physical_lines": 12,
+            "start": 308,
+            "end": 319,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "received_callbacks": {
+            "physical_lines": 3,
+            "start": 320,
+            "end": 322,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_events": {
+            "physical_lines": 3,
+            "start": 323,
+            "end": 325,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_budget_seconds": {
+            "physical_lines": 3,
+            "start": 327,
+            "end": 329,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "stop_receive_on_events": {
+            "physical_lines": 8,
+            "start": 331,
+            "end": 338,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_pass_done": {
+            "physical_lines": 3,
+            "start": 339,
+            "end": 341,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_stopped": {
+            "physical_lines": 3,
+            "start": 342,
+            "end": 344,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "callbacks_done": {
+            "physical_lines": 4,
+            "start": 346,
+            "end": 349,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_cycle": {
+            "physical_lines": 12,
+            "start": 351,
+            "end": 362,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "tick": {
+            "physical_lines": 360,
+            "start": 365,
+            "end": 724,
+            "max_control_nesting": 6,
+            "control_statement_count": 51
+          },
+          "current_graph": {
+            "physical_lines": 19,
+            "start": 749,
+            "end": 767,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "query_graph": {
+            "physical_lines": 42,
+            "start": 769,
+            "end": 810,
+            "max_control_nesting": 1,
+            "control_statement_count": 4
+          },
+          "reference_ready": {
+            "physical_lines": 4,
+            "start": 812,
+            "end": 815,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_z": {
+            "physical_lines": 4,
+            "start": 817,
+            "end": 820,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "begin_shutdown": {
+            "physical_lines": 7,
+            "start": 822,
+            "end": 828,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "source_timeout": {
+            "physical_lines": 19,
+            "start": 830,
+            "end": 848,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "record_receipt": {
+            "physical_lines": 29,
+            "start": 850,
+            "end": 878,
+            "max_control_nesting": 2,
+            "control_statement_count": 3
+          },
+          "receive": {
+            "physical_lines": 12,
+            "start": 881,
+            "end": 892,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "receive_sampled": {
+            "physical_lines": 12,
+            "start": 895,
+            "end": 906,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "latch_event": {
+            "physical_lines": 4,
+            "start": 908,
+            "end": 911,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "observe_pending_safety": {
+            "physical_lines": 108,
+            "start": 913,
+            "end": 1020,
+            "max_control_nesting": 1,
+            "control_statement_count": 8
+          },
+          "latch_event_for_slot": {
+            "physical_lines": 4,
+            "start": 1033,
+            "end": 1036,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "end_latched_events": {
+            "physical_lines": 13,
+            "start": 1038,
+            "end": 1050,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "receive_event": {
+            "physical_lines": 9,
+            "start": 1053,
+            "end": 1061,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "receive_manual": {
+            "physical_lines": 14,
+            "start": 1063,
+            "end": 1076,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "receive_switches": {
+            "physical_lines": 14,
+            "start": 1078,
+            "end": 1091,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "timestamp": {
+            "physical_lines": 16,
+            "start": 1094,
+            "end": 1109,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "boundary_context": {
+            "physical_lines": 44,
+            "start": 1111,
+            "end": 1154,
+            "max_control_nesting": 2,
+            "control_statement_count": 3
+          },
+          "abort_preparation_timing": {
+            "physical_lines": 8,
+            "start": 1156,
+            "end": 1163,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "refuse_publication": {
+            "physical_lines": 10,
+            "start": 1165,
+            "end": 1174,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "defer_unarmed_source_expiry": {
+            "physical_lines": 37,
+            "start": 1176,
+            "end": 1212,
+            "max_control_nesting": 1,
+            "control_statement_count": 5
+          },
+          "report_publication_failure": {
+            "physical_lines": 11,
+            "start": 1214,
+            "end": 1224,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "publish_command": {
+            "physical_lines": 58,
+            "start": 1227,
+            "end": 1284,
+            "max_control_nesting": 5,
+            "control_statement_count": 9
+          },
+          "update_stationary_evidence": {
+            "physical_lines": 23,
+            "start": 1289,
+            "end": 1311,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "transaction_fields": {
+            "physical_lines": 47,
+            "start": 1315,
+            "end": 1361,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "populate_velocity_feedback": {
+            "physical_lines": 29,
+            "start": 1365,
+            "end": 1393,
+            "max_control_nesting": 2,
+            "control_statement_count": 2
+          },
+          "populate_attitude_feedback": {
+            "physical_lines": 78,
+            "start": 1397,
+            "end": 1474,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "snapshot": {
+            "physical_lines": 71,
+            "start": 1475,
+            "end": 1545,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "vertical_feedback_fields": {
+            "physical_lines": 20,
+            "start": 1547,
+            "end": 1566,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "vertical_control_fields": {
+            "physical_lines": 13,
+            "start": 1568,
+            "end": 1580,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "write_phase_event": {
+            "physical_lines": 82,
+            "start": 1582,
+            "end": 1663,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_recovery_fields": {
+            "physical_lines": 24,
+            "start": 1665,
+            "end": 1688,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "progress_fields": {
+            "physical_lines": 25,
+            "start": 1690,
+            "end": 1714,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_fields": {
+            "physical_lines": 17,
+            "start": 1716,
+            "end": 1732,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "work_fields": {
+            "physical_lines": 11,
+            "start": 1734,
+            "end": 1744,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "source_timings": {
+            "physical_lines": 19,
+            "start": 1746,
+            "end": 1764,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "timing_evidence": {
+            "physical_lines": 106,
+            "start": 1766,
+            "end": 1871,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          },
+          "feedback_timing_fields": {
+            "physical_lines": 27,
+            "start": 1873,
+            "end": 1899,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "state": {
+            "physical_lines": 148,
+            "start": 1901,
+            "end": 2048,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "write_csv": {
+            "physical_lines": 39,
+            "start": 2050,
+            "end": 2088,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          }
+        }
+      },
+      "targets": {
+        "SystemNode": {
+          "before": {
+            "physical_lines": 197,
+            "start": 106,
+            "end": 302,
+            "max_control_nesting": 2,
+            "control_statement_count": 19
+          },
+          "after": {
+            "physical_lines": 197,
+            "start": 106,
+            "end": 302,
+            "max_control_nesting": 2,
+            "control_statement_count": 19
+          }
+        },
+        "tick": {
+          "before": {
+            "physical_lines": 379,
+            "start": 365,
+            "end": 743,
+            "max_control_nesting": 6,
+            "control_statement_count": 55
+          },
+          "after": {
+            "physical_lines": 360,
+            "start": 365,
+            "end": 724,
+            "max_control_nesting": 6,
+            "control_statement_count": 51
+          }
+        },
+        "snapshot": {
+          "before": {
+            "physical_lines": 171,
+            "start": 1305,
+            "end": 1475,
+            "max_control_nesting": 2,
+            "control_statement_count": 6
+          },
+          "after": {
+            "physical_lines": 71,
+            "start": 1475,
+            "end": 1545,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          }
+        },
+        "state": {
+          "before": {
+            "physical_lines": 191,
+            "start": 1831,
+            "end": 2021,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "after": {
+            "physical_lines": 148,
+            "start": 1901,
+            "end": 2048,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "new_helpers": [
+        "populate_attitude_feedback",
+        "populate_velocity_feedback",
+        "transaction_fields",
+        "update_stationary_evidence"
+      ]
+    }
+  ]
+}

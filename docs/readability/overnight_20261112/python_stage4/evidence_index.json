@@ -1,0 +1,950 @@
+{
+  "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+  "source_commit": "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+  "archive": "evidence.zip",
+  "archive_sha256": "a269770c2caf65061df21e2e8f2068e4d748a32b28fcbecd1e73fca5eca6f8cb",
+  "archive_bytes": 276032,
+  "files": [
+    {
+      "path": "baseline_package_export.json",
+      "bytes": 548,
+      "sha256": "dca390e3e69a2c8d84d803634ba692b5231e9ad3b9c4fb4c94a1669aacee84ee",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package_export.json",
+      "complete": true
+    },
+    {
+      "path": "baseline_package_export_manifest.json",
+      "bytes": 103220,
+      "sha256": "29d7d406cbe1ee2779e29ba01a22ae12fc353373b49723b25c32dfbd130c5a6f",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_package_export_manifest.json",
+      "complete": true
+    },
+    {
+      "path": "baseline_packaging.json",
+      "bytes": 8408,
+      "sha256": "7cabfad749a55a59d1aaa404b6ec351e9721fbcee03a8449c1a5537a046a7b21",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_packaging.json",
+      "complete": true
+    },
+    {
+      "path": "baseline_packaging.log",
+      "bytes": 6136,
+      "sha256": "9e21e1db0d149960f387405ca72d5abb3876c43e5dadabe5e82e053ed8c5b659",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/baseline_packaging.log",
+      "complete": true
+    },
+    {
+      "path": "check_static.py",
+      "bytes": 4403,
+      "sha256": "ce563e6e9e0055e6b81a046a6cfcf6074bf6e8ff1d719a1931e683ff9d7d9608",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/check_static.py",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/activation-baseline.json",
+      "bytes": 26540,
+      "sha256": "35828b0d0fd029bef7a4e47da3bb06cc6d6685a30b3363c3bd5824d6257c400d",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/activation-baseline.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/activation-baseline.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/activation-baseline.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/activation-current.json",
+      "bytes": 26540,
+      "sha256": "35828b0d0fd029bef7a4e47da3bb06cc6d6685a30b3363c3bd5824d6257c400d",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/activation-current.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/activation-current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/activation-current.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/fcctl-baseline.json",
+      "bytes": 2813,
+      "sha256": "15d141b843069a1d65a9f41630bcdff3c0e0dc15237e60981047ac3ffdf05ff8",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fcctl-baseline.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/fcctl-baseline.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fcctl-baseline.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/fcctl-current.json",
+      "bytes": 2813,
+      "sha256": "15d141b843069a1d65a9f41630bcdff3c0e0dc15237e60981047ac3ffdf05ff8",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fcctl-current.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/fcctl-current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/fcctl-current.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/launcher-baseline.json",
+      "bytes": 4436,
+      "sha256": "0766133c85695e34ac01c810f8475eaf604a665462d53560ae1902bd26bfe39b",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/launcher-baseline.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/launcher-baseline.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/launcher-baseline.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/launcher-current.json",
+      "bytes": 4436,
+      "sha256": "0766133c85695e34ac01c810f8475eaf604a665462d53560ae1902bd26bfe39b",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/launcher-current.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/launcher-current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/launcher-current.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/launcher_entry-baseline.json",
+      "bytes": 21848,
+      "sha256": "7d409f10d2a6a2e00790c051848fdfb5757283752b638c3b9ee39fe6d2f5ef1f",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/launcher_entry-baseline.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/launcher_entry-baseline.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/launcher_entry-baseline.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/launcher_entry-current.json",
+      "bytes": 21848,
+      "sha256": "7d409f10d2a6a2e00790c051848fdfb5757283752b638c3b9ee39fe6d2f5ef1f",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/launcher_entry-current.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/launcher_entry-current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/launcher_entry-current.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/probe-baseline.json",
+      "bytes": 3790,
+      "sha256": "1f30bbdf088e1068f1a638573d9c57c2570b6f50e3494d1e38f5b605ef3d00cc",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/probe-baseline.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/probe-baseline.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/probe-baseline.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/probe-current.json",
+      "bytes": 3790,
+      "sha256": "1f30bbdf088e1068f1a638573d9c57c2570b6f50e3494d1e38f5b605ef3d00cc",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/probe-current.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/probe-current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/probe-current.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/render-baseline.json",
+      "bytes": 81984,
+      "sha256": "ebedca3d72cd37f94fb017a869fe14975afc335afbe80d7afd68273b4a0da6e5",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/render-baseline.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/render-baseline.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/render-baseline.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/render-current.json",
+      "bytes": 81984,
+      "sha256": "ebedca3d72cd37f94fb017a869fe14975afc335afbe80d7afd68273b4a0da6e5",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/render-current.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/render-current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/render-current.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/report-baseline.json",
+      "bytes": 1409,
+      "sha256": "312874591cf7ffa287e02d579b648fbc5cf94cd32cb73910f5bf0062a63ba7cb",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/report-baseline.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/report-baseline.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/report-baseline.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/report-current.json",
+      "bytes": 1409,
+      "sha256": "312874591cf7ffa287e02d579b648fbc5cf94cd32cb73910f5bf0062a63ba7cb",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/report-current.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/report-current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/report-current.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/service-baseline.json",
+      "bytes": 5032,
+      "sha256": "76a646a2ce81fd2a3353880dde0f3786bc72d6a140a6fe14443b4c92c91c0f53",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/service-baseline.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/service-baseline.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/service-baseline.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/service-current.json",
+      "bytes": 5032,
+      "sha256": "76a646a2ce81fd2a3353880dde0f3786bc72d6a140a6fe14443b4c92c91c0f53",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/service-current.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/service-current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/service-current.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/standby-baseline.json",
+      "bytes": 16755,
+      "sha256": "1ec237aef169c3bc596f3bb8bf3cbfb03a5276cba31e5077f91ba4890398847d",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/standby-baseline.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/standby-baseline.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/standby-baseline.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/standby-current.json",
+      "bytes": 16755,
+      "sha256": "1ec237aef169c3bc596f3bb8bf3cbfb03a5276cba31e5077f91ba4890398847d",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/standby-current.json",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces/standby-current.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces/standby-current.stderr",
+      "complete": true
+    },
+    {
+      "path": "current_baseline_traces.json",
+      "bytes": 10870,
+      "sha256": "de48c4fc6f872b0a4a4c6b9594b444220d7442697aa6169e48b6faaa0cef3e9b",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/current_baseline_traces.json",
+      "complete": true
+    },
+    {
+      "path": "deployment/build_evidence_after_fix.log",
+      "bytes": 6369,
+      "sha256": "1a2e78f6d1dc118101207c4306df518db66b4705cd545501724ce2d475a89226",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/build_evidence_after_fix.log",
+      "complete": true
+    },
+    {
+      "path": "deployment/final_delivery_review_lifecycle.json",
+      "bytes": 4150,
+      "sha256": "50a8e3b258c8e6fb31828abbe8cadc0de11727ad011e38a3f45484e492adac81",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/final_delivery_review_lifecycle.json",
+      "complete": true
+    },
+    {
+      "path": "deployment/independent_root_review.log",
+      "bytes": 8256,
+      "sha256": "a8a1fa9f0a9a6c57f550e593c5b29e43a7049170b3cc805d174fb9b1f130aa3e",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/independent_root_review.log",
+      "complete": true
+    },
+    {
+      "path": "deployment/launcher_final_cross_review.json",
+      "bytes": 1872,
+      "sha256": "87bf244b2e325c348eb5d69325435040702a6d5698ca20e0ac78bf9f24a2378e",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/launcher_final_cross_review.json",
+      "complete": true
+    },
+    {
+      "path": "deployment/launcher_final_cross_review_zh.md",
+      "bytes": 1524,
+      "sha256": "da92f19bb074e167aae298a689a233f368eaf291c07878c366f72a7db6f958c1",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/launcher_final_cross_review_zh.md",
+      "complete": true
+    },
+    {
+      "path": "deployment/ownership_after.log",
+      "bytes": 1985,
+      "sha256": "dc0f9fd32af818e5544c892f13fbb5eb69c8b5b0b8c0474f5c06cdea70bbe7b0",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/ownership_after.log",
+      "complete": true
+    },
+    {
+      "path": "deployment/ownership_and_equivalence.log",
+      "bytes": 2405,
+      "sha256": "b1e21358a1715e4dfd9162cfb61e33e2df2c772ab4e7fa095120a2d211a6721f",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/ownership_and_equivalence.log",
+      "complete": true
+    },
+    {
+      "path": "deployment/ownership_before.log",
+      "bytes": 5438,
+      "sha256": "b0c746c6bf91539fed4e13820aacfde5dd2c2348e9fb3c8056c98941854652c5",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/ownership_before.log",
+      "complete": true
+    },
+    {
+      "path": "deployment/readonly_packaging_review.json",
+      "bytes": 1332,
+      "sha256": "24f5b7b87690f5536daac87d50faaf40e3bdb9843301a97d4f4a51695e072fcd",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/readonly_packaging_review.json",
+      "complete": true
+    },
+    {
+      "path": "deployment/readonly_packaging_review_zh.md",
+      "bytes": 4564,
+      "sha256": "6b49bf2cd4daf042581140ed9ecd992d3e355ba971009888947e7ae6d74d1e95",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/readonly_packaging_review_zh.md",
+      "complete": true
+    },
+    {
+      "path": "deployment/review_zh.md",
+      "bytes": 4396,
+      "sha256": "845229f34e57bccded7b5cbed35ac41f8bcd20d0f9df2913b53d12b8cedfb6cb",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/review_zh.md",
+      "complete": true
+    },
+    {
+      "path": "deployment/targeted_final.log",
+      "bytes": 17404,
+      "sha256": "49f665ae44a971545ecbf7741a15e945a1a8e39087557e3a7c6a5250f2bece11",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/targeted_final.log",
+      "complete": true
+    },
+    {
+      "path": "deployment/verification.json",
+      "bytes": 9700,
+      "sha256": "76fa7f157a601cd5ceea1c036774c6c9f0b0d148cc27df0c90cb9648f4471d57",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/deployment/verification.json",
+      "complete": true
+    },
+    {
+      "path": "diff_check_final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/diff_check_final.log",
+      "complete": true
+    },
+    {
+      "path": "fcctl_historical_equivalence.log",
+      "bytes": 205,
+      "sha256": "37d8f71ccaa3eb01871f5ced37703e969e8b08eb42b4e97d229f478c8eabb1f5",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/fcctl_historical_equivalence.log",
+      "complete": true
+    },
+    {
+      "path": "feedback_behavior_difference.json",
+      "bytes": 12074,
+      "sha256": "0ccb2dc35a76356d6f700d87cae02adfb22b57088e2527fa31f8d206dacb7c6f",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_behavior_difference.json",
+      "complete": true
+    },
+    {
+      "path": "feedback_comments_equivalence.json",
+      "bytes": 784,
+      "sha256": "be4d0a31255cc778e6c98fd0c21336e74da5972a6873859801c31a2e12dfc9a0",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_comments_equivalence.json",
+      "complete": true
+    },
+    {
+      "path": "feedback_independent_root_review.log",
+      "bytes": 3277,
+      "sha256": "199644024bb0be67d39cae5d9621a4154dad5b21a743e0126a8a89a97e4fb173",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_independent_root_review.log",
+      "complete": true
+    },
+    {
+      "path": "feedback_large_integer_original.json",
+      "bytes": 233,
+      "sha256": "6e4909feb3f4d24343a9ad3e078b171da3d628781b79932843a41aba46a2cc3a",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_large_integer_original.json",
+      "complete": true
+    },
+    {
+      "path": "feedback_lifecycle_original.json",
+      "bytes": 648,
+      "sha256": "84d67bb7311a72e3b5237e93b5ba2354e88b660fc9d0907e96e3b605e9cd3d26",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_lifecycle_original.json",
+      "complete": true
+    },
+    {
+      "path": "feedback_numeric_evidence.json",
+      "bytes": 454,
+      "sha256": "0066b2ead87ba6eda39d91d6811f3aae5da82dac9c6b7b3400e40c7bb2b1e0f7",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_numeric_evidence.json",
+      "complete": true
+    },
+    {
+      "path": "feedback_numeric_independent.log",
+      "bytes": 3607,
+      "sha256": "29f3ccf22860b2923f693a4cb4b4989017e63708acdc3d031bca4008fabd55fb",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_numeric_independent.log",
+      "complete": true
+    },
+    {
+      "path": "feedback_numeric_targeted.log",
+      "bytes": 3607,
+      "sha256": "85d2417f8b9fbcfc17921e5e2f31ca04c4d8ef354b71c764108da902431f8607",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_numeric_targeted.log",
+      "complete": true
+    },
+    {
+      "path": "feedback_real_ros_smoke.json",
+      "bytes": 6962,
+      "sha256": "ccabbf4d53f73a4f864100615f9e782f3a9321ae30515498ea4554da2752e73d",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_real_ros_smoke.json",
+      "complete": true
+    },
+    {
+      "path": "feedback_real_ros_smoke.log",
+      "bytes": 1036,
+      "sha256": "de2af8760074a2aedb09081a494d27db31db3a6dcc0e88d663eee25e9440f6e4",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_real_ros_smoke.log",
+      "complete": true
+    },
+    {
+      "path": "feedback_smoke_final_ast_root_review.json",
+      "bytes": 306,
+      "sha256": "d0a5ae9e99fdfb0ed72bf98f3986a9d960f0b673aeb2f405142842da00886798",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_smoke_final_ast_root_review.json",
+      "complete": true
+    },
+    {
+      "path": "feedback_snapshot_stamp_residual.json",
+      "bytes": 261,
+      "sha256": "2a52b0f08d23cfdc4ae0a47f32970b83847965174330ec29e8d1d436a9f4db07",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_snapshot_stamp_residual.json",
+      "complete": true
+    },
+    {
+      "path": "feedback_stamp_evidence.json",
+      "bytes": 512,
+      "sha256": "ba1caafb2e011d734e0269f35a1cf0e3ab7928107f875f8222a71b8c7cc40a30",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_stamp_evidence.json",
+      "complete": true
+    },
+    {
+      "path": "feedback_stamp_independent.log",
+      "bytes": 3734,
+      "sha256": "fb54e0cd33b70e1ce48b65a6e49706e8aa1f04f86601d38f185f9c7664a29489",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_stamp_independent.log",
+      "complete": true
+    },
+    {
+      "path": "feedback_stamp_targeted.log",
+      "bytes": 3734,
+      "sha256": "2247c717a2a756bf75ba36a9b2fdc82710e68ef37aefdd70f038f0d685b1c869",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_stamp_targeted.log",
+      "complete": true
+    },
+    {
+      "path": "feedback_targeted.log",
+      "bytes": 3277,
+      "sha256": "e253aac8c845a3d1bd10c81a131edf807da44d92b3d5046ead3ab93176f8b0d5",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/feedback_targeted.log",
+      "complete": true
+    },
+    {
+      "path": "final_delivery_review_evidence.json",
+      "bytes": 9364,
+      "sha256": "aaaa7c1bd434278a13ac6eb3772e44fc52cb678fb7602eb152bc62137b753dd5",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/final_delivery_review_evidence.json",
+      "complete": true
+    },
+    {
+      "path": "format_final.log",
+      "bytes": 721,
+      "sha256": "9d1f26d051ea608ebe55f13e90b7c505c846faab4d67675cb9c2afd75a4a7448",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/format_final.log",
+      "complete": true
+    },
+    {
+      "path": "initial.json",
+      "bytes": 60426,
+      "sha256": "28d929e05a56baaa7b9224b7ce5223b1553c9ce53cce7fb3350b26b00373fe2c",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/initial.json",
+      "complete": true
+    },
+    {
+      "path": "launcher_readability.log",
+      "bytes": 2338,
+      "sha256": "25c830cab1085d2d5566cd1d1fcef5adfcf6ce7eb38a6b70b1104e89f0b3f0e8",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/launcher_readability.log",
+      "complete": true
+    },
+    {
+      "path": "launcher_socket_after.log",
+      "bytes": 1911,
+      "sha256": "9783b0c9c760781985eed674438b76f310cb50a6193813916c0bdf6dc7f351df",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/launcher_socket_after.log",
+      "complete": true
+    },
+    {
+      "path": "launcher_socket_before.log",
+      "bytes": 2755,
+      "sha256": "891062641b81f573de1802fe3ff07867c8a4bf38c29781659285b2241fc348cc",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/launcher_socket_before.log",
+      "complete": true
+    },
+    {
+      "path": "launcher_socket_original.json",
+      "bytes": 250,
+      "sha256": "9ba04252db88573dea276b659d78985d70a9793b6930ca2408e06bbe68374975",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/launcher_socket_original.json",
+      "complete": true
+    },
+    {
+      "path": "native_final.json",
+      "bytes": 256,
+      "sha256": "40acc408712fe86bc101e2472c77774936422603771fd38b0bea8d191318591f",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/native_final.json",
+      "complete": true
+    },
+    {
+      "path": "native_final.log",
+      "bytes": 4113,
+      "sha256": "663217fdb82b6b4c26309c75032ef39aa001f2972c5ef327890fe790bfb68a6a",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/native_final.log",
+      "complete": true
+    },
+    {
+      "path": "native_final.stdout",
+      "bytes": 762,
+      "sha256": "76f6915d99cf582a3f2653064bee678d733df26a89754efcddc042e6b612f9e6",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/native_final.stdout",
+      "complete": true
+    },
+    {
+      "path": "native_initial_comment_drift_final.json",
+      "bytes": 257,
+      "sha256": "e2230fe1c3dc9d93050cbbbf879680b55b80d1d5323447e42ba20fd53d718f58",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/native_initial_comment_drift_final.json",
+      "complete": true
+    },
+    {
+      "path": "native_initial_comment_drift_final.log",
+      "bytes": 4113,
+      "sha256": "18957d652340594cdc6631affc293fff70149c10aadce9987ee40281cd378f77",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/native_initial_comment_drift_final.log",
+      "complete": true
+    },
+    {
+      "path": "native_initial_comment_drift_reason.json",
+      "bytes": 179,
+      "sha256": "1a726ce536e9da2278f335bdc042772bc18a03f5990b1f25496bfed243a21af7",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/native_initial_comment_drift_reason.json",
+      "complete": true
+    },
+    {
+      "path": "native_initial_comment_drift_tested_sources.json",
+      "bytes": 12980,
+      "sha256": "dab39ac8b918e74960be5b755640156db187f30e38a2ccd4202e1594adbb43ca",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/native_initial_comment_drift_tested_sources.json",
+      "complete": true
+    },
+    {
+      "path": "native_tested_sources.json",
+      "bytes": 12980,
+      "sha256": "760536971060747efb6d27fb40522be1f9ea77afc160d2dd4f9d692b94f20071",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/native_tested_sources.json",
+      "complete": true
+    },
+    {
+      "path": "native_tools_targeted.log",
+      "bytes": 1746,
+      "sha256": "71fa85b90eedb29cb6ef78505bd6008993e2cfc424f58830e031310407066c32",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/native_tools_targeted.log",
+      "complete": true
+    },
+    {
+      "path": "python_inventory.json",
+      "bytes": 211263,
+      "sha256": "eee6c7ce24f6b561fd6a985952282ed213a6cd9ad4fd2b24d541ba3be1c706ab",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/python_inventory.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/baseline.json",
+      "bytes": 4425,
+      "sha256": "2e40aff4354e0a431ca58d88d432364303849252622b62ca272094f45806cb1a",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/baseline.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/candidate_report_path_escape.reproduction.json",
+      "bytes": 322,
+      "sha256": "705f215a8ae390e8421a75b8d3f8187247938ab2c273e3c11ab99e76260af44c",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/candidate_report_path_escape.reproduction.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/comment_modules.tests.log",
+      "bytes": 7031,
+      "sha256": "2029a1470f38316751380555444e52970bd0e47189ef929e419978e6eee5fc57",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/comment_modules.tests.log",
+      "complete": true
+    },
+    {
+      "path": "reporting/containment.after.log",
+      "bytes": 1157,
+      "sha256": "ca74b1223c3ffc21133081ced6a44e43fdd5dbfb2ade880b8a19cbd9c27d9c17",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/containment.after.log",
+      "complete": true
+    },
+    {
+      "path": "reporting/containment.before.log",
+      "bytes": 3603,
+      "sha256": "955e0a21765c853b3e0fe5453e13f270ec3532c130d323dc4dff7e3d98ad71b1",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/containment.before.log",
+      "complete": true
+    },
+    {
+      "path": "reporting/containment.verification.json",
+      "bytes": 1697,
+      "sha256": "061402769e6f006597368f71197e61137032986215f33d991bdd9b783107a893",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/containment.verification.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/deployment_argv_order_traces.json",
+      "bytes": 12306,
+      "sha256": "17d2d02e688a8e8f897faf9f1e522fb3686380a8c0e8a472771b3b0cdd6ea307",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/deployment_argv_order_traces.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/deployment_cross_review.json",
+      "bytes": 2633,
+      "sha256": "c6d2561e83fe8b267a60e679d9e99577514a0582ac280dc564c4919f6e055821",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/deployment_cross_review.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/deployment_cross_review.tests.log",
+      "bytes": 2405,
+      "sha256": "b88d248c72c745cb3a09f8fa3e68bf1fc45ed3e835c17450026d2678dddc854f",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/deployment_cross_review.tests.log",
+      "complete": true
+    },
+    {
+      "path": "reporting/final_affected_tests.log",
+      "bytes": 10426,
+      "sha256": "fad44fa67a5b0f5e819e175e29b3d5d284b77d1ba32c30c1520d5498aa1d6ed4",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/final_affected_tests.log",
+      "complete": true
+    },
+    {
+      "path": "reporting/final_verification.json",
+      "bytes": 4983,
+      "sha256": "d7ece5b3c90e12716553e5f6d04899b09c631ca04d9f59cc61c23324dc9ce86b",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/final_verification.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/independent_root_review.log",
+      "bytes": 2943,
+      "sha256": "8b4b6675070f55a06a8dbfff22a4e44c5d582c69674db3d90195ea4bdebd73d3",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/independent_root_review.log",
+      "complete": true
+    },
+    {
+      "path": "reporting/refactor.tests.log",
+      "bytes": 1709,
+      "sha256": "05ae7a8a55a3710b40b311f6f67747b8231664b083edc9ec9a4b2040ee5bf72f",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/refactor.tests.log",
+      "complete": true
+    },
+    {
+      "path": "reporting/refactor_baseline.json",
+      "bytes": 137,
+      "sha256": "6c8e2d11596c4abdeee674d672bd1b7f1e75d5cf3b47356c764fc1a77bb0b890",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/refactor_baseline.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report.existing.log",
+      "bytes": 1883,
+      "sha256": "4bebf6f16a9be30c5c5cc9c0549ec52155b1817919c1d9e022da125fabe7bd9b",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report.existing.log",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_trace_comparison.json",
+      "bytes": 840,
+      "sha256": "49e51907564a67ab0f7ae1e1254ea6f0d3bcb3af3cb332c093bbaee9272c2269",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_trace_comparison.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/allocation_error.baseline.json",
+      "bytes": 162,
+      "sha256": "641741192f49ef2a1f3cb9a99932e4d8217d998838985d483a78aaaaf6116046",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/allocation_error.baseline.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/allocation_error.current.json",
+      "bytes": 162,
+      "sha256": "641741192f49ef2a1f3cb9a99932e4d8217d998838985d483a78aaaaf6116046",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/allocation_error.current.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/io_error.baseline.json",
+      "bytes": 154,
+      "sha256": "258e7b4b0a897eb0165017efc1370f66099a5d2d4a4decf4db6882952f11752d",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/io_error.baseline.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/io_error.current.json",
+      "bytes": 154,
+      "sha256": "258e7b4b0a897eb0165017efc1370f66099a5d2d4a4decf4db6882952f11752d",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/io_error.current.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/non_dict.baseline.json",
+      "bytes": 3340,
+      "sha256": "b2cebfd75f195c3c35e22fb7f22a8ff4444323cf97dcbef720036fe5b4b0f1ac",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/non_dict.baseline.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/non_dict.current.json",
+      "bytes": 3340,
+      "sha256": "b2cebfd75f195c3c35e22fb7f22a8ff4444323cf97dcbef720036fe5b4b0f1ac",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/non_dict.current.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/normal.baseline.json",
+      "bytes": 3664,
+      "sha256": "2da275f5ec68d60108e742e23d0e10e6685d26c9170aacc87b93535eee70d5f2",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/normal.baseline.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/normal.current.json",
+      "bytes": 3664,
+      "sha256": "2da275f5ec68d60108e742e23d0e10e6685d26c9170aacc87b93535eee70d5f2",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/normal.current.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/unknown_state.baseline.json",
+      "bytes": 3342,
+      "sha256": "583d5eddf8affbe6a7ba98bfae8483734c0e86aa09bbfda806421c3c066c4188",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/unknown_state.baseline.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/unknown_state.current.json",
+      "bytes": 3342,
+      "sha256": "583d5eddf8affbe6a7ba98bfae8483734c0e86aa09bbfda806421c3c066c4188",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/unknown_state.current.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/utf8_invalid.baseline.json",
+      "bytes": 3340,
+      "sha256": "c113b727d2e91b37fe233051082437604c710b1df32a9b015c07f5b9b4a3a115",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/utf8_invalid.baseline.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/report_traces/utf8_invalid.current.json",
+      "bytes": 3340,
+      "sha256": "c113b727d2e91b37fe233051082437604c710b1df32a9b015c07f5b9b4a3a115",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/report_traces/utf8_invalid.current.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/root_evidence_cross_review.json",
+      "bytes": 2063,
+      "sha256": "5de40440892dc39ffd91dae0ecf834fbba5a64dc7986ba81301b25b7626287cf",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/root_evidence_cross_review.json",
+      "complete": true
+    },
+    {
+      "path": "reporting/root_launcher_tests.log",
+      "bytes": 525,
+      "sha256": "7f5eb406822f6aa40e18287060d5a00c78e3560d9b3331a0f83acde4a7ad8e02",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/reporting/root_launcher_tests.log",
+      "complete": true
+    },
+    {
+      "path": "root_final.json",
+      "bytes": 2621,
+      "sha256": "9bb987f543264f34ba7bf5fee03562b408cd9dca5ff77f513e6ed5dfd3eac88d",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/root_final.json",
+      "complete": true
+    },
+    {
+      "path": "root_final.log",
+      "bytes": 78773,
+      "sha256": "39a47799cdd5267dc0f0e907331b3da03a20cdf0c894b6d38111e8b7599462eb",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/root_final.log",
+      "complete": true
+    },
+    {
+      "path": "root_final.stdout",
+      "bytes": 14107,
+      "sha256": "19e92fc53f38de573c4713c43ef05ffaf1697ff2b7b3afffc25139f9b825162d",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/root_final.stdout",
+      "complete": true
+    },
+    {
+      "path": "root_tested_sources.json",
+      "bytes": 12980,
+      "sha256": "760536971060747efb6d27fb40522be1f9ea77afc160d2dd4f9d692b94f20071",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/root_tested_sources.json",
+      "complete": true
+    },
+    {
+      "path": "run_current_baseline_traces.py",
+      "bytes": 2850,
+      "sha256": "8c4bbe4fe16fb662105c5d1d8fafebc4960b6f0cfb5a0c1cf44bb2ea49c0fe5e",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/run_current_baseline_traces.py",
+      "complete": true
+    },
+    {
+      "path": "run_regressions.py",
+      "bytes": 2543,
+      "sha256": "8569e8ef11edee2c89b7a0fffc64fe484b14f20718ccb26057c7430a51052f27",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/run_regressions.py",
+      "complete": true
+    },
+    {
+      "path": "static_verification.json",
+      "bytes": 52595,
+      "sha256": "faae33a0b6007b860edf11a2844037a3ffff5e4d20817864bb4697f221d47f00",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/static_verification.json",
+      "complete": true
+    },
+    {
+      "path": "targeted_final.json",
+      "bytes": 258,
+      "sha256": "27adbf5fee33f50e094128f15135b96798e4594aff10dbdeeb94fa9c1f00126c",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/targeted_final.json",
+      "complete": true
+    },
+    {
+      "path": "targeted_final.log",
+      "bytes": 8800,
+      "sha256": "248ca0c7e67c96b21e96bb7b2d79b26b1a04893988ce8f1966f7deac9aaefeff",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/targeted_final.log",
+      "complete": true
+    },
+    {
+      "path": "targeted_final.stdout",
+      "bytes": 1425,
+      "sha256": "eb6ed545de0168777fdd75d70d809c9e62d6f8c6e260f1bf112ae00f092a0d00",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/targeted_final.stdout",
+      "complete": true
+    },
+    {
+      "path": "targeted_tested_sources.json",
+      "bytes": 12980,
+      "sha256": "760536971060747efb6d27fb40522be1f9ea77afc160d2dd4f9d692b94f20071",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/targeted_tested_sources.json",
+      "complete": true
+    },
+    {
+      "path": "tools_comments_equivalence.json",
+      "bytes": 1532,
+      "sha256": "ccceb68361207eae6e2fd51e9e8db4cc51fe2e3a05ab02f02f8b51192c72fedf",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/tools_comments_equivalence.json",
+      "complete": true
+    },
+    {
+      "path": "tools_review.json",
+      "bytes": 13388,
+      "sha256": "2b80699a9d13adb6a8b6a24fff97e1bc72e17298aafedb1a75a30c238486ae36",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/tools_review.json",
+      "complete": true
+    },
+    {
+      "path": "tools_supplemental_review.json",
+      "bytes": 7069,
+      "sha256": "6c82d0c64f9dd633986bef732f0ed51311a4d55a155314b944cfaab7bf552a8a",
+      "source_cache": "/home/jikl62/.cache/fc01-python-stage4-20261112-a_dl1k6p/tools_supplemental_review.json",
+      "complete": true
+    }
+  ],
+  "omitted_large_artifacts": "Immutable Git archive/export, compiled caches and temporary fixture trees stay in developer cache; complete selected JSON traces/logs are included, no truncated files in this archive.",
+  "source_of_truth": "Git commits hold source/tests; archive does not substitute for final source identity.",
+  "native_initial_drift_note": "Initial native run passed but Launcher comment changed. Preserve first log/manifest/reason; final 41 run frozen and matching all current Python SHA."
+}

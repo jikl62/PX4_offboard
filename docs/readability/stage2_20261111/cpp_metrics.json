@@ -1,0 +1,3307 @@
+{
+  "method": "Clang 14 JSON AST; physical source range lines; control nesting counts nested If/For/RangeFor/While/Do/Switch/Try/Catch, including else-if AST nesting. Counts are structural indicators, not proof of control complexity or behavioral equivalence.",
+  "files": [
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp",
+      "scope": "fc01::attitude::Core",
+      "before": {
+        "sha256": "a7f6d3e9169cbf30769c86aaeb4c20f6ebf2d1359780ad59c14a4233d77087dd",
+        "methods": {
+          "Core": {
+            "physical_lines": 10,
+            "start": 15,
+            "end": 24,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "phase": {
+            "physical_lines": 3,
+            "start": 26,
+            "end": 28,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reason": {
+            "physical_lines": 3,
+            "start": 29,
+            "end": 31,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "event": {
+            "physical_lines": 3,
+            "start": 32,
+            "end": 34,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "vertical_feedback_evidence": {
+            "physical_lines": 3,
+            "start": 35,
+            "end": 37,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "active": {
+            "physical_lines": 5,
+            "start": 38,
+            "end": 42,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "note_rc_publication": {
+            "physical_lines": 9,
+            "start": 44,
+            "end": 52,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "visual_result": {
+            "physical_lines": 3,
+            "start": 53,
+            "end": 55,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "visual_current": {
+            "physical_lines": 5,
+            "start": 57,
+            "end": 61,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "visual_land": {
+            "physical_lines": 11,
+            "start": 63,
+            "end": 73,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "rc_prestream_commits": {
+            "physical_lines": 3,
+            "start": 75,
+            "end": 77,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_ground_reference_qualified": {
+            "physical_lines": 3,
+            "start": 78,
+            "end": 80,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_ground_reference_samples": {
+            "physical_lines": 3,
+            "start": 81,
+            "end": 83,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_ground_reference_seconds": {
+            "physical_lines": 3,
+            "start": 84,
+            "end": 86,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_manual_arm_proven": {
+            "physical_lines": 3,
+            "start": 87,
+            "end": 89,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_manual_armed_time": {
+            "physical_lines": 3,
+            "start": 90,
+            "end": 92,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_arm_evidence_pending": {
+            "physical_lines": 4,
+            "start": 94,
+            "end": 97,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_navigation_zero_allowed": {
+            "physical_lines": 4,
+            "start": 99,
+            "end": 102,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_restart_allowed": {
+            "physical_lines": 24,
+            "start": 104,
+            "end": 127,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "defer_rc_preparation": {
+            "physical_lines": 46,
+            "start": 132,
+            "end": 177,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "flight_started": {
+            "physical_lines": 3,
+            "start": 179,
+            "end": 181,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "liftoff_confirmed": {
+            "physical_lines": 3,
+            "start": 187,
+            "end": 189,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "target_height_settled": {
+            "physical_lines": 3,
+            "start": 190,
+            "end": 192,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "navigation_allowed": {
+            "physical_lines": 4,
+            "start": 194,
+            "end": 197,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "liftoff_evidence": {
+            "physical_lines": 3,
+            "start": 198,
+            "end": 200,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "takeoff_stage": {
+            "physical_lines": 21,
+            "start": 202,
+            "end": 222,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "bench_arm_only_active": {
+            "physical_lines": 3,
+            "start": 224,
+            "end": 226,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_disarm_proven": {
+            "physical_lines": 3,
+            "start": 227,
+            "end": 229,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_sample_guard_ready": {
+            "physical_lines": 3,
+            "start": 230,
+            "end": 232,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_sample_z": {
+            "physical_lines": 3,
+            "start": 233,
+            "end": 235,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_sample_vz": {
+            "physical_lines": 3,
+            "start": 236,
+            "end": 238,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_arm_status_baseline": {
+            "physical_lines": 3,
+            "start": 239,
+            "end": 241,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_arm_local_baseline": {
+            "physical_lines": 3,
+            "start": 242,
+            "end": 244,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_disarm_status_floor": {
+            "physical_lines": 3,
+            "start": 245,
+            "end": 247,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_disarm_local_floor": {
+            "physical_lines": 3,
+            "start": 248,
+            "end": 250,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_disarm_land_floor": {
+            "physical_lines": 3,
+            "start": 251,
+            "end": 253,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_ground_dwell_seconds": {
+            "physical_lines": 5,
+            "start": 254,
+            "end": 258,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_ground_first_land_stamp": {
+            "physical_lines": 3,
+            "start": 259,
+            "end": 261,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_ground_last_land_stamp": {
+            "physical_lines": 3,
+            "start": 262,
+            "end": 264,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_wait_overdue": {
+            "physical_lines": 4,
+            "start": 265,
+            "end": 268,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_mode_state_only_allowed": {
+            "physical_lines": 4,
+            "start": 270,
+            "end": 273,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "disarm_requested": {
+            "physical_lines": 3,
+            "start": 274,
+            "end": 276,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_ready": {
+            "physical_lines": 3,
+            "start": 278,
+            "end": 280,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_z": {
+            "physical_lines": 3,
+            "start": 281,
+            "end": 283,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_z_reset": {
+            "physical_lines": 3,
+            "start": 284,
+            "end": 286,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_vz_reset": {
+            "physical_lines": 3,
+            "start": 287,
+            "end": 289,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_quat_reset": {
+            "physical_lines": 3,
+            "start": 290,
+            "end": 292,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "local_requires_control_step": {
+            "physical_lines": 94,
+            "start": 297,
+            "end": 390,
+            "max_control_nesting": 3,
+            "control_statement_count": 22
+          },
+          "armed_ground_fault_evidence": {
+            "physical_lines": 3,
+            "start": 391,
+            "end": 393,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "authority_ground_evidence": {
+            "physical_lines": 3,
+            "start": 394,
+            "end": 396,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "authority_ground_failed_mask": {
+            "physical_lines": 7,
+            "start": 398,
+            "end": 404,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "yaw_reference": {
+            "physical_lines": 3,
+            "start": 406,
+            "end": 408,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "level_target": {
+            "physical_lines": 4,
+            "start": 410,
+            "end": 413,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "authority_state": {
+            "physical_lines": 3,
+            "start": 414,
+            "end": 416,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "takeover_reason": {
+            "physical_lines": 3,
+            "start": 417,
+            "end": 419,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "restart_required": {
+            "physical_lines": 3,
+            "start": 420,
+            "end": 422,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_fault_recovery_ready": {
+            "physical_lines": 3,
+            "start": 423,
+            "end": 425,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_recovery_diagnostics": {
+            "physical_lines": 18,
+            "start": 435,
+            "end": 452,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_safety_terminal": {
+            "physical_lines": 7,
+            "start": 454,
+            "end": 460,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "offboard_observed": {
+            "physical_lines": 3,
+            "start": 461,
+            "end": 463,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_confirmed": {
+            "physical_lines": 3,
+            "start": 464,
+            "end": 466,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_release_pending": {
+            "physical_lines": 3,
+            "start": 467,
+            "end": 469,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "arm_confirmed": {
+            "physical_lines": 3,
+            "start": 470,
+            "end": 472,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "arm_cancel_pending": {
+            "physical_lines": 3,
+            "start": 473,
+            "end": 475,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "arm_command_committed": {
+            "physical_lines": 3,
+            "start": 476,
+            "end": 478,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "disarm_command_committed": {
+            "physical_lines": 3,
+            "start": 479,
+            "end": 481,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "disarm_outcome_uncertain": {
+            "physical_lines": 3,
+            "start": 482,
+            "end": 484,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "note_command_publication": {
+            "physical_lines": 23,
+            "start": 488,
+            "end": 510,
+            "max_control_nesting": 1,
+            "control_statement_count": 7
+          },
+          "touchdown_baseline": {
+            "physical_lines": 3,
+            "start": 511,
+            "end": 513,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "fault_class": {
+            "physical_lines": 3,
+            "start": 514,
+            "end": 516,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "recovery_deadline": {
+            "physical_lines": 3,
+            "start": 517,
+            "end": 519,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "recovery_budget_exhausted": {
+            "physical_lines": 3,
+            "start": 520,
+            "end": 522,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "px4_land_command_committed": {
+            "physical_lines": 3,
+            "start": 523,
+            "end": 525,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "recovery_progress_observed": {
+            "physical_lines": 3,
+            "start": 526,
+            "end": 528,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "px4_land_mode_observed": {
+            "physical_lines": 3,
+            "start": 529,
+            "end": 531,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "recovery_responsibility": {
+            "physical_lines": 30,
+            "start": 536,
+            "end": 565,
+            "max_control_nesting": 2,
+            "control_statement_count": 11
+          },
+          "operator_intervened": {
+            "physical_lines": 7,
+            "start": 567,
+            "end": 573,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "takeover_cause": {
+            "physical_lines": 20,
+            "start": 575,
+            "end": 594,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "operator_lease_live": {
+            "physical_lines": 7,
+            "start": 596,
+            "end": 602,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "preparation_lease_valid": {
+            "physical_lines": 3,
+            "start": 604,
+            "end": 606,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "live_console": {
+            "physical_lines": 4,
+            "start": 608,
+            "end": 611,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ping": {
+            "physical_lines": 4,
+            "start": 613,
+            "end": 616,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "select_authority": {
+            "physical_lines": 15,
+            "start": 618,
+            "end": 632,
+            "max_control_nesting": 1,
+            "control_statement_count": 4
+          },
+          "reset_authority": {
+            "physical_lines": 26,
+            "start": 634,
+            "end": 659,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "request_operator_takeover": {
+            "physical_lines": 28,
+            "start": 663,
+            "end": 690,
+            "max_control_nesting": 2,
+            "control_statement_count": 6
+          },
+          "operator_release_requested": {
+            "physical_lines": 3,
+            "start": 691,
+            "end": 693,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "handover_observed": {
+            "physical_lines": 3,
+            "start": 694,
+            "end": 696,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "release_to_operator": {
+            "physical_lines": 6,
+            "start": 698,
+            "end": 703,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "prepare": {
+            "physical_lines": 61,
+            "start": 705,
+            "end": 765,
+            "max_control_nesting": 2,
+            "control_statement_count": 9
+          },
+          "arm_only": {
+            "physical_lines": 52,
+            "start": 769,
+            "end": 820,
+            "max_control_nesting": 1,
+            "control_statement_count": 12
+          },
+          "takeoff": {
+            "physical_lines": 64,
+            "start": 822,
+            "end": 885,
+            "max_control_nesting": 1,
+            "control_statement_count": 16
+          },
+          "descend": {
+            "physical_lines": 77,
+            "start": 887,
+            "end": 963,
+            "max_control_nesting": 2,
+            "control_statement_count": 13
+          },
+          "disconnect": {
+            "physical_lines": 9,
+            "start": 965,
+            "end": 973,
+            "max_control_nesting": 2,
+            "control_statement_count": 2
+          },
+          "stop_disarmed": {
+            "physical_lines": 12,
+            "start": 975,
+            "end": 986,
+            "max_control_nesting": 2,
+            "control_statement_count": 3
+          },
+          "block": {
+            "physical_lines": 3,
+            "start": 988,
+            "end": 990,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "block_rc_preparation_timing": {
+            "physical_lines": 9,
+            "start": 992,
+            "end": 1000,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "clear_rc_timing_recovery": {
+            "physical_lines": 3,
+            "start": 1002,
+            "end": 1004,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "begin_safety_observation": {
+            "physical_lines": 3,
+            "start": 1006,
+            "end": 1008,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_safety_event": {
+            "physical_lines": 128,
+            "start": 1015,
+            "end": 1142,
+            "max_control_nesting": 8,
+            "control_statement_count": 35
+          },
+          "step": {
+            "physical_lines": 933,
+            "start": 1145,
+            "end": 2077,
+            "max_control_nesting": 16,
+            "control_statement_count": 163
+          },
+          "observe_fault_watermarks": {
+            "physical_lines": 9,
+            "start": 2081,
+            "end": 2089,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_recoverable_fault": {
+            "physical_lines": 25,
+            "start": 2091,
+            "end": 2115,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_recovery_sample_block_reason": {
+            "physical_lines": 34,
+            "start": 2117,
+            "end": 2150,
+            "max_control_nesting": 1,
+            "control_statement_count": 15
+          },
+          "rc_recovery_sample_safe": {
+            "physical_lines": 3,
+            "start": 2152,
+            "end": 2154,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "clear_rc_recovery": {
+            "physical_lines": 9,
+            "start": 2156,
+            "end": 2164,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_rc_recovery": {
+            "physical_lines": 122,
+            "start": 2166,
+            "end": 2287,
+            "max_control_nesting": 6,
+            "control_statement_count": 22
+          },
+          "land_fallback_ready": {
+            "physical_lines": 5,
+            "start": 2289,
+            "end": 2293,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_external_terminal": {
+            "physical_lines": 12,
+            "start": 2295,
+            "end": 2306,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "disarm_terminal": {
+            "physical_lines": 3,
+            "start": 2308,
+            "end": 2310,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "safe_authority_ground": {
+            "physical_lines": 22,
+            "start": 2312,
+            "end": 2333,
+            "max_control_nesting": 1,
+            "control_statement_count": 7
+          },
+          "health": {
+            "physical_lines": 21,
+            "start": 2335,
+            "end": 2355,
+            "max_control_nesting": 1,
+            "control_statement_count": 9
+          },
+          "vertical_sample": {
+            "physical_lines": 3,
+            "start": 2358,
+            "end": 2360,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "apply": {
+            "physical_lines": 26,
+            "start": 2362,
+            "end": 2387,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "pending_ramp_lift": {
+            "physical_lines": 6,
+            "start": 2389,
+            "end": 2394,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "height_feedback": {
+            "physical_lines": 26,
+            "start": 2399,
+            "end": 2424,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "clear_ramp_feedback": {
+            "physical_lines": 4,
+            "start": 2426,
+            "end": 2429,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "verified_ground": {
+            "physical_lines": 10,
+            "start": 2431,
+            "end": 2440,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "capture_bench_ground_fault": {
+            "physical_lines": 18,
+            "start": 2442,
+            "end": 2459,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "dwell": {
+            "physical_lines": 9,
+            "start": 2461,
+            "end": 2469,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "dwell_bench_ground": {
+            "physical_lines": 15,
+            "start": 2471,
+            "end": 2485,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "dwell_land": {
+            "physical_lines": 40,
+            "start": 2490,
+            "end": 2529,
+            "max_control_nesting": 1,
+            "control_statement_count": 6
+          },
+          "observe_disarmed_ground_prep": {
+            "physical_lines": 38,
+            "start": 2534,
+            "end": 2571,
+            "max_control_nesting": 1,
+            "control_statement_count": 4
+          },
+          "clear_disarmed_prep": {
+            "physical_lines": 4,
+            "start": 2573,
+            "end": 2576,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "clear_land_dwell": {
+            "physical_lines": 4,
+            "start": 2578,
+            "end": 2581,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "enter": {
+            "physical_lines": 9,
+            "start": 2583,
+            "end": 2591,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "fault": {
+            "physical_lines": 24,
+            "start": 2593,
+            "end": 2616,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "rc_startup": {
+            "physical_lines": 89,
+            "start": 2618,
+            "end": 2706,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          }
+        }
+      },
+      "after": {
+        "sha256": "e53fdf955b4923a0cb17f8c5feba22cd3cbb1436c09b167654c13c8f80f78108",
+        "methods": {
+          "Core": {
+            "physical_lines": 10,
+            "start": 15,
+            "end": 24,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "phase": {
+            "physical_lines": 3,
+            "start": 26,
+            "end": 28,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reason": {
+            "physical_lines": 3,
+            "start": 29,
+            "end": 31,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "event": {
+            "physical_lines": 3,
+            "start": 32,
+            "end": 34,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "vertical_feedback_evidence": {
+            "physical_lines": 3,
+            "start": 35,
+            "end": 37,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "active": {
+            "physical_lines": 5,
+            "start": 38,
+            "end": 42,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "note_rc_publication": {
+            "physical_lines": 9,
+            "start": 44,
+            "end": 52,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "visual_result": {
+            "physical_lines": 3,
+            "start": 53,
+            "end": 55,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "visual_current": {
+            "physical_lines": 5,
+            "start": 57,
+            "end": 61,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "visual_land": {
+            "physical_lines": 11,
+            "start": 63,
+            "end": 73,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "rc_prestream_commits": {
+            "physical_lines": 3,
+            "start": 75,
+            "end": 77,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_ground_reference_qualified": {
+            "physical_lines": 3,
+            "start": 78,
+            "end": 80,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_ground_reference_samples": {
+            "physical_lines": 3,
+            "start": 81,
+            "end": 83,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_ground_reference_seconds": {
+            "physical_lines": 3,
+            "start": 84,
+            "end": 86,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_manual_arm_proven": {
+            "physical_lines": 3,
+            "start": 87,
+            "end": 89,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_manual_armed_time": {
+            "physical_lines": 3,
+            "start": 90,
+            "end": 92,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_arm_evidence_pending": {
+            "physical_lines": 4,
+            "start": 94,
+            "end": 97,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_navigation_zero_allowed": {
+            "physical_lines": 4,
+            "start": 99,
+            "end": 102,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_restart_allowed": {
+            "physical_lines": 24,
+            "start": 104,
+            "end": 127,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "defer_rc_preparation": {
+            "physical_lines": 46,
+            "start": 132,
+            "end": 177,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "flight_started": {
+            "physical_lines": 3,
+            "start": 179,
+            "end": 181,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "liftoff_confirmed": {
+            "physical_lines": 3,
+            "start": 187,
+            "end": 189,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "target_height_settled": {
+            "physical_lines": 3,
+            "start": 190,
+            "end": 192,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "navigation_allowed": {
+            "physical_lines": 4,
+            "start": 194,
+            "end": 197,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "liftoff_evidence": {
+            "physical_lines": 3,
+            "start": 198,
+            "end": 200,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "takeoff_stage": {
+            "physical_lines": 21,
+            "start": 202,
+            "end": 222,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "bench_arm_only_active": {
+            "physical_lines": 3,
+            "start": 224,
+            "end": 226,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_disarm_proven": {
+            "physical_lines": 3,
+            "start": 227,
+            "end": 229,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_sample_guard_ready": {
+            "physical_lines": 3,
+            "start": 230,
+            "end": 232,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_sample_z": {
+            "physical_lines": 3,
+            "start": 233,
+            "end": 235,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_sample_vz": {
+            "physical_lines": 3,
+            "start": 236,
+            "end": 238,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_arm_status_baseline": {
+            "physical_lines": 3,
+            "start": 239,
+            "end": 241,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_arm_local_baseline": {
+            "physical_lines": 3,
+            "start": 242,
+            "end": 244,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_disarm_status_floor": {
+            "physical_lines": 3,
+            "start": 245,
+            "end": 247,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_disarm_local_floor": {
+            "physical_lines": 3,
+            "start": 248,
+            "end": 250,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_disarm_land_floor": {
+            "physical_lines": 3,
+            "start": 251,
+            "end": 253,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_ground_dwell_seconds": {
+            "physical_lines": 5,
+            "start": 254,
+            "end": 258,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_ground_first_land_stamp": {
+            "physical_lines": 3,
+            "start": 259,
+            "end": 261,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_ground_last_land_stamp": {
+            "physical_lines": 3,
+            "start": 262,
+            "end": 264,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "bench_wait_overdue": {
+            "physical_lines": 4,
+            "start": 265,
+            "end": 268,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_mode_state_only_allowed": {
+            "physical_lines": 4,
+            "start": 270,
+            "end": 273,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "disarm_requested": {
+            "physical_lines": 3,
+            "start": 274,
+            "end": 276,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_ready": {
+            "physical_lines": 3,
+            "start": 278,
+            "end": 280,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_z": {
+            "physical_lines": 3,
+            "start": 281,
+            "end": 283,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_z_reset": {
+            "physical_lines": 3,
+            "start": 284,
+            "end": 286,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_vz_reset": {
+            "physical_lines": 3,
+            "start": 287,
+            "end": 289,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reference_quat_reset": {
+            "physical_lines": 3,
+            "start": 290,
+            "end": 292,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "local_requires_control_step": {
+            "physical_lines": 94,
+            "start": 297,
+            "end": 390,
+            "max_control_nesting": 3,
+            "control_statement_count": 22
+          },
+          "armed_ground_fault_evidence": {
+            "physical_lines": 3,
+            "start": 391,
+            "end": 393,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "authority_ground_evidence": {
+            "physical_lines": 3,
+            "start": 394,
+            "end": 396,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "authority_ground_failed_mask": {
+            "physical_lines": 7,
+            "start": 398,
+            "end": 404,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "yaw_reference": {
+            "physical_lines": 3,
+            "start": 406,
+            "end": 408,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "level_target": {
+            "physical_lines": 4,
+            "start": 410,
+            "end": 413,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "authority_state": {
+            "physical_lines": 3,
+            "start": 414,
+            "end": 416,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "takeover_reason": {
+            "physical_lines": 3,
+            "start": 417,
+            "end": 419,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "restart_required": {
+            "physical_lines": 3,
+            "start": 420,
+            "end": 422,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_fault_recovery_ready": {
+            "physical_lines": 3,
+            "start": 423,
+            "end": 425,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_recovery_diagnostics": {
+            "physical_lines": 18,
+            "start": 435,
+            "end": 452,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_safety_terminal": {
+            "physical_lines": 7,
+            "start": 454,
+            "end": 460,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "offboard_observed": {
+            "physical_lines": 3,
+            "start": 461,
+            "end": 463,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_confirmed": {
+            "physical_lines": 3,
+            "start": 464,
+            "end": 466,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_release_pending": {
+            "physical_lines": 3,
+            "start": 467,
+            "end": 469,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "arm_confirmed": {
+            "physical_lines": 3,
+            "start": 470,
+            "end": 472,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "arm_cancel_pending": {
+            "physical_lines": 3,
+            "start": 473,
+            "end": 475,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "arm_command_committed": {
+            "physical_lines": 3,
+            "start": 476,
+            "end": 478,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "disarm_command_committed": {
+            "physical_lines": 3,
+            "start": 479,
+            "end": 481,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "disarm_outcome_uncertain": {
+            "physical_lines": 3,
+            "start": 482,
+            "end": 484,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "note_command_publication": {
+            "physical_lines": 23,
+            "start": 488,
+            "end": 510,
+            "max_control_nesting": 1,
+            "control_statement_count": 7
+          },
+          "touchdown_baseline": {
+            "physical_lines": 3,
+            "start": 511,
+            "end": 513,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "fault_class": {
+            "physical_lines": 3,
+            "start": 514,
+            "end": 516,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "recovery_deadline": {
+            "physical_lines": 3,
+            "start": 517,
+            "end": 519,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "recovery_budget_exhausted": {
+            "physical_lines": 3,
+            "start": 520,
+            "end": 522,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "px4_land_command_committed": {
+            "physical_lines": 3,
+            "start": 523,
+            "end": 525,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "recovery_progress_observed": {
+            "physical_lines": 3,
+            "start": 526,
+            "end": 528,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "px4_land_mode_observed": {
+            "physical_lines": 3,
+            "start": 529,
+            "end": 531,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "recovery_responsibility": {
+            "physical_lines": 30,
+            "start": 536,
+            "end": 565,
+            "max_control_nesting": 2,
+            "control_statement_count": 11
+          },
+          "operator_intervened": {
+            "physical_lines": 7,
+            "start": 567,
+            "end": 573,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "takeover_cause": {
+            "physical_lines": 20,
+            "start": 575,
+            "end": 594,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "operator_lease_live": {
+            "physical_lines": 7,
+            "start": 596,
+            "end": 602,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "preparation_lease_valid": {
+            "physical_lines": 3,
+            "start": 604,
+            "end": 606,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "live_console": {
+            "physical_lines": 4,
+            "start": 608,
+            "end": 611,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ping": {
+            "physical_lines": 4,
+            "start": 613,
+            "end": 616,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "select_authority": {
+            "physical_lines": 15,
+            "start": 618,
+            "end": 632,
+            "max_control_nesting": 1,
+            "control_statement_count": 4
+          },
+          "reset_authority": {
+            "physical_lines": 26,
+            "start": 634,
+            "end": 659,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "request_operator_takeover": {
+            "physical_lines": 28,
+            "start": 663,
+            "end": 690,
+            "max_control_nesting": 2,
+            "control_statement_count": 6
+          },
+          "operator_release_requested": {
+            "physical_lines": 3,
+            "start": 691,
+            "end": 693,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "handover_observed": {
+            "physical_lines": 3,
+            "start": 694,
+            "end": 696,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "release_to_operator": {
+            "physical_lines": 6,
+            "start": 698,
+            "end": 703,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "prepare": {
+            "physical_lines": 61,
+            "start": 705,
+            "end": 765,
+            "max_control_nesting": 2,
+            "control_statement_count": 9
+          },
+          "arm_only": {
+            "physical_lines": 52,
+            "start": 769,
+            "end": 820,
+            "max_control_nesting": 1,
+            "control_statement_count": 12
+          },
+          "takeoff": {
+            "physical_lines": 64,
+            "start": 822,
+            "end": 885,
+            "max_control_nesting": 1,
+            "control_statement_count": 16
+          },
+          "descend": {
+            "physical_lines": 77,
+            "start": 887,
+            "end": 963,
+            "max_control_nesting": 2,
+            "control_statement_count": 13
+          },
+          "disconnect": {
+            "physical_lines": 9,
+            "start": 965,
+            "end": 973,
+            "max_control_nesting": 2,
+            "control_statement_count": 2
+          },
+          "stop_disarmed": {
+            "physical_lines": 12,
+            "start": 975,
+            "end": 986,
+            "max_control_nesting": 2,
+            "control_statement_count": 3
+          },
+          "block": {
+            "physical_lines": 3,
+            "start": 988,
+            "end": 990,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "block_rc_preparation_timing": {
+            "physical_lines": 9,
+            "start": 992,
+            "end": 1000,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "clear_rc_timing_recovery": {
+            "physical_lines": 3,
+            "start": 1002,
+            "end": 1004,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "begin_safety_observation": {
+            "physical_lines": 3,
+            "start": 1006,
+            "end": 1008,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_safety_event": {
+            "physical_lines": 128,
+            "start": 1015,
+            "end": 1142,
+            "max_control_nesting": 8,
+            "control_statement_count": 35
+          },
+          "step": {
+            "physical_lines": 795,
+            "start": 1145,
+            "end": 1939,
+            "max_control_nesting": 16,
+            "control_statement_count": 139
+          },
+          "advance_requested_arm": {
+            "physical_lines": 76,
+            "start": 1946,
+            "end": 2021,
+            "max_control_nesting": 5,
+            "control_statement_count": 16
+          },
+          "advance_thrust_ramp": {
+            "physical_lines": 72,
+            "start": 2026,
+            "end": 2097,
+            "max_control_nesting": 3,
+            "control_statement_count": 10
+          },
+          "record_rc_recovery_sources": {
+            "physical_lines": 21,
+            "start": 2101,
+            "end": 2121,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "update_rc_recovery_reason": {
+            "physical_lines": 16,
+            "start": 2125,
+            "end": 2140,
+            "max_control_nesting": 6,
+            "control_statement_count": 6
+          },
+          "observe_fault_watermarks": {
+            "physical_lines": 9,
+            "start": 2142,
+            "end": 2150,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_recoverable_fault": {
+            "physical_lines": 25,
+            "start": 2152,
+            "end": 2176,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_recovery_sample_block_reason": {
+            "physical_lines": 34,
+            "start": 2178,
+            "end": 2211,
+            "max_control_nesting": 1,
+            "control_statement_count": 15
+          },
+          "rc_recovery_sample_safe": {
+            "physical_lines": 3,
+            "start": 2213,
+            "end": 2215,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "clear_rc_recovery": {
+            "physical_lines": 9,
+            "start": 2217,
+            "end": 2225,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_rc_recovery": {
+            "physical_lines": 91,
+            "start": 2227,
+            "end": 2317,
+            "max_control_nesting": 1,
+            "control_statement_count": 13
+          },
+          "land_fallback_ready": {
+            "physical_lines": 5,
+            "start": 2319,
+            "end": 2323,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_external_terminal": {
+            "physical_lines": 12,
+            "start": 2325,
+            "end": 2336,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "disarm_terminal": {
+            "physical_lines": 3,
+            "start": 2338,
+            "end": 2340,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "safe_authority_ground": {
+            "physical_lines": 22,
+            "start": 2342,
+            "end": 2363,
+            "max_control_nesting": 1,
+            "control_statement_count": 7
+          },
+          "health": {
+            "physical_lines": 21,
+            "start": 2365,
+            "end": 2385,
+            "max_control_nesting": 1,
+            "control_statement_count": 9
+          },
+          "vertical_sample": {
+            "physical_lines": 3,
+            "start": 2388,
+            "end": 2390,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "apply": {
+            "physical_lines": 26,
+            "start": 2392,
+            "end": 2417,
+            "max_control_nesting": 2,
+            "control_statement_count": 4
+          },
+          "pending_ramp_lift": {
+            "physical_lines": 6,
+            "start": 2419,
+            "end": 2424,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "height_feedback": {
+            "physical_lines": 26,
+            "start": 2429,
+            "end": 2454,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "clear_ramp_feedback": {
+            "physical_lines": 4,
+            "start": 2456,
+            "end": 2459,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "verified_ground": {
+            "physical_lines": 10,
+            "start": 2461,
+            "end": 2470,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "capture_bench_ground_fault": {
+            "physical_lines": 18,
+            "start": 2472,
+            "end": 2489,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "dwell": {
+            "physical_lines": 9,
+            "start": 2491,
+            "end": 2499,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "dwell_bench_ground": {
+            "physical_lines": 15,
+            "start": 2501,
+            "end": 2515,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "dwell_land": {
+            "physical_lines": 40,
+            "start": 2520,
+            "end": 2559,
+            "max_control_nesting": 1,
+            "control_statement_count": 6
+          },
+          "observe_disarmed_ground_prep": {
+            "physical_lines": 38,
+            "start": 2564,
+            "end": 2601,
+            "max_control_nesting": 1,
+            "control_statement_count": 4
+          },
+          "clear_disarmed_prep": {
+            "physical_lines": 4,
+            "start": 2603,
+            "end": 2606,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "clear_land_dwell": {
+            "physical_lines": 4,
+            "start": 2608,
+            "end": 2611,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "enter": {
+            "physical_lines": 9,
+            "start": 2613,
+            "end": 2621,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "fault": {
+            "physical_lines": 24,
+            "start": 2623,
+            "end": 2646,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "rc_startup": {
+            "physical_lines": 89,
+            "start": 2648,
+            "end": 2736,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          }
+        }
+      },
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 933,
+            "start": 1145,
+            "end": 2077,
+            "max_control_nesting": 16,
+            "control_statement_count": 163
+          },
+          "after": {
+            "physical_lines": 795,
+            "start": 1145,
+            "end": 1939,
+            "max_control_nesting": 16,
+            "control_statement_count": 139
+          }
+        },
+        "observe_safety_event": {
+          "before": {
+            "physical_lines": 128,
+            "start": 1015,
+            "end": 1142,
+            "max_control_nesting": 8,
+            "control_statement_count": 35
+          },
+          "after": {
+            "physical_lines": 128,
+            "start": 1015,
+            "end": 1142,
+            "max_control_nesting": 8,
+            "control_statement_count": 35
+          }
+        },
+        "observe_rc_recovery": {
+          "before": {
+            "physical_lines": 122,
+            "start": 2166,
+            "end": 2287,
+            "max_control_nesting": 6,
+            "control_statement_count": 22
+          },
+          "after": {
+            "physical_lines": 91,
+            "start": 2227,
+            "end": 2317,
+            "max_control_nesting": 1,
+            "control_statement_count": 13
+          }
+        }
+      },
+      "new_helpers": [
+        "advance_requested_arm",
+        "advance_thrust_ramp",
+        "record_rc_recovery_sources",
+        "update_rc_recovery_reason"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_types.hpp",
+      "scope": "fc01::attitude::Config",
+      "before": {
+        "sha256": "c332ba1d1f459301393da4b47990a76a581e0ae235227fd4d9b12fb7804bd37a",
+        "methods": {
+          "validate": {
+            "physical_lines": 67,
+            "start": 68,
+            "end": 134,
+            "max_control_nesting": 3,
+            "control_statement_count": 17
+          }
+        }
+      },
+      "after": {
+        "sha256": "248a1a4ae902861401ef7887b3612fd1d05577eba291157adaba84b51897d010",
+        "methods": {
+          "validate": {
+            "physical_lines": 21,
+            "start": 68,
+            "end": 88,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "validate_preparation": {
+            "physical_lines": 27,
+            "start": 91,
+            "end": 117,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "validate_flight_limits": {
+            "physical_lines": 25,
+            "start": 120,
+            "end": 144,
+            "max_control_nesting": 3,
+            "control_statement_count": 7
+          }
+        }
+      },
+      "targets": {
+        "validate": {
+          "before": {
+            "physical_lines": 67,
+            "start": 68,
+            "end": 134,
+            "max_control_nesting": 3,
+            "control_statement_count": 17
+          },
+          "after": {
+            "physical_lines": 21,
+            "start": 68,
+            "end": 88,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          }
+        }
+      },
+      "new_helpers": [
+        "validate_flight_limits",
+        "validate_preparation"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/authority_telemetry.hpp",
+      "scope": "fc01::AuthorityTelemetry",
+      "before": {
+        "sha256": "c5eb44f02224af2424a7a7ce840eddb1c9671b0d5e216da01a7102875527d424",
+        "methods": {
+          "manual": {
+            "physical_lines": 67,
+            "start": 36,
+            "end": 102,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "switches": {
+            "physical_lines": 52,
+            "start": 105,
+            "end": 156,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "facts": {
+            "physical_lines": 57,
+            "start": 159,
+            "end": 215,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "after": {
+        "sha256": "d2e4465c57b9046ec08d0c79286e6b7214bf33d1076e9dfc2fe1e4de9ac68611",
+        "methods": {
+          "manual": {
+            "physical_lines": 57,
+            "start": 36,
+            "end": 92,
+            "max_control_nesting": 2,
+            "control_statement_count": 7
+          },
+          "switches": {
+            "physical_lines": 31,
+            "start": 95,
+            "end": 125,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          },
+          "facts": {
+            "physical_lines": 57,
+            "start": 128,
+            "end": 184,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_switch_values": {
+            "physical_lines": 24,
+            "start": 190,
+            "end": 213,
+            "max_control_nesting": 2,
+            "control_statement_count": 3
+          },
+          "observe_manual_axes": {
+            "physical_lines": 14,
+            "start": 217,
+            "end": 230,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          }
+        }
+      },
+      "targets": {
+        "manual": {
+          "before": {
+            "physical_lines": 67,
+            "start": 36,
+            "end": 102,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "after": {
+            "physical_lines": 57,
+            "start": 36,
+            "end": 92,
+            "max_control_nesting": 2,
+            "control_statement_count": 7
+          }
+        },
+        "switches": {
+          "before": {
+            "physical_lines": 52,
+            "start": 105,
+            "end": 156,
+            "max_control_nesting": 2,
+            "control_statement_count": 8
+          },
+          "after": {
+            "physical_lines": 31,
+            "start": 95,
+            "end": 125,
+            "max_control_nesting": 2,
+            "control_statement_count": 5
+          }
+        },
+        "facts": {
+          "before": {
+            "physical_lines": 57,
+            "start": 159,
+            "end": 215,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "after": {
+            "physical_lines": 57,
+            "start": 128,
+            "end": 184,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "new_helpers": [
+        "observe_manual_axes",
+        "observe_switch_values"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp",
+      "scope": "fc01::attitude::RcNavigationStart",
+      "before": {
+        "sha256": "88db59d0ecbbc07d774d19771dff20200bae9c96a7cdef69580d9d95d0cf4b2c",
+        "methods": {
+          "phase": {
+            "physical_lines": 3,
+            "start": 31,
+            "end": 33,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reason": {
+            "physical_lines": 3,
+            "start": 34,
+            "end": 36,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "anchor_valid": {
+            "physical_lines": 3,
+            "start": 37,
+            "end": 39,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "z0": {
+            "physical_lines": 3,
+            "start": 40,
+            "end": 42,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "q0": {
+            "physical_lines": 3,
+            "start": 43,
+            "end": 45,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "z_reset": {
+            "physical_lines": 3,
+            "start": 46,
+            "end": 48,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "vz_reset": {
+            "physical_lines": 3,
+            "start": 49,
+            "end": 51,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "quat_reset": {
+            "physical_lines": 3,
+            "start": 52,
+            "end": 54,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reference_qualified": {
+            "physical_lines": 3,
+            "start": 56,
+            "end": 58,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reference_samples": {
+            "physical_lines": 3,
+            "start": 59,
+            "end": 61,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reference_seconds": {
+            "physical_lines": 3,
+            "start": 62,
+            "end": 64,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reference_height_changed": {
+            "physical_lines": 3,
+            "start": 66,
+            "end": 68,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "commits": {
+            "physical_lines": 3,
+            "start": 69,
+            "end": 71,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "manual_arm_proven": {
+            "physical_lines": 3,
+            "start": 72,
+            "end": 74,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "manual_armed_time": {
+            "physical_lines": 3,
+            "start": 75,
+            "end": 77,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "no_arm_intent_observed": {
+            "physical_lines": 5,
+            "start": 81,
+            "end": 85,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "note_commit": {
+            "physical_lines": 16,
+            "start": 87,
+            "end": 102,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "stream_ready": {
+            "physical_lines": 5,
+            "start": 104,
+            "end": 108,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_live": {
+            "physical_lines": 4,
+            "start": 110,
+            "end": 113,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "pending_zero_allowed": {
+            "physical_lines": 40,
+            "start": 118,
+            "end": 157,
+            "max_control_nesting": 1,
+            "control_statement_count": 6
+          },
+          "navigation_zero_allowed": {
+            "physical_lines": 37,
+            "start": 162,
+            "end": 198,
+            "max_control_nesting": 1,
+            "control_statement_count": 6
+          },
+          "step": {
+            "physical_lines": 201,
+            "start": 202,
+            "end": 402,
+            "max_control_nesting": 3,
+            "control_statement_count": 48
+          },
+          "clear_ground_reference": {
+            "physical_lines": 7,
+            "start": 406,
+            "end": 412,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_ground_reference": {
+            "physical_lines": 87,
+            "start": 414,
+            "end": 500,
+            "max_control_nesting": 1,
+            "control_statement_count": 8
+          },
+          "reset": {
+            "physical_lines": 9,
+            "start": 502,
+            "end": 510,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "capture": {
+            "physical_lines": 13,
+            "start": 512,
+            "end": 524,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "after": {
+        "sha256": "b973a96663a6c0485f859d82ec8c85d326a95c0c074fc254ea3dee6635ab681b",
+        "methods": {
+          "phase": {
+            "physical_lines": 3,
+            "start": 31,
+            "end": 33,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reason": {
+            "physical_lines": 3,
+            "start": 34,
+            "end": 36,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "anchor_valid": {
+            "physical_lines": 3,
+            "start": 37,
+            "end": 39,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "z0": {
+            "physical_lines": 3,
+            "start": 40,
+            "end": 42,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "q0": {
+            "physical_lines": 3,
+            "start": 43,
+            "end": 45,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "z_reset": {
+            "physical_lines": 3,
+            "start": 46,
+            "end": 48,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "vz_reset": {
+            "physical_lines": 3,
+            "start": 49,
+            "end": 51,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "quat_reset": {
+            "physical_lines": 3,
+            "start": 52,
+            "end": 54,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reference_qualified": {
+            "physical_lines": 3,
+            "start": 56,
+            "end": 58,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reference_samples": {
+            "physical_lines": 3,
+            "start": 59,
+            "end": 61,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reference_seconds": {
+            "physical_lines": 3,
+            "start": 62,
+            "end": 64,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ground_reference_height_changed": {
+            "physical_lines": 3,
+            "start": 66,
+            "end": 68,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "commits": {
+            "physical_lines": 3,
+            "start": 69,
+            "end": 71,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "manual_arm_proven": {
+            "physical_lines": 3,
+            "start": 72,
+            "end": 74,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "manual_armed_time": {
+            "physical_lines": 3,
+            "start": 75,
+            "end": 77,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "no_arm_intent_observed": {
+            "physical_lines": 5,
+            "start": 81,
+            "end": 85,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "note_commit": {
+            "physical_lines": 16,
+            "start": 87,
+            "end": 102,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "stream_ready": {
+            "physical_lines": 5,
+            "start": 104,
+            "end": 108,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "rc_live": {
+            "physical_lines": 4,
+            "start": 110,
+            "end": 113,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "pending_zero_allowed": {
+            "physical_lines": 40,
+            "start": 118,
+            "end": 157,
+            "max_control_nesting": 1,
+            "control_statement_count": 6
+          },
+          "navigation_zero_allowed": {
+            "physical_lines": 37,
+            "start": 162,
+            "end": 198,
+            "max_control_nesting": 1,
+            "control_statement_count": 6
+          },
+          "step": {
+            "physical_lines": 109,
+            "start": 202,
+            "end": 310,
+            "max_control_nesting": 3,
+            "control_statement_count": 25
+          },
+          "step_prestream": {
+            "physical_lines": 23,
+            "start": 317,
+            "end": 339,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "step_wait_navigation": {
+            "physical_lines": 66,
+            "start": 344,
+            "end": 409,
+            "max_control_nesting": 2,
+            "control_statement_count": 20
+          },
+          "block": {
+            "physical_lines": 5,
+            "start": 412,
+            "end": 416,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "clear_ground_reference": {
+            "physical_lines": 7,
+            "start": 418,
+            "end": 424,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe_ground_reference": {
+            "physical_lines": 87,
+            "start": 426,
+            "end": 512,
+            "max_control_nesting": 1,
+            "control_statement_count": 8
+          },
+          "reset": {
+            "physical_lines": 9,
+            "start": 514,
+            "end": 522,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "capture": {
+            "physical_lines": 13,
+            "start": 524,
+            "end": 536,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 201,
+            "start": 202,
+            "end": 402,
+            "max_control_nesting": 3,
+            "control_statement_count": 48
+          },
+          "after": {
+            "physical_lines": 109,
+            "start": 202,
+            "end": 310,
+            "max_control_nesting": 3,
+            "control_statement_count": 25
+          }
+        },
+        "observe_ground_reference": {
+          "before": {
+            "physical_lines": 87,
+            "start": 414,
+            "end": 500,
+            "max_control_nesting": 1,
+            "control_statement_count": 8
+          },
+          "after": {
+            "physical_lines": 87,
+            "start": 426,
+            "end": 512,
+            "max_control_nesting": 1,
+            "control_statement_count": 8
+          }
+        }
+      },
+      "new_helpers": [
+        "block",
+        "step_prestream",
+        "step_wait_navigation"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/velocity_core.hpp",
+      "scope": "jikl_velocity::Core",
+      "before": {
+        "sha256": "6f411d990663ec0d585fb9bfed5c87c53869f87bf8e36f5cd98b0dd0dd78e334",
+        "methods": {
+          "Core": {
+            "physical_lines": 3,
+            "start": 159,
+            "end": 161,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "phase": {
+            "physical_lines": 3,
+            "start": 163,
+            "end": 165,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reason": {
+            "physical_lines": 3,
+            "start": 166,
+            "end": 168,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "origin": {
+            "physical_lines": 3,
+            "start": 169,
+            "end": 171,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "active": {
+            "physical_lines": 3,
+            "start": 173,
+            "end": 175,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "accepts_motion": {
+            "physical_lines": 3,
+            "start": 177,
+            "end": 179,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "command_age": {
+            "physical_lines": 3,
+            "start": 181,
+            "end": 183,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "command_fresh": {
+            "physical_lines": 3,
+            "start": 185,
+            "end": 187,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "not_ready": {
+            "physical_lines": 21,
+            "start": 189,
+            "end": 209,
+            "max_control_nesting": 1,
+            "control_statement_count": 9
+          },
+          "receive": {
+            "physical_lines": 13,
+            "start": 211,
+            "end": 223,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "invalidate": {
+            "physical_lines": 4,
+            "start": 225,
+            "end": 228,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "start": {
+            "physical_lines": 19,
+            "start": 230,
+            "end": 248,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "land": {
+            "physical_lines": 12,
+            "start": 250,
+            "end": 261,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "rejected_arm": {
+            "physical_lines": 3,
+            "start": 263,
+            "end": 265,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "release": {
+            "physical_lines": 6,
+            "start": 267,
+            "end": 272,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "step": {
+            "physical_lines": 158,
+            "start": 275,
+            "end": 432,
+            "max_control_nesting": 8,
+            "control_statement_count": 35
+          },
+          "enter": {
+            "physical_lines": 7,
+            "start": 436,
+            "end": 442,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "dwell": {
+            "physical_lines": 9,
+            "start": 444,
+            "end": 452,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "position_output": {
+            "physical_lines": 7,
+            "start": 454,
+            "end": 460,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "landing": {
+            "physical_lines": 38,
+            "start": 462,
+            "end": 499,
+            "max_control_nesting": 2,
+            "control_statement_count": 7
+          }
+        }
+      },
+      "after": {
+        "sha256": "10aaac1ae27ab4c694cc9a3ede8927ad428475378e917a08ba82aaf88396d7b7",
+        "methods": {
+          "Core": {
+            "physical_lines": 3,
+            "start": 159,
+            "end": 161,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "phase": {
+            "physical_lines": 3,
+            "start": 163,
+            "end": 165,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reason": {
+            "physical_lines": 3,
+            "start": 166,
+            "end": 168,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "origin": {
+            "physical_lines": 3,
+            "start": 169,
+            "end": 171,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "active": {
+            "physical_lines": 3,
+            "start": 173,
+            "end": 175,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "accepts_motion": {
+            "physical_lines": 3,
+            "start": 177,
+            "end": 179,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "command_age": {
+            "physical_lines": 3,
+            "start": 181,
+            "end": 183,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "command_fresh": {
+            "physical_lines": 3,
+            "start": 185,
+            "end": 187,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "not_ready": {
+            "physical_lines": 21,
+            "start": 189,
+            "end": 209,
+            "max_control_nesting": 1,
+            "control_statement_count": 9
+          },
+          "receive": {
+            "physical_lines": 13,
+            "start": 211,
+            "end": 223,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "invalidate": {
+            "physical_lines": 4,
+            "start": 225,
+            "end": 228,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "start": {
+            "physical_lines": 19,
+            "start": 230,
+            "end": 248,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "land": {
+            "physical_lines": 12,
+            "start": 250,
+            "end": 261,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "rejected_arm": {
+            "physical_lines": 3,
+            "start": 263,
+            "end": 265,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "release": {
+            "physical_lines": 6,
+            "start": 267,
+            "end": 272,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "step": {
+            "physical_lines": 118,
+            "start": 275,
+            "end": 392,
+            "max_control_nesting": 8,
+            "control_statement_count": 29
+          },
+          "motion_output": {
+            "physical_lines": 45,
+            "start": 398,
+            "end": 442,
+            "max_control_nesting": 2,
+            "control_statement_count": 6
+          },
+          "enter": {
+            "physical_lines": 7,
+            "start": 444,
+            "end": 450,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "dwell": {
+            "physical_lines": 9,
+            "start": 452,
+            "end": 460,
+            "max_control_nesting": 1,
+            "control_statement_count": 2
+          },
+          "position_output": {
+            "physical_lines": 7,
+            "start": 462,
+            "end": 468,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "landing": {
+            "physical_lines": 38,
+            "start": 470,
+            "end": 507,
+            "max_control_nesting": 2,
+            "control_statement_count": 7
+          }
+        }
+      },
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 158,
+            "start": 275,
+            "end": 432,
+            "max_control_nesting": 8,
+            "control_statement_count": 35
+          },
+          "after": {
+            "physical_lines": 118,
+            "start": 275,
+            "end": 392,
+            "max_control_nesting": 8,
+            "control_statement_count": 29
+          }
+        }
+      },
+      "new_helpers": [
+        "motion_output"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_controller.hpp",
+      "scope": "fc01::attitude::VerticalController",
+      "before": {
+        "sha256": "3d1cd34925a754078ce3b4ba49f45d8852b03b4571181cd401e95969ad9be576",
+        "methods": {
+          "VerticalController": {
+            "physical_lines": 3,
+            "start": 59,
+            "end": 61,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reset": {
+            "physical_lines": 6,
+            "start": 63,
+            "end": 68,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "integral": {
+            "physical_lines": 3,
+            "start": 70,
+            "end": 72,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "freeze_integral": {
+            "physical_lines": 3,
+            "start": 74,
+            "end": 76,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "retain_lift_reserve": {
+            "physical_lines": 3,
+            "start": 82,
+            "end": 84,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ramp": {
+            "physical_lines": 12,
+            "start": 87,
+            "end": 98,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "step": {
+            "physical_lines": 83,
+            "start": 101,
+            "end": 183,
+            "max_control_nesting": 2,
+            "control_statement_count": 9
+          },
+          "bad": {
+            "physical_lines": 5,
+            "start": 187,
+            "end": 191,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "limit": {
+            "physical_lines": 4,
+            "start": 193,
+            "end": 196,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "after": {
+        "sha256": "69b86aabeb6715775e89aefe1bba4eeea3b4f00a17accf4bc27553edcb3b5b9a",
+        "methods": {
+          "VerticalController": {
+            "physical_lines": 3,
+            "start": 59,
+            "end": 61,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reset": {
+            "physical_lines": 6,
+            "start": 63,
+            "end": 68,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "integral": {
+            "physical_lines": 3,
+            "start": 70,
+            "end": 72,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "freeze_integral": {
+            "physical_lines": 3,
+            "start": 74,
+            "end": 76,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "retain_lift_reserve": {
+            "physical_lines": 3,
+            "start": 82,
+            "end": 84,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "ramp": {
+            "physical_lines": 12,
+            "start": 87,
+            "end": 98,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "step": {
+            "physical_lines": 71,
+            "start": 101,
+            "end": 171,
+            "max_control_nesting": 1,
+            "control_statement_count": 5
+          },
+          "accept_integral": {
+            "physical_lines": 8,
+            "start": 177,
+            "end": 184,
+            "max_control_nesting": 2,
+            "control_statement_count": 2
+          },
+          "input_error": {
+            "physical_lines": 13,
+            "start": 188,
+            "end": 200,
+            "max_control_nesting": 1,
+            "control_statement_count": 3
+          },
+          "bad": {
+            "physical_lines": 5,
+            "start": 202,
+            "end": 206,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "limit": {
+            "physical_lines": 4,
+            "start": 208,
+            "end": 211,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 83,
+            "start": 101,
+            "end": 183,
+            "max_control_nesting": 2,
+            "control_statement_count": 9
+          },
+          "after": {
+            "physical_lines": 71,
+            "start": 101,
+            "end": 171,
+            "max_control_nesting": 1,
+            "control_statement_count": 5
+          }
+        }
+      },
+      "new_helpers": [
+        "accept_integral",
+        "input_error"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp",
+      "scope": "fc01::attitude::VerticalFeedbackGuard",
+      "before": {
+        "sha256": "e739fb87381a4c58440a1c72ab1b2eb94e0933b723e3f4f0c3f3bbbe6b1cfaa3",
+        "methods": {
+          "VerticalFeedbackGuard": {
+            "physical_lines": 3,
+            "start": 47,
+            "end": 49,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reset": {
+            "physical_lines": 3,
+            "start": 51,
+            "end": 53,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "evidence": {
+            "physical_lines": 3,
+            "start": 55,
+            "end": 57,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe": {
+            "physical_lines": 81,
+            "start": 59,
+            "end": 139,
+            "max_control_nesting": 3,
+            "control_statement_count": 11
+          },
+          "fail": {
+            "physical_lines": 6,
+            "start": 143,
+            "end": 148,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "operator=": {
+            "physical_lines": 1,
+            "start": 44,
+            "end": 44,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "after": {
+        "sha256": "caf94bf879a3115e5214c841fa2fb2749d0ae206f067a4981c3f1e656bbde15e",
+        "methods": {
+          "VerticalFeedbackGuard": {
+            "physical_lines": 3,
+            "start": 47,
+            "end": 49,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "reset": {
+            "physical_lines": 3,
+            "start": 51,
+            "end": 53,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "evidence": {
+            "physical_lines": 3,
+            "start": 55,
+            "end": 57,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "observe": {
+            "physical_lines": 40,
+            "start": 59,
+            "end": 98,
+            "max_control_nesting": 1,
+            "control_statement_count": 7
+          },
+          "observe_position_window": {
+            "physical_lines": 28,
+            "start": 104,
+            "end": 131,
+            "max_control_nesting": 3,
+            "control_statement_count": 3
+          },
+          "observe_rate_disagreement": {
+            "physical_lines": 21,
+            "start": 134,
+            "end": 154,
+            "max_control_nesting": 2,
+            "control_statement_count": 2
+          },
+          "fail": {
+            "physical_lines": 6,
+            "start": 156,
+            "end": 161,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "operator=": {
+            "physical_lines": 1,
+            "start": 44,
+            "end": 44,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "targets": {
+        "observe": {
+          "before": {
+            "physical_lines": 81,
+            "start": 59,
+            "end": 139,
+            "max_control_nesting": 3,
+            "control_statement_count": 11
+          },
+          "after": {
+            "physical_lines": 40,
+            "start": 59,
+            "end": 98,
+            "max_control_nesting": 1,
+            "control_statement_count": 7
+          }
+        }
+      },
+      "new_helpers": [
+        "observe_position_window",
+        "observe_rate_disagreement"
+      ]
+    },
+    {
+      "path": "native/src/jikl_fc01_system/include/jikl_fc01_system/vision_navigation.hpp",
+      "scope": "fc01::vision::Controller",
+      "before": {
+        "sha256": "2fffdae319ac177cf420194381ee5829a5926bf5d4a28344998b1fa4a3b4959f",
+        "methods": {
+          "Controller": {
+            "physical_lines": 3,
+            "start": 215,
+            "end": 217,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "step": {
+            "physical_lines": 162,
+            "start": 219,
+            "end": 380,
+            "max_control_nesting": 2,
+            "control_statement_count": 32
+          },
+          "current": {
+            "physical_lines": 11,
+            "start": 382,
+            "end": 392,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "last": {
+            "physical_lines": 3,
+            "start": 393,
+            "end": 395,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "stop": {
+            "physical_lines": 5,
+            "start": 397,
+            "end": 401,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "validate_state": {
+            "physical_lines": 32,
+            "start": 405,
+            "end": 436,
+            "max_control_nesting": 1,
+            "control_statement_count": 10
+          },
+          "validate_command": {
+            "physical_lines": 29,
+            "start": 438,
+            "end": 466,
+            "max_control_nesting": 3,
+            "control_statement_count": 12
+          },
+          "reject": {
+            "physical_lines": 7,
+            "start": 468,
+            "end": 474,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "land": {
+            "physical_lines": 8,
+            "start": 476,
+            "end": 483,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "after": {
+        "sha256": "43cac74fbbb9b9c69d4b24f88b112cd8fe5799751b8b0889f98404e5a6b731cb",
+        "methods": {
+          "Controller": {
+            "physical_lines": 3,
+            "start": 215,
+            "end": 217,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "step": {
+            "physical_lines": 136,
+            "start": 219,
+            "end": 354,
+            "max_control_nesting": 2,
+            "control_statement_count": 26
+          },
+          "current": {
+            "physical_lines": 11,
+            "start": 356,
+            "end": 366,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "last": {
+            "physical_lines": 3,
+            "start": 367,
+            "end": 369,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "stop": {
+            "physical_lines": 5,
+            "start": 371,
+            "end": 375,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          },
+          "accepted_input_error": {
+            "physical_lines": 31,
+            "start": 381,
+            "end": 411,
+            "max_control_nesting": 1,
+            "control_statement_count": 7
+          },
+          "validate_state": {
+            "physical_lines": 32,
+            "start": 413,
+            "end": 444,
+            "max_control_nesting": 1,
+            "control_statement_count": 10
+          },
+          "validate_command": {
+            "physical_lines": 29,
+            "start": 446,
+            "end": 474,
+            "max_control_nesting": 3,
+            "control_statement_count": 12
+          },
+          "reject": {
+            "physical_lines": 7,
+            "start": 476,
+            "end": 482,
+            "max_control_nesting": 1,
+            "control_statement_count": 1
+          },
+          "land": {
+            "physical_lines": 8,
+            "start": 484,
+            "end": 491,
+            "max_control_nesting": 0,
+            "control_statement_count": 0
+          }
+        }
+      },
+      "targets": {
+        "step": {
+          "before": {
+            "physical_lines": 162,
+            "start": 219,
+            "end": 380,
+            "max_control_nesting": 2,
+            "control_statement_count": 32
+          },
+          "after": {
+            "physical_lines": 136,
+            "start": 219,
+            "end": 354,
+            "max_control_nesting": 2,
+            "control_statement_count": 26
+          }
+        }
+      },
+      "new_helpers": [
+        "accepted_input_error"
+      ]
+    }
+  ]
+}

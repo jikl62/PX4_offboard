@@ -1,0 +1,49 @@
+{
+  "baseline": "1e824f883fe6255f8d265b1cece339a83594b059",
+  "source_commit": "212f477c67a036f302a604099a492f8be80c7f17",
+  "files": [
+    {
+      "path": "native/tests/test_overnight_stage6_ipc.cpp",
+      "reason": "New122assertion host contract: local owned socket framing/order/error/reconnect, timestamp/NaN/overflow/TTL. Budget defect remains separate candidate, not accepted behavior.",
+      "bytes": 7144,
+      "sha256": "d63ececb0fab67cd19e808759d00409cb20242577a3d1c618f3243901e69c2e6",
+      "baseline_sha256": null
+    },
+    {
+      "path": "navigation_collect.py",
+      "reason": "P2 ordinary passive tool: partial init and destroy failure cleanup, owned default Context, primary exception preserved.",
+      "bytes": 26578,
+      "sha256": "489879af68ba34ed20a29cf16f419dbfc9245c13666977c79f1bb85400a3aa55",
+      "baseline_sha256": "490e6ac77a420b9c03302829bb30b2a3f6bcd00b9278b90330d221366225360e"
+    },
+    {
+      "path": "navigation_deploy.py",
+      "reason": "P2 ordinary file ownership: close after failed constructor BEGIN or finish write, preserve original write/cause and cleanup failure. No command/service coordination edits.",
+      "bytes": 17433,
+      "sha256": "fdc11f8bae767a17ec8c3f17e53a9839714df472aa760b2b5303da82bad23a95",
+      "baseline_sha256": "b8fb776755ea946ed43d7a53abbfe8357979e775ccf67699183a67422f32791b"
+    },
+    {
+      "path": "tests/test_overnight_stage4_deployment.py",
+      "reason": "Historical AST guard explicitly accounts for independently committed6c4cc7d fix; whole deploy bound to fixed immutable object, coordinator and record/step remain oldAST, install/build assertions retained.",
+      "bytes": 16051,
+      "sha256": "b41cf1a8f4501f983e15ded1b98cf2366aa4a08518b9ae79f046de698149401e",
+      "baseline_sha256": "a92ac493a5c996ae4a8681251789a1b2454015e9f55905f4a0166d53d9f8f338"
+    },
+    {
+      "path": "tests/test_overnight_stage6_deployment_logs.py",
+      "reason": "8 deterministic file failure methods plus10 temporary real-file cycles; no deployment commands.",
+      "bytes": 6825,
+      "sha256": "82f868906644879c3a56af56fbd0ecaf20f184eb47ec1f51ec8cffa568e30e0b",
+      "baseline_sha256": null
+    },
+    {
+      "path": "tests/test_overnight_stage6_lifecycle.py",
+      "reason": "15 deterministic resource lifecycle methods, preserving real function execution and first exception ownership; simulated context/node and repeated cycles.",
+      "bytes": 12085,
+      "sha256": "8b6fd92f4c0cb2025dd728db328a73fa85fec1fda2d1342b2399cec59016a4b6",
+      "baseline_sha256": null
+    }
+  ],
+  "file_count": 6
+}

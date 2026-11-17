@@ -1,4 +1,4 @@
-Current delivery: [20261110 recovery diagnostic release](docs/FC01_RECOVERY_DIAGNOSTIC_V4_20261110.md), version `20261110.6`. `HOST_VERIFICATION.json` records the host checks for this package; target ARM64 evidence is generated only after native compilation on the Orange Pi. The record below describes the original release and its environment at that time.
+Current delivery: [20261110 recovery diagnostic V5 release](docs/FC01_RECOVERY_DIAGNOSTIC_V5_20261110.md), version `20261110.7`. V5 includes the landing output, vertical-only receive, ground proof continuity and sample expiry display fixes; the previous V4 package remains available as a historical artifact. `HOST_VERIFICATION.json` records the host checks for this package; target ARM64 evidence is generated only after native compilation on the Orange Pi. The record below describes the original release and its environment at that time.
 
 # RC navigation verification record
 

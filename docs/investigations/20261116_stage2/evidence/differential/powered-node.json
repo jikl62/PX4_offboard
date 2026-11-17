@@ -1,0 +1,54 @@
+{
+  "baseline": "3677b9dd1f35e092e43501d26164c6263545c947",
+  "comparison": "exact-existing-json-members-and-wire-bytes",
+  "driver_sha256": "fd0d83488b03c66f5734b72b9f1f9c9c1ecd5ab4dad4e474c9fe547fd901415d",
+  "state_samples": 707,
+  "phase_counts": {
+    "IDLE": 41,
+    "RC_PRESTREAM": 80,
+    "RC_READY_WAIT_ARM": 11,
+    "RC_ARMED_WAIT_NAVIGATION": 3,
+    "ARMED_GROUND": 21,
+    "THRUST_RAMP": 117,
+    "ASCEND": 131,
+    "HEIGHT_HOLD": 6,
+    "DESCENT": 155,
+    "LANDED": 61,
+    "REQUEST_DISARM": 3,
+    "SAFE_DISARMED": 1,
+    "SAFETY": 77
+  },
+  "sink_order_counts": {
+    "TARGET,HEARTBEAT": 587,
+    "TARGET,HEARTBEAT,COMMAND": 1
+  },
+  "trace_sha256": "af4daf43582ad0303f13dca22004cacbcff737caac547c3a7d2c9bd26cc5168a",
+  "normalization": {
+    "diagnostic_controller_pid": 4242
+  },
+  "float_sink_encoding": "hexfloat exact for all target/command floating fields",
+  "scope": "Synthetic 20Hz source feedback and fake ROS; production node/control/publish code.",
+  "hardware_or_flight_validation": false,
+  "allowed_additive_keys": [
+    "range_available",
+    "range_compared",
+    "range_distance_m",
+    "range_fused_rise_m",
+    "range_interval_s",
+    "range_policy",
+    "range_rise_m",
+    "range_same_direction",
+    "range_sample_stamp",
+    "range_variance_m2",
+    "rc_queued_safety_land_stamp",
+    "rc_queued_safety_local_stamp",
+    "rc_queued_safety_mask",
+    "rc_queued_safety_observed_at",
+    "rc_queued_safety_recorded",
+    "rc_queued_safety_source",
+    "rc_queued_safety_status_stamp",
+    "rc_queued_safety_switch_stamp"
+  ],
+  "comparison_evidence": "powered-node-comparison.json",
+  "raw_json_byte_identity_claimed": false
+}

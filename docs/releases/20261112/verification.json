@@ -1,0 +1,63 @@
+{
+  "created_utc": "2026-11-12T03:07:09.128160+00:00",
+  "baseline_commit": "87fa7c15092d4d3638e32c0e4380dab01faf4cb2",
+  "source_commit": "32990e599a68fde377daadbb89710b77fda1fb82",
+  "source_working_tree_dirty": false,
+  "archive_commit": "The local Git commit containing this report and final artifacts; see git log -1 -- docs/releases/20261112/DELIVERY_zh.md",
+  "branch": "readability/fc01-chinese-20261111",
+  "release_version": "20261112.1",
+  "package": "/home/jikl62/FC01_OrangePi_Navigation_20261028/dist/FC01_OrangePi_Navigation_20261112_release.sh",
+  "package_bytes": 767820,
+  "package_sha256": "f2726cfe18923c2e8783f19f81a536658dd9a99e28f9398b6ac05c5de5534927",
+  "manifest_sha256": "2b6eeb197e0b5c49696c1d23bf7ce19bc0b62ac928e22696b2834c63e4231c9e",
+  "package_members": 95,
+  "uncompressed_bytes": 1543406,
+  "tests": {
+    "root_unittest_methods": 643,
+    "root_passed": 643,
+    "native_unittest_methods": 41,
+    "native_passed": 41,
+    "packaging_original_error_count": 3,
+    "packaging_original_errors_resolved": true,
+    "targeted_86_methods_are_subset_of_root_suite": true
+  },
+  "actual_package_ros_acceptance": {
+    "fresh_build_passed": true,
+    "message_types": 5,
+    "vision_checks": 7,
+    "velocity_checks": 11,
+    "collector_normal_cycles": 3,
+    "graph_checks": 6,
+    "imports": 25,
+    "architecture": "x86_64"
+  },
+  "expected_host_refusal": "Actual ARM64 shell entry rejects x86 host; this does not constitute ARM64 validation",
+  "native_control_and_config_files_unchanged_from_baseline": 59,
+  "service_behavior_change": "ENTRY_VERSION metadata only: 20261110.7 to 20261112.1",
+  "flight_profile": {
+    "manual_rc_arm": true,
+    "program_arm_enabled": false,
+    "target_height_m": 1.5,
+    "visual_navigation_enabled": false,
+    "aa_hover_thrust": 0.5,
+    "aa_takeoff_reserve_thrust": 0.04,
+    "aa_thrust_min": 0.12,
+    "aa_thrust_max": 0.8,
+    "aa_thrust_slew": 0.4
+  },
+  "arm64_tested": false,
+  "physical_device_accessed": false,
+  "controller_executed": false,
+  "agent_or_systemd_started": false,
+  "deployed": false,
+  "github_pushed": false,
+  "main_modified": false,
+  "unverified": [
+    "Orange Pi native ARM64 build and runtime load",
+    "Target SDK px4_msgs compatibility with actual PX4 firmware",
+    "UART/DDS live timing and feedback",
+    "Real camera/SLAM data and performance",
+    "Flight performance"
+  ],
+  "raw_logs_preserved": true
+}

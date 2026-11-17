@@ -1,0 +1,23 @@
+Nov 16 13:44:28 fc01-arm64-test-vm systemd[1]: Stopping FC01 manual RC navigation controller...
+Nov 16 13:44:28 fc01-arm64-test-vm fc01-navigation[808]: STOPPING: 等待原生退出
+Nov 16 13:44:28 fc01-arm64-test-vm fc01-navigation[808]: STOPPING: 原生控制器退出，code=0
+Nov 16 13:44:28 fc01-arm64-test-vm fc01-navigation[808]: 保留本次 IPC 目录：[Errno 39] Directory not empty: '/home/orangepi/.cache/fc01_operator/ipc/s_ugofgaro'
+Nov 16 13:44:28 fc01-arm64-test-vm fc01-navigation[808]: STOPPED: 后台待命已停止
+Nov 16 13:44:28 fc01-arm64-test-vm systemd[1]: fc01-navigation.service: Deactivated successfully.
+Nov 16 13:44:29 fc01-arm64-test-vm systemd[1]: Stopped FC01 manual RC navigation controller.
+Nov 16 13:44:29 fc01-arm64-test-vm systemd[1]: fc01-navigation.service: Consumed 5min 14.572s CPU time.
+Nov 16 13:44:33 fc01-arm64-test-vm systemd[1]: Started FC01 manual RC navigation controller.
+Nov 16 13:45:04 fc01-arm64-test-vm systemd[1]: Stopping FC01 manual RC navigation controller...
+Nov 16 13:45:04 fc01-arm64-test-vm systemd[1]: fc01-navigation.service: Deactivated successfully.
+Nov 16 13:45:04 fc01-arm64-test-vm systemd[1]: Stopped FC01 manual RC navigation controller.
+Nov 16 13:45:04 fc01-arm64-test-vm systemd[1]: fc01-navigation.service: Consumed 27.274s CPU time.
+Nov 16 13:45:09 fc01-arm64-test-vm systemd[1]: Started FC01 manual RC navigation controller.
+    "exe": "/home/orangepi/fc01_agent_build_offline/MicroXRCEAgent",
+    "cwd": "/",
+    "sha256": "dfaebdde06bc6dcaaa96b49ce5e8579c6c535f55953b75f5173def1ad42adde5"
+  },
+  "agent_owned": false,
+  "boot_id": "662ede28-4b6e-4914-84f9-6c0e8f9ab7bc",
+  "phase": "failed_restored",
+  "error": "InstallError('新版启动验收失败：安装/回退需当前受管服务 active 且恰好一个控制器')"
+}

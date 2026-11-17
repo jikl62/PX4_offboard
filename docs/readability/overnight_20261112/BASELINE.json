@@ -1,0 +1,249 @@
+{
+  "branch": "readability/fc01-chinese-20261111",
+  "head": "5b86eeb4094ada009903c0140f66289cfe89411e",
+  "initial_status_porcelain": "",
+  "initial_clean": true,
+  "repository": "/home/jikl62/FC01_OrangePi_Navigation_20261028",
+  "origin": "https://github.com/jikl62/PX4_offboard.git",
+  "ahead_behind_cached_origin": "0\t14",
+  "remote_queried_live": false,
+  "host": {
+    "machine": "x86_64",
+    "python": "3.10.12"
+  },
+  "recent_commits": [
+    "5b86eeb4094ada009903c0140f66289cfe89411e docs(stage3): archive reliability repairs, exact control evidence and host validation",
+    "e8a856ad94d4d579cd4a0e20e9497259eb5a8ad1 test(logging): link resource injection consistently in the native runner",
+    "0e1937ae47e1fcbbad7a8b8029a937041e794812 fix(vision): bound UTF-8 identities before caching and retain revocation watermarks",
+    "522923c3c13dcde0ac1f1be9a930283e8ccdcbd0 test(control): verify ordered hazards, publication failures and stage3 baseline traces",
+    "2af4ede0773a2573277de9eb12ddcdb8062739f2 fix(logging): roll back startup failures and retain bounded logs under allocation errors",
+    "769ad51602f9a6107cee3d66214f49e3528d9c2c fix(probe): distinguish handled caller exceptions from current failures",
+    "9e9d7396d8341e28b62a7b05d71c437ccecbc0b6 fix(vision): own partially configured nodes and preserve lifecycle failure chains",
+    "3fbb3f7986a0af7fdc594e6f20e7261fdaef7ae9 fix(probe): release owned ROS resources while preserving primary failures",
+    "f06715a70c6c070ecce25551ecb5de535e51b7a3 docs(stage2): deliver refactor coverage, exact replay evidence and host verification",
+    "fc13565f4d59ed30f94d73e1db70a4eb3e251cfe refactor(runtime): separate transaction and snapshot responsibilities with exact traces",
+    "e4fc5e753dc1a7d10a849fc84b4c0b6f2d17639f refactor(control): extract ordered control phases without changing numerical behavior",
+    "a73e98e815b6b16c9f1f384a4dd1cbb4672726bc refactor(vision): separate ROS configuration callbacks and executor lifecycle"
+  ],
+  "remote_main_queried_or_modified": false,
+  "configured_navigation_profile": {
+    "rc_target_height": 1.5,
+    "rc_navigation_mode_slot": 1,
+    "aa_hover_thrust": 0.5,
+    "aa_takeoff_reserve_thrust": 0.04,
+    "aa_thrust_max": 0.8,
+    "arm_enabled": false,
+    "flight_enabled": false,
+    "flight_actions_enabled": true,
+    "takeoff_enabled": true,
+    "visual_navigation_enabled": false,
+    "aa_max_tilt_deg": 10.0,
+    "aa_max_flight_seconds": 30.0
+  },
+  "navigation_settings": {
+    "target_height_m": 1.5,
+    "navigation_mode_slot": 1
+  },
+  "vision_settings": {
+    "enabled": false,
+    "state_topic": "/fc01/vision/state",
+    "command_topic": "/fc01/navigation/command",
+    "state_reliable": false,
+    "command_reliable": true,
+    "qos_depth": 5,
+    "parameters": {}
+  },
+  "profile_scope": "Pure profile derivation from current checked-in settings; no validate/preflight/Agent/device read or service execution; not proof of actual deployed parameters or FC mode mapping.",
+  "configs": {
+    "native/config/R6_OFFLINE_DEV.yaml": {
+      "sha256": "1d223c9a0884df619595605c62d276b8db07fa037ec41dc11753f65f719f6898",
+      "explicit_keys_only": {
+        "aa_hover_thrust": -1.0,
+        "aa_thrust_max": -1.0,
+        "arm_enabled": false,
+        "flight_enabled": false,
+        "flight_actions_enabled": false,
+        "takeoff_enabled": false,
+        "aa_max_tilt_deg": 10.0,
+        "aa_max_flight_seconds": 30.0,
+        "profile": "attitude_altitude"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    },
+    "native/config/R6_REAL_FC01_PENDING_REVIEW.yaml": {
+      "sha256": "f098f9d530111aabd396067af9c64fb6056a9ae701dab4f46802e3a4353a75f9",
+      "explicit_keys_only": {
+        "aa_hover_thrust": -1.0,
+        "aa_thrust_max": -1.0,
+        "arm_enabled": false,
+        "flight_enabled": false,
+        "flight_actions_enabled": false,
+        "takeoff_enabled": false,
+        "aa_max_tilt_deg": 10.0,
+        "aa_max_flight_seconds": 30.0,
+        "profile": "attitude_altitude"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    },
+    "native/config/S10_1HZ_EXPERIMENTAL_SIM_ONLY.yaml": {
+      "sha256": "c98e291e8684e9544847d9e68b85bb1af715f8ed0f1b2998c34e1a679ef10fbc",
+      "explicit_keys_only": {
+        "aa_hover_thrust": 0.5,
+        "aa_thrust_max": 0.75,
+        "arm_enabled": true,
+        "flight_enabled": false,
+        "flight_actions_enabled": true,
+        "takeoff_enabled": true,
+        "aa_max_tilt_deg": 10.0,
+        "aa_max_flight_seconds": 30.0,
+        "profile": "attitude_altitude"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    },
+    "native/config/attitude_altitude.yaml": {
+      "sha256": "01fec7e4388f948c77847ef9ccfc116c3b83f3a2add3a4a1f08de3d1606ce692",
+      "explicit_keys_only": {
+        "rc_target_height": 1.5,
+        "aa_hover_thrust": 0.5,
+        "aa_takeoff_reserve_thrust": 0.04,
+        "aa_thrust_max": 0.8,
+        "arm_enabled": false,
+        "flight_enabled": false,
+        "flight_actions_enabled": false,
+        "takeoff_enabled": false,
+        "aa_max_tilt_deg": 10.0,
+        "aa_max_flight_seconds": 30.0,
+        "profile": "attitude_altitude"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    },
+    "native/config/diagnostic.yaml": {
+      "sha256": "ee965f34b33c9be7d46900ba2dfc32a8c8181e68efecb893b86179e96a28023d",
+      "explicit_keys_only": {
+        "rc_target_height": 1.5,
+        "rc_navigation_mode_slot": 1,
+        "aa_hover_thrust": 0.5,
+        "aa_takeoff_reserve_thrust": 0.04,
+        "aa_thrust_max": 0.8,
+        "arm_enabled": false,
+        "flight_enabled": false,
+        "flight_actions_enabled": false,
+        "takeoff_enabled": false,
+        "visual_navigation_enabled": false,
+        "aa_max_tilt_deg": 10.0,
+        "aa_max_flight_seconds": 30.0,
+        "profile": "attitude_altitude"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    },
+    "native/config/flight.yaml": {
+      "sha256": "7bb138448112e272e05a8e50c08a1eb260f892167614ef91a29c1e902e892188",
+      "explicit_keys_only": {
+        "flight_enabled": false,
+        "profile": "flight"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    },
+    "native/config/flight_test.yaml": {
+      "sha256": "1ddce8549bcd9f9b6eaacf532ad9f00d04b70706a54245f51eddbce6cdc5ff2b",
+      "explicit_keys_only": {
+        "rc_target_height": 1.5,
+        "rc_navigation_mode_slot": 1,
+        "aa_hover_thrust": 0.5,
+        "aa_takeoff_reserve_thrust": 0.04,
+        "aa_thrust_max": 0.8,
+        "arm_enabled": false,
+        "flight_enabled": false,
+        "flight_actions_enabled": false,
+        "takeoff_enabled": false,
+        "visual_navigation_enabled": false,
+        "aa_max_tilt_deg": 10.0,
+        "aa_max_flight_seconds": 30.0,
+        "profile": "attitude_altitude"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    },
+    "native/config/ground.yaml": {
+      "sha256": "8947013b855967b91d1a4d6493b6c280054aa88deab264a67f4de3dfeea4387a",
+      "explicit_keys_only": {
+        "flight_enabled": false,
+        "profile": "ground"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    },
+    "native/config/historical/R5_CANDIDATES_GATES_CLOSED.yaml": {
+      "sha256": "57f336de2cf7caacc217faf5192f438b7a7e303f361fbd163dd04f3ae652495b",
+      "explicit_keys_only": {
+        "aa_hover_thrust": 0.5,
+        "aa_thrust_max": 0.75,
+        "arm_enabled": false,
+        "flight_enabled": false,
+        "flight_actions_enabled": false,
+        "takeoff_enabled": false,
+        "aa_max_tilt_deg": 10.0,
+        "aa_max_flight_seconds": 30.0,
+        "profile": "attitude_altitude"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    },
+    "native/config/sim.yaml": {
+      "sha256": "49df2f1ab02f3785e5ec6d76a2762443b84b005c944af27ddaa0c9f22e667474",
+      "explicit_keys_only": {
+        "flight_enabled": true,
+        "profile": "sim"
+      },
+      "scope": "YAML explicitly written values; missing keys may come from code/runtime profile, not inferred defaults."
+    }
+  },
+  "last_full_regression": {
+    "source": "docs/reliability/stage3_20261112/verification.json",
+    "source_sha256": "1f779b89a8ebf25f76f08bc15ec95e8cbc0529ce1a7bea4bf226f0bb9dbb1486",
+    "reported_source_head": "e8a856ad94d4d579cd4a0e20e9497259eb5a8ad1",
+    "cpp_ctest": 80,
+    "python_root": 534,
+    "python_native": 41,
+    "python_total_test_method_executions": 575,
+    "asan_ubsan_unique_programs": 9,
+    "ros_build_and_isolated_smokes": true,
+    "tsan": "not passed: unexpected memory mapping; compile0/run66",
+    "arm64": "not performed",
+    "reexecuted_this_stage": false,
+    "source_identity_rechecked_this_stage": true
+  },
+  "baseline_bundle": {
+    "files_with_manifest": 437,
+    "bytes_with_manifest": 8250853,
+    "limit_total_bytes": 8388608,
+    "remaining_bytes": 137755,
+    "all_existing_hashes_match_before_new_docs": true,
+    "manifest_refreshed_this_stage": false,
+    "note": "This audit adds documents under a recursively packaged docs root. Existing release manifest is preserved as Stage3 historical identity; later packaging must refresh/curate current docs and reverify limits."
+  },
+  "initial_refs": [
+    "9fa9f7663c6400da52453307eeaed458473fa5e3 refs/codex/turn-diffs/checkpoints/005b453b80a9a6b84d658cce808cd4bb/8639dc8b6a4c11a43f47910110005892/1793514248509/d45bd3ca-6ffd-4cba-865d-e3218a516396",
+    "9fa9f7663c6400da52453307eeaed458473fa5e3 refs/codex/turn-diffs/checkpoints/25025580001c7f2ad9350f86023548a1/cfb932d128f8b31d2cf104abd4e4866a/1793522282477/b2980026-1b70-45b5-80cb-ffa7fcd0130e",
+    "053eb2c3be90240e6ed5521714efdcc0113c2b33 refs/heads/audit/fc01-engineering-20261111",
+    "950ac04df5305fe94e901ea8239d6fd153247444 refs/heads/dev/feedback-drain-20261107",
+    "97eb691b9b4809451b3d8ce70ecdc9e462c712b7 refs/heads/dev/offline-control-stability-20261107",
+    "fcc35162536da75a00e0ae995e8ef50cf2244d96 refs/heads/dev/uart-topology-20261105",
+    "28bdf958abddc29200319b5877d617f856b96c14 refs/heads/feature/vision-navigation",
+    "6c5b185526b7ac194138d05ec9698fccadf288c0 refs/heads/fix/takeoff-readiness-20261103",
+    "6b440ab71af66536ddbcd17e90bd16e693a1667c refs/heads/navigation-repair-20261031",
+    "5b86eeb4094ada009903c0140f66289cfe89411e refs/heads/readability/fc01-chinese-20261111",
+    "89bbc9f0988e0b1d42111ab418800147069df2aa refs/heads/release/fc01-recovery-v5-20261110",
+    "950ac04df5305fe94e901ea8239d6fd153247444 refs/remotes/origin/dev/feedback-drain-20261107",
+    "28bdf958abddc29200319b5877d617f856b96c14 refs/remotes/origin/feature/vision-navigation",
+    "377a945d9cd1147baad8871cd5387b9e63cd774d refs/remotes/origin/main",
+    "cdd6223470e919190fbfc466f943404fcee81294 refs/remotes/origin/r62c-review3-bench-20261016",
+    "5198d33f25aaaf2abc7e4b078169ae84d5c4b2c4 refs/remotes/origin/readability/fc01-chinese-20261111",
+    "950ac04df5305fe94e901ea8239d6fd153247444 refs/remotes/origin/release/fc01-recovery-v5-20261110"
+  ],
+  "baseline_scope": {
+    "clear": 123,
+    "needs_guide": 127,
+    "historical": 26,
+    "needs_structure": 47
+  },
+  "reviewed_source_entries": 323,
+  "classification_does_not_count_as_completion": "needs_guide/needs_structure为后续工作，不写成全部可读性重构完成。"
+}

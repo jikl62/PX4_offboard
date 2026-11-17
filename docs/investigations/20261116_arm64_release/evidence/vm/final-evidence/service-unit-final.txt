@@ -1,0 +1,30 @@
+# /etc/systemd/system/fc01-navigation.service
+# FC01_RC_NAVIGATION_MANUAL_ARM_20261028_V1
+[Unit]
+Description=FC01 manual RC navigation controller
+After=local-fs.target
+StartLimitIntervalSec=120s
+StartLimitBurst=5
+[Service]
+Type=simple
+User=orangepi
+WorkingDirectory=/home/orangepi/fc01-old
+Environment="HOME=/home/orangepi"
+Environment="FC01_PROJECT_ROOT=/home/orangepi/sdk"
+Environment=ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0 PYTHONUNBUFFERED=1
+ExecStart=/bin/bash "/home/orangepi/fc01-old/navigation_boot.sh" run --mode flight-test --confirm-flight-test
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fc01-navigation
+UMask=0077
+NoNewPrivileges=true
+Restart=on-failure
+RestartSec=30s
+KillMode=process
+KillSignal=SIGTERM
+SendSIGKILL=no
+TimeoutStopSec=infinity
+[Install]
+WantedBy=multi-user.target
+

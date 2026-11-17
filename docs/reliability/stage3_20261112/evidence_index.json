@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "baseline": "f06715a70c6c070ecce25551ecb5de535e51b7a3",
+  "scope": "Host-only finite verification; no ARM64/flight acceptance. Both ZIPs contain exact evidence bytes, CRC checked.",
+  "curated": {
+    "path": "docs/reliability/stage3_20261112/evidence_curated.zip",
+    "sha256": "a5cc703efc4f896c401afa2ed546e3008e3cd4e07011e91f1f5ca8ea025cb4a6",
+    "bytes": 117507,
+    "members_including_index": 128,
+    "member_index": "CURATED_INDEX.json",
+    "notes": "Original module failures, summaries, commands and selected logs. VALIDATION_LOG_EXCERPTS.json is explicitly derived; full large traces/root logs remain outside repository."
+  },
+  "full_cache_only": {
+    "path": "/home/jikl62/.cache/fc01-stage3-20261112/run-jv6ltzrw/stage3_evidence_full.zip",
+    "sha256": "7764665cb143b594356fe5650baec443eea0c19d9d5d66e37fb7fd0e2bbd341c",
+    "bytes": 2448260,
+    "members_including_index": 246,
+    "member_index": "FULL_INDEX.json",
+    "notes": "245 original text evidence files, including full control traces and failed/accepted logs. Excludes baseline, build/install/ELF/.git; do not delete cache until this archive is backed up."
+  },
+  "module_reports": {
+    "probe": "stage3_probe/module_report.json",
+    "vision_lifecycle": "stage3_vision_lifecycle/module_report.json",
+    "vision_resource_budget": "stage3_vision_budget/module_report.json",
+    "async_log": "stage3_async_log/module_report.json",
+    "sanitizers": "stage3_sanitizers/summary.json",
+    "tsan_failed": "stage3_sanitizers/tsan_summary.json"
+  },
+  "key_records": [
+    "python-root-accepted.log",
+    "python-root-final.log",
+    "python-native-final.log",
+    "ctest-final.log",
+    "packaging-final.log",
+    "format.json",
+    "control_diff/*.json",
+    "ros/build.command.sh",
+    "ros/build.log",
+    "ros/vision_smoke.json",
+    "ros/velocity_smoke.json",
+    "ros/install_semantic_verification.json",
+    "ros/host_performance.json",
+    "stage3_probe/final-delivery-review.json",
+    "stage3_vision_budget/final_resource_contract_review.json",
+    "stage3_vision_lifecycle/lifecycle.final.report.json"
+  ],
+  "archive_selection_rule": {
+    "full_member": "evidence_inventory.py",
+    "command": "python3 CACHE/evidence_inventory.py --build --logs-finished",
+    "read_stability_checked": true
+  },
+  "post_archive_checks": {
+    "script_in_full_archive": "verify_final_delivery.py",
+    "log_cache_only": "/home/jikl62/.cache/fc01-stage3-20261112/run-jv6ltzrw/final_integrity_verification.json",
+    "qualification": "Final exact checkout bundle/manifest verification is executed after archive/metadata freeze, so its report is external; it is not claimed to be included in these fixed archives. Source SHA and archive identity are checked by that script."
+  }
+}

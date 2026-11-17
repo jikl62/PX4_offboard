@@ -1,0 +1,5941 @@
+{
+  "source": "/home/jikl62/桌面/log_1_2026-10-20-11-20-32.ulg",
+  "filename_is_not_mode_or_flight_identity": true,
+  "sha256": "a426241fb8985a2dfed617bc9f86f19e3e4c1a44608e12532f1e05f4409efb9c",
+  "size_bytes": 145634,
+  "source_mtime_utc": "2026-10-20T03:24:48.926827+00:00",
+  "ulog_header_start_timestamp_us": 253484982,
+  "ulog_last_timestamp_us": 254476675,
+  "ulog_duration_s": 0.991693,
+  "firmware_and_hardware": {
+    "ver_sw": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+    "ver_sw_release": 17825792,
+    "ver_hw": "DAMIAO_DM_FC01",
+    "sys_name": "PX4",
+    "sys_os_name": "NuttX",
+    "sys_os_ver": "886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849",
+    "sys_os_ver_release": 202113279,
+    "sys_toolchain": "GNU GCC",
+    "sys_toolchain_ver": "10.3.1 20210621 (release)",
+    "sys_mcu": "STM32H7[4|5]xxx, rev. V",
+    "ver_data_format": 2,
+    "sys_uuid": "0006000000003638373135335105003a0036",
+    "time_ref_utc": 0,
+    "metadata_events_sha256": "179c40bc35dfc7008a0d92ce39d94d6cb494b50b44768a16c1d4f0135aa9b513"
+  },
+  "time_domain": "ULog/PX4 boot-relative microseconds; filename date not independently validated; no companion-time alignment",
+  "dropouts": [],
+  "topics": [
+    {
+      "topic": "action_request",
+      "instance": 0,
+      "samples": 2,
+      "first": {
+        "timestamp_us": 253472904,
+        "seconds_since_ulog_header": -0.012078
+      },
+      "last": {
+        "timestamp_us": 253804973,
+        "seconds_since_ulog_header": 0.319991
+      },
+      "timestamp_span_s": 0.332069,
+      "sample_intervals_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.332069,
+        "max": 0.332069,
+        "span": 0.0,
+        "mean": 0.332069,
+        "std": 0.0,
+        "median": 0.332069,
+        "p05": 0.332069,
+        "p95": 0.332069,
+        "first": 0.332069,
+        "last": 0.332069
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 3.0114223248782634
+    },
+    {
+      "topic": "actuator_armed",
+      "instance": 0,
+      "samples": 3,
+      "first": {
+        "timestamp_us": 253478491,
+        "seconds_since_ulog_header": -0.006491
+      },
+      "last": {
+        "timestamp_us": 254322145,
+        "seconds_since_ulog_header": 0.837163
+      },
+      "timestamp_span_s": 0.843654,
+      "sample_intervals_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 0.336581,
+        "max": 0.507073,
+        "span": 0.17049199999999998,
+        "mean": 0.421827,
+        "std": 0.08524599999999999,
+        "median": 0.421827,
+        "p05": 0.3451056,
+        "p95": 0.4985484,
+        "first": 0.336581,
+        "last": 0.507073
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.3706400965324645
+    },
+    {
+      "topic": "actuator_motors",
+      "instance": 0,
+      "samples": 8,
+      "first": {
+        "timestamp_us": 253794228,
+        "seconds_since_ulog_header": 0.309246
+      },
+      "last": {
+        "timestamp_us": 254395098,
+        "seconds_since_ulog_header": 0.910116
+      },
+      "timestamp_span_s": 0.60087,
+      "sample_intervals_s": {
+        "samples": 7,
+        "finite_samples": 7,
+        "nonfinite_samples": 0,
+        "min": 0.000503,
+        "max": 0.101636,
+        "span": 0.101133,
+        "mean": 0.08583857142857143,
+        "std": 0.034863487952941516,
+        "median": 0.100149,
+        "p05": 0.029783900000000002,
+        "p95": 0.1015019,
+        "first": 0.000503,
+        "last": 0.098151
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 11.649774493650872,
+      "publication_minus_sample_s": {
+        "samples": 8,
+        "finite_samples": 8,
+        "nonfinite_samples": 0,
+        "min": 7.6e-05,
+        "max": 0.000117,
+        "span": 4.0999999999999994e-05,
+        "mean": 8.6e-05,
+        "std": 1.2257650672131261e-05,
+        "median": 8.400000000000001e-05,
+        "p05": 7.635e-05,
+        "p95": 0.00010614999999999998,
+        "first": 7.7e-05,
+        "last": 8.6e-05
+      }
+    },
+    {
+      "topic": "actuator_outputs",
+      "instance": 0,
+      "samples": 8,
+      "first": {
+        "timestamp_us": 253794246,
+        "seconds_since_ulog_header": 0.309264
+      },
+      "last": {
+        "timestamp_us": 254395123,
+        "seconds_since_ulog_header": 0.910141
+      },
+      "timestamp_span_s": 0.600877,
+      "sample_intervals_s": {
+        "samples": 7,
+        "finite_samples": 7,
+        "nonfinite_samples": 0,
+        "min": 0.000503,
+        "max": 0.101694,
+        "span": 0.101191,
+        "mean": 0.08583957142857143,
+        "std": 0.03486695013438183,
+        "median": 0.099653,
+        "p05": 0.029784800000000004,
+        "p95": 0.1016736,
+        "first": 0.000503,
+        "last": 0.098156
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 11.649638777986176
+    },
+    {
+      "topic": "battery_status",
+      "instance": 0,
+      "samples": 5,
+      "first": {
+        "timestamp_us": 253793367,
+        "seconds_since_ulog_header": 0.308385
+      },
+      "last": {
+        "timestamp_us": 254393294,
+        "seconds_since_ulog_header": 0.908312
+      },
+      "timestamp_span_s": 0.599927,
+      "sample_intervals_s": {
+        "samples": 4,
+        "finite_samples": 4,
+        "nonfinite_samples": 0,
+        "min": 0.010169,
+        "max": 0.200853,
+        "span": 0.190684,
+        "mean": 0.14998175,
+        "std": 0.08083131307660107,
+        "median": 0.1944525,
+        "p05": 0.0371078,
+        "p95": 0.20059665,
+        "first": 0.010169,
+        "last": 0.199144
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 6.667477876474972
+    },
+    {
+      "topic": "can_interface_status",
+      "instance": 0,
+      "samples": 8,
+      "first": {
+        "timestamp_us": 253710276,
+        "seconds_since_ulog_header": 0.225294
+      },
+      "last": {
+        "timestamp_us": 254424275,
+        "seconds_since_ulog_header": 0.939293
+      },
+      "timestamp_span_s": 0.713999,
+      "sample_intervals_s": {
+        "samples": 7,
+        "finite_samples": 7,
+        "nonfinite_samples": 0,
+        "min": 0.101508,
+        "max": 0.102327,
+        "span": 0.0008190000000000003,
+        "mean": 0.10199985714285716,
+        "std": 0.000273382739851987,
+        "median": 0.102002,
+        "p05": 0.1015755,
+        "p95": 0.1023084,
+        "first": 0.10218,
+        "last": 0.102002
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 9.80393529962927
+    },
+    {
+      "topic": "can_interface_status",
+      "instance": 1,
+      "samples": 8,
+      "first": {
+        "timestamp_us": 253710278,
+        "seconds_since_ulog_header": 0.225296
+      },
+      "last": {
+        "timestamp_us": 254424277,
+        "seconds_since_ulog_header": 0.939295
+      },
+      "timestamp_span_s": 0.713999,
+      "sample_intervals_s": {
+        "samples": 7,
+        "finite_samples": 7,
+        "nonfinite_samples": 0,
+        "min": 0.101508,
+        "max": 0.102325,
+        "span": 0.0008169999999999983,
+        "mean": 0.10199985714285716,
+        "std": 0.0002731281376787011,
+        "median": 0.102002,
+        "p05": 0.1015755,
+        "p95": 0.102307,
+        "first": 0.102181,
+        "last": 0.102002
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 9.80393529962927
+    },
+    {
+      "topic": "config_overrides",
+      "instance": 0,
+      "samples": 6,
+      "first": {
+        "timestamp_us": 251770752,
+        "seconds_since_ulog_header": -1.71423
+      },
+      "last": {
+        "timestamp_us": 254311598,
+        "seconds_since_ulog_header": 0.826616
+      },
+      "timestamp_span_s": 2.540846,
+      "sample_intervals_s": {
+        "samples": 5,
+        "finite_samples": 5,
+        "nonfinite_samples": 0,
+        "min": 0.506496,
+        "max": 0.51229,
+        "span": 0.005794000000000077,
+        "mean": 0.5081692,
+        "std": 0.0021122101599983035,
+        "median": 0.507163,
+        "p05": 0.506589,
+        "p95": 0.5114192000000001,
+        "first": 0.507163,
+        "last": 0.507936
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 1.9678485040022102
+    },
+    {
+      "topic": "control_allocator_status",
+      "instance": 0,
+      "samples": 5,
+      "first": {
+        "timestamp_us": 253792236,
+        "seconds_since_ulog_header": 0.307254
+      },
+      "last": {
+        "timestamp_us": 254395101,
+        "seconds_since_ulog_header": 0.910119
+      },
+      "timestamp_span_s": 0.602865,
+      "sample_intervals_s": {
+        "samples": 4,
+        "finite_samples": 4,
+        "nonfinite_samples": 0,
+        "min": 0.0055,
+        "max": 0.203747,
+        "span": 0.198247,
+        "mean": 0.15071625,
+        "std": 0.08389544790206141,
+        "median": 0.196809,
+        "p05": 0.03396685000000001,
+        "p95": 0.2029358,
+        "first": 0.0055,
+        "last": 0.203747
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 6.634984615129424
+    },
+    {
+      "topic": "cpuload",
+      "instance": 0,
+      "samples": 2,
+      "first": {
+        "timestamp_us": 253630679,
+        "seconds_since_ulog_header": 0.145697
+      },
+      "last": {
+        "timestamp_us": 254185477,
+        "seconds_since_ulog_header": 0.700495
+      },
+      "timestamp_span_s": 0.554798,
+      "sample_intervals_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.554798,
+        "max": 0.554798,
+        "span": 0.0,
+        "mean": 0.554798,
+        "std": 0.0,
+        "median": 0.554798,
+        "p05": 0.554798,
+        "p95": 0.554798,
+        "first": 0.554798,
+        "last": 0.554798
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 1.802457831499032
+    },
+    {
+      "topic": "estimator_aid_src_baro_hgt",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 254194105,
+        "seconds_since_ulog_header": 0.709123
+      },
+      "last": {
+        "timestamp_us": 254194105,
+        "seconds_since_ulog_header": 0.709123
+      },
+      "timestamp_span_s": 0.0,
+      "publication_minus_sample_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.237055,
+        "max": 0.237055,
+        "span": 0.0,
+        "mean": 0.237055,
+        "std": 0.0,
+        "median": 0.237055,
+        "p05": 0.237055,
+        "p95": 0.237055,
+        "first": 0.237055,
+        "last": 0.237055
+      }
+    },
+    {
+      "topic": "estimator_aid_src_gravity",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 254217623,
+        "seconds_since_ulog_header": 0.732641
+      },
+      "last": {
+        "timestamp_us": 254217623,
+        "seconds_since_ulog_header": 0.732641
+      },
+      "timestamp_span_s": 0.0,
+      "publication_minus_sample_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.22619,
+        "max": 0.22619,
+        "span": 0.0,
+        "mean": 0.22619,
+        "std": 0.0,
+        "median": 0.22619,
+        "p05": 0.22619,
+        "p95": 0.22619,
+        "first": 0.22619,
+        "last": 0.22619
+      }
+    },
+    {
+      "topic": "estimator_event_flags",
+      "instance": 0,
+      "samples": 2,
+      "first": {
+        "timestamp_us": 252945717,
+        "seconds_since_ulog_header": -0.539265
+      },
+      "last": {
+        "timestamp_us": 253957149,
+        "seconds_since_ulog_header": 0.472167
+      },
+      "timestamp_span_s": 1.011432,
+      "sample_intervals_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 1.011432,
+        "max": 1.011432,
+        "span": 0.0,
+        "mean": 1.011432,
+        "std": 0.0,
+        "median": 1.011432,
+        "p05": 1.011432,
+        "p95": 1.011432,
+        "first": 1.011432,
+        "last": 1.011432
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 0.9886972134557734,
+      "publication_minus_sample_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 37.610587,
+        "max": 38.622019,
+        "span": 1.0114319999999992,
+        "mean": 38.116303,
+        "std": 0.5057159999999996,
+        "median": 38.116303,
+        "p05": 37.6611586,
+        "p95": 38.571447400000004,
+        "first": 37.610587,
+        "last": 38.622019
+      }
+    },
+    {
+      "topic": "estimator_innovation_test_ratios",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 254194111,
+        "seconds_since_ulog_header": 0.709129
+      },
+      "last": {
+        "timestamp_us": 254194111,
+        "seconds_since_ulog_header": 0.709129
+      },
+      "timestamp_span_s": 0.0,
+      "publication_minus_sample_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.226712,
+        "max": 0.226712,
+        "span": 0.0,
+        "mean": 0.226712,
+        "std": 0.0,
+        "median": 0.226712,
+        "p05": 0.226712,
+        "p95": 0.226712,
+        "first": 0.226712,
+        "last": 0.226712
+      }
+    },
+    {
+      "topic": "estimator_innovation_variances",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 254194113,
+        "seconds_since_ulog_header": 0.709131
+      },
+      "last": {
+        "timestamp_us": 254194113,
+        "seconds_since_ulog_header": 0.709131
+      },
+      "timestamp_span_s": 0.0,
+      "publication_minus_sample_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.226714,
+        "max": 0.226714,
+        "span": 0.0,
+        "mean": 0.226714,
+        "std": 0.0,
+        "median": 0.226714,
+        "p05": 0.226714,
+        "p95": 0.226714,
+        "first": 0.226714,
+        "last": 0.226714
+      }
+    },
+    {
+      "topic": "estimator_innovations",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 254182157,
+        "seconds_since_ulog_header": 0.697175
+      },
+      "last": {
+        "timestamp_us": 254182157,
+        "seconds_since_ulog_header": 0.697175
+      },
+      "timestamp_span_s": 0.0,
+      "publication_minus_sample_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.226227,
+        "max": 0.226227,
+        "span": 0.0,
+        "mean": 0.226227,
+        "std": 0.0,
+        "median": 0.226227,
+        "p05": 0.226227,
+        "p95": 0.226227,
+        "first": 0.226227,
+        "last": 0.226227
+      }
+    },
+    {
+      "topic": "estimator_states",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 254182163,
+        "seconds_since_ulog_header": 0.697181
+      },
+      "last": {
+        "timestamp_us": 254182163,
+        "seconds_since_ulog_header": 0.697181
+      },
+      "timestamp_span_s": 0.0,
+      "publication_minus_sample_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.226233,
+        "max": 0.226233,
+        "span": 0.0,
+        "mean": 0.226233,
+        "std": 0.0,
+        "median": 0.226233,
+        "p05": 0.226233,
+        "p95": 0.226233,
+        "first": 0.226233,
+        "last": 0.226233
+      }
+    },
+    {
+      "topic": "estimator_status",
+      "instance": 0,
+      "samples": 5,
+      "first": {
+        "timestamp_us": 253789961,
+        "seconds_since_ulog_header": 0.304979
+      },
+      "last": {
+        "timestamp_us": 254394811,
+        "seconds_since_ulog_header": 0.909829
+      },
+      "timestamp_span_s": 0.60485,
+      "sample_intervals_s": {
+        "samples": 4,
+        "finite_samples": 4,
+        "nonfinite_samples": 0,
+        "min": 0.012472,
+        "max": 0.201455,
+        "span": 0.18898299999999998,
+        "mean": 0.1512125,
+        "std": 0.08022505012930811,
+        "median": 0.1954615,
+        "p05": 0.03913345,
+        "p95": 0.20134295,
+        "first": 0.012472,
+        "last": 0.200708
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 6.6132098867487805,
+      "publication_minus_sample_s": {
+        "samples": 5,
+        "finite_samples": 5,
+        "nonfinite_samples": 0,
+        "min": 0.226077,
+        "max": 0.228039,
+        "span": 0.0019619999999999915,
+        "mean": 0.2272112,
+        "std": 0.0007156737804335157,
+        "median": 0.227595,
+        "p05": 0.2262024,
+        "p95": 0.2279594,
+        "first": 0.227641,
+        "last": 0.226077
+      }
+    },
+    {
+      "topic": "estimator_status_flags",
+      "instance": 0,
+      "samples": 4,
+      "first": {
+        "timestamp_us": 252945724,
+        "seconds_since_ulog_header": -0.539258
+      },
+      "last": {
+        "timestamp_us": 254406959,
+        "seconds_since_ulog_header": 0.921977
+      },
+      "timestamp_span_s": 1.461235,
+      "sample_intervals_s": {
+        "samples": 3,
+        "finite_samples": 3,
+        "nonfinite_samples": 0,
+        "min": 0.167215,
+        "max": 1.011432,
+        "span": 0.8442170000000001,
+        "mean": 0.48707833333333345,
+        "std": 0.37375375859187765,
+        "median": 0.282588,
+        "p05": 0.1787523,
+        "p95": 0.9385476,
+        "first": 1.011432,
+        "last": 0.167215
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.0530578585922177,
+      "publication_minus_sample_s": {
+        "samples": 4,
+        "finite_samples": 4,
+        "nonfinite_samples": 0,
+        "min": 0.224777,
+        "max": 0.228111,
+        "span": 0.0033340000000000036,
+        "mean": 0.22693525,
+        "std": 0.001362434287406184,
+        "median": 0.2274265,
+        "p05": 0.22507370000000002,
+        "p95": 0.22810905,
+        "first": 0.228111,
+        "last": 0.226755
+      }
+    },
+    {
+      "topic": "event",
+      "instance": 0,
+      "samples": 17,
+      "first": {
+        "timestamp_us": 217591875,
+        "seconds_since_ulog_header": -35.893107
+      },
+      "last": {
+        "timestamp_us": 253815063,
+        "seconds_since_ulog_header": 0.330081
+      },
+      "timestamp_span_s": 36.223188,
+      "sample_intervals_s": {
+        "samples": 16,
+        "finite_samples": 16,
+        "nonfinite_samples": 0,
+        "min": 3e-06,
+        "max": 35.886592,
+        "span": 35.886589,
+        "mean": 2.2639492499999996,
+        "std": 8.681673149394255,
+        "median": 3e-06,
+        "p05": 3e-06,
+        "p95": 9.212362749999999,
+        "first": 4e-06,
+        "last": 0.010975
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 0.4417060143905612
+    },
+    {
+      "topic": "failsafe_flags",
+      "instance": 0,
+      "samples": 3,
+      "first": {
+        "timestamp_us": 253478037,
+        "seconds_since_ulog_header": -0.006945
+      },
+      "last": {
+        "timestamp_us": 254355091,
+        "seconds_since_ulog_header": 0.870109
+      },
+      "timestamp_span_s": 0.877054,
+      "sample_intervals_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 0.326114,
+        "max": 0.55094,
+        "span": 0.22482599999999997,
+        "mean": 0.438527,
+        "std": 0.11241299999999999,
+        "median": 0.438527,
+        "p05": 0.3373553,
+        "p95": 0.5396987,
+        "first": 0.326114,
+        "last": 0.55094
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.2803613004444423
+    },
+    {
+      "topic": "failure_detector_status",
+      "instance": 0,
+      "samples": 3,
+      "first": {
+        "timestamp_us": 253478500,
+        "seconds_since_ulog_header": -0.006482
+      },
+      "last": {
+        "timestamp_us": 254322155,
+        "seconds_since_ulog_header": 0.837173
+      },
+      "timestamp_span_s": 0.843655,
+      "sample_intervals_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 0.336579,
+        "max": 0.507076,
+        "span": 0.17049699999999995,
+        "mean": 0.4218275,
+        "std": 0.08524849999999998,
+        "median": 0.4218275,
+        "p05": 0.34510385,
+        "p95": 0.49855114999999994,
+        "first": 0.336579,
+        "last": 0.507076
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.3706372865685617
+    },
+    {
+      "topic": "heater_status",
+      "instance": 0,
+      "samples": 94,
+      "first": {
+        "timestamp_us": 253778408,
+        "seconds_since_ulog_header": 0.293426
+      },
+      "last": {
+        "timestamp_us": 254475829,
+        "seconds_since_ulog_header": 0.990847
+      },
+      "timestamp_span_s": 0.697421,
+      "sample_intervals_s": {
+        "samples": 93,
+        "finite_samples": 93,
+        "nonfinite_samples": 0,
+        "min": 0.001153,
+        "max": 0.071754,
+        "span": 0.070601,
+        "mean": 0.007499150537634407,
+        "std": 0.007958618087947903,
+        "median": 0.008863,
+        "p05": 0.0011792,
+        "p95": 0.010584599999999996,
+        "first": 0.025165,
+        "last": 0.001486
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 133.34843659711998
+    },
+    {
+      "topic": "input_rc",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 254273061,
+        "seconds_since_ulog_header": 0.788079
+      },
+      "last": {
+        "timestamp_us": 254273061,
+        "seconds_since_ulog_header": 0.788079
+      },
+      "timestamp_span_s": 0.0
+    },
+    {
+      "topic": "manual_control_setpoint",
+      "instance": 0,
+      "samples": 5,
+      "first": {
+        "timestamp_us": 253768961,
+        "seconds_since_ulog_header": 0.283979
+      },
+      "last": {
+        "timestamp_us": 254320883,
+        "seconds_since_ulog_header": 0.835901
+      },
+      "timestamp_span_s": 0.551922,
+      "sample_intervals_s": {
+        "samples": 4,
+        "finite_samples": 4,
+        "nonfinite_samples": 0,
+        "min": 0.011216,
+        "max": 0.30645,
+        "span": 0.295234,
+        "mean": 0.1379805,
+        "std": 0.12151272972511974,
+        "median": 0.117128,
+        "p05": 0.01466975,
+        "p95": 0.29048474999999996,
+        "first": 0.034241,
+        "last": 0.200015
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 7.247400900851932,
+      "publication_minus_sample_s": {
+        "samples": 5,
+        "finite_samples": 5,
+        "nonfinite_samples": 0,
+        "min": 3.2e-05,
+        "max": 0.200047,
+        "span": 0.200015,
+        "mean": 0.040084999999999996,
+        "std": 0.07998105433913709,
+        "median": 3.8e-05,
+        "p05": 3.22e-05,
+        "p95": 0.16009259999999997,
+        "first": 3.8e-05,
+        "last": 0.200047
+      }
+    },
+    {
+      "topic": "manual_control_switches",
+      "instance": 0,
+      "samples": 2,
+      "first": {
+        "timestamp_us": 253472886,
+        "seconds_since_ulog_header": -0.012096
+      },
+      "last": {
+        "timestamp_us": 253804960,
+        "seconds_since_ulog_header": 0.319978
+      },
+      "timestamp_span_s": 0.332074,
+      "sample_intervals_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.332074,
+        "max": 0.332074,
+        "span": 0.0,
+        "mean": 0.332074,
+        "std": 0.0,
+        "median": 0.332074,
+        "p05": 0.332074,
+        "p95": 0.332074,
+        "first": 0.332074,
+        "last": 0.332074
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 3.011376982238899,
+      "publication_minus_sample_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 0.001791,
+        "max": 0.011898,
+        "span": 0.010107000000000001,
+        "mean": 0.0068445,
+        "std": 0.005053500000000001,
+        "median": 0.0068445,
+        "p05": 0.00229635,
+        "p95": 0.01139265,
+        "first": 0.011898,
+        "last": 0.001791
+      }
+    },
+    {
+      "topic": "navigator_status",
+      "instance": 0,
+      "samples": 3,
+      "first": {
+        "timestamp_us": 253256184,
+        "seconds_since_ulog_header": -0.228798
+      },
+      "last": {
+        "timestamp_us": 254322192,
+        "seconds_since_ulog_header": 0.83721
+      },
+      "timestamp_span_s": 1.066008,
+      "sample_intervals_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 0.517887,
+        "max": 0.548121,
+        "span": 0.030233999999999983,
+        "mean": 0.533004,
+        "std": 0.015116999999999992,
+        "median": 0.533004,
+        "p05": 0.5193987,
+        "p95": 0.5466093,
+        "first": 0.548121,
+        "last": 0.517887
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 1.8761585278909725
+    },
+    {
+      "topic": "rate_ctrl_status",
+      "instance": 0,
+      "samples": 5,
+      "first": {
+        "timestamp_us": 253794209,
+        "seconds_since_ulog_header": 0.309227
+      },
+      "last": {
+        "timestamp_us": 254395076,
+        "seconds_since_ulog_header": 0.910094
+      },
+      "timestamp_span_s": 0.600867,
+      "sample_intervals_s": {
+        "samples": 4,
+        "finite_samples": 4,
+        "nonfinite_samples": 0,
+        "min": 0.000502,
+        "max": 0.201336,
+        "span": 0.20083399999999998,
+        "mean": 0.15021675,
+        "std": 0.0864411995386893,
+        "median": 0.19951449999999998,
+        "p05": 0.030319750000000003,
+        "p95": 0.2010969,
+        "first": 0.000502,
+        "last": 0.199287
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 6.657047233414382
+    },
+    {
+      "topic": "sensor_combined",
+      "instance": 0,
+      "samples": 117,
+      "first": {
+        "timestamp_us": 253788643,
+        "seconds_since_ulog_header": 0.303661
+      },
+      "last": {
+        "timestamp_us": 254476675,
+        "seconds_since_ulog_header": 0.991693
+      },
+      "timestamp_span_s": 0.688032,
+      "sample_intervals_s": {
+        "samples": 116,
+        "finite_samples": 116,
+        "nonfinite_samples": 0,
+        "min": 0.004939,
+        "max": 0.006561,
+        "span": 0.0016220000000000002,
+        "mean": 0.005931310344827586,
+        "std": 0.0005969318018834991,
+        "median": 0.006009,
+        "p05": 0.005007,
+        "p95": 0.00652225,
+        "first": 0.006009,
+        "last": 0.006055
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 168.5968094507232
+    },
+    {
+      "topic": "sensors_status_imu",
+      "instance": 0,
+      "samples": 5,
+      "first": {
+        "timestamp_us": 253789073,
+        "seconds_since_ulog_header": 0.304091
+      },
+      "last": {
+        "timestamp_us": 254393864,
+        "seconds_since_ulog_header": 0.908882
+      },
+      "timestamp_span_s": 0.604791,
+      "sample_intervals_s": {
+        "samples": 4,
+        "finite_samples": 4,
+        "nonfinite_samples": 0,
+        "min": 0.0062,
+        "max": 0.201359,
+        "span": 0.195159,
+        "mean": 0.15119775000000002,
+        "std": 0.08373539898506185,
+        "median": 0.19861600000000001,
+        "p05": 0.0347444,
+        "p95": 0.20126555000000002,
+        "first": 0.0062,
+        "last": 0.200736
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 6.613855034218432
+    },
+    {
+      "topic": "system_power",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 254273284,
+        "seconds_since_ulog_header": 0.788302
+      },
+      "last": {
+        "timestamp_us": 254273284,
+        "seconds_since_ulog_header": 0.788302
+      },
+      "timestamp_span_s": 0.0
+    },
+    {
+      "topic": "trajectory_setpoint",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 251734327,
+        "seconds_since_ulog_header": -1.750655
+      },
+      "last": {
+        "timestamp_us": 251734327,
+        "seconds_since_ulog_header": -1.750655
+      },
+      "timestamp_span_s": 0.0
+    },
+    {
+      "topic": "vehicle_acceleration",
+      "instance": 0,
+      "samples": 15,
+      "first": {
+        "timestamp_us": 253791875,
+        "seconds_since_ulog_header": 0.306893
+      },
+      "last": {
+        "timestamp_us": 254445821,
+        "seconds_since_ulog_header": 0.960839
+      },
+      "timestamp_span_s": 0.653946,
+      "sample_intervals_s": {
+        "samples": 14,
+        "finite_samples": 14,
+        "nonfinite_samples": 0,
+        "min": 0.00474,
+        "max": 0.054727,
+        "span": 0.049987,
+        "mean": 0.04671042857142858,
+        "std": 0.01200089854203953,
+        "median": 0.049552,
+        "p05": 0.0307153,
+        "p95": 0.05458985,
+        "first": 0.00474,
+        "last": 0.054447
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 21.408495502686762,
+      "publication_minus_sample_s": {
+        "samples": 15,
+        "finite_samples": 15,
+        "nonfinite_samples": 0,
+        "min": 6.8e-05,
+        "max": 0.000306,
+        "span": 0.000238,
+        "mean": 0.00014379999999999997,
+        "std": 9.75938522653963e-05,
+        "median": 8.9e-05,
+        "p05": 6.8e-05,
+        "p95": 0.0003053,
+        "first": 0.000283,
+        "last": 0.000105
+      }
+    },
+    {
+      "topic": "vehicle_air_data",
+      "instance": 0,
+      "samples": 5,
+      "first": {
+        "timestamp_us": 253786343,
+        "seconds_since_ulog_header": 0.301361
+      },
+      "last": {
+        "timestamp_us": 254367186,
+        "seconds_since_ulog_header": 0.882204
+      },
+      "timestamp_span_s": 0.580843,
+      "sample_intervals_s": {
+        "samples": 4,
+        "finite_samples": 4,
+        "nonfinite_samples": 0,
+        "min": 0.064614,
+        "max": 0.193744,
+        "span": 0.12913,
+        "mean": 0.14521075,
+        "std": 0.05342996921847793,
+        "median": 0.1612425,
+        "p05": 0.07430160000000001,
+        "p95": 0.19367545,
+        "first": 0.064614,
+        "last": 0.193744
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 6.886542490827987,
+      "publication_minus_sample_s": {
+        "samples": 5,
+        "finite_samples": 5,
+        "nonfinite_samples": 0,
+        "min": 0.01709,
+        "max": 0.017201,
+        "span": 0.00011099999999999999,
+        "mean": 0.0171474,
+        "std": 3.613087322498597e-05,
+        "median": 0.017152,
+        "p05": 0.0170988,
+        "p95": 0.0171928,
+        "first": 0.017134,
+        "last": 0.017201
+      }
+    },
+    {
+      "topic": "vehicle_angular_velocity",
+      "instance": 0,
+      "samples": 36,
+      "first": {
+        "timestamp_us": 253794202,
+        "seconds_since_ulog_header": 0.30922
+      },
+      "last": {
+        "timestamp_us": 254475679,
+        "seconds_since_ulog_header": 0.990697
+      },
+      "timestamp_span_s": 0.681477,
+      "sample_intervals_s": {
+        "samples": 35,
+        "finite_samples": 35,
+        "nonfinite_samples": 0,
+        "min": 0.000502,
+        "max": 0.02207,
+        "span": 0.021568,
+        "mean": 0.01947077142857143,
+        "std": 0.0036520752228656776,
+        "median": 0.021025,
+        "p05": 0.0170509,
+        "p95": 0.0216552,
+        "first": 0.000502,
+        "last": 0.021027
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 51.359033393643514,
+      "publication_minus_sample_s": {
+        "samples": 36,
+        "finite_samples": 36,
+        "nonfinite_samples": 0,
+        "min": 5e-05,
+        "max": 9.1e-05,
+        "span": 4.1e-05,
+        "mean": 5.763888888888888e-05,
+        "std": 1.050172678334848e-05,
+        "median": 5.4499999999999997e-05,
+        "p05": 5e-05,
+        "p95": 8.925e-05,
+        "first": 5.1e-05,
+        "last": 5.2e-05
+      }
+    },
+    {
+      "topic": "vehicle_attitude",
+      "instance": 0,
+      "samples": 15,
+      "first": {
+        "timestamp_us": 253789101,
+        "seconds_since_ulog_header": 0.304119
+      },
+      "last": {
+        "timestamp_us": 254447303,
+        "seconds_since_ulog_header": 0.962321
+      },
+      "timestamp_span_s": 0.658202,
+      "sample_intervals_s": {
+        "samples": 14,
+        "finite_samples": 14,
+        "nonfinite_samples": 0,
+        "min": 0.006197,
+        "max": 0.053839,
+        "span": 0.047642,
+        "mean": 0.047014428571428575,
+        "std": 0.011672639931017475,
+        "median": 0.048045500000000005,
+        "p05": 0.031976000000000004,
+        "p95": 0.0538195,
+        "first": 0.006197,
+        "last": 0.053406
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 21.270066028362113,
+      "publication_minus_sample_s": {
+        "samples": 15,
+        "finite_samples": 15,
+        "nonfinite_samples": 0,
+        "min": 0.000217,
+        "max": 0.000808,
+        "span": 0.000591,
+        "mean": 0.0005240666666666666,
+        "std": 0.00016507512094666342,
+        "median": 0.000476,
+        "p05": 0.0003199,
+        "p95": 0.000752,
+        "first": 0.000458,
+        "last": 0.000217
+      }
+    },
+    {
+      "topic": "vehicle_attitude_setpoint",
+      "instance": 0,
+      "samples": 15,
+      "first": {
+        "timestamp_us": 253789264,
+        "seconds_since_ulog_header": 0.304282
+      },
+      "last": {
+        "timestamp_us": 254447320,
+        "seconds_since_ulog_header": 0.962338
+      },
+      "timestamp_span_s": 0.658056,
+      "sample_intervals_s": {
+        "samples": 14,
+        "finite_samples": 14,
+        "nonfinite_samples": 0,
+        "min": 0.006106,
+        "max": 0.054069,
+        "span": 0.047963,
+        "mean": 0.047004,
+        "std": 0.011694612227126523,
+        "median": 0.0480185,
+        "p05": 0.031944150000000004,
+        "p95": 0.0539026,
+        "first": 0.006106,
+        "last": 0.053408
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 21.27478512467024
+    },
+    {
+      "topic": "vehicle_control_mode",
+      "instance": 0,
+      "samples": 3,
+      "first": {
+        "timestamp_us": 253478493,
+        "seconds_since_ulog_header": -0.006489
+      },
+      "last": {
+        "timestamp_us": 254322147,
+        "seconds_since_ulog_header": 0.837165
+      },
+      "timestamp_span_s": 0.843654,
+      "sample_intervals_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 0.336581,
+        "max": 0.507073,
+        "span": 0.17049199999999998,
+        "mean": 0.421827,
+        "std": 0.08524599999999999,
+        "median": 0.421827,
+        "p05": 0.3451056,
+        "p95": 0.4985484,
+        "first": 0.336581,
+        "last": 0.507073
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.3706400965324645
+    },
+    {
+      "topic": "vehicle_imu",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 254111042,
+        "seconds_since_ulog_header": 0.62606
+      },
+      "last": {
+        "timestamp_us": 254111042,
+        "seconds_since_ulog_header": 0.62606
+      },
+      "timestamp_span_s": 0.0,
+      "publication_minus_sample_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.000438,
+        "max": 0.000438,
+        "span": 0.0,
+        "mean": 0.000438,
+        "std": 0.0,
+        "median": 0.000438,
+        "p05": 0.000438,
+        "p95": 0.000438,
+        "first": 0.000438,
+        "last": 0.000438
+      }
+    },
+    {
+      "topic": "vehicle_land_detected",
+      "instance": 0,
+      "samples": 2,
+      "first": {
+        "timestamp_us": 253635369,
+        "seconds_since_ulog_header": 0.150387
+      },
+      "last": {
+        "timestamp_us": 254004949,
+        "seconds_since_ulog_header": 0.519967
+      },
+      "timestamp_span_s": 0.36958,
+      "sample_intervals_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.36958,
+        "max": 0.36958,
+        "span": 0.0,
+        "mean": 0.36958,
+        "std": 0.0,
+        "median": 0.36958,
+        "p05": 0.36958,
+        "p95": 0.36958,
+        "first": 0.36958,
+        "last": 0.36958
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.7057741219762974
+    },
+    {
+      "topic": "vehicle_local_position",
+      "instance": 0,
+      "samples": 8,
+      "first": {
+        "timestamp_us": 253789633,
+        "seconds_since_ulog_header": 0.304651
+      },
+      "last": {
+        "timestamp_us": 254394491,
+        "seconds_since_ulog_header": 0.909509
+      },
+      "timestamp_span_s": 0.604858,
+      "sample_intervals_s": {
+        "samples": 7,
+        "finite_samples": 7,
+        "nonfinite_samples": 0,
+        "min": 0.012726,
+        "max": 0.106975,
+        "span": 0.094249,
+        "mean": 0.08640828571428572,
+        "std": 0.03116453125275722,
+        "median": 0.095699,
+        "p05": 0.033858900000000004,
+        "p95": 0.1069354,
+        "first": 0.012726,
+        "last": 0.106975
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 11.572964232927397,
+      "publication_minus_sample_s": {
+        "samples": 8,
+        "finite_samples": 8,
+        "nonfinite_samples": 0,
+        "min": 0.000938,
+        "max": 0.0013,
+        "span": 0.0003619999999999999,
+        "mean": 0.0010961249999999999,
+        "std": 0.0001292076211955007,
+        "median": 0.001057,
+        "p05": 0.0009534000000000001,
+        "p95": 0.00128145,
+        "first": 0.00099,
+        "last": 0.000982
+      }
+    },
+    {
+      "topic": "vehicle_local_position_setpoint",
+      "instance": 0,
+      "samples": 1,
+      "first": {
+        "timestamp_us": 251734354,
+        "seconds_since_ulog_header": -1.750628
+      },
+      "last": {
+        "timestamp_us": 251734354,
+        "seconds_since_ulog_header": -1.750628
+      },
+      "timestamp_span_s": 0.0
+    },
+    {
+      "topic": "vehicle_rates_setpoint",
+      "instance": 0,
+      "samples": 36,
+      "first": {
+        "timestamp_us": 253789271,
+        "seconds_since_ulog_header": 0.304289
+      },
+      "last": {
+        "timestamp_us": 254471016,
+        "seconds_since_ulog_header": 0.986034
+      },
+      "timestamp_span_s": 0.681745,
+      "sample_intervals_s": {
+        "samples": 35,
+        "finite_samples": 35,
+        "nonfinite_samples": 0,
+        "min": 0.006106,
+        "max": 0.024417,
+        "span": 0.018311,
+        "mean": 0.01947842857142857,
+        "std": 0.003962872942599053,
+        "median": 0.018185,
+        "p05": 0.014699,
+        "p95": 0.0242203,
+        "first": 0.006106,
+        "last": 0.017266
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 51.33884370255741
+    },
+    {
+      "topic": "vehicle_status",
+      "instance": 0,
+      "samples": 3,
+      "first": {
+        "timestamp_us": 253478495,
+        "seconds_since_ulog_header": -0.006487
+      },
+      "last": {
+        "timestamp_us": 254322151,
+        "seconds_since_ulog_header": 0.837169
+      },
+      "timestamp_span_s": 0.843656,
+      "sample_intervals_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 0.33658,
+        "max": 0.507076,
+        "span": 0.17049599999999998,
+        "mean": 0.421828,
+        "std": 0.08524799999999999,
+        "median": 0.421828,
+        "p05": 0.3451048,
+        "p95": 0.49855119999999997,
+        "first": 0.33658,
+        "last": 0.507076
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.3706344766113205
+    },
+    {
+      "topic": "vehicle_thrust_setpoint",
+      "instance": 0,
+      "samples": 36,
+      "first": {
+        "timestamp_us": 253794210,
+        "seconds_since_ulog_header": 0.309228
+      },
+      "last": {
+        "timestamp_us": 254475687,
+        "seconds_since_ulog_header": 0.990705
+      },
+      "timestamp_span_s": 0.681477,
+      "sample_intervals_s": {
+        "samples": 35,
+        "finite_samples": 35,
+        "nonfinite_samples": 0,
+        "min": 0.000502,
+        "max": 0.02207,
+        "span": 0.021568,
+        "mean": 0.01947077142857143,
+        "std": 0.003618808770739851,
+        "median": 0.020992,
+        "p05": 0.0172038,
+        "p95": 0.0215226,
+        "first": 0.000502,
+        "last": 0.021026
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 51.359033393643514,
+      "publication_minus_sample_s": {
+        "samples": 36,
+        "finite_samples": 36,
+        "nonfinite_samples": 0,
+        "min": 5.8e-05,
+        "max": 0.000101,
+        "span": 4.3e-05,
+        "mean": 6.725e-05,
+        "std": 1.052609192013404e-05,
+        "median": 6.4e-05,
+        "p05": 5.875e-05,
+        "p95": 9.8e-05,
+        "first": 5.9e-05,
+        "last": 6e-05
+      }
+    },
+    {
+      "topic": "vehicle_torque_setpoint",
+      "instance": 0,
+      "samples": 36,
+      "first": {
+        "timestamp_us": 253794211,
+        "seconds_since_ulog_header": 0.309229
+      },
+      "last": {
+        "timestamp_us": 254475688,
+        "seconds_since_ulog_header": 0.990706
+      },
+      "timestamp_span_s": 0.681477,
+      "sample_intervals_s": {
+        "samples": 35,
+        "finite_samples": 35,
+        "nonfinite_samples": 0,
+        "min": 0.000502,
+        "max": 0.02207,
+        "span": 0.021568,
+        "mean": 0.01947077142857143,
+        "std": 0.0036284759814218287,
+        "median": 0.020993,
+        "p05": 0.0168755,
+        "p95": 0.0215226,
+        "first": 0.000502,
+        "last": 0.021026
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 51.359033393643514,
+      "publication_minus_sample_s": {
+        "samples": 36,
+        "finite_samples": 36,
+        "nonfinite_samples": 0,
+        "min": 5.9e-05,
+        "max": 0.000101,
+        "span": 4.2000000000000004e-05,
+        "mean": 6.805555555555554e-05,
+        "std": 1.049588396691358e-05,
+        "median": 6.5e-05,
+        "p05": 5.9e-05,
+        "p95": 9.9e-05,
+        "first": 6e-05,
+        "last": 6.1e-05
+      }
+    }
+  ],
+  "selected_initial_parameters": {
+    "COM_OBL_RC_ACT": 1,
+    "COM_OF_LOSS_T": 1.0,
+    "COM_POS_LOW_ACT": 3,
+    "COM_RC_ARM_HYST": 1000,
+    "COM_RC_IN_MODE": 0,
+    "COM_RC_LOSS_T": 0.5,
+    "COM_RC_OVERRIDE": 1,
+    "COM_RC_STICK_OV": 30.0,
+    "EKF2_BARO_CTRL": 1,
+    "EKF2_BARO_DELAY": 0.0,
+    "EKF2_BARO_GATE": 5.0,
+    "EKF2_BARO_NOISE": 3.5,
+    "EKF2_EV_CTRL": 0,
+    "EKF2_EV_DELAY": 0.0,
+    "EKF2_EV_NOISE_MD": 0,
+    "EKF2_EV_POS_X": 0.0,
+    "EKF2_EV_POS_Y": 0.0,
+    "EKF2_EV_POS_Z": 0.0,
+    "EKF2_EV_QMIN": 0,
+    "EKF2_HGT_REF": 1,
+    "EKF2_RNG_A_HMAX": 5.0,
+    "EKF2_RNG_A_IGATE": 1.0,
+    "EKF2_RNG_A_VMAX": 1.0,
+    "EKF2_RNG_CTRL": 1,
+    "EKF2_RNG_DELAY": 5.0,
+    "EKF2_RNG_FOG": 1.0,
+    "EKF2_RNG_GATE": 5.0,
+    "EKF2_RNG_K_GATE": 1.0,
+    "EKF2_RNG_NOISE": 0.10000000149011612,
+    "EKF2_RNG_PITCH": 0.0,
+    "EKF2_RNG_POS_X": 0.0,
+    "EKF2_RNG_POS_Y": 0.0,
+    "EKF2_RNG_POS_Z": 0.0,
+    "EKF2_RNG_QLTY_T": 1.0,
+    "EKF2_RNG_SFE": 0.05000000074505806,
+    "MAV_0_CONFIG": 101,
+    "MAV_0_FLOW_CTRL": 2,
+    "MAV_0_FORWARD": 1,
+    "MAV_0_MODE": 0,
+    "MAV_0_RADIO_CTL": 1,
+    "MAV_0_RATE": 24000,
+    "MAV_1_CONFIG": 0,
+    "MAV_2_CONFIG": 0,
+    "MAV_COMP_ID": 1,
+    "MAV_FWDEXTSP": 1,
+    "MAV_HASH_CHK_EN": 1,
+    "MAV_HB_FORW_EN": 1,
+    "MAV_PROTO_VER": 0,
+    "MAV_RADIO_TOUT": 5,
+    "MAV_SIK_RADIO_ID": 0,
+    "MAV_SYS_ID": 1,
+    "MAV_TYPE": 2,
+    "MAV_USEHILGPS": 0,
+    "MPC_THR_CURVE": 0,
+    "MPC_THR_HOVER": 0.4722999930381775,
+    "MPC_THR_MAX": 1.0,
+    "MPC_THR_MIN": 0.11999999731779099,
+    "MPC_THR_XY_MARG": 0.30000001192092896,
+    "SDLOG_BOOT_BAT": 0,
+    "SDLOG_DIRS_MAX": 0,
+    "SDLOG_MISSION": 0,
+    "SDLOG_MODE": 0,
+    "SDLOG_PROFILE": 1,
+    "SDLOG_UTC_OFFSET": 0,
+    "SDLOG_UUID": 1,
+    "SYS_AUTOSTART": 4001,
+    "UXRCE_DDS_CFG": 103,
+    "UXRCE_DDS_DOM_ID": 0,
+    "UXRCE_DDS_KEY": 1,
+    "UXRCE_DDS_PTCFG": 0,
+    "UXRCE_DDS_RX_TO": -1,
+    "UXRCE_DDS_SYNCC": 0,
+    "UXRCE_DDS_SYNCT": 1,
+    "UXRCE_DDS_TX_TO": 3
+  },
+  "changed_parameters": [],
+  "vehicle_status": {
+    "topic": "vehicle_status",
+    "instance": 0,
+    "samples": 3,
+    "first": {
+      "timestamp_us": 253478495,
+      "seconds_since_ulog_header": -0.006487
+    },
+    "last": {
+      "timestamp_us": 254322151,
+      "seconds_since_ulog_header": 0.837169
+    },
+    "timestamp_span_s": 0.843656,
+    "sample_intervals_s": {
+      "samples": 2,
+      "finite_samples": 2,
+      "nonfinite_samples": 0,
+      "min": 0.33658,
+      "max": 0.507076,
+      "span": 0.17049599999999998,
+      "mean": 0.421828,
+      "std": 0.08524799999999999,
+      "median": 0.421828,
+      "p05": 0.3451048,
+      "p95": 0.49855119999999997,
+      "first": 0.33658,
+      "last": 0.507076
+    },
+    "nonpositive_intervals": 0,
+    "observed_logger_samples_per_s": 2.3706344766113205,
+    "nav_state": {
+      "present": true,
+      "counts": [
+        {
+          "value": 15,
+          "samples": 3
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253478495,
+          "seconds_since_ulog_header": -0.006487,
+          "sample_index": 0,
+          "value": 15,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "nav_state_user_intention": {
+      "present": true,
+      "counts": [
+        {
+          "value": 15,
+          "samples": 3
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253478495,
+          "seconds_since_ulog_header": -0.006487,
+          "sample_index": 0,
+          "value": 15,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "arming_state": {
+      "present": true,
+      "counts": [
+        {
+          "value": 1,
+          "samples": 2
+        },
+        {
+          "value": 2,
+          "samples": 1
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253478495,
+          "seconds_since_ulog_header": -0.006487,
+          "sample_index": 0,
+          "value": 2,
+          "initial": true
+        },
+        {
+          "timestamp_us": 253815075,
+          "seconds_since_ulog_header": 0.330093,
+          "sample_index": 1,
+          "value": 1,
+          "initial": false
+        }
+      ],
+      "observed_change_count": 1
+    },
+    "failsafe": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 3
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253478495,
+          "seconds_since_ulog_header": -0.006487,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "failsafe_and_user_took_over": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 3
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253478495,
+          "seconds_since_ulog_header": -0.006487,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "failure_detector_status": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 3
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253478495,
+          "seconds_since_ulog_header": -0.006487,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "pre_flight_checks_pass": {
+      "present": true,
+      "counts": [
+        {
+          "value": 1,
+          "samples": 3
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253478495,
+          "seconds_since_ulog_header": -0.006487,
+          "sample_index": 0,
+          "value": 1,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "latest_arming_reason": {
+      "present": true,
+      "counts": [
+        {
+          "value": 2,
+          "samples": 3
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253478495,
+          "seconds_since_ulog_header": -0.006487,
+          "sample_index": 0,
+          "value": 2,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "latest_disarming_reason": {
+      "present": true,
+      "counts": [
+        {
+          "value": 2,
+          "samples": 2
+        },
+        {
+          "value": 6,
+          "samples": 1
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253478495,
+          "seconds_since_ulog_header": -0.006487,
+          "sample_index": 0,
+          "value": 6,
+          "initial": true
+        },
+        {
+          "timestamp_us": 253815075,
+          "seconds_since_ulog_header": 0.330093,
+          "sample_index": 1,
+          "value": 2,
+          "initial": false
+        }
+      ],
+      "observed_change_count": 1
+    }
+  },
+  "nav_segments": [
+    {
+      "nav_state": 15,
+      "name": "STAB",
+      "start": {
+        "timestamp_us": 253478495,
+        "seconds_since_ulog_header": -0.006487
+      },
+      "end_exclusive_or_ulog_last": {
+        "timestamp_us": 254476675,
+        "seconds_since_ulog_header": 0.991693
+      },
+      "duration_s": 0.99818,
+      "vehicle_status_samples": 3,
+      "arming_states": [
+        1,
+        2
+      ],
+      "local_position_during_interval": {
+        "samples": 8,
+        "x": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": -21.953754425048828,
+          "max": -21.947912216186523,
+          "span": 0.0058422088623046875,
+          "mean": -21.950662851333618,
+          "std": 0.0021791667723325965,
+          "median": -21.95059585571289,
+          "p05": -21.95354480743408,
+          "p95": -21.947944927215577,
+          "first": -21.947912216186523,
+          "last": -21.953754425048828
+        },
+        "y": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 4.484384059906006,
+          "max": 4.486101150512695,
+          "span": 0.0017170906066894531,
+          "mean": 4.4852248430252075,
+          "std": 0.0006483366072494098,
+          "median": 4.485238552093506,
+          "p05": 4.484394073486328,
+          "p95": 4.486047911643982,
+          "first": 4.484384059906006,
+          "last": 4.486101150512695
+        },
+        "z": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.8556150197982788,
+          "max": 0.8595981597900391,
+          "span": 0.003983139991760254,
+          "mean": 0.8573534116148949,
+          "std": 0.0013810415999217323,
+          "median": 0.8572938442230225,
+          "p05": 0.8556711584329605,
+          "p95": 0.8593044489622116,
+          "first": 0.8556150197982788,
+          "last": 0.8595981597900391
+        },
+        "vx": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": -0.011026352643966675,
+          "max": -0.0034647986758500338,
+          "span": 0.007561553968116641,
+          "mean": -0.007493433484341949,
+          "std": 0.002535025248133385,
+          "median": -0.008101452607661486,
+          "p05": -0.010675154672935606,
+          "p95": -0.0036048624897375703,
+          "first": -0.0034647986758500338,
+          "last": -0.008239831775426865
+        },
+        "vy": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.0027067079208791256,
+          "max": 0.0046749538742005825,
+          "span": 0.001968245953321457,
+          "mean": 0.0036435414222069085,
+          "std": 0.000682729876429989,
+          "median": 0.0037270018365234137,
+          "p05": 0.0027131618233397605,
+          "p95": 0.0045749129261821505,
+          "first": 0.0027251476421952248,
+          "last": 0.0032146270386874676
+        },
+        "vz": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.01752195507287979,
+          "max": 0.020821604877710342,
+          "span": 0.003299649804830551,
+          "mean": 0.01909819687716663,
+          "std": 0.0012092693597099704,
+          "median": 0.019099493511021137,
+          "p05": 0.01753466632217169,
+          "p95": 0.020743988547474147,
+          "first": 0.020821604877710342,
+          "last": 0.017558272927999496
+        },
+        "z_deriv": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.008481849916279316,
+          "max": 0.01298920251429081,
+          "span": 0.004507352598011494,
+          "mean": 0.010628044954501092,
+          "std": 0.0016362545253720859,
+          "median": 0.010531333740800619,
+          "p05": 0.008548492705449462,
+          "p95": 0.012923827394843102,
+          "first": 0.01298920251429081,
+          "last": 0.008672257885336876
+        },
+        "dist_bottom": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.10000002384185791,
+          "max": 0.10000002384185791,
+          "span": 0.0,
+          "mean": 0.10000002384185791,
+          "std": 0.0,
+          "median": 0.10000002384185791,
+          "p05": 0.10000002384185791,
+          "p95": 0.10000002384185791,
+          "first": 0.10000002384185791,
+          "last": 0.10000002384185791
+        },
+        "epv": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.2799876034259796,
+          "max": 0.28151968121528625,
+          "span": 0.0015320777893066406,
+          "mean": 0.2806677892804146,
+          "std": 0.0004807338757111629,
+          "median": 0.28079473972320557,
+          "p05": 0.28003469854593277,
+          "p95": 0.28132385313510894,
+          "first": 0.28151968121528625,
+          "last": 0.28096017241477966
+        },
+        "evv": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.05814744159579277,
+          "max": 0.059631552547216415,
+          "span": 0.001484110951423645,
+          "mean": 0.059012251906096935,
+          "std": 0.0006531623771377909,
+          "median": 0.059478603303432465,
+          "p05": 0.05815608482807875,
+          "p95": 0.059584724716842175,
+          "first": 0.059497758746147156,
+          "last": 0.0594852939248085
+        },
+        "xy_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_xy_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "v_z_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "heading_good_for_control": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "xy_global": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_global": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "dist_bottom_valid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "dead_reckoning": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "xy_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 7,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 7,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vxy_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 7,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 7,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "heading_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "dist_bottom_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 8
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "delta_z": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "delta_vz": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.0001061375587596558,
+          "max": 0.0001061375587596558,
+          "span": 0.0,
+          "mean": 0.0001061375587596558,
+          "std": 0.0,
+          "median": 0.0001061375587596558,
+          "p05": 0.0001061375587596558,
+          "p95": 0.0001061375587596558,
+          "first": 0.0001061375587596558,
+          "last": 0.0001061375587596558
+        },
+        "delta_heading": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "delta_dist_bottom": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "vz_minus_z_deriv": {
+          "samples": 8,
+          "finite_samples": 8,
+          "nonfinite_samples": 0,
+          "min": 0.007797427475452423,
+          "max": 0.009040105156600475,
+          "span": 0.0012426776811480522,
+          "mean": 0.008470151922665536,
+          "std": 0.00044505339394226433,
+          "median": 0.008568159770220518,
+          "p05": 0.007809668686240912,
+          "p95": 0.008986173616722225,
+          "first": 0.007832402363419533,
+          "last": 0.00888601504266262
+        }
+      }
+    }
+  ],
+  "local_position": {
+    "topic": "vehicle_local_position",
+    "instance": 0,
+    "samples": 8,
+    "first": {
+      "timestamp_us": 253789633,
+      "seconds_since_ulog_header": 0.304651
+    },
+    "last": {
+      "timestamp_us": 254394491,
+      "seconds_since_ulog_header": 0.909509
+    },
+    "timestamp_span_s": 0.604858,
+    "sample_intervals_s": {
+      "samples": 7,
+      "finite_samples": 7,
+      "nonfinite_samples": 0,
+      "min": 0.012726,
+      "max": 0.106975,
+      "span": 0.094249,
+      "mean": 0.08640828571428572,
+      "std": 0.03116453125275722,
+      "median": 0.095699,
+      "p05": 0.033858900000000004,
+      "p95": 0.1069354,
+      "first": 0.012726,
+      "last": 0.106975
+    },
+    "nonpositive_intervals": 0,
+    "observed_logger_samples_per_s": 11.572964232927397,
+    "publication_minus_sample_s": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.000938,
+      "max": 0.0013,
+      "span": 0.0003619999999999999,
+      "mean": 0.0010961249999999999,
+      "std": 0.0001292076211955007,
+      "median": 0.001057,
+      "p05": 0.0009534000000000001,
+      "p95": 0.00128145,
+      "first": 0.00099,
+      "last": 0.000982
+    },
+    "x": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": -21.953754425048828,
+      "max": -21.947912216186523,
+      "span": 0.0058422088623046875,
+      "mean": -21.950662851333618,
+      "std": 0.0021791667723325965,
+      "median": -21.95059585571289,
+      "p05": -21.95354480743408,
+      "p95": -21.947944927215577,
+      "first": -21.947912216186523,
+      "last": -21.953754425048828
+    },
+    "y": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 4.484384059906006,
+      "max": 4.486101150512695,
+      "span": 0.0017170906066894531,
+      "mean": 4.4852248430252075,
+      "std": 0.0006483366072494098,
+      "median": 4.485238552093506,
+      "p05": 4.484394073486328,
+      "p95": 4.486047911643982,
+      "first": 4.484384059906006,
+      "last": 4.486101150512695
+    },
+    "z": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.8556150197982788,
+      "max": 0.8595981597900391,
+      "span": 0.003983139991760254,
+      "mean": 0.8573534116148949,
+      "std": 0.0013810415999217323,
+      "median": 0.8572938442230225,
+      "p05": 0.8556711584329605,
+      "p95": 0.8593044489622116,
+      "first": 0.8556150197982788,
+      "last": 0.8595981597900391
+    },
+    "vx": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": -0.011026352643966675,
+      "max": -0.0034647986758500338,
+      "span": 0.007561553968116641,
+      "mean": -0.007493433484341949,
+      "std": 0.002535025248133385,
+      "median": -0.008101452607661486,
+      "p05": -0.010675154672935606,
+      "p95": -0.0036048624897375703,
+      "first": -0.0034647986758500338,
+      "last": -0.008239831775426865
+    },
+    "vy": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.0027067079208791256,
+      "max": 0.0046749538742005825,
+      "span": 0.001968245953321457,
+      "mean": 0.0036435414222069085,
+      "std": 0.000682729876429989,
+      "median": 0.0037270018365234137,
+      "p05": 0.0027131618233397605,
+      "p95": 0.0045749129261821505,
+      "first": 0.0027251476421952248,
+      "last": 0.0032146270386874676
+    },
+    "vz": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.01752195507287979,
+      "max": 0.020821604877710342,
+      "span": 0.003299649804830551,
+      "mean": 0.01909819687716663,
+      "std": 0.0012092693597099704,
+      "median": 0.019099493511021137,
+      "p05": 0.01753466632217169,
+      "p95": 0.020743988547474147,
+      "first": 0.020821604877710342,
+      "last": 0.017558272927999496
+    },
+    "z_deriv": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.008481849916279316,
+      "max": 0.01298920251429081,
+      "span": 0.004507352598011494,
+      "mean": 0.010628044954501092,
+      "std": 0.0016362545253720859,
+      "median": 0.010531333740800619,
+      "p05": 0.008548492705449462,
+      "p95": 0.012923827394843102,
+      "first": 0.01298920251429081,
+      "last": 0.008672257885336876
+    },
+    "dist_bottom": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.10000002384185791,
+      "max": 0.10000002384185791,
+      "span": 0.0,
+      "mean": 0.10000002384185791,
+      "std": 0.0,
+      "median": 0.10000002384185791,
+      "p05": 0.10000002384185791,
+      "p95": 0.10000002384185791,
+      "first": 0.10000002384185791,
+      "last": 0.10000002384185791
+    },
+    "epv": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.2799876034259796,
+      "max": 0.28151968121528625,
+      "span": 0.0015320777893066406,
+      "mean": 0.2806677892804146,
+      "std": 0.0004807338757111629,
+      "median": 0.28079473972320557,
+      "p05": 0.28003469854593277,
+      "p95": 0.28132385313510894,
+      "first": 0.28151968121528625,
+      "last": 0.28096017241477966
+    },
+    "evv": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.05814744159579277,
+      "max": 0.059631552547216415,
+      "span": 0.001484110951423645,
+      "mean": 0.059012251906096935,
+      "std": 0.0006531623771377909,
+      "median": 0.059478603303432465,
+      "p05": 0.05815608482807875,
+      "p95": 0.059584724716842175,
+      "first": 0.059497758746147156,
+      "last": 0.0594852939248085
+    },
+    "xy_valid": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "z_valid": {
+      "present": true,
+      "counts": [
+        {
+          "value": 1,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 1,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "v_xy_valid": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "v_z_valid": {
+      "present": true,
+      "counts": [
+        {
+          "value": 1,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 1,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "heading_good_for_control": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "xy_global": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "z_global": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "dist_bottom_valid": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "dead_reckoning": {
+      "present": true,
+      "counts": [
+        {
+          "value": 1,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 1,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "xy_reset_counter": {
+      "present": true,
+      "counts": [
+        {
+          "value": 7,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 7,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "z_reset_counter": {
+      "present": true,
+      "counts": [
+        {
+          "value": 1,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 1,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "vxy_reset_counter": {
+      "present": true,
+      "counts": [
+        {
+          "value": 7,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 7,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "vz_reset_counter": {
+      "present": true,
+      "counts": [
+        {
+          "value": 1,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 1,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "heading_reset_counter": {
+      "present": true,
+      "counts": [
+        {
+          "value": 0,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 0,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "dist_bottom_reset_counter": {
+      "present": true,
+      "counts": [
+        {
+          "value": 1,
+          "samples": 8
+        }
+      ],
+      "changes": [
+        {
+          "timestamp_us": 253789633,
+          "seconds_since_ulog_header": 0.304651,
+          "sample_index": 0,
+          "value": 1,
+          "initial": true
+        }
+      ],
+      "observed_change_count": 0
+    },
+    "delta_z": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.0,
+      "max": 0.0,
+      "span": 0.0,
+      "mean": 0.0,
+      "std": 0.0,
+      "median": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "first": 0.0,
+      "last": 0.0
+    },
+    "delta_vz": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.0001061375587596558,
+      "max": 0.0001061375587596558,
+      "span": 0.0,
+      "mean": 0.0001061375587596558,
+      "std": 0.0,
+      "median": 0.0001061375587596558,
+      "p05": 0.0001061375587596558,
+      "p95": 0.0001061375587596558,
+      "first": 0.0001061375587596558,
+      "last": 0.0001061375587596558
+    },
+    "delta_heading": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.0,
+      "max": 0.0,
+      "span": 0.0,
+      "mean": 0.0,
+      "std": 0.0,
+      "median": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "first": 0.0,
+      "last": 0.0
+    },
+    "delta_dist_bottom": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.0,
+      "max": 0.0,
+      "span": 0.0,
+      "mean": 0.0,
+      "std": 0.0,
+      "median": 0.0,
+      "p05": 0.0,
+      "p95": 0.0,
+      "first": 0.0,
+      "last": 0.0
+    },
+    "vz_minus_z_deriv": {
+      "samples": 8,
+      "finite_samples": 8,
+      "nonfinite_samples": 0,
+      "min": 0.007797427475452423,
+      "max": 0.009040105156600475,
+      "span": 0.0012426776811480522,
+      "mean": 0.008470151922665536,
+      "std": 0.00044505339394226433,
+      "median": 0.008568159770220518,
+      "p05": 0.007809668686240912,
+      "p95": 0.008986173616722225,
+      "first": 0.007832402363419533,
+      "last": 0.00888601504266262
+    }
+  },
+  "local_position_by_arming_state": [
+    {
+      "arming_state": 1,
+      "method": "Most recent logged vehicle_status at each local-position timestamp",
+      "local_position": {
+        "samples": 6,
+        "x": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": -21.953754425048828,
+          "max": -21.948787689208984,
+          "span": 0.00496673583984375,
+          "mean": -21.95156415303548,
+          "std": 0.0017554439605968724,
+          "median": -21.95184326171875,
+          "p05": -21.953604698181152,
+          "p95": -21.9490909576416,
+          "first": -21.948787689208984,
+          "last": -21.953754425048828
+        },
+        "y": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 4.4846696853637695,
+          "max": 4.486101150512695,
+          "span": 0.0014314651489257812,
+          "mean": 4.485500335693359,
+          "std": 0.0005067551237779653,
+          "median": 4.485607385635376,
+          "p05": 4.484769105911255,
+          "p95": 4.486063122749329,
+          "first": 4.4846696853637695,
+          "last": 4.486101150512695
+        },
+        "z": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.8561100363731384,
+          "max": 0.8595981597900391,
+          "span": 0.0034881234169006348,
+          "mean": 0.8579061428705851,
+          "std": 0.0011484090130122787,
+          "median": 0.8579606711864471,
+          "p05": 0.856344610452652,
+          "p95": 0.8593883663415909,
+          "first": 0.8561100363731384,
+          "last": 0.8595981597900391
+        },
+        "vx": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": -0.011026352643966675,
+          "max": -0.006613630335777998,
+          "span": 0.004412722308188677,
+          "mean": -0.008769614699607095,
+          "std": 0.0014284856353213391,
+          "median": -0.008495850954204798,
+          "p05": -0.010775496950373054,
+          "p95": -0.006950991111807525,
+          "first": -0.006613630335777998,
+          "last": -0.008239831775426865
+        },
+        "vy": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.0032146270386874676,
+          "max": 0.0046749538742005825,
+          "span": 0.001460326835513115,
+          "mean": 0.00395274596909682,
+          "std": 0.0004889123674174257,
+          "median": 0.003951886668801308,
+          "p05": 0.0032944700215011835,
+          "p95": 0.004603496054187417,
+          "first": 0.003920004703104496,
+          "last": 0.0032146270386874676
+        },
+        "vz": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.01752195507287979,
+          "max": 0.019938716664910316,
+          "span": 0.002416761592030525,
+          "mean": 0.01856068770090739,
+          "std": 0.0008888272579753171,
+          "median": 0.018598118796944618,
+          "p05": 0.017531034536659718,
+          "p95": 0.01974127348512411,
+          "first": 0.019938716664910316,
+          "last": 0.017558272927999496
+        },
+        "z_deriv": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.008481849916279316,
+          "max": 0.011645743623375893,
+          "span": 0.0031638937070965767,
+          "mean": 0.009872123443832,
+          "std": 0.0011318988862463577,
+          "median": 0.009873413015156984,
+          "p05": 0.008529451908543706,
+          "p95": 0.011405823519453406,
+          "first": 0.011645743623375893,
+          "last": 0.008672257885336876
+        },
+        "dist_bottom": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.10000002384185791,
+          "max": 0.10000002384185791,
+          "span": 0.0,
+          "mean": 0.10000002384185791,
+          "std": 0.0,
+          "median": 0.10000002384185791,
+          "p05": 0.10000002384185791,
+          "p95": 0.10000002384185791,
+          "first": 0.10000002384185791,
+          "last": 0.10000002384185791
+        },
+        "epv": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.2799876034259796,
+          "max": 0.28096017241477966,
+          "span": 0.0009725689888000488,
+          "mean": 0.28048477570215863,
+          "std": 0.00037893436094226196,
+          "median": 0.2804879993200302,
+          "p05": 0.2800212427973747,
+          "p95": 0.2809358090162277,
+          "first": 0.2799876034259796,
+          "last": 0.28096017241477966
+        },
+        "evv": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.05814744159579277,
+          "max": 0.05949775129556656,
+          "span": 0.0013503096997737885,
+          "mean": 0.058828117325901985,
+          "std": 0.000657049628985303,
+          "median": 0.0588330402970314,
+          "p05": 0.058153615333139896,
+          "p95": 0.059494636952877045,
+          "first": 0.05814744159579277,
+          "last": 0.0594852939248085
+        },
+        "xy_valid": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 6
+            }
+          ]
+        },
+        "z_valid": {
+          "counts": [
+            {
+              "value": 1,
+              "samples": 6
+            }
+          ]
+        },
+        "v_xy_valid": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 6
+            }
+          ]
+        },
+        "v_z_valid": {
+          "counts": [
+            {
+              "value": 1,
+              "samples": 6
+            }
+          ]
+        },
+        "heading_good_for_control": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 6
+            }
+          ]
+        },
+        "xy_global": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 6
+            }
+          ]
+        },
+        "z_global": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 6
+            }
+          ]
+        },
+        "dist_bottom_valid": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 6
+            }
+          ]
+        },
+        "dead_reckoning": {
+          "counts": [
+            {
+              "value": 1,
+              "samples": 6
+            }
+          ]
+        },
+        "xy_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 7,
+              "samples": 6
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253885528,
+              "seconds_since_ulog_header": 0.400546,
+              "sample_index": 2,
+              "value": 7,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 6
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253885528,
+              "seconds_since_ulog_header": 0.400546,
+              "sample_index": 2,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vxy_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 7,
+              "samples": 6
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253885528,
+              "seconds_since_ulog_header": 0.400546,
+              "sample_index": 2,
+              "value": 7,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 6
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253885528,
+              "seconds_since_ulog_header": 0.400546,
+              "sample_index": 2,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "heading_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 6
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253885528,
+              "seconds_since_ulog_header": 0.400546,
+              "sample_index": 2,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "dist_bottom_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 6
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253885528,
+              "seconds_since_ulog_header": 0.400546,
+              "sample_index": 2,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "delta_z": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "delta_vz": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.0001061375587596558,
+          "max": 0.0001061375587596558,
+          "span": 0.0,
+          "mean": 0.0001061375587596558,
+          "std": 0.0,
+          "median": 0.0001061375587596558,
+          "p05": 0.0001061375587596558,
+          "p95": 0.0001061375587596558,
+          "first": 0.0001061375587596558,
+          "last": 0.0001061375587596558
+        },
+        "delta_heading": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "delta_dist_bottom": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "vz_minus_z_deriv": {
+          "samples": 6,
+          "finite_samples": 6,
+          "nonfinite_samples": 0,
+          "min": 0.008292973041534424,
+          "max": 0.009040105156600475,
+          "span": 0.0007471321150660515,
+          "mean": 0.00868856425707539,
+          "std": 0.0002705161173711582,
+          "median": 0.008774156216531992,
+          "p05": 0.008310724748298526,
+          "p95": 0.009001582628116012,
+          "first": 0.008292973041534424,
+          "last": 0.00888601504266262
+        }
+      },
+      "first_local_sample": {
+        "timestamp_us": 253885528,
+        "seconds_since_ulog_header": 0.400546
+      },
+      "last_local_sample": {
+        "timestamp_us": 254394491,
+        "seconds_since_ulog_header": 0.909509
+      }
+    },
+    {
+      "arming_state": 2,
+      "method": "Most recent logged vehicle_status at each local-position timestamp",
+      "local_position": {
+        "samples": 2,
+        "x": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": -21.94800567626953,
+          "max": -21.947912216186523,
+          "span": 9.34600830078125e-05,
+          "mean": -21.947958946228027,
+          "std": 4.673004150390625e-05,
+          "median": -21.947958946228027,
+          "p05": -21.948001003265382,
+          "p95": -21.947916889190672,
+          "first": -21.947912216186523,
+          "last": -21.94800567626953
+        },
+        "y": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 4.484384059906006,
+          "max": 4.484412670135498,
+          "span": 2.86102294921875e-05,
+          "mean": 4.484398365020752,
+          "std": 1.430511474609375e-05,
+          "median": 4.484398365020752,
+          "p05": 4.4843854904174805,
+          "p95": 4.484411239624023,
+          "first": 4.484384059906006,
+          "last": 4.484412670135498
+        },
+        "z": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.8556150197982788,
+          "max": 0.8557754158973694,
+          "span": 0.00016039609909057617,
+          "mean": 0.8556952178478241,
+          "std": 8.019804954528809e-05,
+          "median": 0.8556952178478241,
+          "p05": 0.8556230396032334,
+          "p95": 0.8557673960924148,
+          "first": 0.8556150197982788,
+          "last": 0.8557754158973694
+        },
+        "vx": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": -0.0038649810012429953,
+          "max": -0.0034647986758500338,
+          "span": 0.0004001823253929615,
+          "mean": -0.0036648898385465145,
+          "std": 0.00020009116269648075,
+          "median": -0.0036648898385465145,
+          "p05": -0.003844971884973347,
+          "p95": -0.003484807792119682,
+          "first": -0.0034647986758500338,
+          "last": -0.0038649810012429953
+        },
+        "vy": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.0027067079208791256,
+          "max": 0.0027251476421952248,
+          "span": 1.8439721316099167e-05,
+          "mean": 0.002715927781537175,
+          "std": 9.219860658049583e-06,
+          "median": 0.002715927781537175,
+          "p05": 0.0027076299069449306,
+          "p95": 0.0027242256561294197,
+          "first": 0.0027251476421952248,
+          "last": 0.0027067079208791256
+        },
+        "vz": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.020599843934178352,
+          "max": 0.020821604877710342,
+          "span": 0.00022176094353199005,
+          "mean": 0.020710724405944347,
+          "std": 0.00011088047176599503,
+          "median": 0.020710724405944347,
+          "p05": 0.02061093198135495,
+          "p95": 0.020810516830533744,
+          "first": 0.020821604877710342,
+          "last": 0.020599843934178352
+        },
+        "z_deriv": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.01280241645872593,
+          "max": 0.01298920251429081,
+          "span": 0.00018678605556488037,
+          "mean": 0.01289580948650837,
+          "std": 9.339302778244019e-05,
+          "median": 0.01289580948650837,
+          "p05": 0.012811755761504173,
+          "p95": 0.012979863211512566,
+          "first": 0.01298920251429081,
+          "last": 0.01280241645872593
+        },
+        "dist_bottom": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.10000002384185791,
+          "max": 0.10000002384185791,
+          "span": 0.0,
+          "mean": 0.10000002384185791,
+          "std": 0.0,
+          "median": 0.10000002384185791,
+          "p05": 0.10000002384185791,
+          "p95": 0.10000002384185791,
+          "first": 0.10000002384185791,
+          "last": 0.10000002384185791
+        },
+        "epv": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.28091397881507874,
+          "max": 0.28151968121528625,
+          "span": 0.0006057024002075195,
+          "mean": 0.2812168300151825,
+          "std": 0.00030285120010375977,
+          "median": 0.2812168300151825,
+          "p05": 0.2809442639350891,
+          "p95": 0.2814893960952759,
+          "first": 0.28151968121528625,
+          "last": 0.28091397881507874
+        },
+        "evv": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.059497758746147156,
+          "max": 0.059631552547216415,
+          "span": 0.00013379380106925964,
+          "mean": 0.059564655646681786,
+          "std": 6.689690053462982e-05,
+          "median": 0.059564655646681786,
+          "p05": 0.05950444843620062,
+          "p95": 0.05962486285716295,
+          "first": 0.059497758746147156,
+          "last": 0.059631552547216415
+        },
+        "xy_valid": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ]
+        },
+        "z_valid": {
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ]
+        },
+        "v_xy_valid": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ]
+        },
+        "v_z_valid": {
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ]
+        },
+        "heading_good_for_control": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ]
+        },
+        "xy_global": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ]
+        },
+        "z_global": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ]
+        },
+        "dist_bottom_valid": {
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ]
+        },
+        "dead_reckoning": {
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ]
+        },
+        "xy_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 7,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 7,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "z_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vxy_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 7,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 7,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vz_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "heading_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "dist_bottom_reset_counter": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253789633,
+              "seconds_since_ulog_header": 0.304651,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "delta_z": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "delta_vz": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.0001061375587596558,
+          "max": 0.0001061375587596558,
+          "span": 0.0,
+          "mean": 0.0001061375587596558,
+          "std": 0.0,
+          "median": 0.0001061375587596558,
+          "p05": 0.0001061375587596558,
+          "p95": 0.0001061375587596558,
+          "first": 0.0001061375587596558,
+          "last": 0.0001061375587596558
+        },
+        "delta_heading": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "delta_dist_bottom": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "vz_minus_z_deriv": {
+          "samples": 2,
+          "finite_samples": 2,
+          "nonfinite_samples": 0,
+          "min": 0.007797427475452423,
+          "max": 0.007832402363419533,
+          "span": 3.497488796710968e-05,
+          "mean": 0.007814914919435978,
+          "std": 1.748744398355484e-05,
+          "median": 0.007814914919435978,
+          "p05": 0.007799176219850779,
+          "p95": 0.007830653619021178,
+          "first": 0.007832402363419533,
+          "last": 0.007797427475452423
+        }
+      },
+      "first_local_sample": {
+        "timestamp_us": 253789633,
+        "seconds_since_ulog_header": 0.304651
+      },
+      "last_local_sample": {
+        "timestamp_us": 253802359,
+        "seconds_since_ulog_header": 0.317377
+      }
+    }
+  ],
+  "attitude": [
+    {
+      "topic": "vehicle_attitude",
+      "instance": 0,
+      "samples": 15,
+      "first": {
+        "timestamp_us": 253789101,
+        "seconds_since_ulog_header": 0.304119
+      },
+      "last": {
+        "timestamp_us": 254447303,
+        "seconds_since_ulog_header": 0.962321
+      },
+      "timestamp_span_s": 0.658202,
+      "sample_intervals_s": {
+        "samples": 14,
+        "finite_samples": 14,
+        "nonfinite_samples": 0,
+        "min": 0.006197,
+        "max": 0.053839,
+        "span": 0.047642,
+        "mean": 0.047014428571428575,
+        "std": 0.011672639931017475,
+        "median": 0.048045500000000005,
+        "p05": 0.031976000000000004,
+        "p95": 0.0538195,
+        "first": 0.006197,
+        "last": 0.053406
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 21.270066028362113,
+      "publication_minus_sample_s": {
+        "samples": 15,
+        "finite_samples": 15,
+        "nonfinite_samples": 0,
+        "min": 0.000217,
+        "max": 0.000808,
+        "span": 0.000591,
+        "mean": 0.0005240666666666666,
+        "std": 0.00016507512094666342,
+        "median": 0.000476,
+        "p05": 0.0003199,
+        "p95": 0.000752,
+        "first": 0.000458,
+        "last": 0.000217
+      },
+      "quat_reset_counter": {
+        "present": true,
+        "counts": [
+          {
+            "value": 0,
+            "samples": 15
+          }
+        ],
+        "changes": [
+          {
+            "timestamp_us": 253789101,
+            "seconds_since_ulog_header": 0.304119,
+            "sample_index": 0,
+            "value": 0,
+            "initial": true
+          }
+        ],
+        "observed_change_count": 0
+      },
+      "delta_q_reset": {
+        "delta_q_reset[0]": {
+          "samples": 15,
+          "finite_samples": 15,
+          "nonfinite_samples": 0,
+          "min": 1.0,
+          "max": 1.0,
+          "span": 0.0,
+          "mean": 1.0,
+          "std": 0.0,
+          "median": 1.0,
+          "p05": 1.0,
+          "p95": 1.0,
+          "first": 1.0,
+          "last": 1.0
+        },
+        "delta_q_reset[1]": {
+          "samples": 15,
+          "finite_samples": 15,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "delta_q_reset[2]": {
+          "samples": 15,
+          "finite_samples": 15,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        },
+        "delta_q_reset[3]": {
+          "samples": 15,
+          "finite_samples": 15,
+          "nonfinite_samples": 0,
+          "min": 0.0,
+          "max": 0.0,
+          "span": 0.0,
+          "mean": 0.0,
+          "std": 0.0,
+          "median": 0.0,
+          "p05": 0.0,
+          "p95": 0.0,
+          "first": 0.0,
+          "last": 0.0
+        }
+      }
+    }
+  ],
+  "offboard_heartbeat": {
+    "topic": "offboard_control_mode",
+    "present": false,
+    "last_timestamp_us": null,
+    "last_seconds_since_ulog_header": null,
+    "absence_limit": "No samples in this ULog; alone this cannot establish unpublished topics were logged or prove physical link silence."
+  },
+  "failsafe_flags": [
+    {
+      "topic": "failsafe_flags",
+      "instance": 0,
+      "samples": 3,
+      "first": {
+        "timestamp_us": 253478037,
+        "seconds_since_ulog_header": -0.006945
+      },
+      "last": {
+        "timestamp_us": 254355091,
+        "seconds_since_ulog_header": 0.870109
+      },
+      "timestamp_span_s": 0.877054,
+      "sample_intervals_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 0.326114,
+        "max": 0.55094,
+        "span": 0.22482599999999997,
+        "mean": 0.438527,
+        "std": 0.11241299999999999,
+        "median": 0.438527,
+        "p05": 0.3373553,
+        "p95": 0.5396987,
+        "first": 0.326114,
+        "last": 0.55094
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.2803613004444423,
+      "fields": {
+        "mode_req_angular_velocity": {
+          "present": true,
+          "counts": [
+            {
+              "value": 8311934,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 8311934,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_attitude": {
+          "present": true,
+          "counts": [
+            {
+              "value": 8310910,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 8310910,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_local_alt": {
+          "present": true,
+          "counts": [
+            {
+              "value": 8257662,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 8257662,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_local_position": {
+          "present": true,
+          "counts": [
+            {
+              "value": 7995448,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 7995448,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_local_position_relaxed": {
+          "present": true,
+          "counts": [
+            {
+              "value": 262212,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 262212,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_global_position": {
+          "present": true,
+          "counts": [
+            {
+              "value": 56,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 56,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_mission": {
+          "present": true,
+          "counts": [
+            {
+              "value": 8,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 8,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_offboard_signal": {
+          "present": true,
+          "counts": [
+            {
+              "value": 16384,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 16384,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_home_position": {
+          "present": true,
+          "counts": [
+            {
+              "value": 32,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 32,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_wind_and_flight_time_compliance": {
+          "present": true,
+          "counts": [
+            {
+              "value": 2621464,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 2621464,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_prevent_arming": {
+          "present": true,
+          "counts": [
+            {
+              "value": 3944480,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 3944480,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_manual_control": {
+          "present": true,
+          "counts": [
+            {
+              "value": 33863,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 33863,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mode_req_other": {
+          "present": true,
+          "counts": [
+            {
+              "value": 2139095040,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 2139095040,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "angular_velocity_invalid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "attitude_invalid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "local_altitude_invalid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "local_position_invalid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "local_position_invalid_relaxed": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "local_velocity_invalid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "global_position_invalid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "auto_mission_missing": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "offboard_control_signal_lost": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "home_position_invalid": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "manual_control_signal_lost": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "gcs_connection_lost": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "battery_warning": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "battery_low_remaining_time": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "battery_unhealthy": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "geofence_breached": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "mission_failure": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vtol_fixed_wing_system_failure": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "wind_limit_exceeded": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flight_time_limit_exceeded": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "local_position_accuracy_low": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "navigator_failure": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "fd_critical_failure": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "fd_esc_arming_failure": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "fd_imbalanced_prop": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "fd_motor_failure": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478037,
+              "seconds_since_ulog_header": -0.006945,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      }
+    }
+  ],
+  "vehicle_control_mode": [
+    {
+      "topic": "vehicle_control_mode",
+      "instance": 0,
+      "samples": 3,
+      "first": {
+        "timestamp_us": 253478493,
+        "seconds_since_ulog_header": -0.006489
+      },
+      "last": {
+        "timestamp_us": 254322147,
+        "seconds_since_ulog_header": 0.837165
+      },
+      "timestamp_span_s": 0.843654,
+      "sample_intervals_s": {
+        "samples": 2,
+        "finite_samples": 2,
+        "nonfinite_samples": 0,
+        "min": 0.336581,
+        "max": 0.507073,
+        "span": 0.17049199999999998,
+        "mean": 0.421827,
+        "std": 0.08524599999999999,
+        "median": 0.421827,
+        "p05": 0.3451056,
+        "p95": 0.4985484,
+        "first": 0.336581,
+        "last": 0.507073
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.3706400965324645,
+      "fields": {
+        "flag_armed": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            },
+            {
+              "value": 1,
+              "samples": 1
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            },
+            {
+              "timestamp_us": 253815074,
+              "seconds_since_ulog_header": 0.330092,
+              "sample_index": 1,
+              "value": 0,
+              "initial": false
+            }
+          ],
+          "observed_change_count": 1
+        },
+        "flag_multicopter_position_control_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_manual_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_auto_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_offboard_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_position_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_velocity_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_altitude_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_climb_rate_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_acceleration_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_attitude_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_rates_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_allocation_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "flag_control_termination_enabled": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 3
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253478493,
+              "seconds_since_ulog_header": -0.006489,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        }
+      }
+    }
+  ],
+  "land_detection": [
+    {
+      "topic": "vehicle_land_detected",
+      "instance": 0,
+      "samples": 2,
+      "first": {
+        "timestamp_us": 253635369,
+        "seconds_since_ulog_header": 0.150387
+      },
+      "last": {
+        "timestamp_us": 254004949,
+        "seconds_since_ulog_header": 0.519967
+      },
+      "timestamp_span_s": 0.36958,
+      "sample_intervals_s": {
+        "samples": 1,
+        "finite_samples": 1,
+        "nonfinite_samples": 0,
+        "min": 0.36958,
+        "max": 0.36958,
+        "span": 0.0,
+        "mean": 0.36958,
+        "std": 0.0,
+        "median": 0.36958,
+        "p05": 0.36958,
+        "p95": 0.36958,
+        "first": 0.36958,
+        "last": 0.36958
+      },
+      "nonpositive_intervals": 0,
+      "observed_logger_samples_per_s": 2.7057741219762974,
+      "fields": {
+        "freefall": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "ground_contact": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "maybe_landed": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "landed": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "in_ground_effect": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "in_descend": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "has_low_throttle": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "vertical_movement": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "horizontal_movement": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "rotational_movement": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 0,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "close_to_ground_or_skipped_check": {
+          "present": true,
+          "counts": [
+            {
+              "value": 1,
+              "samples": 2
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            }
+          ],
+          "observed_change_count": 0
+        },
+        "at_rest": {
+          "present": true,
+          "counts": [
+            {
+              "value": 0,
+              "samples": 1
+            },
+            {
+              "value": 1,
+              "samples": 1
+            }
+          ],
+          "changes": [
+            {
+              "timestamp_us": 253635369,
+              "seconds_since_ulog_header": 0.150387,
+              "sample_index": 0,
+              "value": 1,
+              "initial": true
+            },
+            {
+              "timestamp_us": 254004949,
+              "seconds_since_ulog_header": 0.519967,
+              "sample_index": 1,
+              "value": 0,
+              "initial": false
+            }
+          ],
+          "observed_change_count": 1
+        }
+      }
+    }
+  ],
+  "logged_messages": [
+    {
+      "timestamp_us": 253478485,
+      "seconds_since_ulog_header": -0.006497,
+      "level_ascii": 54,
+      "severity": 6,
+      "message": "[commander] Armed by RC switch\t"
+    },
+    {
+      "timestamp_us": 253482123,
+      "seconds_since_ulog_header": -0.002859,
+      "level_ascii": 54,
+      "severity": 6,
+      "message": "[logger] Start file log (type: full)"
+    },
+    {
+      "timestamp_us": 253483098,
+      "seconds_since_ulog_header": -0.001884,
+      "level_ascii": 54,
+      "severity": 6,
+      "message": "[logger] [logger] /fs/microsd/log/2026-10-20/03_20_32.ulg\t"
+    },
+    {
+      "timestamp_us": 253484978,
+      "seconds_since_ulog_header": -4e-06,
+      "level_ascii": 54,
+      "severity": 6,
+      "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-20/03_20_32.ulg"
+    },
+    {
+      "timestamp_us": 253815062,
+      "seconds_since_ulog_header": 0.33008,
+      "level_ascii": 54,
+      "severity": 6,
+      "message": "[commander] Disarmed by RC switch\t"
+    }
+  ],
+  "decoded_events": [
+    {
+      "timestamp_us": 253478487,
+      "seconds_since_ulog_header": -0.006495,
+      "level": "INFO",
+      "message": "Armed by RC switch"
+    },
+    {
+      "timestamp_us": 253483115,
+      "seconds_since_ulog_header": -0.001867,
+      "level": "INFO",
+      "message": "logging: opening log file 2026-10-20/3_20_32.ulg"
+    },
+    {
+      "timestamp_us": 253815063,
+      "seconds_since_ulog_header": 0.330081,
+      "level": "INFO",
+      "message": "Disarmed by RC switch"
+    }
+  ],
+  "raw_events": [
+    {
+      "timestamp": 217591875,
+      "id": 27825120,
+      "event_sequence": 72,
+      "arguments[0]": 0,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 18,
+      "arguments[4]": 1,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 131,
+      "arguments[10]": 191,
+      "arguments[11]": 1,
+      "arguments[12]": 128,
+      "arguments[13]": 131,
+      "arguments[14]": 191,
+      "arguments[15]": 1,
+      "arguments[16]": 128,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 136
+    },
+    {
+      "timestamp": 217591879,
+      "id": 30612409,
+      "event_sequence": 73,
+      "arguments[0]": 124,
+      "arguments[1]": 0,
+      "arguments[2]": 126,
+      "arguments[3]": 0,
+      "arguments[4]": 17,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 51
+    },
+    {
+      "timestamp": 217591882,
+      "id": 26788467,
+      "event_sequence": 74,
+      "arguments[0]": 56,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 24,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 51
+    },
+    {
+      "timestamp": 217591886,
+      "id": 17154777,
+      "event_sequence": 75,
+      "arguments[0]": 8,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 20,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 102
+    },
+    {
+      "timestamp": 217591889,
+      "id": 19865031,
+      "event_sequence": 76,
+      "arguments[0]": 0,
+      "arguments[1]": 64,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 20,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 51
+    },
+    {
+      "timestamp": 217591892,
+      "id": 16856624,
+      "event_sequence": 77,
+      "arguments[0]": 32,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 20,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 102
+    },
+    {
+      "timestamp": 217591895,
+      "id": 18691879,
+      "event_sequence": 78,
+      "arguments[0]": 0,
+      "arguments[1]": 130,
+      "arguments[2]": 16,
+      "arguments[3]": 2,
+      "arguments[4]": 48,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 136
+    },
+    {
+      "timestamp": 253478487,
+      "id": 26266355,
+      "event_sequence": 79,
+      "arguments[0]": 2,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 0,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 102
+    },
+    {
+      "timestamp": 253483115,
+      "id": 17980399,
+      "event_sequence": 80,
+      "arguments[0]": 234,
+      "arguments[1]": 7,
+      "arguments[2]": 10,
+      "arguments[3]": 20,
+      "arguments[4]": 3,
+      "arguments[5]": 20,
+      "arguments[6]": 32,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 102
+    },
+    {
+      "timestamp": 253804068,
+      "id": 27825120,
+      "event_sequence": 81,
+      "arguments[0]": 0,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 18,
+      "arguments[4]": 1,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 131,
+      "arguments[10]": 191,
+      "arguments[11]": 1,
+      "arguments[12]": 128,
+      "arguments[13]": 131,
+      "arguments[14]": 191,
+      "arguments[15]": 1,
+      "arguments[16]": 128,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 136
+    },
+    {
+      "timestamp": 253804073,
+      "id": 30612409,
+      "event_sequence": 82,
+      "arguments[0]": 124,
+      "arguments[1]": 0,
+      "arguments[2]": 126,
+      "arguments[3]": 0,
+      "arguments[4]": 17,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 51
+    },
+    {
+      "timestamp": 253804076,
+      "id": 26788467,
+      "event_sequence": 83,
+      "arguments[0]": 56,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 24,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 51
+    },
+    {
+      "timestamp": 253804079,
+      "id": 17154777,
+      "event_sequence": 84,
+      "arguments[0]": 8,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 20,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 102
+    },
+    {
+      "timestamp": 253804082,
+      "id": 19865031,
+      "event_sequence": 85,
+      "arguments[0]": 0,
+      "arguments[1]": 64,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 20,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 51
+    },
+    {
+      "timestamp": 253804085,
+      "id": 16856624,
+      "event_sequence": 86,
+      "arguments[0]": 32,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 20,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 102
+    },
+    {
+      "timestamp": 253804088,
+      "id": 18691879,
+      "event_sequence": 87,
+      "arguments[0]": 0,
+      "arguments[1]": 130,
+      "arguments[2]": 20,
+      "arguments[3]": 2,
+      "arguments[4]": 48,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 136
+    },
+    {
+      "timestamp": 253815063,
+      "id": 32794487,
+      "event_sequence": 88,
+      "arguments[0]": 2,
+      "arguments[1]": 0,
+      "arguments[2]": 0,
+      "arguments[3]": 0,
+      "arguments[4]": 0,
+      "arguments[5]": 0,
+      "arguments[6]": 0,
+      "arguments[7]": 0,
+      "arguments[8]": 0,
+      "arguments[9]": 0,
+      "arguments[10]": 0,
+      "arguments[11]": 0,
+      "arguments[12]": 0,
+      "arguments[13]": 0,
+      "arguments[14]": 0,
+      "arguments[15]": 0,
+      "arguments[16]": 0,
+      "arguments[17]": 0,
+      "arguments[18]": 0,
+      "arguments[19]": 0,
+      "arguments[20]": 0,
+      "arguments[21]": 0,
+      "arguments[22]": 0,
+      "arguments[23]": 0,
+      "arguments[24]": 0,
+      "log_levels": 102
+    }
+  ],
+  "boot_console_output": [
+    "1 bound accel instance 0 (device_id=6946826)\nINFO  [heater] heater 2 bound accel instance 1 (device_id=3407906)\nINFO  [cdcacm_autostart] Starting mavlink on /dev/ttyACM0 (SYS_USB_AUTO=2)\nINFO  [mavlink] mode: Onboard, data rate: 100000 B/s on /dev/ttyACM0 @ 2000000B\nERROR [parameters] get: param 65535 invalid\nERROR [parameters] get: param 65535 invalid\nERROR [mavlink] vehicle_command_ack lost, generation 4 -> 6\nERROR [mavlink] vehicle_command_ack lost, generation 11 -> 15\nERROR [mavlink] vehicle_command_ack lost, generation 13 -> 17\nERROR [mavlink] vehicle_command_ack lost, generation 22 -> 24\nWARN  [health_and_arming_checks] Preflight Fail: CPU load too high: 95.6%\nINFO  [rc_input] RC scan: SBUS RC input locked\nINFO  [uxrce_dds_client] synchronized with time offset 1792466178999441us\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/register_ext_component_reply data writer, topic id: 198\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/arming_check_request data writer, topic id: 17\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/mode_completed data writer, topic id: 150\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/battery_status data writer, topic id: 20\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/collision_constraints data writer, topic id: 27\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/estimator_status_flags data writer, topic id: 85\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/failsafe_flags data writer, topic id: 91\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/manual_control_setpoint data writer, topic id: 141\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/manual_control_switches data writer, topic id: 142\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/message_format_response data writer, topic id: 147\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/position_setpoint_triplet data writer, topic id: 185\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/sensor_combined data writer, topic id: 217\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/timesync_status data writer, topic id: 240\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_land_detected data writer, topic id: 268\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_attitude data writer, topic id: 255\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_control_mode data writer, topic id: 262\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_command_ack data writer, topic id: 259\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_global_position data writer, topic id: 263\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_gps_position data writer, topic id: 265\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_local_position data writer, topic id: 269\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_odometry data writer, topic id: 274\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_status_v1 data writer, topic id: 279\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/airspeed_validated data writer, topic id: 14\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/vtol_vehicle_status data writer, topic id: 288\nINFO  [uxrce_dds_client] successfully created rt/fmu/out/home_position data writer, topic id: 123\nINFO  [uxrce_dds_client] time sync converged\nINFO  [commander] Armed by external command\t\nINFO  [logger] Start file log (type: full)\nINFO  [logger] [logger] /fs/microsd/log/2026-10-20/03_19_37.ulg\t\nINFO  [logger] Opened full log file: /fs/microsd/log/2026-10-20/03_19_37.ulg\nINFO  [commander] Takeoff detected\t\nWARN  [failsafe] Failsafe activated\t\nINFO  [commander] Landing detected\t\nINFO  [commander] Disarmed by landing\t\nINFO  [logger] closed logfile, bytes written: 731537\nINFO  [commander] Armed by RC switch\t\nINFO  [logger] Start file log (type: full)\nINFO  [logger] [logger] /fs/microsd/log/2026-10-20/03_20_32.ulg\t\nINFO  [logger] Opened full log file: /fs/microsd/log/2026-10-20/03_20_32.ulg\n"
+  ],
+  "boot_console_time_limit": "Untimed metadata can include activity before this ULog; do not place its messages on the data timeline.",
+  "console_dds_failure_lines": [
+    "INFO  [uxrce_dds_client] synchronized with time offset 1792466178999441us",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/register_ext_component_reply data writer, topic id: 198",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/arming_check_request data writer, topic id: 17",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/mode_completed data writer, topic id: 150",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/battery_status data writer, topic id: 20",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/collision_constraints data writer, topic id: 27",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/estimator_status_flags data writer, topic id: 85",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/failsafe_flags data writer, topic id: 91",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/manual_control_setpoint data writer, topic id: 141",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/manual_control_switches data writer, topic id: 142",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/message_format_response data writer, topic id: 147",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/position_setpoint_triplet data writer, topic id: 185",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/sensor_combined data writer, topic id: 217",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/timesync_status data writer, topic id: 240",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_land_detected data writer, topic id: 268",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_attitude data writer, topic id: 255",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_control_mode data writer, topic id: 262",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_command_ack data writer, topic id: 259",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_global_position data writer, topic id: 263",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_gps_position data writer, topic id: 265",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_local_position data writer, topic id: 269",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_odometry data writer, topic id: 274",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_status_v1 data writer, topic id: 279",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/airspeed_validated data writer, topic id: 14",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/vtol_vehicle_status data writer, topic id: 288",
+    "INFO  [uxrce_dds_client] successfully created rt/fmu/out/home_position data writer, topic id: 123",
+    "INFO  [uxrce_dds_client] time sync converged"
+  ],
+  "classification": {
+    "observed_nav_states": [
+      15
+    ],
+    "position_nav_state_2_observed": false,
+    "offboard_nav_state_14_observed": false,
+    "offboard_heartbeat_samples_observed": false,
+    "position_stable_height_baseline_demonstrated": false,
+    "stable_height_limit": "No numerical physical-height acceptance threshold or independent height measurement supplied; report ranges, do not infer flight stability from estimator validity."
+  },
+  "source_unchanged_during_inspection": true
+}

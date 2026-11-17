@@ -1,0 +1,1 @@
+FC01_PREBUILT_INSTALL_FAILED: Command '['/usr/bin/systemd-analyze', 'verify', '/tmp/fc01-unit-check-5jcr8p89/fc01-navigation.service']' returned non-zero exit status 1.

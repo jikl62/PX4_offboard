@@ -1,0 +1,779 @@
+From e8652ad686c52502ea877fd23b5805d6b64e0da6 Mon Sep 17 00:00:00 2001
+From: jikl62 <255068030+jikl62@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 19:22:42 +0800
+Subject: [PATCH 2/2] fix(diagnostics): retain queued fault causes and observe
+ PX4 range trends
+
+---
+ .../attitude_altitude_core.hpp                |  34 +-
+ .../range_trend_diagnostics.hpp               |  78 +++++
+ .../jikl_fc01_system/src/fc01_system_node.cpp |  51 ++-
+ native/tests/adapter_compile_check.py         |   2 +-
+ .../tests/stage2_20261116_captured_config.hpp |  77 +++++
+ native/tests/test_20261116_diagnostics.cpp    |  80 +++++
+ .../tests/test_20261116_height_contract.cpp   |  45 +++
+ native/tests/test_receive_event_adapter.py    |  19 ++
+ tests/test_20261116_stage2_equivalence.py     | 307 ++++++++++++++++++
+ 9 files changed, 681 insertions(+), 12 deletions(-)
+ create mode 100644 native/src/jikl_fc01_system/include/jikl_fc01_system/range_trend_diagnostics.hpp
+ create mode 100644 native/tests/stage2_20261116_captured_config.hpp
+ create mode 100644 native/tests/test_20261116_diagnostics.cpp
+ create mode 100644 native/tests/test_20261116_height_contract.cpp
+ create mode 100644 tests/test_20261116_stage2_equivalence.py
+
+diff --git a/native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp b/native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp
+index 2ec2a1b..ae3be9e 100644
+--- a/native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp
++++ b/native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp
+@@ -1017,0 +1018,19 @@ public:
++  // 通用拒绝原因继续沿用原协议；另存首次触发的全部失败位，避免健康尾帧或后续坏帧抹掉首因。
++  // 这些值只供日志读取，不参与恢复资格、控制计算或发布裁决。源戳为各来源微秒，now为主机单调秒。
++  struct QueuedSafetyEvidence {
++    bool recorded{};
++    std::uint32_t mask{};
++    SafetyEvent source{SafetyEvent::Status};
++    double observed_at{};
++    std::uint64_t status_stamp{}, land_stamp{}, local_stamp{}, switch_stamp{};
++  };
++  const QueuedSafetyEvidence& queued_safety_evidence() const {
++    return queued_safety_evidence_;
++  }
++  // 位0..9依次对应原通用条件；bit6仍严格复用rc_live，不能用诊断细分放宽原来的准入规则。
++  static std::uint32_t queued_safety_mask(const Feedback& s) {
++    return (s.kill ? 1U : 0U) | (s.failsafe ? 2U : 0U) | (s.calibration ? 4U : 0U) |
++           (s.hil ? 8U : 0U) | (!s.preflight ? 16U : 0U) | (!s.battery_ready ? 32U : 0U) |
++           (!RcNavigationStart::rc_live(s) ? 64U : 0U) | (!s.rc_axes_safe ? 128U : 0U) |
++           (s.rc_sticks_moving ? 256U : 0U) | (!s.rc_aux_switches_safe ? 512U : 0U);
++  }
+@@ -1119,4 +1138,10 @@ public:
+-        if (s.kill || s.failsafe || s.calibration || s.hil || !s.preflight || !s.battery_ready ||
+-            !RcNavigationStart::rc_live(s) || !s.rc_axes_safe || s.rc_sticks_moving ||
+-            !s.rc_aux_switches_safe)
+-          return reject("RC_QUEUED_SAFETY_CONDITION");
++        const auto mask = queued_safety_mask(s);
++        if (mask) {
++          const bool rejected = reject("RC_QUEUED_SAFETY_CONDITION");
++          // 未解锁的临时准备拒绝会按原规则重新等待；只记录真正锁存Safety的任务首因。
++          // 否则启动期preflight未就绪会污染稍后人工解锁任务的真正故障。
++          if (phase_ == Phase::Safety && !queued_safety_evidence_.recorded)
++            queued_safety_evidence_ = {true, mask, source, now, s.status_stamp, s.land_stamp,
++                                       s.local_stamp, s.rc_switch_sample_stamp};
++          return rejected;
++        }
+@@ -2829,0 +2855 @@ private:
++  QueuedSafetyEvidence queued_safety_evidence_;
+diff --git a/native/src/jikl_fc01_system/include/jikl_fc01_system/range_trend_diagnostics.hpp b/native/src/jikl_fc01_system/include/jikl_fc01_system/range_trend_diagnostics.hpp
+new file mode 100644
+index 0000000..bac2964
+--- /dev/null
++++ b/native/src/jikl_fc01_system/include/jikl_fc01_system/range_trend_diagnostics.hpp
+@@ -0,0 +1,78 @@
++#pragma once
++// 测距趋势只读核对：PX4 dist_bottom 是地形距离估计，可能与 z 共用 EKF 数据，
++// RANGE 位不认证具体 MTF 设备，也不能证明独立测量。此类绝不返回控制许可或改写地面 z0。
++#include <cmath>
++#include <cstdint>
++
++namespace fc01::attitude {
++struct RangeTrendEvidence {
++  bool available{}, compared{}, same_direction{};
++  double distance_m{}, variance_m2{}, fused_rise_m{}, range_rise_m{}, interval_s{};
++  std::uint64_t sample_stamp{};
++};
++class RangeTrendDiagnostics {
++public:
++  // stamp为local原始样本µs；z为NED下正m，distance为正向离地距离m，variance为m²。
++  // 仅处理已由接收层接受的消息。新鲜度由读取方另外检查，重复样本不延长比较窗口。
++  void observe(std::uint64_t stamp, bool valid, double z, double distance, double variance,
++               std::uint8_t z_reset, std::uint8_t distance_reset, double max_gap_s) {
++    const bool usable = stamp && valid && std::isfinite(z) && std::isfinite(distance) &&
++                        distance >= 0 && std::isfinite(variance) && variance >= 0;
++    if (!usable || (last_stamp_ && stamp < last_stamp_)) {
++      e_ = {};
++      anchored_ = false;
++      return;
++    }
++    if (stamp == last_stamp_) {
++      // 同戳改数也不能当成另一个测量；保持水位但撤销当前诊断。
++      if (z != last_z_ || distance != e_.distance_m || variance != e_.variance_m2 ||
++          z_reset != z_reset_ || distance_reset != distance_reset_) {
++        e_ = {};
++        anchored_ = false;
++      }
++      return;
++    }
++    const bool continuous = anchored_ && z_reset == z_reset_ && distance_reset == distance_reset_ &&
++                            double(stamp - last_stamp_) * 1e-6 <= max_gap_s;
++    last_stamp_ = stamp;
++    last_z_ = z;
++    z_reset_ = z_reset;
++    distance_reset_ = distance_reset;
++    if (!continuous) {
++      e_ = {};
++      anchor_stamp_ = stamp;
++      anchor_z_ = z;
++      anchor_distance_ = distance;
++      anchored_ = true;
++    }
++    e_.available = true;
++    e_.sample_stamp = stamp;
++    e_.distance_m = distance;
++    e_.variance_m2 = variance;
++    // 200ms仅是诊断差分窗口，降低单帧量化噪声影响；不是离地/到高判据或硬一致性阈值。
++    if (stamp - anchor_stamp_ >= 200000) {
++      e_.compared = true;
++      e_.interval_s = double(stamp - anchor_stamp_) * 1e-6;
++      e_.fused_rise_m = anchor_z_ - z;
++      e_.range_rise_m = distance - anchor_distance_;
++      e_.same_direction = (e_.fused_rise_m > 0 && e_.range_rise_m > 0) ||
++                          (e_.fused_rise_m < 0 && e_.range_rise_m < 0) ||
++                          (e_.fused_rise_m == 0 && e_.range_rise_m == 0);
++      anchor_stamp_ = stamp;
++      anchor_z_ = z;
++      anchor_distance_ = distance;
++    }
++  }
++  // fresh必须同时来自信封、原始样本和同步时钟；失效返回空值，不能展示旧比较为当前有效。
++  RangeTrendEvidence evidence(bool fresh) const {
++    return fresh ? e_ : RangeTrendEvidence{};
++  }
++
++private:
++  RangeTrendEvidence e_;
++  bool anchored_{};
++  std::uint64_t last_stamp_{}, anchor_stamp_{};
++  std::uint8_t z_reset_{}, distance_reset_{};
++  double last_z_{}, anchor_z_{}, anchor_distance_{};
++};
++} // namespace fc01::attitude
+diff --git a/native/src/jikl_fc01_system/src/fc01_system_node.cpp b/native/src/jikl_fc01_system/src/fc01_system_node.cpp
+index 113385a..a136884 100644
+--- a/native/src/jikl_fc01_system/src/fc01_system_node.cpp
++++ b/native/src/jikl_fc01_system/src/fc01_system_node.cpp
+@@ -18,0 +19 @@
++#include "jikl_fc01_system/range_trend_diagnostics.hpp"
+@@ -53,0 +55 @@
++#include <type_traits>
+@@ -943 +945 @@ private:
+-    if (accepted)
++    if (accepted) {
+@@ -945 +947,9 @@ private:
+-    else
++      if constexpr (std::is_same_v<T, Local>) {
++        // 只旁观同一local流；缺测距不创建新依赖，不向Core传控制授权。
++        range_trend_.observe(msg.timestamp_sample,
++                             msg.z_valid && msg.dist_bottom_valid &&
++                                 (msg.dist_bottom_sensor_bitfield & Local::DIST_BOTTOM_SENSOR_RANGE),
++                             msg.z, msg.dist_bottom, msg.dist_bottom_var, msg.z_reset_counter,
++                             msg.dist_bottom_reset_counter, config_.attitude.local_timeout);
++      }
++    } else
+@@ -1592 +1602 @@ private:
+-  std::string vertical_feedback_fields() const {
++  std::string vertical_feedback_fields(const f::Snapshot& s, double now) const {
+@@ -1593,0 +1604,7 @@ private:
++    const auto host = s.attitude.source_host_stamp;
++    const auto range = range_trend_.evidence(
++        s.attitude.source_clock_validated && s.attitude.source_clock_valid && host > 0 &&
++        local_stamp_.fresh(now, config_.attitude.local_timeout) &&
++        local_sample_.fresh(host, now, config_.attitude.local_timeout) &&
++        f::source_sample_in_clock(local_stamp_.value, local_.timestamp_sample,
++                                  host, config_.attitude.local_timeout));
+@@ -1609 +1626,11 @@ private:
+-        << ",\"vertical_feedback_reason\":" << f::quote(e.reason);
++        << ",\"vertical_feedback_reason\":" << f::quote(e.reason)
++        << ",\"range_policy\":\"diagnostic_only_px4_dist_bottom\""
++        << ",\"range_available\":" << boolean(range.available)
++        << ",\"range_compared\":" << boolean(range.compared)
++        << ",\"range_distance_m\":" << number(range.distance_m, range.available)
++        << ",\"range_variance_m2\":" << number(range.variance_m2, range.available)
++        << ",\"range_fused_rise_m\":" << number(range.fused_rise_m, range.compared)
++        << ",\"range_rise_m\":" << number(range.range_rise_m, range.compared)
++        << ",\"range_interval_s\":" << number(range.interval_s, range.compared)
++        << ",\"range_same_direction\":" << boolean(range.compared && range.same_direction)
++        << ",\"range_sample_stamp\":" << range.sample_stamp;
+@@ -1637 +1664 @@ private:
+-              << rc_recovery_fields(s, now) << reference_fields(s) << vertical_feedback_fields()
++              << rc_recovery_fields(s, now) << reference_fields(s) << vertical_feedback_fields(s, now)
+@@ -1712,0 +1740 @@ private:
++    const auto& queued = core.queued_safety_evidence();
+@@ -1716 +1744,9 @@ private:
+-    out << ",\"rc_first_fault_reason\":" << f::quote(d.first_fault_reason)
++    out << ",\"rc_queued_safety_recorded\":" << boolean(queued.recorded)
++        << ",\"rc_queued_safety_mask\":" << queued.mask
++        << ",\"rc_queued_safety_source\":" << unsigned(queued.source)
++        << ",\"rc_queued_safety_observed_at\":" << number(queued.observed_at, queued.recorded)
++        << ",\"rc_queued_safety_status_stamp\":" << queued.status_stamp
++        << ",\"rc_queued_safety_land_stamp\":" << queued.land_stamp
++        << ",\"rc_queued_safety_local_stamp\":" << queued.local_stamp
++        << ",\"rc_queued_safety_switch_stamp\":" << queued.switch_stamp
++        << ",\"rc_first_fault_reason\":" << f::quote(d.first_fault_reason)
+@@ -2102 +2138 @@ private:
+-        << vertical_feedback_fields() << vertical_control_fields(last_attitude_output_)
++        << vertical_feedback_fields(s, now) << vertical_control_fields(last_attitude_output_)
+@@ -2228,0 +2265 @@ private:
++  f::attitude::RangeTrendDiagnostics range_trend_;
+diff --git a/native/tests/adapter_compile_check.py b/native/tests/adapter_compile_check.py
+index db57b30..10267c6 100644
+--- a/native/tests/adapter_compile_check.py
++++ b/native/tests/adapter_compile_check.py
+@@ -131 +131 @@ MESSAGES = {
+-        'std::uint64_t timestamp_sample{};float x{},y{},z{},vx{},vy{},vz{},z_deriv{},ax{},ay{},az{},heading{};bool xy_valid{},z_valid{},v_xy_valid{},v_z_valid{},heading_good_for_control{},dead_reckoning{};std::uint8_t xy_reset_counter{},z_reset_counter{},vxy_reset_counter{},vz_reset_counter{},heading_reset_counter{};',
++        'static constexpr std::uint8_t DIST_BOTTOM_SENSOR_RANGE=1;std::uint64_t timestamp_sample{};float x{},y{},z{},vx{},vy{},vz{},z_deriv{},ax{},ay{},az{},heading{},dist_bottom{},dist_bottom_var{};bool xy_valid{},z_valid{},v_xy_valid{},v_z_valid{},heading_good_for_control{},dead_reckoning{},dist_bottom_valid{};std::uint8_t xy_reset_counter{},z_reset_counter{},vxy_reset_counter{},vz_reset_counter{},heading_reset_counter{},dist_bottom_reset_counter{},dist_bottom_sensor_bitfield{};',
+diff --git a/native/tests/stage2_20261116_captured_config.hpp b/native/tests/stage2_20261116_captured_config.hpp
+new file mode 100644
+index 0000000..8d76030
+--- /dev/null
++++ b/native/tests/stage2_20261116_captured_config.hpp
+@@ -0,0 +1,77 @@
++#pragma once
++// 由2026-11-14板端runtime.yaml和生产参数映射生成；只用于离线测试，不是飞行配置修改。
++// 来源报告ZIP SHA256 ca2a2cc685995169526e08658d552103c4419bccb08c8cb2e7f1a4cf4a7eac4f。
++inline fc01::Config captured_config() {
++  fc01::Config result;
++  auto& c = result.attitude;
++  c.visual.enabled = false; // visual_navigation_enabled
++  c.rc_navigation_enabled = true; // rc_navigation_enabled
++  c.rc_target_height = 1.5; // rc_target_height
++  c.rc_navigation_mode_slot = 1; // rc_navigation_mode_slot
++  c.rc_arm_to_navigation_timeout = 8.0; // rc_arm_to_navigation_timeout
++  c.flight_actions_enabled = true; // flight_actions_enabled
++  c.bench_arm_only_enabled = false; // bench_arm_only_enabled
++  c.arm_enabled = false; // arm_enabled
++  c.takeoff_enabled = true; // takeoff_enabled
++  c.parameters_confirmed = true; // flight_parameters_confirmed
++  c.rc_takeover_confirmed = true; // rc_takeover_confirmed
++  c.autonomous_failsafe_confirmed = false; // autonomous_failsafe_confirmed
++  c.px4_land_fallback_confirmed = false; // px4_land_fallback_confirmed
++  c.px4_land_evidence_id = ""; // px4_land_evidence_id
++  c.feedback_guard.enabled = true; // aa_vertical_feedback_guard_enabled
++  c.loop_hz = 20.0; // control_loop_hz
++  c.armed_dwell_seconds = 1.0; // aa_armed_dwell_seconds
++  c.feedback_guard.rate_tolerance_mps = 0.2; // aa_feedback_rate_tolerance_mps
++  c.feedback_guard.dwell_seconds = 0.5; // aa_feedback_dwell_seconds
++  c.liftoff_dwell_seconds = 0.2; // aa_liftoff_dwell_seconds
++  c.liftoff_height_m = 0.12; // aa_liftoff_height_m
++  c.liftoff_speed_mps = 0.08; // aa_liftoff_speed_mps
++  c.touchdown_dwell_seconds = 0.3; // aa_touchdown_dwell_seconds
++  c.height_lower_margin_m = 0.25; // aa_height_lower_margin_m
++  c.z_jump_limit_m = 0.45; // aa_z_jump_limit_m
++  c.vz_jump_limit_mps = 1.5; // aa_vz_jump_limit_mps
++  c.prestream_seconds = 1.2; // aa_prestream_seconds
++  c.ground_seconds = 2.0; // aa_ground_seconds
++  c.stall_seconds = 0.3; // aa_stall_seconds
++  c.attitude_timeout = 0.5; // aa_attitude_timeout
++  c.local_timeout = 0.5; // aa_local_timeout
++  c.status_timeout = 2.5; // aa_status_timeout
++  c.land_timeout = 2.5; // aa_land_timeout
++  c.land_sample_max_gap = 1.25; // aa_land_sample_max_gap
++  c.flags_timeout = 2.5; // aa_flags_timeout
++  c.console_timeout = 3.0; // aa_console_timeout
++  c.command_timeout = 5.0; // aa_command_timeout
++  c.ground_vz_tolerance = 0.1; // aa_ground_vz_tolerance
++  c.max_tilt_deg = 10.0; // aa_max_tilt_deg
++  c.bench_ground_down_tolerance_m = 0.5; // aa_bench_ground_down_tolerance_m
++  c.bench_ground_vz_tolerance_mps = 0.25; // aa_bench_ground_vz_tolerance_mps
++  c.vertical.hover = 0.5; // aa_hover_thrust
++  c.vertical.minimum = 0.12; // aa_thrust_min
++  c.vertical.maximum = 0.8; // aa_thrust_max
++  c.vertical.slew = 0.4; // aa_thrust_slew
++  c.vertical.height_gain = 0.5; // aa_height_gain
++  c.vertical.velocity_gain = 0.15; // aa_velocity_gain
++  c.vertical.integral_gain = 0.03; // aa_integral_gain
++  c.vertical.integral_limit = 0.08; // aa_integral_limit
++  c.vertical.max_height = 5.0; // aa_max_height
++  c.vertical.max_climb = 0.3; // aa_max_climb
++  c.vertical.max_descent = 0.2; // aa_max_descent
++  c.ramp_seconds = 2.0; // aa_ramp_seconds
++  c.settle_seconds = 2.0; // aa_settle_seconds
++  c.landing_seconds = 3.0; // aa_landing_seconds
++  c.takeoff_reserve_thrust = 0.04; // aa_takeoff_reserve_thrust
++  c.height_tolerance = 0.15; // aa_height_tolerance
++  c.speed_tolerance = 0.15; // aa_speed_tolerance
++  c.ascent_timeout = 10.0; // aa_ascent_timeout
++  c.descent_timeout = 10.0; // aa_descent_timeout
++  c.recovery_seconds = 15.0; // aa_recovery_seconds
++  c.px4_land_ack_seconds = 5.0; // aa_px4_land_ack_seconds
++  c.saturation_seconds = 1.5; // aa_saturation_seconds
++  c.max_flight_seconds = 30.0; // aa_max_flight_seconds
++  result.profile = "attitude_altitude";
++  result.runtime_mode = "flight-test";
++  result.entry_version = "20261112.1";
++  result.flight_enabled = false;
++  result.validate();
++  return result;
++}
+diff --git a/native/tests/test_20261116_diagnostics.cpp b/native/tests/test_20261116_diagnostics.cpp
+new file mode 100644
+index 0000000..560aee1
+--- /dev/null
++++ b/native/tests/test_20261116_diagnostics.cpp
+@@ -0,0 +1,80 @@
++// 诊断可区分首因、核对测距趋势，但不能代替实际反馈或改变人工RC权限。
++#include "vision_test_support.hpp"
++#include "jikl_fc01_system/range_trend_diagnostics.hpp"
++#include <iostream>
++using namespace vision_test;
++int main() {
++  {
++    auto c = config(); c.attitude.visual.enabled = false;
++    VisionFlight q(c);
++    auto early = q.r.publication_context(q.s, q.t, true, true).feedback;
++    early.preflight = false;
++    q.r.begin_attitude_safety_observation();
++    q.r.observe_attitude_safety_event(early, a::Core::SafetyEvent::Status, q.t);
++    need(!q.r.attitude_core().queued_safety_evidence().recorded,
++         "temporary preparation refusal polluted task first cause");
++    q.warm(); q.manual_arm();
++    auto bad = q.r.publication_context(q.s, q.t, true, true).feedback;
++    bad.failsafe = true;
++    q.r.observe_attitude_safety_event(bad, a::Core::SafetyEvent::Failsafe, q.t);
++    need(q.r.attitude_core().queued_safety_evidence().mask == 2U,
++         "actual task failsafe hidden by old preparation cause");
++  }
++  for (unsigned bit = 0; bit < 10; ++bit) {
++    auto c = config(); c.attitude.visual.enabled = false;
++    VisionFlight q(c); q.warm(); q.manual_arm();
++    auto bad = q.r.publication_context(q.s, q.t, true, true).feedback;
++    switch (bit) {
++    case 0: bad.kill = true; break;
++    case 1: bad.failsafe = true; break;
++    case 2: bad.calibration = true; break;
++    case 3: bad.hil = true; break;
++    case 4: bad.preflight = false; break;
++    case 5: bad.battery_ready = false; break;
++    case 6: bad.rc_link_ready = false; break;
++    case 7: bad.rc_axes_safe = false; break;
++    case 8: bad.rc_sticks_moving = true; break;
++    case 9: bad.rc_aux_switches_safe = false; break;
++    }
++    q.r.begin_attitude_safety_observation();
++    q.r.observe_attitude_safety_event(bad, a::Core::SafetyEvent::Authority, q.t);
++    const auto first = q.r.attitude_core().queued_safety_evidence();
++    need(first.recorded && (first.mask & (1U << bit)), "queued cause missing");
++    need(first.status_stamp == bad.status_stamp && first.switch_stamp == bad.rc_switch_sample_stamp,
++         "queued source watermarks missing");
++    auto next = bad; next.failsafe = true;
++    q.r.observe_attitude_safety_event(next, a::Core::SafetyEvent::Failsafe, q.t + .01);
++    q.tick();
++    need(q.r.attitude_core().queued_safety_evidence().mask == first.mask,
++         "later event overwrote first cause");
++    need(q.r.attitude_core().phase() == a::Phase::Safety && !q.o.attitude.publish &&
++             q.r.attitude_core().reason() == "RC_QUEUED_SAFETY_CONDITION",
++         "diagnostics changed original veto");
++  }
++  a::RangeTrendDiagnostics d;
++  const auto observe = [&](std::uint64_t s, double z, double range, bool valid = true,
++                           unsigned reset = 0, double variance = .01) {
++    d.observe(s, valid, z, range, variance, 0, reset, .5);
++  };
++  observe(1000000, 4., .1); observe(1250000, 3.9, .2);
++  auto e = d.evidence(true);
++  need(e.available && e.compared && e.same_direction && std::abs(e.fused_rise_m - .1) < 1e-9,
++       "relative upward trends not comparable");
++  need(!d.evidence(false).available, "stale range remained current");
++  observe(1500000, 3.8, .1);
++  need(d.evidence(true).compared && !d.evidence(true).same_direction,
++       "opposite trend not visible");
++  observe(1750000, 3.7, .2, true, 1);
++  need(!d.evidence(true).compared, "range reset bridged old baseline");
++  observe(2000000, 3.6, .3, false);
++  need(!d.evidence(true).available, "invalid range remained current");
++  observe(2250000, 3.5, .4); need(!d.evidence(true).compared, "invalid gap bridged");
++  observe(2250000, 3.4, .5); need(!d.evidence(true).available, "same stamp changed payload");
++  observe(2500000, 3.3, .6, true, 0, NAN);
++  need(!d.evidence(true).available, "NaN variance accepted");
++  observe(2750000, 3.2, -.1); need(!d.evidence(true).available, "negative range accepted");
++  observe(3000000, 3.1, .8); observe(4000000, 3., .9);
++  need(!d.evidence(true).compared, "sample gap bridged old range");
++  observe(3999999, 3., .9); need(!d.evidence(true).available, "regressed sample accepted");
++  std::cout << "DIAGNOSTICS_PASS 10 queued cause bits + range trend/reset/freshness/invalid\n";
++}
+diff --git a/native/tests/test_20261116_height_contract.cpp b/native/tests/test_20261116_height_contract.cpp
+new file mode 100644
+index 0000000..5b1fffa
+--- /dev/null
++++ b/native/tests/test_20261116_height_contract.cpp
+@@ -0,0 +1,45 @@
++// 合成反馈逐周期走人工RC和真实Core：不同NED原点须产生同一相对高度控制，目标来自配置。
++// 不模拟真实动力学；偏置值和高度增量选二进制精确值，使浮点逐位比较有明确含义。
++#include "vision_test_support.hpp"
++#include "stage2_20261116_captured_config.hpp"
++#include <iostream>
++using namespace vision_test;
++int main() {
++  for (double target : {.75, 1.5}) {
++    auto c = captured_config(); c.attitude.rc_target_height = target; c.validate();
++    VisionFlight low(c), high(c);
++    low.s.attitude.z = -16.; high.s.attitude.z = 32.;
++    low.join(); high.join();
++    need(low.r.attitude_core().reference_z() == -16. &&
++             high.r.attitude_core().reference_z() == 32., "safe ground anchor not captured");
++    const auto advance = [&](double height, double up) {
++      low.s.attitude.z = -16. - height; high.s.attitude.z = 32. - height;
++      low.s.attitude.vz = low.s.attitude.z_deriv = -up;
++      high.s.attitude.vz = high.s.attitude.z_deriv = -up;
++      low.tick(); high.tick();
++      need(low.r.attitude_core().phase() == high.r.attitude_core().phase() &&
++               low.o.attitude.height == high.o.attitude.height &&
++               low.o.attitude.thrust == high.o.attitude.thrust &&
++               low.o.attitude.q == high.o.attitude.q &&
++               low.o.attitude.target_height == high.o.attitude.target_height,
++           "NED origin changed relative-height control");
++      need(low.r.attitude_core().reference_z() == -16. &&
++               high.r.attitude_core().reference_z() == 32., "armed feedback rebased ground");
++    };
++    for (int i = 0; i < 100 && low.r.attitude_core().phase() != a::Phase::ThrustRamp; ++i)
++      advance(0, 0);
++    need(low.r.attitude_core().phase() == a::Phase::ThrustRamp, "ramp not reached");
++    low.s.feedback.landed = high.s.feedback.landed = false;
++    low.s.at_rest = high.s.at_rest = false;
++    for (double height = .015625; height <= target; height += .015625)
++      advance(height, .3125);
++    for (int i = 0; i < 160 && low.r.attitude_core().phase() != a::Phase::HeightHold; ++i)
++      advance(target, 0);
++    need(low.r.attitude_core().phase() == a::Phase::HeightHold &&
++             low.r.attitude_core().target_height_settled() &&
++             low.o.attitude.target_height == target, "configured height did not settle");
++    need(low.arm_commands == 0 && high.arm_commands == 0 &&
++             low.mode_commands == 0 && high.mode_commands == 0, "automatic RC authority command");
++  }
++  std::cout << "HEIGHT_CONTRACT_PASS NED offsets -16/+32; targets .75/1.5; manual RC only\n";
++}
+diff --git a/native/tests/test_receive_event_adapter.py b/native/tests/test_receive_event_adapter.py
+index 1d4ed37..1cbc033 100644
+--- a/native/tests/test_receive_event_adapter.py
++++ b/native/tests/test_receive_event_adapter.py
+@@ -165,0 +166,19 @@ int main(){
++  {Fixture f;Local l;l.timestamp=l.timestamp_sample=1000000;l.z_valid=true;
++   l.z=2;l.dist_bottom=.1f;l.dist_bottom_var=.01f;l.dist_bottom_valid=true;
++   // 只有RANGE参与位才用于测距趋势；FLOW单独有效不认证测距。
++   l.dist_bottom_sensor_bitfield=2;
++   f.node.receive_sampled(l,f.node.local_,f.node.local_stamp_,f.node.local_sample_,
++     fc01::SourceSlot::Local,rclcpp::MessageInfo{});
++   assert(!f.node.range_trend_.evidence(true).available);
++   l.timestamp+=250000;l.timestamp_sample=l.timestamp;l.dist_bottom_sensor_bitfield=Local::DIST_BOTTOM_SENSOR_RANGE;
++   f.node.receive_sampled(l,f.node.local_,f.node.local_stamp_,f.node.local_sample_,
++     fc01::SourceSlot::Local,rclcpp::MessageInfo{});
++   auto s=f.s;s.attitude.source_host_stamp=l.timestamp;
++   s.attitude.source_clock_validated=s.attitude.source_clock_valid=true;
++   auto fields=f.node.vertical_feedback_fields(s,steady());
++   assert(fields.find("\"range_available\":true")!=std::string::npos);
++   s.attitude.source_host_stamp+=600000;
++   fields=f.node.vertical_feedback_fields(s,steady());
++   assert(fields.find("\"range_available\":false")!=std::string::npos);
++   assert(f.node.runtime_->attitude_core().phase()==fc01::attitude::Phase::ThrustRamp);
++  }
+diff --git a/tests/test_20261116_stage2_equivalence.py b/tests/test_20261116_stage2_equivalence.py
+new file mode 100644
+index 0000000..c638177
+--- /dev/null
++++ b/tests/test_20261116_stage2_equivalence.py
+@@ -0,0 +1,307 @@
++"""阶段 2：对 3677b9d 基线严格对照控制，只允许新增只读诊断字段。
++
++复用既有真实 Core、Runtime、SystemNode 和发布 sink 夹具，不复制控制算法。
++节点的既有 JSON 成员保留原字节，所有目标、心跳、命令字段和顺序直接比较；
++只有本轮明确列出的新增顶层诊断键可以从当前输出中剔除，不能忽略旧字段差异。
++"""
++
++import hashlib
++import json
++import os
++from pathlib import Path
++import subprocess
++import unittest
++from unittest.mock import patch
++
++import test_stage2_powered_node_equivalence as powered_trace
++import test_stage3_control_equivalence as stage3_trace
++
++
++BASELINE = '3677b9dd1f35e092e43501d26164c6263545c947'
++EVIDENCE_ENV = 'FC01_20261116_STAGE2_TRACE_DIR'
++# 明确枚举本轮新增字段，避免未来同前缀的控制字段也被无意跳过。
++ADDITIVE_DIAGNOSTIC_KEYS = frozenset(
++    (
++        'range_policy',
++        'range_available',
++        'range_compared',
++        'range_distance_m',
++        'range_variance_m2',
++        'range_fused_rise_m',
++        'range_rise_m',
++        'range_interval_s',
++        'range_same_direction',
++        'range_sample_stamp',
++        'rc_queued_safety_recorded',
++        'rc_queued_safety_mask',
++        'rc_queued_safety_source',
++        'rc_queued_safety_observed_at',
++        'rc_queued_safety_status_stamp',
++        'rc_queued_safety_land_stamp',
++        'rc_queued_safety_local_stamp',
++        'rc_queued_safety_switch_stamp',
++    )
++)
++
++
++def _source_identity():
++    """记录真实编译输入；同一轮中源码有变更就拒绝给出跨版本的通过证据。"""
++    root = Path(__file__).resolve().parents[1]
++    files = {
++        path
++        for folder in (root / 'native/src/jikl_fc01_system', root / 'native/tests')
++        for path in folder.rglob('*')
++        if path.is_file() and path.suffix in ('.cpp', '.hpp', '.py')
++    }
++    files.update(
++        root / 'tests' / name
++        for name in (
++            'test_20261116_stage2_equivalence.py',
++            'test_stage2_core_equivalence.py',
++            'test_stage2_powered_node_equivalence.py',
++            'test_stage3_control_equivalence.py',
++        )
++    )
++    return {
++        path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
++        for path in sorted(files)
++    }
++
++
++def setUpModule():
++    """所有差分场景开始前固定本轮源码摘要，不切换分支或改写源码。"""
++    global _SOURCE_BEFORE
++    _SOURCE_BEFORE = _source_identity()
++
++
++def tearDownModule():
++    """测试完成后再次核对源码，防止并行编辑让不同场景使用不同版本。"""
++    after = _source_identity()
++    root = Path(__file__).resolve().parents[1]
++    evidence = Path(os.environ.get(EVIDENCE_ENV, '/tmp/fc01-stage2-differential'))
++    evidence.mkdir(parents=True, exist_ok=True)
++    changed = sorted(
++        key for key in _SOURCE_BEFORE.keys() | after.keys() if _SOURCE_BEFORE.get(key) != after.get(key)
++    )
++    summary = {
++        'baseline': BASELINE,
++        'current_head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
++        'source_unchanged_during_run': not changed,
++        'changed_during_run': changed,
++        'source_sha256': after,
++        'scope': 'Offline fake ROS and deterministic inputs; no DDS or hardware execution.',
++    }
++    (evidence / 'SOURCE_IDENTITY.json').write_text(json.dumps(summary, indent=2) + '\n')
++    if changed:
++        raise AssertionError('production or fixture sources changed during differential: ' + ', '.join(changed))
++
++
++def _reject_constant(value):
++    raise ValueError('non-standard JSON constant: ' + value)
++
++
++def _unique_object(pairs):
++    """拒绝重复键，不能让 JSON 解析器以后值覆盖前值而漏掉状态变化。"""
++    result = {}
++    for key, value in pairs:
++        if key in result:
++            raise ValueError('duplicate JSON key: ' + key)
++        result[key] = value
++    return result
++
++
++def _json_members(raw):
++    """提取紧凑顶层对象的成员原文，数值字面量、嵌套值和成员顺序均不重写。"""
++    text = raw.decode('utf-8')
++    decoder = json.JSONDecoder(object_pairs_hook=_unique_object, parse_constant=_reject_constant)
++    decoded, end = decoder.raw_decode(text)
++    if not isinstance(decoded, dict) or end != len(text) or not text.startswith('{'):
++        raise ValueError('expected one complete JSON object')
++    if text == '{}':
++        return []
++    position = 1
++    members = []
++    while position < len(text) - 1:
++        start = position
++        key, position = decoder.raw_decode(text, position)
++        if not isinstance(key, str) or text[position : position + 1] != ':':
++            raise ValueError('expected compact JSON member')
++        _, position = decoder.raw_decode(text, position + 1)
++        members.append((key, text[start:position].encode('utf-8')))
++        separator = text[position : position + 1]
++        if separator == '}':
++            if position != len(text) - 1:
++                raise ValueError('trailing JSON data')
++            return members
++        if separator != ',':
++            raise ValueError('expected compact JSON member separator')
++        position += 1
++    raise ValueError('missing JSON member')
++
++
++def remove_new_diagnostics(current_trace, baseline_trace):
++    """按相同位置的基线 JSON 仅去新增诊断成员；非状态行一字节也不处理。"""
++    old_lines = baseline_trace.split(b'\n')
++    new_lines = current_trace.split(b'\n')
++    if len(old_lines) != len(new_lines):
++        raise AssertionError('trace line count changed')
++    filtered = []
++    removed = set()
++    states = 0
++    for before, after in zip(old_lines, new_lines):
++        if before.startswith((b'TRACE STATE ', b'POWERED STATE ')):
++            before_prefix, before_json = before.split(b'{', 1)
++            after_prefix, after_json = after.split(b'{', 1)
++            if before_prefix != after_prefix:
++                raise AssertionError('state sample identity changed')
++            previous_members = _json_members(b'{' + before_json)
++            current_members = _json_members(b'{' + after_json)
++            previous_keys = {key for key, _ in previous_members}
++            if previous_keys & ADDITIVE_DIAGNOSTIC_KEYS:
++                raise AssertionError('allowed additive key already existed in baseline')
++            retained = []
++            for key, member in current_members:
++                if key in ADDITIVE_DIAGNOSTIC_KEYS:
++                    removed.add(key)
++                else:
++                    retained.append(member)
++            filtered.append(after_prefix + b'{' + b','.join(retained) + b'}')
++            states += 1
++        else:
++            # 包括 TARGET / HEARTBEAT / COMMAND / COMPLETE；调用方逐字节比较这些原行。
++            filtered.append(after)
++    return b'\n'.join(filtered), {'state_samples': states, 'removed_keys': sorted(removed)}
++
++
++class DiagnosticFilterTests(unittest.TestCase):
++    """过滤器必须只允许新增诊断，不能吞掉浮点、权限、顺序或消息差异。"""
++
++    def test_only_additive_top_level_members_are_removed(self):
++        baseline = b'TRACE STATE 0:{"height":1.00,"armed":false,"nested":{"range_policy":1}}'
++        current = (
++            b'TRACE STATE 0:{"height":1.00,"range_available":false,"armed":false,'
++            b'"nested":{"range_policy":1},"rc_queued_safety_mask":0}'
++        )
++        filtered, audit = remove_new_diagnostics(current, baseline)
++        self.assertEqual(filtered, baseline)
++        self.assertEqual(audit['removed_keys'], ['range_available', 'rc_queued_safety_mask'])
++
++    def test_existing_values_order_and_sink_bytes_remain_visible(self):
++        baseline = b'POWERED STATE 0:{"height":1.00,"armed":false}\nPOWERED TARGET 0:0x1p-2'
++        for current in (
++            baseline.replace(b'1.00', b'1.0'),
++            baseline.replace(b'"armed":false', b'"armed":true'),
++            baseline.replace(b'"height":1.00,"armed":false', b'"armed":false,"height":1.00'),
++            baseline.replace(b'0x1p-2', b'0x1p-1'),
++            baseline.replace(b'"armed":false', b'"armed":false,"range_control_permission":true'),
++        ):
++            with self.subTest(current=current):
++                filtered, _ = remove_new_diagnostics(current, baseline)
++                self.assertNotEqual(filtered, baseline)
++
++    def test_duplicate_keys_or_baseline_diagnostic_cannot_be_hidden(self):
++        for before, after in (
++            (b'{"range_available":false}', b'{"range_available":true}'),
++            (b'{"height":1}', b'{"height":1,"height":2}'),
++            (b'{"nested":{}}', b'{"nested":{"armed":false,"armed":true}}'),
++        ):
++            with self.subTest(after=after):
++                with self.assertRaises((ValueError, AssertionError)):
++                    remove_new_diagnostics(b'TRACE STATE 0:' + after, b'TRACE STATE 0:' + before)
++
++
++class _DiagnosticComparisonMixin:
++    """既有夹具没有过滤 hook；仅截获指定 trace 最终比较，其他断言维持原行为。"""
++
++    _diagnostic_trace_name = None
++
++    def _correct_inherited_summary(self, filename, comparison):
++        """原夹具摘要默认声称全部字节相同；本轮必须明确写出只比较既有诊断成员。"""
++        evidence = Path(os.environ.get(EVIDENCE_ENV, '/tmp/fc01-stage2-differential'))
++        path = evidence / filename
++        summary = json.loads(path.read_text())
++        summary['comparison'] = 'exact-existing-json-members-and-wire-bytes'
++        summary['allowed_additive_keys'] = sorted(ADDITIVE_DIAGNOSTIC_KEYS)
++        summary['comparison_evidence'] = comparison
++        summary['raw_json_byte_identity_claimed'] = False
++        path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
++
++    def assertEqual(self, first, second, msg=None):
++        messages = {
++            '节点状态字节/发布顺序与基线不一致',
++            'powered node behavior differs from 5198d33',
++        }
++        if self._diagnostic_trace_name is not None and msg in messages:
++            if not isinstance(first, bytes) or not isinstance(second, bytes):
++                raise AssertionError('trace comparison no longer supplies bytes')
++            normalized, audit = remove_new_diagnostics(second, first)
++            evidence = Path(os.environ.get(EVIDENCE_ENV, '/tmp/fc01-stage2-differential'))
++            evidence.mkdir(parents=True, exist_ok=True)
++            stem = self._diagnostic_trace_name
++            (evidence / (stem + '-baseline.exact.log')).write_bytes(first)
++            (evidence / (stem + '-current.filtered.log')).write_bytes(normalized)
++            (evidence / (stem + '-current.raw.log')).write_bytes(second)
++            audit.update(
++                baseline=BASELINE,
++                comparison='exact-existing-json-members-and-wire-bytes',
++                existing_member_serialization='preserved raw JSON tokens and member order',
++                baseline_sha256=hashlib.sha256(first).hexdigest(),
++                current_raw_sha256=hashlib.sha256(second).hexdigest(),
++                current_filtered_sha256=hashlib.sha256(normalized).hexdigest(),
++                allowed_additive_keys=sorted(ADDITIVE_DIAGNOSTIC_KEYS),
++                passed=first == normalized,
++                hardware_or_dds_validation=False,
++            )
++            (evidence / (stem + '-comparison.json')).write_text(
++                json.dumps(audit, ensure_ascii=False, indent=2) + '\n'
++            )
++            super().assertEqual(first, normalized, msg)
++            return
++        super().assertEqual(first, second, msg)
++
++
++class Stage2CoreEquivalenceTests(_DiagnosticComparisonMixin, stage3_trace.Stage3CoreEquivalenceTests):
++    """Core/事务/发布组合精确差分；节点只允许额外顶层诊断字段。"""
++
++    @classmethod
++    def setUpClass(cls):
++        evidence = os.environ.get(EVIDENCE_ENV, '/tmp/fc01-stage2-differential')
++        with patch.object(stage3_trace, 'BASELINE', BASELINE), patch.dict(
++            os.environ, {'FC01_STAGE3_TRACE_DIR': evidence}
++        ):
++            super().setUpClass()
++
++    def compare_cpp(self, stem):
++        with patch.object(stage3_trace, 'BASELINE', BASELINE):
++            super().compare_cpp(stem)
++
++    def test_actual_node_tick_and_status_bytes(self):
++        self._diagnostic_trace_name = 'recovery-node'
++        try:
++            with patch.object(stage3_trace, 'BASELINE', BASELINE):
++                super().test_actual_node_tick_and_status_bytes()
++            self._correct_inherited_summary('node.json', 'recovery-node-comparison.json')
++        finally:
++            self._diagnostic_trace_name = None
++
++
++class Stage2PoweredNodeEquivalenceTests(
++    _DiagnosticComparisonMixin, powered_trace.PoweredNodeEquivalenceTests
++):
++    """真实节点 RC 起飞/定高/降落/再准备，wire 浮点逐位对照。"""
++
++    def test_powered_rc_lifecycle_and_all_sink_fields_match_baseline(self):
++        self._diagnostic_trace_name = 'powered-node'
++        evidence = os.environ.get(EVIDENCE_ENV, '/tmp/fc01-stage2-differential')
++        try:
++            with patch.object(powered_trace, 'BASELINE', BASELINE), patch.dict(
++                os.environ, {'FC01_STAGE2_EVIDENCE': evidence}
++            ):
++                super().test_powered_rc_lifecycle_and_all_sink_fields_match_baseline()
++            self._correct_inherited_summary('powered-node.json', 'powered-node-comparison.json')
++        finally:
++            self._diagnostic_trace_name = None
++
++
++if __name__ == '__main__':
++    unittest.main()

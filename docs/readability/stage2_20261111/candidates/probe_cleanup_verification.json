@@ -1,0 +1,513 @@
+{
+  "production_sha256": "645ab0e4c582bfc00a9905fec13bc16fe4c5d6580460170faadbbf84dcb78ff5",
+  "candidate_sha256": "b548c9a265011e3457c6645de477aea1cc316639aca31b50c82c29e7516701a7",
+  "patch_sha256": "1d9c968380b1186ec89879d49636d527558da5cd207613c4b68d3b7056f5a0eb",
+  "production_unchanged": true,
+  "scope": "mock ROS only; keeps original write OSError visible, no RuntimeError swallowing; independent candidate not applied",
+  "results": [
+    {
+      "label": "production",
+      "scenarios": [
+        {
+          "scenario": "ground",
+          "result": [
+            "return",
+            0
+          ],
+          "events": [
+            [
+              "init"
+            ],
+            [
+              "node",
+              "fc01_install_ground_observer"
+            ],
+            [
+              "subscribe",
+              "VehicleStatus",
+              "/fmu/out/vehicle_status_v1",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "VehicleLandDetected",
+              "/fmu/out/vehicle_land_detected",
+              "sensor-qos"
+            ],
+            [
+              "destroy-node"
+            ],
+            [
+              "shutdown"
+            ]
+          ],
+          "stdout": "已观察到新鲜、单一来源的未解锁接地静止反馈\n",
+          "evidence": {
+            "ok": true,
+            "reason": "已观察到新鲜、单一来源的未解锁接地静止反馈",
+            "armed_seen": false,
+            "samples": {
+              "status": 2,
+              "land": 2
+            },
+            "rc_samples": null,
+            "rc_safe": null,
+            "agent_pid": 55,
+            "agent_created": false,
+            "agent_retained": true,
+            "updated_unix": 1000.4,
+            "updated_monotonic": 100.4,
+            "boot_id": "06837b44-00e9-4eb6-ac2f-592b326ab3c2"
+          },
+          "ros_context_alive": false,
+          "known_cleanup_defect": false
+        },
+        {
+          "scenario": "rc",
+          "result": [
+            "return",
+            0
+          ],
+          "events": [
+            [
+              "init"
+            ],
+            [
+              "node",
+              "fc01_install_ground_observer"
+            ],
+            [
+              "subscribe",
+              "VehicleStatus",
+              "/fmu/out/vehicle_status_v1",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "VehicleLandDetected",
+              "/fmu/out/vehicle_land_detected",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "ManualControlSetpoint",
+              "/fmu/out/manual_control_setpoint",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "ManualControlSwitches",
+              "/fmu/out/manual_control_switches",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "FailsafeFlags",
+              "/fmu/out/failsafe_flags",
+              "sensor-qos"
+            ],
+            [
+              "destroy-node"
+            ],
+            [
+              "shutdown"
+            ]
+          ],
+          "stdout": "已观察到新鲜、单一来源的未解锁接地静止反馈\n",
+          "evidence": {
+            "ok": true,
+            "reason": "已观察到新鲜、单一来源的未解锁接地静止反馈",
+            "armed_seen": false,
+            "samples": {
+              "status": 2,
+              "land": 2
+            },
+            "rc_samples": {
+              "manual": 2,
+              "switches": 2,
+              "flags": 2
+            },
+            "rc_safe": true,
+            "agent_pid": 55,
+            "agent_created": false,
+            "agent_retained": true,
+            "updated_unix": 1000.4,
+            "updated_monotonic": 100.4,
+            "boot_id": "06837b44-00e9-4eb6-ac2f-592b326ab3c2"
+          },
+          "ros_context_alive": false,
+          "known_cleanup_defect": false
+        },
+        {
+          "scenario": "armed",
+          "result": [
+            "ControlError",
+            "观察到飞机已解锁；保留原服务；未变更服务"
+          ],
+          "events": [
+            [
+              "init"
+            ],
+            [
+              "node",
+              "fc01_install_ground_observer"
+            ],
+            [
+              "subscribe",
+              "VehicleStatus",
+              "/fmu/out/vehicle_status_v1",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "VehicleLandDetected",
+              "/fmu/out/vehicle_land_detected",
+              "sensor-qos"
+            ],
+            [
+              "destroy-node"
+            ],
+            [
+              "shutdown"
+            ]
+          ],
+          "stdout": "",
+          "evidence": {
+            "ok": false,
+            "reason": "观察到飞机已解锁；保留原服务",
+            "armed_seen": true,
+            "samples": {
+              "status": 0,
+              "land": 1
+            },
+            "rc_samples": null,
+            "rc_safe": null,
+            "agent_pid": 55,
+            "agent_created": false,
+            "agent_retained": true,
+            "updated_unix": 1000.2,
+            "updated_monotonic": 0.0,
+            "boot_id": "06837b44-00e9-4eb6-ac2f-592b326ab3c2"
+          },
+          "ros_context_alive": false,
+          "known_cleanup_defect": false
+        },
+        {
+          "scenario": "existing-required",
+          "result": [
+            "ControlError",
+            "未找到可复用的既有 Agent；在线启用不会启动第二个 Agent"
+          ],
+          "events": [],
+          "stdout": "",
+          "evidence": {
+            "ok": false,
+            "reason": "未找到可复用的既有 Agent；在线启用不会启动第二个 Agent",
+            "armed_seen": false,
+            "samples": {
+              "status": 0,
+              "land": 0
+            },
+            "rc_samples": null,
+            "rc_safe": null,
+            "agent_pid": null,
+            "agent_created": false,
+            "agent_retained": true,
+            "updated_unix": 1000.0,
+            "updated_monotonic": 0.0,
+            "boot_id": "06837b44-00e9-4eb6-ac2f-592b326ab3c2"
+          },
+          "ros_context_alive": false,
+          "known_cleanup_defect": false
+        },
+        {
+          "scenario": "disk-full",
+          "result": [
+            "OSError",
+            "fixture disk full"
+          ],
+          "events": [
+            [
+              "init"
+            ],
+            [
+              "node",
+              "fc01_install_ground_observer"
+            ],
+            [
+              "subscribe",
+              "VehicleStatus",
+              "/fmu/out/vehicle_status_v1",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "VehicleLandDetected",
+              "/fmu/out/vehicle_land_detected",
+              "sensor-qos"
+            ]
+          ],
+          "stdout": "已观察到新鲜、单一来源的未解锁接地静止反馈\n",
+          "evidence": null,
+          "ros_context_alive": true,
+          "known_cleanup_defect": true
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "scenarios": [
+        {
+          "scenario": "ground",
+          "result": [
+            "return",
+            0
+          ],
+          "events": [
+            [
+              "init"
+            ],
+            [
+              "node",
+              "fc01_install_ground_observer"
+            ],
+            [
+              "subscribe",
+              "VehicleStatus",
+              "/fmu/out/vehicle_status_v1",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "VehicleLandDetected",
+              "/fmu/out/vehicle_land_detected",
+              "sensor-qos"
+            ],
+            [
+              "destroy-node"
+            ],
+            [
+              "shutdown"
+            ]
+          ],
+          "stdout": "已观察到新鲜、单一来源的未解锁接地静止反馈\n",
+          "evidence": {
+            "ok": true,
+            "reason": "已观察到新鲜、单一来源的未解锁接地静止反馈",
+            "armed_seen": false,
+            "samples": {
+              "status": 2,
+              "land": 2
+            },
+            "rc_samples": null,
+            "rc_safe": null,
+            "agent_pid": 55,
+            "agent_created": false,
+            "agent_retained": true,
+            "updated_unix": 1000.4,
+            "updated_monotonic": 100.4,
+            "boot_id": "06837b44-00e9-4eb6-ac2f-592b326ab3c2"
+          },
+          "ros_context_alive": false,
+          "known_cleanup_defect": false
+        },
+        {
+          "scenario": "rc",
+          "result": [
+            "return",
+            0
+          ],
+          "events": [
+            [
+              "init"
+            ],
+            [
+              "node",
+              "fc01_install_ground_observer"
+            ],
+            [
+              "subscribe",
+              "VehicleStatus",
+              "/fmu/out/vehicle_status_v1",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "VehicleLandDetected",
+              "/fmu/out/vehicle_land_detected",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "ManualControlSetpoint",
+              "/fmu/out/manual_control_setpoint",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "ManualControlSwitches",
+              "/fmu/out/manual_control_switches",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "FailsafeFlags",
+              "/fmu/out/failsafe_flags",
+              "sensor-qos"
+            ],
+            [
+              "destroy-node"
+            ],
+            [
+              "shutdown"
+            ]
+          ],
+          "stdout": "已观察到新鲜、单一来源的未解锁接地静止反馈\n",
+          "evidence": {
+            "ok": true,
+            "reason": "已观察到新鲜、单一来源的未解锁接地静止反馈",
+            "armed_seen": false,
+            "samples": {
+              "status": 2,
+              "land": 2
+            },
+            "rc_samples": {
+              "manual": 2,
+              "switches": 2,
+              "flags": 2
+            },
+            "rc_safe": true,
+            "agent_pid": 55,
+            "agent_created": false,
+            "agent_retained": true,
+            "updated_unix": 1000.4,
+            "updated_monotonic": 100.4,
+            "boot_id": "06837b44-00e9-4eb6-ac2f-592b326ab3c2"
+          },
+          "ros_context_alive": false,
+          "known_cleanup_defect": false
+        },
+        {
+          "scenario": "armed",
+          "result": [
+            "ControlError",
+            "观察到飞机已解锁；保留原服务；未变更服务"
+          ],
+          "events": [
+            [
+              "init"
+            ],
+            [
+              "node",
+              "fc01_install_ground_observer"
+            ],
+            [
+              "subscribe",
+              "VehicleStatus",
+              "/fmu/out/vehicle_status_v1",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "VehicleLandDetected",
+              "/fmu/out/vehicle_land_detected",
+              "sensor-qos"
+            ],
+            [
+              "destroy-node"
+            ],
+            [
+              "shutdown"
+            ]
+          ],
+          "stdout": "",
+          "evidence": {
+            "ok": false,
+            "reason": "观察到飞机已解锁；保留原服务",
+            "armed_seen": true,
+            "samples": {
+              "status": 0,
+              "land": 1
+            },
+            "rc_samples": null,
+            "rc_safe": null,
+            "agent_pid": 55,
+            "agent_created": false,
+            "agent_retained": true,
+            "updated_unix": 1000.2,
+            "updated_monotonic": 0.0,
+            "boot_id": "06837b44-00e9-4eb6-ac2f-592b326ab3c2"
+          },
+          "ros_context_alive": false,
+          "known_cleanup_defect": false
+        },
+        {
+          "scenario": "existing-required",
+          "result": [
+            "ControlError",
+            "未找到可复用的既有 Agent；在线启用不会启动第二个 Agent"
+          ],
+          "events": [],
+          "stdout": "",
+          "evidence": {
+            "ok": false,
+            "reason": "未找到可复用的既有 Agent；在线启用不会启动第二个 Agent",
+            "armed_seen": false,
+            "samples": {
+              "status": 0,
+              "land": 0
+            },
+            "rc_samples": null,
+            "rc_safe": null,
+            "agent_pid": null,
+            "agent_created": false,
+            "agent_retained": true,
+            "updated_unix": 1000.0,
+            "updated_monotonic": 0.0,
+            "boot_id": "06837b44-00e9-4eb6-ac2f-592b326ab3c2"
+          },
+          "ros_context_alive": false,
+          "known_cleanup_defect": false
+        },
+        {
+          "scenario": "disk-full",
+          "result": [
+            "OSError",
+            "fixture disk full"
+          ],
+          "events": [
+            [
+              "init"
+            ],
+            [
+              "node",
+              "fc01_install_ground_observer"
+            ],
+            [
+              "subscribe",
+              "VehicleStatus",
+              "/fmu/out/vehicle_status_v1",
+              "sensor-qos"
+            ],
+            [
+              "subscribe",
+              "VehicleLandDetected",
+              "/fmu/out/vehicle_land_detected",
+              "sensor-qos"
+            ],
+            [
+              "destroy-node"
+            ],
+            [
+              "shutdown"
+            ]
+          ],
+          "stdout": "已观察到新鲜、单一来源的未解锁接地静止反馈\n",
+          "evidence": null,
+          "ros_context_alive": false,
+          "known_cleanup_defect": false
+        }
+      ]
+    }
+  ]
+}

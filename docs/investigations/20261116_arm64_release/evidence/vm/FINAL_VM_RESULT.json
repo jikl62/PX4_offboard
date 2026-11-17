@@ -1,0 +1,39 @@
+{
+  "passed": true,
+  "final_archive_sha256": "3c876f6f98d45df994658ad3f68691c12dee0cf14befa18f2824a52f58d2a123",
+  "source_commit": "56424d7f16af2b6c2a93eb121e0b2bb00a6fb34a",
+  "control_candidate_commit": "adc55d0b7c67e80bf9d77b1082208c898f95b756",
+  "stages": [
+    "install",
+    "repeat_install",
+    "manual_rollback",
+    "failed_startup_automatic_rollback"
+  ],
+  "installed_controller_pid": 4623,
+  "repeated_controller_pid": 4623,
+  "rollback_controller_pid": 5339,
+  "same_repeat_pid": true,
+  "controller_count_all_stages": 1,
+  "target_height_m_all_stages": 1.23,
+  "rc_navigation_slot_all_stages": 1,
+  "original_runtime_bytes_restored": true,
+  "identity_changes_only": {
+    "fc01_entry_version": {
+      "original": "20261112.1",
+      "installed": "20261116_stage3"
+    },
+    "fc01_config_source_path": {
+      "original": "/home/orangepi/fc01-old/native/config/flight_test.yaml",
+      "installed": "/home/orangepi/FC01_versions/20261116_stage3/deployment/runtime.yaml"
+    }
+  },
+  "arm64_unit_tests": 43,
+  "arm64_unit_tests_seconds": 17.71,
+  "hardware_verified": false,
+  "installer_status_command_exit": 0,
+  "familiar_navigation_status_command_exit": 0,
+  "repeated_rollback_after_success_exit": 1,
+  "repeated_rollback_after_success_safely_rejected": true,
+  "status_cli_checked_after_guest_restart": true,
+  "shared_agent_identity_unchanged_during_install_transactions": true
+}

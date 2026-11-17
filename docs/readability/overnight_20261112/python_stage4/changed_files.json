@@ -1,0 +1,168 @@
+{
+  "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+  "source_commit": "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+  "production_files": 14,
+  "test_files": 6,
+  "files": [
+    {
+      "path": "feedback_age_probe.py",
+      "reason": "三项独立功能修复：自有Context/逐项清理与原异常、数字溢出、本地源戳算术；随后仅补中文合同。",
+      "source_or_test": "production",
+      "sha256": "d8dbb09dca98a851b98f961e805b31b8565b98246209cf11fc1604f347b00539",
+      "bytes": 23098,
+      "lines": 489
+    },
+    {
+      "path": "launcher.py",
+      "reason": "拒绝长Socket路径时释放本次空目录；摘要构造提取及会话/进程/流所有权中文说明。",
+      "source_or_test": "production",
+      "sha256": "9089f43f4346643f968dbb9ca1f53bf8302e63f3e4b963df35f20d175b8374ce",
+      "bytes": 44318,
+      "lines": 989
+    },
+    {
+      "path": "native/tools/deploy.py",
+      "reason": "仅解释vendor来源、过滤/凭据区别、hash与非事务SSH/ZIP边界。",
+      "source_or_test": "production",
+      "sha256": "b50b5dd9a9fe46ba2cecedf30eeca11f5b0f105cea0fb85ca1dc46c53aa349f0",
+      "bytes": 8836,
+      "lines": 200
+    },
+    {
+      "path": "native/tools/fcctl.py",
+      "reason": "仅解释ACK/状态/序号水位、部分写、确认机会、VEL期限和断连；保留线协议顺序。",
+      "source_or_test": "production",
+      "sha256": "6cd697ba3046bff32cb1bef792265d8721ca2e5925a9f2b3216cb9c0652cbbf6",
+      "bytes": 23084,
+      "lines": 510
+    },
+    {
+      "path": "native/tools/socket_safety.py",
+      "reason": "仅解释父目录权限、协作flock与fd释放边界；不夸大竞态或close保证。",
+      "source_or_test": "production",
+      "sha256": "92e000bfb7e449e9a85dd36e1f8b79f1307ee970af2b25a1c8ffd0ce2eca95a2",
+      "bytes": 6578,
+      "lines": 156
+    },
+    {
+      "path": "native/tools/start.py",
+      "reason": "仅解释自建/复用Agent、子进程/日志/锁所有权及优雅退出、清理错误边界。",
+      "source_or_test": "production",
+      "sha256": "fe5aa1d0cf09a091a5df8255b2eedfb685e1954a5dae2eebb53c1c144233525f",
+      "bytes": 5513,
+      "lines": 114
+    },
+    {
+      "path": "native/tools/update.py",
+      "reason": "仅解释包目标、锁、原子current切换及清理异常不等于回滚。",
+      "source_or_test": "production",
+      "sha256": "4ef80c4131f821f41cc563080aae6b24f8a542bc86746840b7fc322908a2f438",
+      "bytes": 4135,
+      "lines": 84
+    },
+    {
+      "path": "navigation.py",
+      "reason": "仅补命令分派、显式确认、当前/历史状态和退出不停止控制器的中文说明。",
+      "source_or_test": "production",
+      "sha256": "3b112dd67ca3759a67ec4283b8d24124f94300e8b3757c91f8f652b5354f36d2",
+      "bytes": 19868,
+      "lines": 399
+    },
+    {
+      "path": "navigation_build_evidence.py",
+      "reason": "独占创建失败不再误清旧临时项；其后提取纯argv生成并解释构建取证/阶段保留/非原子双发布。",
+      "source_or_test": "production",
+      "sha256": "95d5bb59dde4da51f3b886aeb9e6c8a76ee79eff58fb7d33a22d184ad959f5a8",
+      "bytes": 28790,
+      "lines": 597
+    },
+    {
+      "path": "navigation_deploy.py",
+      "reason": "仅补离线/在线边界、配置、日志、确认令牌和外部动作异常中文说明；不变CLI或实际行为。",
+      "source_or_test": "production",
+      "sha256": "b8fb776755ea946ed43d7a53abbfe8357979e775ccf67699183a67422f32791b",
+      "bytes": 15509,
+      "lines": 335
+    },
+    {
+      "path": "navigation_install.py",
+      "reason": "仅补部署前后检查、旧构建身份与正式证据、锁、地面复验和错误传播中文合同；不变原协调顺序。",
+      "source_or_test": "production",
+      "sha256": "ef6b80d0d8fcf83f440ef7026b9e60f9bcaed01718fa6b1be372169c09dfda7b",
+      "bytes": 24742,
+      "lines": 512
+    },
+    {
+      "path": "navigation_probe.py",
+      "reason": "保留Stage3清理修复，仅解释参数、只读订阅、两帧推进/RC证据与Node/Context归属。",
+      "source_or_test": "production",
+      "sha256": "d5e853669bf2d8e8fbc8744d99e79851c765d4205bc4be2e05c339ce5f645994",
+      "bytes": 18115,
+      "lines": 433
+    },
+    {
+      "path": "navigation_report.py",
+      "reason": "独立修复间接running_entry真实路径归属；随后提取内存状态身份处理，解释预算/关闭/采集顺序。",
+      "source_or_test": "production",
+      "sha256": "7ccf3b01fe9b536bfdc5e701457bc703bd7d4bc1a8853cae3a920b8401e8ce68",
+      "bytes": 12571,
+      "lines": 285
+    },
+    {
+      "path": "navigation_status.py",
+      "reason": "仅补PID/外层boot、状态/话题独立TTL及显示不授权的准确说明。",
+      "source_or_test": "production",
+      "sha256": "082ba9aa602e98c637a1af755397a7321cd80c7cd0b1d1a7dc6ccc6bfae40612",
+      "bytes": 11519,
+      "lines": 242
+    },
+    {
+      "path": "tests/test_feedback_age_probe.py",
+      "reason": "新增4方法：大整数/有限原类型/诊断输入不变，超大正负快照源戳四组合；原测试保留。",
+      "source_or_test": "test",
+      "sha256": "ba1fa84e78455714c40c270d9d2ad9878ad343e77265bb7e51cee85668fcc691",
+      "bytes": 9579,
+      "lines": 192
+    },
+    {
+      "path": "tests/test_overnight_stage4_deployment.py",
+      "reason": "新增8方法：5资源归属回归，3等价方法含8构建协调场景；原错误身份/归档/argv/顺序核验。",
+      "source_or_test": "test",
+      "sha256": "a92ac493a5c996ae4a8681251789a1b2454015e9f55905f4a0166d53d9f8f338",
+      "bytes": 13622,
+      "lines": 311
+    },
+    {
+      "path": "tests/test_overnight_stage4_launcher_readability.py",
+      "reason": "新增3方法：正常/8MiB裁剪报告成员、首错、完整AST内联；不涉及设备或控制进程。",
+      "source_or_test": "test",
+      "sha256": "b2a7386663056d875cc5b223ae4f4fb68d4fe0a69c4dfa2e95bad33d3203a7cb",
+      "bytes": 6729,
+      "lines": 156
+    },
+    {
+      "path": "tests/test_overnight_stage4_launcher_resources.py",
+      "reason": "新增3方法：10次长路径拒绝、旧会话保留、成功移交、清理自身失败原错可见。",
+      "source_or_test": "test",
+      "sha256": "42d819932108634f63ea5e5041f55fb73ca4cdb83a3c3ce6b94baeccbe634b4c",
+      "bytes": 2546,
+      "lines": 53
+    },
+    {
+      "path": "tests/test_overnight_stage4_reporting.py",
+      "reason": "新增12方法：8路径归属修复，4差分方法含6归档场景及错误原对象/流关闭。",
+      "source_or_test": "test",
+      "sha256": "71ae4ce0b31f71b1c7b6baefec1c8d1e7409effb7e76e369ced9be58fc3047dd",
+      "bytes": 14365,
+      "lines": 315
+    },
+    {
+      "path": "tests/test_overnight_stage4_tools.py",
+      "reason": "新增18生命周期方法：假ROS对象/默认Context、订阅/报告/文件/释放错误、重复退出和异常链。",
+      "source_or_test": "test",
+      "sha256": "59034d2f7f7814aa32422d335c648f38c88e84fd89687aa9acd210d485e5fbe2",
+      "bytes": 16771,
+      "lines": 420
+    }
+  ]
+}

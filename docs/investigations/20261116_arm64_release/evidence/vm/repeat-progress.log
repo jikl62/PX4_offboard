@@ -1,0 +1,5 @@
+MainPID=4161
+ActiveState=active
+4623 /home/orangepi/FC01_versions/20261116_stage3/install/lib/jikl_fc01_system/fc01_system_node --ros-args --disable-external-lib-logs --params-file /home/orangepi/FC01_navigation/runtime.yaml -p socket_path:=/home/orangepi/.cache/fc01_operator/ipc/s_w4riase8/control.sock
+4692 /usr/bin/python3 - /home/orangepi/FC01_OrangePi_20261116_stage3_arm64.tar.gz
+5042 bash -c systemctl show fc01-navigation.service -p MainPID -p ActiveState; pgrep -af "fc01_system_node|ldd|python3 -" | head -5

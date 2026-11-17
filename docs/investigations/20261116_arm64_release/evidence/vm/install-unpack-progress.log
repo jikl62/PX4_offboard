@@ -1,0 +1,6 @@
+    ELAPSED %CPU   RSS COMMAND
+      01:02 90.2 31040 /usr/bin/python3 - /home/orangepi/FC01_OrangePi_20261116_stage3_arm64.tar.gz
+56M	/home/orangepi/FC01_versions/20261116_stage3
+51M	/home/orangepi/FC01_versions/.
+119M	/home/orangepi/FC01_versions/..
+0

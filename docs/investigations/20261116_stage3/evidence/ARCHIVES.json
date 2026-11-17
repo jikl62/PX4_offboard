@@ -1,0 +1,17 @@
+{
+  "ros_raw_traces.tar.gz": {
+    "sha256": "a90ced9564c0f8aa80889d201f03e578b83b03a44c84757668c863f2b2286121",
+    "bytes": 6748930,
+    "files": 88
+  },
+  "regression_traces.tar.gz": {
+    "sha256": "07b5e94cc88e6e9abfa34e92d7d9355bc3fe06d84c53e2b10dd9c4a8b10e286a",
+    "bytes": 3165847,
+    "files": 34
+  },
+  "early_attempts.tar.gz": {
+    "sha256": "0250e7bbd6aeaf40708aac6b4fc9d88a73c48a14fba029acfb9670c3e77c27e6",
+    "bytes": 10827067,
+    "files": 144
+  }
+}

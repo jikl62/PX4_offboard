@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "baseline": {
+    "kind": "git",
+    "revision": "053eb2c",
+    "commit": "053eb2c3be90240e6ed5521714efdcc0113c2b33"
+  },
+  "raw_checker_passed": false,
+  "unexpected_differences": [],
+  "documented_intentional_differences": [
+    {
+      "path": "FC01_RELEASE.json",
+      "reason": "source manifest refresh"
+    },
+    {
+      "path": "native/tests/test_rc_recovery_adapter.py",
+      "reason": "fixture insertion accepts only same C++ tokens with new whitespace"
+    },
+    {
+      "path": "native/tests/test_receive_event_adapter.py",
+      "reason": "fixture visibility/main insertion verified exactly once"
+    },
+    {
+      "path": "tests/test_native_profile.py",
+      "reason": "same 80 mappings with whitespace tolerant extraction"
+    },
+    {
+      "path": "vision_replay.py",
+      "reason": "offline same 80 mappings with whitespace tolerant extraction"
+    }
+  ],
+  "cpp_tokens_all_passed": true,
+  "unchanged_original_python_ast_count": 91,
+  "original_python_files": 95,
+  "qualification": "Original control C++ stays token identical. Four offline/test Python edits and manifest refresh are deliberate, not equivalent AST claims."
+}

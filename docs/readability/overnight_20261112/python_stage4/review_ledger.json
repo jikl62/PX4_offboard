@@ -1,0 +1,398 @@
+{
+  "baseline": "f46468c21cac677dec0a3b300eb779de2fca44fd",
+  "source_commit": "3ce3bc254eb30a67d1d67734afa4f8cb11c8db9d",
+  "production_manual_review_count": 39,
+  "production_modified": 14,
+  "production_retained": 25,
+  "scope_note": "39根/原生工具生产文件逐文件审查；6新增/修改测试经过针对性审查。其余Python测试/驱动本轮静态检查和完整回归，未声称再次逐行深审。",
+  "files": [
+    {
+      "decision": "retain_readonly",
+      "reason": "历史standby入口独立于正式导航，unit归属/预检/优雅停止已有中文说明；保留其CLI行为，异常快照提示留候选。",
+      "evidence": "evidence.zip:deployment/readonly_packaging_review_zh.md",
+      "path": "autostart.py",
+      "sha256": "5c8d49ccb938b1b9e4b1955ebdaaab71e9c474c748486f7644e68afaca0d7528",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "短小显式NAMES及固定归档职责；保留缺参历史合同，提示改进留候选，不生成或执行包。",
+      "evidence": "evidence.zip:deployment/readonly_packaging_review_zh.md",
+      "path": "build_autostart_bundle.py",
+      "sha256": "bd3002b574b9585aa51a3ecde2fe0d98230a3a467d7c1fbe4dc8673773945583",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "历史源包已有明确白名单、固定归档与路径/预算/冲突规则；HEADER本身为执行合同，保留原字节，不重复格式化。",
+      "evidence": "evidence.zip:deployment/readonly_packaging_review_zh.md",
+      "path": "build_bundle.py",
+      "sha256": "3456feef08191c9ef85cce17b1ef0ad8ec53edbfa8ae3c3dc49921c82d384499",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "生成与实际解包/离线动作区分已说明；保留512文件/8MiB/1MiB拒绝规则及当前旧清单，不混入打包策略变化。",
+      "evidence": "evidence.zip:deployment/readonly_packaging_review_zh.md",
+      "path": "build_navigation_bundle.py",
+      "sha256": "850f5f92658f9229aacac99c99ed1593c145fbf20d960f896091ee1516f3e2c7",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "runtime_profile深拷贝并校验当前profile/时钟/20Hz/地面采样合同，先关门再按显式flight选择独立定高动作门。 readiness_issues对真实bool、新鲜度、地面窗口、Vz和唯一来源逐项列拒绝；不是缺字段自动允许。 Mission状态、单次submitted水位、pending序号、超时/取消及AUTHORITY_RC→ATTITUDE_READY→TAKEOFF推进已有中文。 模块不创建ROS publisher或socket；issue/poll返回请求建议，实际发送仍由外层并由原生/PX4再次核验，DONE不代表已离地。",
+      "remaining": [
+        "Mission与外层send/sent/reply顺序耦合属安全关键合同；任何重排/自动恢复重用submitted均需独立安全回归，当前保留。",
+        "运行配置的部分数值/布尔兼容例外仍依赖现有调用合同；不在只读补扫中更改权限准入。"
+      ],
+      "evidence": "evidence.zip:tools_supplemental_review.json",
+      "path": "fc01_control.py",
+      "sha256": "29f269d0bf12d102f9c8b4e20db4cb833ec5147612cb608eeea054ae04059357",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "modified",
+      "reason": "三项独立功能修复：自有Context/逐项清理与原异常、数字溢出、本地源戳算术；随后仅补中文合同。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "feedback_age_probe.py",
+      "sha256": "d8dbb09dca98a851b98f961e805b31b8565b98246209cf11fc1604f347b00539",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "modified",
+      "reason": "拒绝长Socket路径时释放本次空目录；摘要构造提取及会话/进程/流所有权中文说明。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "launcher.py",
+      "sha256": "9089f43f4346643f968dbb9ca1f53bf8302e63f3e4b963df35f20d175b8374ce",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "modified",
+      "reason": "仅解释vendor来源、过滤/凭据区别、hash与非事务SSH/ZIP边界。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "native/tools/deploy.py",
+      "sha256": "b50b5dd9a9fe46ba2cecedf30eeca11f5b0f105cea0fb85ca1dc46c53aa349f0",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "modified",
+      "reason": "仅解释ACK/状态/序号水位、部分写、确认机会、VEL期限和断连；保留线协议顺序。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "native/tools/fcctl.py",
+      "sha256": "6cd697ba3046bff32cb1bef792265d8721ca2e5925a9f2b3216cb9c0652cbbf6",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "既有中文已解释主机白名单、shlex转义、TTY选择与退出码；无新增职责拆分必要，未调用SSH。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/pc.py",
+      "sha256": "d6858422248686e30d6d970de646dbd3f54a880e31ded39670c2c42353082f71",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "逐行JSON对象过滤、wire/ACK因果差及状态去重已注释；输出不证明Offboard或PX4采用，保留。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/r632_ack176_summary.py",
+      "sha256": "13805c9b5919d0d37de0bff00c5e909d837b75485df2a4ed5ae82db1abb92e97",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "历史R6.3专用数值/关闭门断言，不是当前飞行参数修改器；顶层argv/text依赖明确，保留。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/r63_config_check.py",
+      "sha256": "a24672e22eed00ef9c894c518fbbfdaaa059d658ddf1659ed26bfbe4c6edecc4",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "动作门只读检查与本地双sink证据检查已分离；明确缺乏PX4收取/外部回退证明，保留。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/r6_preflight_audit.py",
+      "sha256": "1b6654260205c6888cc3819461dc184c6418a9c1729a0f8899ce032df3c86004",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "历史ULog/控制日志对齐、邻域变化容差及C++ guard输入已有中文解释；依赖原始日志/numpy/pyulog，本轮不重新运行历史回放。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/replay_vertical_feedback.py",
+      "sha256": "8d9cebf3e3c7606f6a7bc48d23639e0eb9dee287383f3c3948f303792ec4c655",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "固定原始垂直输入与合成姿态/权限分界已说明；baseline重现误差及原推力计划保留，不构造反事实真实飞行结论。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/replay_vertical_refinement.py",
+      "sha256": "905781fe8384c0ae17223c81dc1fff24db01c49ab0d20175419d66c19e646807",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "CSV/JSONL读取、时间回退显示顺序、未知handoff与空输入拒绝已清晰；保留原输出兼容。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/s10_timeline.py",
+      "sha256": "85e0138881d6e297cadcfc96fd6d527dc49d890efbe5a0fcf2ffb7364209eb50",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "modified",
+      "reason": "仅解释父目录权限、协作flock与fd释放边界；不夸大竞态或close保证。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "native/tools/socket_safety.py",
+      "sha256": "92e000bfb7e449e9a85dd36e1f8b79f1307ee970af2b25a1c8ffd0ce2eca95a2",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "扫描/来源排除/逐文件SHA审核/过期结论与仅提示复杂度的关系已具名分离；不靠汉字数判通过。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/source_readability_audit.py",
+      "sha256": "a31b2bc4f0ff4e63760c039086a7d5c445e48ba43547145bc2ab8ae1831a7b80",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "modified",
+      "reason": "仅解释自建/复用Agent、子进程/日志/锁所有权及优雅退出、清理错误边界。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "native/tools/start.py",
+      "sha256": "fe5aa1d0cf09a091a5df8255b2eedfb685e1954a5dae2eebb53c1c144233525f",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "modified",
+      "reason": "仅解释包目标、锁、原子current切换及清理异常不等于回滚。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "native/tools/update.py",
+      "sha256": "4ef80c4131f821f41cc563080aae6b24f8a542bc86746840b7fc322908a2f438",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "前轮已完成33份中文契约、生命周期故障修复与真实ROS只读通信；当前字节与f46468c一致，不重复制造改动。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/velocity_command_diagnostic.py",
+      "sha256": "d15956d567f98ede6287913c144ce2310d6642cbe00726b05095f981d563c147",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "前轮已覆盖坐标/杆臂/精确配对/Guarded缓存撤销及Node生命周期；当前字节与f46468c一致，不重新进行充分完成的审查。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/vision_odometry_adapter.py",
+      "sha256": "5378771c2bcfc7eb284ce125c99b5b059a7045958bf3699d381b996a9a461416",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "统一UTF-8字节预算、精确身份检查与仅诊断截断已有简洁中文；当前实现小且独立，保留。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/vision_resource_budget.py",
+      "sha256": "c479c97b6b84686fba0ff3443592c757d9a2c35425b7e0db7a521f06d9c28927",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "前轮已说明合法位、测量/接收双时间、source/epoch可信水位及撤销；未改现有校验和资源预算。",
+      "evidence": "evidence.zip:tools_review.json",
+      "path": "native/tools/vision_state_validation.py",
+      "sha256": "f15c4604ba242d8b1263075f813c7f1787c073d33942783a75d4adc5c1a0e0ca",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "modified",
+      "reason": "仅补命令分派、显式确认、当前/历史状态和退出不停止控制器的中文说明。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "navigation.py",
+      "sha256": "3b112dd67ca3759a67ec4283b8d24124f94300e8b3757c91f8f652b5354f36d2",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "modified",
+      "reason": "独占创建失败不再误清旧临时项；其后提取纯argv生成并解释构建取证/阶段保留/非原子双发布。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "navigation_build_evidence.py",
+      "sha256": "95d5bb59dde4da51f3b886aeb9e6c8a76ee79eff58fb7d33a22d184ad959f5a8",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "部署身份采集、白名单环境、源码/SDK摘要、进程/串口fd身份及可选ROS统计已有独立具名函数与中文说明。 默认不导入ROS；--ros-seconds显式选择并以子进程+外层超时运行，只订阅/fmu/out，不启动服务/Agent或打开UART。 环境或命令查询失败记unknown；包元数据与磁盘摘要不冒充运行二进制/线协议身份。",
+      "remaining": [
+        "sample_ros在try外init，finally串联destroy_node/shutdown；部分init或destroy失败的显式清理覆盖需独立故障注入。本次未复现、不改写行为。",
+        "run_command先capture_output再截断返回；超时限制运行时间，裁剪长度并非采集期内存硬上限。",
+        "collect仍协调多来源证据；未来拆分须保留服务WorkingDirectory优先与unknown/partial语义。"
+      ],
+      "evidence": "evidence.zip:tools_supplemental_review.json",
+      "path": "navigation_collect.py",
+      "sha256": "490e6ac77a420b9c03302829bb30b2a3f6bcd00b9278b90330d221366225360e",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "modified",
+      "reason": "仅补离线/在线边界、配置、日志、确认令牌和外部动作异常中文说明；不变CLI或实际行为。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "navigation_deploy.py",
+      "sha256": "b8fb776755ea946ed43d7a53abbfe8357979e775ccf67699183a67422f32791b",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "modified",
+      "reason": "仅补部署前后检查、旧构建身份与正式证据、锁、地面复验和错误传播中文合同；不变原协调顺序。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "navigation_install.py",
+      "sha256": "ef6b80d0d8fcf83f440ef7026b9e60f9bcaed01718fa6b1be372169c09dfda7b",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "modified",
+      "reason": "保留Stage3清理修复，仅解释参数、只读订阅、两帧推进/RC证据与Node/Context归属。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "navigation_probe.py",
+      "sha256": "d5e853669bf2d8e8fbc8744d99e79851c765d4205bc4be2e05c339ce5f645994",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "modified",
+      "reason": "独立修复间接running_entry真实路径归属；随后提取内存状态身份处理，解释预算/关闭/采集顺序。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "navigation_report.py",
+      "sha256": "7ccf3b01fe9b536bfdc5e701457bc703bd7d4bc1a8853cae3a920b8401e8ce68",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "上一阶段已解释activate/configure/rollback的地面复验和补偿。此次复核配置覆盖、复用Agent、事务锁与认证后复验；保留长协调器及早记水位顺序，执行activation差分/原测试。",
+      "evidence": "PYTHON_READING_zh.md; current_baseline_traces.json; root_final.log",
+      "path": "navigation_restore.py",
+      "sha256": "bc97282e0b5b42a8049975202f81ab1a9bd54adcfa73dd58e935de0a3ca9bc4a",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "上一阶段已完成输入/输出/权限/配置中文合同及具名配置工厂。本轮复核load_profile及每轮配置工厂、describe_row、原生路径身份，保持原字节并运行服务差分。",
+      "evidence": "PYTHON_READING_zh.md; current_baseline_traces.json; root_final.log",
+      "path": "navigation_service.py",
+      "sha256": "dcdc64abc435ede5617f323a4aa0df30c0c4230190847ba1097c0309dc350940",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "modified",
+      "reason": "仅补PID/外层boot、状态/话题独立TTL及显示不授权的准确说明。",
+      "evidence": "changed_files.json; verification.json",
+      "path": "navigation_status.py",
+      "sha256": "082ba9aa602e98c637a1af755397a7321cd80c7cd0b1d1a7dc6ccc6bfae40612",
+      "bytes_identical_to_stage_baseline": false
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "上一阶段已解释AgentTransport、monitor、StatusPublisher及close顺序；本轮复核Agent重连不替换活原生、停止等待、每轮重置与清理异常候选，保留原字节并执行重复生命周期与差分。",
+      "evidence": "PYTHON_READING_zh.md; current_baseline_traces.json; root_final.log",
+      "path": "standby.py",
+      "sha256": "51d8d6e761e21f10ec01398de274ebbadeb4a44e87b0a40713ab4ea144ee4614",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "历史用户接线陈述、带日期固件源码、用户提供NSH与本机Linux观测明确分开，最高结论eligible_for_manual_review。 SystemPaths可注入虚拟根；元数据读预算/NOFOLLOW/fstat、目录/符号链接/设备树遍历上限和命令白名单具名独立。 只stat/dev元数据；仅systemctl show和fuser只读查询，不open串口、不改overlay/服务/主链路。 错误/缺证据保留unknown，冲突优先not_ready；不会因x86宿主机元数据发出OrangePi硬件就绪结论。",
+      "remaining": [
+        "文件1065行主要是带日期证据常量与多个独立检查，非一体化大算法；未来可分离静态证据但不将历史映射升级为实时事实。",
+        "命令回读有64KiB限制且最长4秒，临时文件写入期的磁盘使用不等于64KiB硬限额；不夸大资源保证。"
+      ],
+      "evidence": "evidence.zip:tools_supplemental_review.json",
+      "path": "uart_preflight.py",
+      "sha256": "71a1d16d74ca1b77bb0dab80ea8235c55de2de86ab7a5e6ed66a373a9342d88c",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "候选导出流程短：读基础YAML与两份JSON→navigation_profile→apply_settings→显式output写YAML。 --enable-vision只覆盖内存selected，未启动ROS/硬件/服务；成功是候选文件生成，不代表视觉或实机验收。 文件/YAML/合同类异常返回2，不自行回退或运行控制节点。",
+      "remaining": [
+        "output.write_text可覆盖显式指定的既有路径，并非exclusive新文件；不得把源码“新YAML”解释为文件排他创建保证。",
+        "导出失败可能留下部分output；输入/输出同路径的误操作保护是候选，修改会改变现有CLI行为，当前不改。"
+      ],
+      "evidence": "evidence.zip:tools_supplemental_review.json",
+      "path": "vision_config.py",
+      "sha256": "eb3e6fef3d7b6c1da145249fc015cd033d4026814ef3c1ac6ccc9896bc820fdc",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "JSONL状态与目标指令白名单分开；拒重复key和非JSON常量，unknown用null→nan，而非补零。 完全编码校验后才构建/运行宿主C++回放，参数映射从当前ROS头提取且源码哈希决定缓存，不导入ROS或打开设备。 synthetic/recorded来源和理想模型限制已说明；demo/回放输出不证明真实硬件控制权或飞行轨迹。",
+      "remaining": [
+        "encode_records、driver、configuration职责已分离；少量长表达式与源参数正则仍需随C++映射变更保持测试。",
+        "错误转换只覆盖明确列出的异常，不应宣称所有Python数值/资源异常都被规范成InputError；异常不会绕过为控制指令。"
+      ],
+      "evidence": "evidence.zip:tools_supplemental_review.json",
+      "path": "vision_replay.py",
+      "sha256": "f97caa1ac62eabf30b7fd8c98da308ae00ac202ae855186d00468743cbd0edff",
+      "bytes_identical_to_stage_baseline": true
+    },
+    {
+      "decision": "retain_readonly",
+      "reason": "JSON字段白名单、精确bool、话题名、QoS深度、有限正数和视觉不扩大原包络的规则清楚，单位已有中文。 缺文件显式disabled，存在损坏则报错；适配器参数不是目标速度指令，更不直接发布飞控消息。 apply_settings明确原地写目标配置；enabled仅视觉候选开关，不替代原动作门及C++权限。",
+      "remaining": [
+        "apply_settings部分参数已写后再校验后项，失败不事务回滚；调用者不能复用被拒的半更新对象。",
+        "未来若改为先全校验再提交，应作为有解释的功能/事务变化，不能混入等价可读性重构。"
+      ],
+      "evidence": "evidence.zip:tools_supplemental_review.json",
+      "path": "vision_settings.py",
+      "sha256": "db3146e388649a69ce3c0d734ac96180eb047e79f8441261abe57c4899d07ead",
+      "bytes_identical_to_stage_baseline": true
+    }
+  ],
+  "tests": [
+    {
+      "path": "tests/test_feedback_age_probe.py",
+      "reason": "新增4方法：大整数/有限原类型/诊断输入不变，超大正负快照源戳四组合；原测试保留。",
+      "source_or_test": "test",
+      "sha256": "ba1fa84e78455714c40c270d9d2ad9878ad343e77265bb7e51cee85668fcc691",
+      "bytes": 9579,
+      "lines": 192
+    },
+    {
+      "path": "tests/test_overnight_stage4_deployment.py",
+      "reason": "新增8方法：5资源归属回归，3等价方法含8构建协调场景；原错误身份/归档/argv/顺序核验。",
+      "source_or_test": "test",
+      "sha256": "a92ac493a5c996ae4a8681251789a1b2454015e9f55905f4a0166d53d9f8f338",
+      "bytes": 13622,
+      "lines": 311
+    },
+    {
+      "path": "tests/test_overnight_stage4_launcher_readability.py",
+      "reason": "新增3方法：正常/8MiB裁剪报告成员、首错、完整AST内联；不涉及设备或控制进程。",
+      "source_or_test": "test",
+      "sha256": "b2a7386663056d875cc5b223ae4f4fb68d4fe0a69c4dfa2e95bad33d3203a7cb",
+      "bytes": 6729,
+      "lines": 156
+    },
+    {
+      "path": "tests/test_overnight_stage4_launcher_resources.py",
+      "reason": "新增3方法：10次长路径拒绝、旧会话保留、成功移交、清理自身失败原错可见。",
+      "source_or_test": "test",
+      "sha256": "42d819932108634f63ea5e5041f55fb73ca4cdb83a3c3ce6b94baeccbe634b4c",
+      "bytes": 2546,
+      "lines": 53
+    },
+    {
+      "path": "tests/test_overnight_stage4_reporting.py",
+      "reason": "新增12方法：8路径归属修复，4差分方法含6归档场景及错误原对象/流关闭。",
+      "source_or_test": "test",
+      "sha256": "71ae4ce0b31f71b1c7b6baefec1c8d1e7409effb7e76e369ced9be58fc3047dd",
+      "bytes": 14365,
+      "lines": 315
+    },
+    {
+      "path": "tests/test_overnight_stage4_tools.py",
+      "reason": "新增18生命周期方法：假ROS对象/默认Context、订阅/报告/文件/释放错误、重复退出和异常链。",
+      "source_or_test": "test",
+      "sha256": "59034d2f7f7814aa32422d335c648f38c88e84fd89687aa9acd210d485e5fbe2",
+      "bytes": 16771,
+      "lines": 420
+    }
+  ],
+  "static_inventory": "evidence.zip:static_verification.json; python_inventory.json"
+}

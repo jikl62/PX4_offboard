@@ -1,0 +1,8 @@
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+获取:1 https://repo.huaweicloud.com/ubuntu jammy/main amd64 libaio1 amd64 0.3.112-13build1 [7176 B]
+获取:2 https://repo.huaweicloud.com/ubuntu jammy/main amd64 libpmem1 amd64 1.11.1-3build1 [81.4 kB]
+获取:3 https://repo.huaweicloud.com/ubuntu jammy/main amd64 liburing2 amd64 2.1-2build1 [10.3 kB]
+获取:4 https://repo.huaweicloud.com/ubuntu jammy-updates/main amd64 libslirp0 amd64 4.6.1-1ubuntu0.2 [61.7 kB]
+已下载 161 kB，耗时 0秒 (427 kB/s)

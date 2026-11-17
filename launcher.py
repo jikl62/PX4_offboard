@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 旧版现场交互入口：先确认串口、Agent 与唯一控制器，再由控制台请求检查或起飞。
+# Python 负责会话、命令与证据；解锁、姿态控制、降落和退出恢复始终由原生控制器决定。
 """Offline Orange Pi entry for the installed R6.3.2 native controller."""
 from __future__ import annotations
 
@@ -27,18 +29,36 @@ import time
 import uuid
 import zipfile
 
-from fc01_control import ControlError, DEFAULT_TAKEOFF_HEIGHT_M, Mission, readiness_issues, runtime_profile
+from fc01_control import (
+    ControlError,
+    DEFAULT_TAKEOFF_HEIGHT_M,
+    Mission,
+    readiness_issues,
+    runtime_profile,
+)
 
+# 此处项目路径用于寻找已安装 SDK；二进制标识用于拒绝不兼容的旧控制器。
 PROJECT = 'FC01_ARM64_PORT_20261020/FC01_R632_P0_ATTITUDE_AUDIT_CANDIDATE'
 BINARY_MARKERS = (b'R632_ACK176_STATE_CANDIDATE_V1', b'R632_SCHEDULED_TAKEOFF_CEILING_V1')
-OPS = {'INTERACTIVE': 0, 'PING': 0, 'STATUS': 0, 'AUTHORITY_RC': 0,
-       'ATTITUDE_READY': 0, 'TAKEOFF': 1, 'LAND': 0}
+# 入口仅编码白名单命令；数字是参数数量，不能借此向原生端注入任意文本。
+OPS = {
+    'INTERACTIVE': 0,
+    'PING': 0,
+    'STATUS': 0,
+    'AUTHORITY_RC': 0,
+    'ATTITUDE_READY': 0,
+    'TAKEOFF': 1,
+    'LAND': 0,
+}
 MAX_MESSAGE = 131072
 
 
+# 终端显示交给有界后台队列：终端关闭或堵塞只影响显示，不能拖住控制台心跳。
 class Display:
     """A vanished or flow-controlled terminal must never own the flight lease."""
+
     def __init__(self, stream):
+        # 借用调用者stream，不拥有关闭它的权利；本对象只拥有显示队列和后台线程。
         self.stream = stream
         self.messages = queue.Queue(maxsize=128)
         self.closed = False
@@ -46,14 +66,16 @@ class Display:
         self.thread = threading.Thread(target=self._write, daemon=True)
         self.thread.start()
 
+    # 显示最多保留 128 条、每条 4096 字符；队列满时舍弃显示副本，证据另行保存。
     def say(self, message):
         if self.closed or self.failed:
             return
         try:
-            self.messages.put_nowait(str(message)[:4096]+'\n')
+            self.messages.put_nowait(str(message)[:4096] + '\n')
         except queue.Full:
             pass  # Bounded display backlog; evidence remains in the session log.
 
+    # 唯一写终端的线程；输出失败后停止实际写入，主会话仍可继续原生恢复流程。
     def _write(self):
         while not self.closed or not self.messages.empty():
             try:
@@ -68,25 +90,30 @@ class Display:
                     self.failed = True
 
     def close(self):
+        # 只请求显示线程结束并有限等待；阻塞的daemon仍可能存活，不能据此宣布写盘或终端完成。
         self.closed = True
         # A blocked terminal writer is a daemon, not a reason to abandon recovery.
         self.thread.join(timeout=0.1)
 
 
+# 序号必须是正 uint64，参数必须是有限数；成功后生成一条 ASCII 换行协议消息。
 def encode_command(seq, op, args):
+    # 返回bytes，不发送；op和参数个数需符合白名单，拒绝发生在Channel消耗序号之前。
     if type(seq) is not int or not 0 < seq < 2**64:
         raise ControlError('无效控制台序号')
     if op not in OPS or len(args) != OPS[op]:
-        raise ControlError('入口不支持此命令/参数: '+str(op))
+        raise ControlError('入口不支持此命令/参数: ' + str(op))
     if any(type(x) not in (float, int) or not math.isfinite(x) for x in args):
         raise ControlError('命令参数必须为有限数字')
     return ('%d %s%s\n' % (seq, op, ''.join(' %.9g' % x for x in args))).encode('ascii')
 
 
+# IPC 断开与原生进程退出是两件事。保留错误类型和 errno，便于报告区分连接与控制器故障。
 class ChannelError(ControlError):
     """A terminal IPC condition, independent of the controller's exit status."""
+
     def __init__(self, kind, message, error_number=None):
-        super().__init__(kind+': '+message)
+        super().__init__(kind + ': ' + message)
         self.kind = kind
         self.errno = error_number
 
@@ -97,8 +124,10 @@ class ChannelError(ControlError):
         return result
 
 
+# 非阻塞 Unix socket 客户端：发送带序号命令，接收按换行分帧的 JSON 状态。
 class Channel:
     def __init__(self, sock):
+        # 保存调用方传入socket并切为非阻塞；Channel自己没有析构close，调用会话负责最终关闭。
         self.sock = sock
         self.sock.setblocking(False)
         self.seq = 0
@@ -106,14 +135,16 @@ class Channel:
         self.eof = False
         self.read_error = None
 
+    # 发送总期限 0.3 秒。开始写之前消耗序号，部分写失败后禁止重发，避免一次请求被执行两次。
     def send(self, op, args):
-        wire = encode_command(self.seq+1, op, args)
+        # 成功返回本次序号；超时/断连向上传播。写入可能已发生，不能因调用报错就重放请求。
+        wire = encode_command(self.seq + 1, op, args)
         # Consume a sequence before writing: a partial write is never replayed.
         self.seq += 1
         view = memoryview(wire)
-        deadline = time.monotonic()+0.3
+        deadline = time.monotonic() + 0.3
         while view:
-            left = deadline-time.monotonic()
+            left = deadline - time.monotonic()
             if left <= 0 or not select.select([], [self.sock], [], max(0, left))[1]:
                 raise ControlError('控制台写入超时；禁止重放命令')
             try:
@@ -125,16 +156,21 @@ class Channel:
             view = view[count:]
         return self.seq
 
+    # 一个 recv 不等于一条消息；先拼接缓冲，再逐条解析，拒绝 NaN、无穷值、非对象与超长记录。
+    # 若有效记录后紧跟 EOF/坏记录，先交付已有记录；错误锁存在 read_error，下一次读取仍会报告。
     def read(self):
+        # 返回本轮完整dict列表；read_error是粘性终止原因，不会被下一次好包清掉。
         if self.read_error is not None:
             raise self.read_error
         objects = []
+
         def terminal(error):
             self.read_error = error
             # Deliver every valid preceding record before exposing the failure.
             if objects:
                 return objects
             raise error
+
         while True:
             try:
                 chunk = self.sock.recv(65536)
@@ -145,7 +181,9 @@ class Channel:
             if not chunk:
                 self.eof = True
                 if self.buf:
-                    return terminal(ChannelError('truncated_json', '控制台关闭时存在未完成的 JSON 消息'))
+                    return terminal(
+                        ChannelError('truncated_json', '控制台关闭时存在未完成的 JSON 消息')
+                    )
                 return terminal(ChannelError('clean_eof', '控制台连接已关闭；没有残缺消息'))
             self.buf += chunk
             while b'\n' in self.buf:
@@ -153,7 +191,9 @@ class Channel:
                 if len(line) > MAX_MESSAGE:
                     return terminal(ChannelError('invalid_message', '控制器消息超长'))
                 try:
-                    obj = json.loads(line, parse_constant=lambda _: (_ for _ in ()).throw(ValueError()))
+                    obj = json.loads(
+                        line, parse_constant=lambda _: (_ for _ in ()).throw(ValueError())
+                    )
                 except (ValueError, UnicodeDecodeError):
                     return terminal(ChannelError('invalid_message', '控制器消息格式错误'))
                 if not isinstance(obj, dict):
@@ -164,6 +204,7 @@ class Channel:
         return objects
 
 
+# 进程身份记录不可变：PID、用户与完整启动参数共同用于判断是否能复用 Agent。
 @dataclass(frozen=True)
 class Process:
     pid: int
@@ -171,13 +212,19 @@ class Process:
     argv: tuple[str, ...]
 
 
+# 读取 /proc 快照，允许进程在检查期间自然退出；权限不足则拒绝继续，不能据此假定没有控制器。
 def process_list():
+    # 返回瞬时/proc事实，不持有进程句柄；检查后进程仍可能退出，慢操作后需重新核对。
     result = []
     for entry in Path('/proc').iterdir():
         if not entry.name.isdecimal():
             continue
         try:
-            argv = tuple(x.decode(errors='replace') for x in (entry/'cmdline').read_bytes().split(b'\0') if x)
+            argv = tuple(
+                x.decode(errors='replace')
+                for x in (entry / 'cmdline').read_bytes().split(b'\0')
+                if x
+            )
             if argv:
                 result.append(Process(int(entry.name), entry.stat().st_uid, argv))
         except (FileNotFoundError, ProcessLookupError):
@@ -187,17 +234,25 @@ def process_list():
     return result
 
 
+# 同一选项必须恰好出现一次才接受；重复或缺少值都返回 None，交由调用方拒绝歧义配置。
 def option(argv, *names):
     values = []
     for i, arg in enumerate(argv):
-        if arg in names and i+1 < len(argv):
-            values.append(argv[i+1])
+        if arg in names and i + 1 < len(argv):
+            values.append(argv[i + 1])
     return values[0] if len(values) == 1 else None
 
 
+# 只复用目标串口、同用户、115200 的唯一 Agent；发现其他占用者时保留它并拒绝新启动。
 def choose_agent(processes, owners, device, uid):
-    candidates = [p for p in processes if Path(p.argv[0]).name == 'MicroXRCEAgent'
-                  and 'serial' in p.argv and option(p.argv, '-D', '--dev') == device]
+    # 返回唯一可复用Process或None；只做选择，不创建/停止Agent，不因名字相同就获得所有权。
+    candidates = [
+        p
+        for p in processes
+        if Path(p.argv[0]).name == 'MicroXRCEAgent'
+        and 'serial' in p.argv
+        and option(p.argv, '-D', '--dev') == device
+    ]
     if len(candidates) > 1:
         raise ControlError('发现多个此 UART 的 Agent，保持原进程，拒绝启动')
     if candidates:
@@ -205,58 +260,82 @@ def choose_agent(processes, owners, device, uid):
         if p.uid != uid or option(p.argv, '-b', '--baudrate') != '115200':
             raise ControlError('现有 Agent 用户/波特率不匹配，需要同用户 115200')
         if owners - {p.pid}:
-            raise ControlError('UART 还被其他进程占用: '+str(sorted(owners-{p.pid})))
+            raise ControlError('UART 还被其他进程占用: ' + str(sorted(owners - {p.pid})))
         return p
     if owners:
-        raise ControlError('UART 被未知程序占用，未停止它: '+str(sorted(owners)))
+        raise ControlError('UART 被未知程序占用，未停止它: ' + str(sorted(owners)))
     return None
 
 
+# fuser 是实际串口占用证据；退出码与输出均须可辨认，不能把检查失败当成串口空闲。
 def uart_owners(device):
     try:
         p = subprocess.run(['fuser', device], capture_output=True, text=True, timeout=4)
     except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
         raise ControlError('需要已安装的 fuser 来确认串口所有权') from exc
     if p.returncode not in (0, 1) or (p.returncode == 1 and p.stderr.strip()):
-        raise ControlError('无法确认串口所有权: '+p.stderr.strip()[:200])
+        raise ControlError('无法确认串口所有权: ' + p.stderr.strip()[:200])
     if any(not x.isdecimal() for x in p.stdout.split()):
         raise ControlError('fuser 返回内容无法辨认')
     return {int(x) for x in p.stdout.split()}
 
 
+# 只检查已安装文件：可执行权限、ELF64 小端 ARM64 架构及两个能力标记；不会编译或替换控制器。
 def verify_binary(path):
     if not path.is_file() or not os.access(path, os.X_OK):
-        raise ControlError('缺少可执行的已安装控制器: '+str(path))
+        raise ControlError('缺少可执行的已安装控制器: ' + str(path))
     data = path.read_bytes()
-    if len(data) < 64 or data[:6] != b'\x7fELF\x02\x01' or int.from_bytes(data[18:20], 'little') != 183:
+    if (
+        len(data) < 64
+        or data[:6] != b'\x7fELF\x02\x01'
+        or int.from_bytes(data[18:20], 'little') != 183
+    ):
         raise ControlError('控制器不是 Linux ARM64 ELF')
     if any(marker not in data for marker in BINARY_MARKERS):
         raise ControlError('控制器缺少当前 ACK176/起飞推力上限标识；已保留现有安装')
 
 
+# 运行目录限定当前用户且无组/其他用户权限；拒绝符号链接，避免 IPC 与证据落到不受控位置。
 def private_dir(path):
+    # 无返回值，可创建缺失目录；已存在则核对当前用户和权限，失败不自动chmod别人的目录。
     if path.is_symlink():
-        raise ControlError('私有运行目录不能是符号链接: '+str(path))
+        raise ControlError('私有运行目录不能是符号链接: ' + str(path))
     path.mkdir(mode=0o700, parents=True, exist_ok=True)
     st = path.stat()
     if st.st_uid != os.getuid() or st.st_mode & 0o077:
-        raise ControlError('运行目录需要当前用户所有且权限 0700: '+str(path))
+        raise ControlError('运行目录需要当前用户所有且权限 0700: ' + str(path))
 
 
+# 每个会话在私有目录生成独立 socket 路径；长度需满足 Unix socket 地址限制，不删除旧会话。
 def make_socket_path(root):
     private_dir(root)
     folder = Path(tempfile.mkdtemp(prefix='s_', dir=root))
-    path = folder/'control.sock'
+    path = folder / 'control.sock'
     if len(os.fsencode(path)) > 103:
-        raise ControlError('Unix socket 路径过长: '+str(path))
+        error = ControlError('Unix socket 路径过长: ' + str(path))
+        try:
+            # 尚未把路径交给调用者，只删除本次创建的空目录，不清理共享root或旧会话。
+            folder.rmdir()
+        except OSError as cleanup_error:
+            raise error from cleanup_error
+        raise error
     return path
 
 
+# 每次会话独立保存配置、命令、状态和日志。first_failure 只记首个失败，后续错误不覆盖根因线索。
 class Evidence:
-    NAMES = ('metadata.json', 'runtime.yaml', 'controller.log', 'agent.log',
-             'console.jsonl', 'telemetry.csv', 'summary.json')
+    NAMES = (
+        'metadata.json',
+        'runtime.yaml',
+        'controller.log',
+        'agent.log',
+        'console.jsonl',
+        'telemetry.csv',
+        'summary.json',
+    )
 
     def __init__(self, folder, metadata):
+        # 创建新证据目录并独占打开events；调用者负责events.close()。后续会话不复用这些文件对象。
         self.folder = folder
         folder.mkdir(mode=0o700, parents=True, exist_ok=False)
         self.first_failure = None
@@ -264,76 +343,99 @@ class Evidence:
         self.last_state_at = -math.inf
         self.truncated = []
         self.write_json('metadata.json', metadata)
-        self.events = open(folder/'console.jsonl', 'x', buffering=1, encoding='utf8')
+        self.events = open(folder / 'console.jsonl', 'x', buffering=1, encoding='utf8')
 
     def write_json(self, name, obj):
-        with open(self.folder/name, 'w', encoding='utf8') as f:
+        # 同步覆盖本会话文件；context manager关闭fd，序列化/写盘失败直接传播，不承诺原子替换。
+        with open(self.folder / name, 'w', encoding='utf8') as f:
             json.dump(obj, f, ensure_ascii=False, indent=2, allow_nan=False)
             f.write('\n')
 
     def failure(self, text):
+        # 首错水位只写一次；这里只存诊断，不会请求LAND、上锁或改变原生控制权。
         if self.first_failure is None:
             self.first_failure = {'kind': 'launcher', 'message': str(text)}
 
+    # host_monotonic 记录主机接收顺序；只有包含 phase 的状态/回复更新最近状态及其接收时间。
     def record(self, obj, now):
         try:
-            self.events.write(json.dumps({'host_monotonic': now, 'data': obj}, ensure_ascii=False, allow_nan=False)+'\n')
+            self.events.write(
+                json.dumps(
+                    {'host_monotonic': now, 'data': obj}, ensure_ascii=False, allow_nan=False
+                )
+                + '\n'
+            )
         except OSError as exc:
-            self.failure('日志写入失败: '+str(exc))
+            self.failure('日志写入失败: ' + str(exc))
         if obj.get('kind') in ('reply', 'state') and 'phase' in obj:
             self.last_state, self.last_state_at = obj, now
-        if self.first_failure is None and (obj.get('accepted') is False or obj.get('phase') == 'SAFETY'):
+        if self.first_failure is None and (
+            obj.get('accepted') is False or obj.get('phase') == 'SAFETY'
+        ):
             self.first_failure = obj
 
     def command(self, seq, op, args, now):
         self.record({'kind': 'command', 'seq': seq, 'op': op, 'args': args}, now)
 
+    def _summary(self, outcome):
+        # 返回当次摘要字典，不写盘；嵌套状态/裁剪列表仍引用本对象，保持原快照构造语义。
+        # 每次原写入点重新构造，保留状态字段重绑定和truncated读取时机；列表就地更新仍共享可见。
+        return {
+            'outcome': outcome,
+            'first_failure': self.first_failure,
+            'last_state': self.last_state,
+            'truncated_files': self.truncated,
+            'hardware_flight_verified_by_this_bundle': False,
+        }
+
+    # 控制器仍在运行时只更新小摘要；扫描与 ZIP 压缩延后，避免给活跃控制会话增加长时间 I/O。
     def checkpoint(self, outcome):
+        # 无返回值；OSError转成first_failure，其余序列化等异常继续传播，不能承诺任意错误都被处理。
         # Only a small current-state JSON while the node is alive. Archive
         # scanning/compression is deliberately deferred until native exit.
         try:
-            self.write_json('summary.json', {'outcome': outcome, 'first_failure': self.first_failure,
-                            'last_state': self.last_state, 'truncated_files': self.truncated,
-                            'hardware_flight_verified_by_this_bundle': False})
+            self.write_json('summary.json', self._summary(outcome))
         except OSError as exc:
-            self.failure('状态摘要写入失败: '+str(exc))
+            self.failure('状态摘要写入失败: ' + str(exc))
 
+    # 节点退出后才归档。每个文件的报告副本最多约 8 MiB，过大时保留头部与尾部并标记，原日志不截断。
     def report(self, outcome):
+        # 返回ZIP路径；调用者须先确认原生已退出，避免归档I/O占用活跃会话。错误不伪装成报告成功。
         self.events.flush()
-        self.write_json('summary.json', {'outcome': outcome, 'first_failure': self.first_failure,
-                        'last_state': self.last_state, 'truncated_files': self.truncated,
-                        'hardware_flight_verified_by_this_bundle': False})
-        path = self.folder/'report.zip'
+        self.write_json('summary.json', self._summary(outcome))
+        path = self.folder / 'report.zip'
         self.truncated.clear()
-        limit = 8*1024*1024
+        limit = 8 * 1024 * 1024
         with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
             for name in self.NAMES:
-                p = self.folder/name
+                p = self.folder / name
                 if not p.is_file() or p.is_symlink():
                     continue
                 with open(p, 'rb') as f:
                     size = os.fstat(f.fileno()).st_size
                     if size > limit:
                         self.truncated.append(name)
-                        data = f.read(limit//4)
-                        f.seek(-limit*3//4, os.SEEK_END)
-                        data += b'\n[REPORT COPY TRUNCATED; ORIGINAL RETAINED]\n'+f.read(limit*3//4)
+                        data = f.read(limit // 4)
+                        f.seek(-limit * 3 // 4, os.SEEK_END)
+                        data += b'\n[REPORT COPY TRUNCATED; ORIGINAL RETAINED]\n' + f.read(
+                            limit * 3 // 4
+                        )
                     else:
                         data = f.read(limit)
                 if name != 'summary.json':
                     z.writestr(name, data)
-            self.write_json('summary.json', {'outcome': outcome, 'first_failure': self.first_failure,
-                            'last_state': self.last_state, 'truncated_files': self.truncated,
-                            'hardware_flight_verified_by_this_bundle': False})
-            z.write(self.folder/'summary.json', 'summary.json')
+            self.write_json('summary.json', self._summary(outcome))
+            z.write(self.folder / 'summary.json', 'summary.json')
         return path
 
 
+# 幂等的优雅退出请求：每个封装最多发送一次 SIGTERM，后续等待原生恢复，不升级为强杀。
 class NodeStop:
     def __init__(self, node):
         self.node, self.requested = node, False
 
     def request(self):
+        # 没有发送成功确认；一旦开始尝试便锁住requested，除已退出外的发送错误仍向上传播。
         if not self.requested and self.node.poll() is None:
             self.requested = True
             try:
@@ -342,11 +444,19 @@ class NodeStop:
                 pass
 
 
+# 只能停止自己创建的 Agent，且需节点已退出、1 秒内的新鲜未解锁接地证据；否则保留传输。
 def finish_agent(agent, owned, node_exited, state, state_at, now):
-    safe = (node_exited and 0 <= now-state_at <= 1 and
-            state.get('phase') in ('IDLE', 'SAFE_DISARMED') and
-            state.get('armed') is False and state.get('landed') is True and
-            state.get('status_fresh') is True and state.get('land_fresh') is True)
+    # state_at/now为单调秒；True表示自有Agent满足停止条件，它可能已退出，也可能仅收到terminate请求。
+    # 只有自建句柄可触发terminate；复用Agent、未知接地或过期状态都返回False并保留。
+    safe = (
+        node_exited
+        and 0 <= now - state_at <= 1
+        and state.get('phase') in ('IDLE', 'SAFE_DISARMED')
+        and state.get('armed') is False
+        and state.get('landed') is True
+        and state.get('status_fresh') is True
+        and state.get('land_fresh') is True
+    )
     if owned and agent is not None and safe:
         if agent.poll() is None:
             agent.terminate()
@@ -354,15 +464,23 @@ def finish_agent(agent, owned, node_exited, state, state_at, now):
     return False
 
 
+# 这里显示的是状态中的相对高度，向上为正；显示内容本身不是新的飞控反馈或起飞许可。
 def state_line(state):
     h = state.get('relative_height_m')
     height = '未知' if type(h) not in (float, int) else '%.2f m' % h
-    return ('[%s] armed=%s landed=%s 相对高度=%s 原因=%s' %
-            (state.get('phase'), state.get('armed'), state.get('landed'), height, state.get('reason', '')))
+    return '[%s] armed=%s landed=%s 相对高度=%s 原因=%s' % (
+        state.get('phase'),
+        state.get('armed'),
+        state.get('landed'),
+        height,
+        state.get('reason', ''),
+    )
 
 
+# 只重试 socket 尚未创建/尚未监听；原生已退出或其他错误立即上报，绝不靠删除旧 socket 绕过。
 def connect_controller(path, node, timeout=12):
-    end = time.monotonic()+timeout
+    # 成功返回接管socket的Channel；失败尝试关闭本次socket，保留原生与它的恢复责任。
+    end = time.monotonic() + timeout
     while time.monotonic() < end:
         if node.poll() is not None:
             raise ControlError('控制器在控制台就绪前退出，查看自动报告 controller.log')
@@ -378,7 +496,66 @@ def connect_controller(path, node, timeout=12):
     raise ControlError('等待控制器 socket 超时，未删除任何旧 socket')
 
 
+def _handle_console_input(text, mission, now, send, say, evidence, close_session):
+    """处理一次现场输入；now为单调秒，目标高度m。
+
+    仅显式takeoff推进Mission；EOF由调用者处理。
+    返回True只表示空输入应跳过本轮，命令/错误/退出副作用顺序与原控制台一致。
+    """
+    try:
+        parts = shlex.split(text)
+        if not parts:
+            return True
+        if parts[0] == 'takeoff' and len(parts) in (1, 2):
+            mission.request_takeoff(
+                float(parts[1]) if len(parts) == 2 else DEFAULT_TAKEOFF_HEIGHT_M,
+                now,
+            )
+            say(
+                '准备起飞 %.2f m；核对 RC 和实时反馈后由原生控制器执行一次 TAKEOFF。'
+                % mission.target
+            )
+        elif parts == ['land']:
+            mission.cancel()
+            send('LAND', [])
+            say('已请求原生降落/地面释放。')
+        elif parts == ['status']:
+            send('STATUS', [])
+            say(state_line(evidence.last_state))
+            say(
+                '等待条件：'
+                + (', '.join(readiness_issues(evidence.last_state)) or '地面反馈已齐备')
+            )
+        elif parts == ['quit']:
+            close_session('operator_quit')
+        else:
+            say(f'命令：takeoff [{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit')
+    except (ControlError, ValueError) as exc:
+        evidence.failure(exc)
+        say('未执行：' + str(exc))
+    return False
+
+
+def _show_console_state(obj, now, say, mission, closing, printed_phase, last_print):
+    """按阶段变化和单调秒节流显示状态，返回新的(printed_phase,last_print)。
+
+    只读Mission与反馈、不提交动作；先状态行后等待条件，保持原输出及节流间隔。
+    """
+    phase = obj.get('phase')
+    if phase != printed_phase or now - last_print >= (3 if closing else 5):
+        say(state_line(obj))
+        if not closing and not mission.submitted:
+            issues = readiness_issues(obj)
+            if issues:
+                say('等待条件：' + ', '.join(issues))
+        printed_phase, last_print = phase, now
+    return printed_phase, last_print
+
+
+# 一次现场会话主循环：持续收状态和发 PING，Mission 仅安排请求，原生端仍拥有最终动作判断权。
 def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
+    # channel/node/evidence都是调用者交来的本轮对象；flight只选择入口策略，不替代原生动作门。
+    # params高度单位m，seconds用于只检查期限，stop_signal为共享单元素列表（信号只改第0项）。
     display = Display(sys.stdout)
     say = display.say
     mission = Mission(params['aa_max_height'])
@@ -394,11 +571,14 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
     healthy_seen = False
 
     def send(op, values):
+        # 闭包借用当前channel/evidence；先真实写socket再记命令证据，后者失败也不能重放已写请求。
         seq = channel.send(op, values)
         evidence.command(seq, op, values, time.monotonic())
         return seq
 
+    # 结束会话先取消 Python 起飞流程，飞行会话再请求 LAND，然后请原生退出；不会自行合成上锁命令。
     def close_session(reason):
+        # nonlocal修改本会话的closing/outcome；幂等关闭请求，等待原生完成，不在此销毁Agent。
         nonlocal closing, outcome
         if closing:
             return
@@ -412,28 +592,33 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
             except (OSError, ControlError) as exc:
                 evidence.failure(exc)
         stop.request()
-        evidence.checkpoint(outcome+'; waiting_native_shutdown')
+        evidence.checkpoint(outcome + '; waiting_native_shutdown')
         say('正在等待原生控制器完成退出/恢复；Agent 和心跳保持运行。')
 
     try:
         send('INTERACTIVE', [])
         send('STATUS', [])
-        say(f'命令：takeoff [高度m，默认{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit' if flight else '只检查：动作门关闭，正在收集实时状态……')
+        say(
+            f'命令：takeoff [高度m，默认{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit'
+            if flight
+            else '只检查：动作门关闭，正在收集实时状态……'
+        )
         while node.poll() is None:
             now = time.monotonic()
             if stop_signal[0]:
                 close_session('operator_signal')
-            if not flight and now-started >= seconds:
-                fresh = 0 <= now-evidence.last_state_at <= 1
+            if not flight and now - started >= seconds:
+                fresh = 0 <= now - evidence.last_state_at <= 1
                 ok = fresh and not readiness_issues(evidence.last_state)
                 close_session('check_pass' if ok and healthy_seen else 'check_blocked')
-            if channel is not None and now-last_ping >= 0.2:
+            # 即便已开始退出，仍每 0.2 秒维持 PING；只有原生进程实际结束才离开监督循环。
+            if channel is not None and now - last_ping >= 0.2:
                 try:
                     send('PING', [])
                     last_ping = now
                 except (ControlError, OSError) as exc:
                     send_failure = str(exc)
-            readers = ([channel.sock] if channel is not None else [])
+            readers = [channel.sock] if channel is not None else []
             if flight and not closing:
                 readers.append(sys.stdin)
             ready = select.select(readers, [], [], 0.05)[0] if readers else []
@@ -447,75 +632,62 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
                         if obj.get('kind') in ('reply', 'state') and 'phase' in obj:
                             mission.observe(obj, now)
                             healthy_seen |= not readiness_issues(obj)
-                            phase = obj.get('phase')
-                            if phase != printed_phase or now-last_print >= (3 if closing else 5):
-                                say(state_line(obj))
-                                if not closing and not mission.submitted:
-                                    issues = readiness_issues(obj)
-                                    if issues:
-                                        say('等待条件：'+', '.join(issues))
-                                printed_phase, last_print = phase, now
+                            printed_phase, last_print = _show_console_state(
+                                obj, now, say, mission, closing, printed_phase, last_print
+                            )
                         if obj.get('kind') == 'reply':
                             pending = mission.pending
                             mission.reply(obj, now)
-                            if (pending and obj.get('seq') == pending[0]) or obj.get('accepted') is False:
-                                say(('[接受] ' if obj.get('accepted') is True else '[拒绝] ')+str(obj.get('message')))
+                            if (pending and obj.get('seq') == pending[0]) or obj.get(
+                                'accepted'
+                            ) is False:
+                                say(
+                                    ('[接受] ' if obj.get('accepted') is True else '[拒绝] ')
+                                    + str(obj.get('message'))
+                                )
                     if channel.read_error is not None:
                         raise channel.read_error
                 except (ControlError, OSError) as exc:
                     send_failure = str(exc)
+            # IPC 失败先锁存证据并停止 Mission，再关闭连接、请求原生恢复，不能通过重连重放起飞。
             if send_failure is not None:
                 evidence.failure(send_failure)
                 mission.fail(send_failure)
-                say(send_failure+'；转入原生退出/恢复流程。')
+                say(send_failure + '；转入原生退出/恢复流程。')
                 if channel is not None:
                     channel.sock.close()
                 channel = None
                 send_failure = None
                 close_session('console_lost')
+            # 只有显式现场输入 takeoff 才启动 Mission；输入 EOF、quit 或信号统一进入结束流程。
             if flight and not closing and sys.stdin in ready:
                 text = sys.stdin.readline()
                 if not text:
                     close_session('operator_eof')
                 else:
-                    try:
-                        parts = shlex.split(text)
-                        if not parts:
-                            continue
-                        if parts[0] == 'takeoff' and len(parts) in (1, 2):
-                            mission.request_takeoff(float(parts[1]) if len(parts) == 2 else DEFAULT_TAKEOFF_HEIGHT_M, now)
-                            say('准备起飞 %.2f m；核对 RC 和实时反馈后由原生控制器执行一次 TAKEOFF。' % mission.target)
-                        elif parts == ['land']:
-                            mission.cancel()
-                            send('LAND', [])
-                            say('已请求原生降落/地面释放。')
-                        elif parts == ['status']:
-                            send('STATUS', [])
-                            say(state_line(evidence.last_state))
-                            say('等待条件：'+(', '.join(readiness_issues(evidence.last_state)) or '地面反馈已齐备'))
-                        elif parts == ['quit']:
-                            close_session('operator_quit')
-                        else:
-                            say(f'命令：takeoff [{DEFAULT_TAKEOFF_HEIGHT_M}] | land | status | quit')
-                    except (ControlError, ValueError) as exc:
-                        evidence.failure(exc)
-                        say('未执行：'+str(exc))
+                    if _handle_console_input(
+                        text, mission, now, send, say, evidence, close_session
+                    ):
+                        continue
+            # Mission.poll 返回待请求动作；发送成功后关联序号，后续回复须按该序号推进流程。
             if flight and not closing and channel is not None:
                 action = mission.poll(now)
                 if action:
                     op, values = action
                     seq = send(op, values)
-                    if mission.stage == 'ISSUED_'+op:
+                    if mission.stage == 'ISSUED_' + op:
                         mission.sent(seq, op)
                 if mission.error and mission.error != old_error:
                     old_error = mission.error
                     evidence.failure(old_error)
-                    say('起飞流程停止：'+old_error)
+                    say('起飞流程停止：' + old_error)
                     evidence.checkpoint('takeoff_refused')
-            if closing and now-last_print >= 10:
-                say('仍在等待原生恢复完成；如飞机仍在空中，使用已验证的 RC 接管。未强制结束控制器。')
+            if closing and now - last_print >= 10:
+                say(
+                    '仍在等待原生恢复完成；如飞机仍在空中，使用已验证的 RC 接管。未强制结束控制器。'
+                )
                 last_print = now
-                evidence.checkpoint(outcome+'; waiting_native_shutdown')
+                evidence.checkpoint(outcome + '; waiting_native_shutdown')
         # The process may exit immediately after writing its final ground state.
         # Drain already queued bytes before deciding whether an owned Agent can stop.
         if channel is not None:
@@ -526,8 +698,9 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
                 pass
         if not closing:
             outcome = 'native_exited_unexpectedly'
-            evidence.failure('控制器意外退出，原生退出码='+str(node.returncode))
+            evidence.failure('控制器意外退出，原生退出码=' + str(node.returncode))
         return outcome
+    # 界面异常也不能遗弃仍活着的原生控制器；继续心跳/读反馈，直至它完成自身退出。
     except (Exception, KeyboardInterrupt) as exc:
         evidence.failure(exc)
         close_session('launcher_error')
@@ -553,73 +726,164 @@ def run_console(channel, node, evidence, params, flight, seconds, stop_signal):
         display.close()
 
 
+# 预检验证实际 ARM64、固定 DDS 域、类型支持、串口与进程唯一性；通过只说明环境可启动，不表示可以飞。
 def preflight(root, agent_binary, device, *, controller=None, config_path=None):
+    # 返回(已验二进制, 可复用Agent或None)，不启动服务。controller/config_path显式覆盖只改来源选择。
     if platform.machine().lower() not in ('aarch64', 'arm64'):
-        raise ControlError('本入口只在实际 ARM64 香橙派上运行；本机架构='+platform.machine())
-    if os.environ.get('ROS_DOMAIN_ID', '0') != '0' or os.environ.get('ROS_LOCALHOST_ONLY', '0') != '0':
+        raise ControlError('本入口只在实际 ARM64 香橙派上运行；本机架构=' + platform.machine())
+    if (
+        os.environ.get('ROS_DOMAIN_ID', '0') != '0'
+        or os.environ.get('ROS_LOCALHOST_ONLY', '0') != '0'
+    ):
         raise ControlError('当前固定使用 ROS_DOMAIN_ID=0、ROS_LOCALHOST_ONLY=0')
-    node = controller if controller is not None else root/'install_r632/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node'
+    node = (
+        controller
+        if controller is not None
+        else root / 'install_r632/jikl_fc01_system/lib/jikl_fc01_system/fc01_system_node'
+    )
     verify_binary(node)
     # The navigation bundle may be installed beside an older SDK checkout.
     # Callers can provide the bundle-owned candidate config; the project root
     # remains an SDK/runtime dependency and is never used as a source of
     # navigation policy in that path.
-    selected_config = Path(config_path) if config_path is not None else root/'config/attitude_altitude.yaml'
+    selected_config = (
+        Path(config_path) if config_path is not None else root / 'config/attitude_altitude.yaml'
+    )
     if not selected_config.is_file():
-        raise ControlError('缺少原配置 attitude_altitude.yaml: '+str(selected_config))
-    if not Path(device).exists() or not stat.S_ISCHR(Path(device).stat().st_mode) or not os.access(device, os.R_OK | os.W_OK):
-        raise ControlError('串口不存在/不可读写: '+device)
+        raise ControlError('缺少原配置 attitude_altitude.yaml: ' + str(selected_config))
+    if (
+        not Path(device).exists()
+        or not stat.S_ISCHR(Path(device).stat().st_mode)
+        or not os.access(device, os.R_OK | os.W_OK)
+    ):
+        raise ControlError('串口不存在/不可读写: ' + device)
     processes = process_list()
     others = [p.pid for p in processes if Path(p.argv[0]).name == 'fc01_system_node']
     if others:
-        raise ControlError('已有控制器运行，保持它，不启动第二个: '+str(others))
+        raise ControlError('已有控制器运行，保持它，不启动第二个: ' + str(others))
     existing = choose_agent(processes, uart_owners(device), device, os.getuid())
     if existing is None and (not agent_binary.is_file() or not os.access(agent_binary, os.X_OK)):
-        raise ControlError('没有可复用的 Agent，且未找到离线 Agent: '+str(agent_binary))
+        raise ControlError('没有可复用的 Agent，且未找到离线 Agent: ' + str(agent_binary))
     try:
         import px4_msgs.msg as msgs
         from rclpy.type_support import check_for_type_support
-        for name in ('BatteryStatus', 'VehicleAttitude', 'VehicleLocalPosition', 'VehicleStatus', 'VehicleLandDetected', 'FailsafeFlags'):
+
+        for name in (
+            'BatteryStatus',
+            'VehicleAttitude',
+            'VehicleLocalPosition',
+            'VehicleStatus',
+            'VehicleLandDetected',
+            'FailsafeFlags',
+        ):
             check_for_type_support(getattr(msgs, name))
     except (ImportError, AttributeError, RuntimeError) as exc:
-        raise ControlError('px4_msgs 类型支持未加载；请通过 start.sh 自动加载 install_r632 环境') from exc
+        raise ControlError(
+            'px4_msgs 类型支持未加载；请通过 start.sh 自动加载 install_r632 环境'
+        ) from exc
     return node, existing
 
 
-def main(argv=None):
+def _parse_launcher_args(argv):
+    """只解析交互/检查模式与5至60秒检查期限，返回args；不创建运行资源。错误先于umask/证据目录/信号安装，保持原入口拒绝顺序。"""
     parser = argparse.ArgumentParser(description='FC01 香橙派单入口：检查 / 交互起飞、定高、降落')
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument('--flight', action='store_true', help='明确选择现有候选参数和 RC 接管路径；仍需交互 takeoff')
+    mode.add_argument(
+        '--flight', action='store_true', help='明确选择现有候选参数和 RC 接管路径；仍需交互 takeoff'
+    )
     mode.add_argument('--check', action='store_true', help='默认：动作门关闭，只检查实时反馈')
-    parser.add_argument('--root', type=Path, default=Path(os.environ.get('FC01_PROJECT_ROOT', str(Path.home()/PROJECT))))
-    parser.add_argument('--agent', type=Path, default=Path.home()/'fc01_agent_build_offline/MicroXRCEAgent')
+    parser.add_argument(
+        '--root',
+        type=Path,
+        default=Path(os.environ.get('FC01_PROJECT_ROOT', str(Path.home() / PROJECT))),
+    )
+    parser.add_argument(
+        '--agent', type=Path, default=Path.home() / 'fc01_agent_build_offline/MicroXRCEAgent'
+    )
     parser.add_argument('--check-seconds', type=float, default=15)
     args = parser.parse_args(argv)
     if not math.isfinite(args.check_seconds) or not 5 <= args.check_seconds <= 60:
         parser.error('--check-seconds 必须在 [5,60] 秒内')
+    return args
+
+
+def _write_console_config(root, folder, flight):
+    """在预检已通过后从既有候选派生并独占写入会话runtime.yaml，返回(params, config_path)。
+
+    不改源配置或PX4参数；保留原模式/来源元数据和写入顺序。
+    """
+    import yaml
+
+    with open(root / 'config/attitude_altitude.yaml', encoding='utf8') as f:
+        config = runtime_profile(yaml.safe_load(f), flight)
+    params = config['fc01_system']['ros__parameters']
+    config_path = folder / 'runtime.yaml'
+    # Keep the standalone legacy console compatible with native launch
+    # provenance checks. Navigation service mode selection is separate;
+    # this path remains an explicitly interactive --flight session.
+    # 运行模式与配置来源随会话写入，供原生核验启动来源；不借用导航服务的自动任务入口。
+    params.update(
+        fc01_runtime_mode='flight-test' if flight else 'diagnostic',
+        fc01_entry_version='launcher-legacy',
+        fc01_config_path=str(config_path.resolve()),
+        fc01_config_source_path=str((root / 'config/attitude_altitude.yaml').resolve()),
+    )
+    with open(config_path, 'x', encoding='utf8') as f:
+        yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False)
+    return params, config_path
+
+
+def _announce_console_configuration(say, params, flight):
+    """只显示刚写入的原会话参数与现场确认提示；米/秒/角度单位不变，无状态变更或控制请求。调用者须先完成配置写入再调用。"""
+    say(
+        '会话配置：20 Hz；UART 115200；定高上限 %.1f m；最长 %.1f s；倾角上限 %.1f°。'
+        % (params['aa_max_height'], params['aa_max_flight_seconds'], params['aa_max_tilt_deg'])
+    )
+    say(
+        '候选参数原样保留：hover=%.3f，起飞余量=%.3f；本包没有完成实机标定。'
+        % (params['aa_hover_thrust'], params['aa_takeoff_reserve_thrust'])
+    )
+    if flight:
+        say('--flight 已开启本次会话动作门并选择 RC 接管路径；输入 takeoff 才请求解锁起飞。')
+
+
+# 默认只检查；--flight 仍要求 TTY 和后续显式 takeoff。每次运行生成独立配置与私有证据目录。
+def main(argv=None):
+    args = _parse_launcher_args(argv)
     os.umask(0o077)
     display = Display(sys.stdout)
     say = display.say
-    run_id = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'_'+uuid.uuid4().hex[:6]
-    folder = Path.home()/'FC01_control_runs'/run_id
-    evidence = Evidence(folder, {'mode': 'flight' if args.flight else 'check', 'domain': '0',
-                                'project': str(args.root), 'device': '/dev/ttyS2', 'baud': 115200,
-                                'entry_version': '20261027.2'})
+    run_id = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '_' + uuid.uuid4().hex[:6]
+    folder = Path.home() / 'FC01_control_runs' / run_id
+    evidence = Evidence(
+        folder,
+        {
+            'mode': 'flight' if args.flight else 'check',
+            'domain': '0',
+            'project': str(args.root),
+            'device': '/dev/ttyS2',
+            'baud': 115200,
+            'entry_version': '20261027.2',
+        },
+    )
+    # None区分未取得资源；owned_agent只在本次Popen成功后置真，不把复用Process当自有子进程。
     node = agent = channel = None
     owned_agent = False
     lock = None
     files = []
     stopped = [False]
     outcome = 'preflight_refused'
+    # 单元素列表让signal闭包写入同一停止标记；handler不操作socket、服务或原生进程。
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
         signal.signal(sig, lambda *_: stopped.__setitem__(0, True))
     try:
         if args.flight and not sys.stdin.isatty():
             raise ControlError('--flight 需要现场交互终端；禁止管道自动起飞')
         root = args.root.expanduser().resolve()
-        cache = Path.home()/'.cache/fc01_operator'
+        cache = Path.home() / '.cache/fc01_operator'
         private_dir(cache)
-        lock_path = cache/'launcher.lock'
+        lock_path = cache / 'launcher.lock'
+        # 所有协作入口共用 launcher.lock；持锁覆盖原生完整生命周期，防止后台与交互入口各起一个控制器。
         lockfd = os.open(lock_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
         lock = os.fdopen(lockfd, 'w')
         try:
@@ -627,50 +891,63 @@ def main(argv=None):
         except BlockingIOError as exc:
             raise ControlError('另一个本入口仍在运行；保持现有会话') from exc
         binary, existing = preflight(root, args.agent, '/dev/ttyS2')
-        import yaml
-        with open(root/'config/attitude_altitude.yaml', encoding='utf8') as f:
-            config = runtime_profile(yaml.safe_load(f), args.flight)
-        params = config['fc01_system']['ros__parameters']
-        config_path = folder/'runtime.yaml'
-        # Keep the standalone legacy console compatible with native launch
-        # provenance checks. Navigation service mode selection is separate;
-        # this path remains an explicitly interactive --flight session.
-        params.update(fc01_runtime_mode='flight-test' if args.flight else 'diagnostic',
-                      fc01_entry_version='launcher-legacy', fc01_config_path=str(config_path.resolve()),
-                      fc01_config_source_path=str((root/'config/attitude_altitude.yaml').resolve()))
-        with open(config_path, 'x', encoding='utf8') as f:
-            yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False)
-        say('会话配置：20 Hz；UART 115200；定高上限 %.1f m；最长 %.1f s；倾角上限 %.1f°。' %
-            (params['aa_max_height'], params['aa_max_flight_seconds'], params['aa_max_tilt_deg']))
-        say('候选参数原样保留：hover=%.3f，起飞余量=%.3f；本包没有完成实机标定。' %
-            (params['aa_hover_thrust'], params['aa_takeoff_reserve_thrust']))
-        if args.flight:
-            say('--flight 已开启本次会话动作门并选择 RC 接管路径；输入 takeoff 才请求解锁起飞。')
-        ipc = make_socket_path(cache/'ipc')
+        params, config_path = _write_console_config(root, folder, args.flight)
+        _announce_console_configuration(say, params, args.flight)
+        ipc = make_socket_path(cache / 'ipc')
+        # 没有可复用 Agent 才由本会话创建；复用已有进程时没有停止它的所有权。
         if existing is None:
-            log = open(folder/'agent.log', 'xb', buffering=0)
+            log = open(folder / 'agent.log', 'xb', buffering=0)
             files.append(log)
-            agent = subprocess.Popen([str(args.agent), 'serial', '-D', '/dev/ttyS2', '-b', '115200', '-v', '4'],
-                                     stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            agent = subprocess.Popen(
+                [str(args.agent), 'serial', '-D', '/dev/ttyS2', '-b', '115200', '-v', '4'],
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
             owned_agent = True
-            say('启动离线 Agent，PID='+str(agent.pid))
+            say('启动离线 Agent，PID=' + str(agent.pid))
         else:
-            say('复用现有 115200 Agent，PID='+str(existing.pid)+'；退出时保持它运行。')
-        evidence.write_json('metadata.json', {'mode': 'flight' if args.flight else 'check', 'domain': '0',
-                'project': str(root), 'device': '/dev/ttyS2', 'baud': 115200, 'socket': str(ipc),
-                'agent_owned': owned_agent, 'agent_pid': agent.pid if owned_agent else existing.pid,
-                'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(), 'entry_version': '20261027.2'})
-        log = open(folder/'controller.log', 'xb', buffering=0)
+            say('复用现有 115200 Agent，PID=' + str(existing.pid) + '；退出时保持它运行。')
+        evidence.write_json(
+            'metadata.json',
+            {
+                'mode': 'flight' if args.flight else 'check',
+                'domain': '0',
+                'project': str(root),
+                'device': '/dev/ttyS2',
+                'baud': 115200,
+                'socket': str(ipc),
+                'agent_owned': owned_agent,
+                'agent_pid': agent.pid if owned_agent else existing.pid,
+                'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
+                'entry_version': '20261027.2',
+            },
+        )
+        log = open(folder / 'controller.log', 'xb', buffering=0)
         files.append(log)
-        node = subprocess.Popen([str(binary), '--ros-args', '--params-file', str(config_path),
-                                '-p', 'socket_path:='+str(ipc), '-p', 'csv_path:='+str(folder/'telemetry.csv')],
-                                stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        node = subprocess.Popen(
+            [
+                str(binary),
+                '--ros-args',
+                '--params-file',
+                str(config_path),
+                '-p',
+                'socket_path:=' + str(ipc),
+                '-p',
+                'csv_path:=' + str(folder / 'telemetry.csv'),
+            ],
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
         channel = connect_controller(ipc, node)
-        outcome = run_console(channel, node, evidence, params, args.flight, args.check_seconds, stopped)
+        outcome = run_console(
+            channel, node, evidence, params, args.flight, args.check_seconds, stopped
+        )
         channel = None
     except (Exception, KeyboardInterrupt) as exc:
         evidence.failure(exc)
-        say('未继续执行：'+str(exc))
+        say('未继续执行：' + str(exc))
         if node is not None and node.poll() is None:
             NodeStop(node).request()
             say('原生控制器仍在退出/恢复；等待它自行完成，保留 Agent。')
@@ -681,20 +958,26 @@ def main(argv=None):
     finally:
         if channel is not None:
             channel.sock.close()
-        clean_exit = (node is not None and node.poll() == 0 and
-                      outcome in ('check_pass', 'check_blocked', 'operator_quit', 'operator_eof', 'operator_signal'))
-        if owned_agent and not finish_agent(agent, True, clean_exit,
-                                            evidence.last_state, evidence.last_state_at, time.monotonic()):
-            say('未获得新鲜的未解锁接地证据，保持自建 Agent PID='+str(agent.pid)+' 运行。')
+        # 退出清理再次核对会话结果与新鲜地面证据；缺证据时保留 Agent，报告则在原生结束后统一生成。
+        clean_exit = (
+            node is not None
+            and node.poll() == 0
+            and outcome
+            in ('check_pass', 'check_blocked', 'operator_quit', 'operator_eof', 'operator_signal')
+        )
+        if owned_agent and not finish_agent(
+            agent, True, clean_exit, evidence.last_state, evidence.last_state_at, time.monotonic()
+        ):
+            say('未获得新鲜的未解锁接地证据，保持自建 Agent PID=' + str(agent.pid) + ' 运行。')
         for f in files:
             f.close()
         if lock is not None:
             lock.close()
         try:
             report = evidence.report(outcome)
-            say('自动报告：'+str(report))
+            say('自动报告：' + str(report))
         except OSError as exc:
-            say('报告写入失败：'+str(exc)+'；会话目录：'+str(folder))
+            say('报告写入失败：' + str(exc) + '；会话目录：' + str(folder))
             outcome = 'report_write_error'
         finally:
             evidence.events.close()

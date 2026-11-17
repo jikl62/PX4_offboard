@@ -1,0 +1,2 @@
+{'status': 'READY_WAIT_ARM', 'reason': 'RC_READY_WAIT_CH5_MANUAL_ARM', 'controller_pid': 845, 'feedback_current': True}
+{'phase': 'RC_READY_WAIT_ARM', 'reason': 'RC_READY_WAIT_CH5_MANUAL_ARM', 'rc_target_height': 1.23, 'armed': False, 'landed': True, 'at_rest': True, 'thrust_body': [0, 0, 0], 'rc_navigation_mode_slot': 1, 'status_fresh': True, 'source_clock_valid': True}

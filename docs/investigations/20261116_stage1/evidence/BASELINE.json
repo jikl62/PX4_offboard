@@ -1,0 +1,28 @@
+{
+  "head": "3677b9dd1f35e092e43501d26164c6263545c947",
+  "branch": "readability/fc01-chinese-20261111",
+  "payload_source_commit": "32990e599a68fde377daadbb89710b77fda1fb82",
+  "recent_log": "3677b9d release: archive verified FC01 20261112 installer and delivery evidence\n32990e5 release: prepare bounded FC01 20261112 runtime source package\n87fa7c1 docs(verification): archive overnight final review and current-source acceptance",
+  "tracked_diff": "",
+  "preexisting_untracked": [
+    "tests/test_micovio_clock_candidate.py",
+    "tests/test_micovio_uart0_reader.py",
+    "tools/"
+  ],
+  "source_sha256": {
+    "native/src/jikl_fc01_system/src/fc01_system_node.cpp": "ce6536cbbd115996a42ccdd8097fe33ed89e7460a4d3baba2f5cb1bf6e29a51c",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/runtime.hpp": "a3b1e77f82c167977fcebe617d7e793d898b447396e8b0a90d6e0c6c6dd31fa2",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_altitude_core.hpp": "c7e9b9951f02cc7380d7d06e62b889ac22a1ba349871c952718f529a77820d26",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/rc_navigation.hpp": "518178edc209f3dbd594f820de50bd48f5c6533fd45a1312bc684345ba89e29a",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/attitude_reference.hpp": "6b583b4db3477b13aee41112761dbf0f89fe8378d6d4bd636491e3d12a49b43c",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/takeoff_evidence.hpp": "4be400538893b36756edb8a2da0f81d6130772f1f9eb9f8832176c61a2017645",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/vertical_feedback_guard.hpp": "ae786db9997796a3eb8d3bd707937a2da1026fe4dc8c7657d0b2e1e220116b9a",
+    "native/src/jikl_fc01_system/include/jikl_fc01_system/source_clock.hpp": "35d3c0b30c77d22c3598be88b2555eafd4b71bdd01ee386f9db66b3f26e55a18",
+    "navigation_service.py": "e6337790480c09c08c25988d001bb9627b92573b17a0d1269017bf20169e063a",
+    "navigation_install.py": "ef6b80d0d8fcf83f440ef7026b9e60f9bcaed01718fa6b1be372169c09dfda7b",
+    "navigation_boot.sh": "34eb588e140252a59d3ad307b96ada00b6a6738f10b49d55ff8210182ff75b1e",
+    "navigation_settings.json": "a3ecf4759adad9901bd0efbae4eff0a7860ad3e4a4a91afdb7c0b1fe8d516131",
+    "native/config/flight_test.yaml": "1ddce8549bcd9f9b6eaacf532ad9f00d04b70706a54245f51eddbce6cdc5ff2b"
+  },
+  "scope": "Read-only production/source/config. Added investigation evidence and offline drivers only. No commit/push/deploy/hardware."
+}

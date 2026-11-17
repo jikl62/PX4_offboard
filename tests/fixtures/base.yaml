@@ -1,17 +1,22 @@
+# 测试基准：R6只读/无桨预备配置；关闭所有飞行动作许可，不能当作实飞参数。
 # R6 default: read-only/no-props staging only, no powered flight release.
 fc01_system:
   ros__parameters:
+    # 时间采用真实ROS时钟；profile决定姿态定高路径，后续动作门仍各自检查。
     use_sim_time: false
     profile: attitude_altitude
+    # 通用入口、飞行动作、程序Arm、起飞、参数确认与台架许可均关闭，互不代替。
     flight_enabled: false
     flight_actions_enabled: false
     arm_enabled: false
     takeoff_enabled: false
     flight_parameters_confirmed: false
     bench_arm_only_enabled: false
+    # RC接管和无RC自主后备各需独立审查；仅选择控制来源不构成确认。
     # Separate reviewed contracts. Selecting an authority never confirms these.
     rc_takeover_confirmed: false
     autonomous_failsafe_confirmed: false
+    # 以下时长/频率只作离线测试输入：预发送、地面证据窗口和各反馈最大年龄。
     control_loop_hz: 20.0
     aa_prestream_seconds: 1.2
     aa_ground_seconds: 2.0
@@ -24,10 +29,12 @@ fc01_system:
     aa_console_timeout: 3.0
     aa_command_timeout: 5.0
     aa_ground_vz_tolerance: 0.1
+    # 仅台架Arm允许地面向下估计漂移；向上仍受0.12m离地/高度边界约束，不是实飞调参。
     # Arm-only bench grace for downward estimator drift; upward height stays
     # min(aa_height_tolerance, aa_liftoff_height_m) = 0.12 m. Not flight tuning.
     aa_bench_ground_down_tolerance_m: 0.50
     aa_bench_ground_vz_tolerance_mps: 0.25
+    # 以下飞行阈值仍是未验证工程候选；写出数值不会打开前面的动作门。
     # Flight-only values are unvalidated engineering candidates, not permission to fly.
     # Three action gates and parameter confirmation remain false; no autonomous Arm is enabled.
     aa_armed_dwell_seconds: 1.0 # s, powered ground observation
@@ -38,11 +45,13 @@ fc01_system:
     aa_height_lower_margin_m: 0.25 # m below z0, negative height envelope
     aa_z_jump_limit_m: 0.45 # m/sample, structural estimator check
     aa_vz_jump_limit_mps: 1.5 # m/s per sample
+    # 垂直反馈监测的候选容差与持续时间；观测一致也不能证明真实高度正确。
     # Candidate dynamic consistency guard; these are engineering thresholds.
     # Agreement is not proof of true altitude. No replacement height source.
     aa_vertical_feedback_guard_enabled: true
     aa_feedback_rate_tolerance_mps: 0.20
     aa_feedback_dwell_seconds: 0.50
+    # 机体动力学候选来自历史数据，仍需实际标定；测试采用这些常量只是为了可重复。
     # Airframe dynamics remain deliberately UNSET; R5 candidate values are archived.
     aa_hover_thrust: 0.50 # R6.3 candidate from historical FC01 ULog; NOT flight-calibrated
     aa_takeoff_reserve_thrust: 0.04 # OFFLINE candidate only: max pre-liftoff thrust 0.54, NOT flight-approved
@@ -53,6 +62,7 @@ fc01_system:
     aa_velocity_gain: 0.15 # UNKNOWN: actual airframe calibration required
     aa_integral_gain: 0.03 # UNKNOWN: actual airframe calibration required
     aa_integral_limit: 0.08 # UNKNOWN: actual airframe calibration required
+    # 其余限幅、下降与恢复预算用于回归触发；预算耗尽不等于允许撤销健康空中托管。
     aa_max_height: 5.0
     aa_max_climb: 0.3
     aa_max_descent: 0.2
@@ -69,5 +79,6 @@ fc01_system:
     aa_land_sample_max_gap: 1.25
     aa_recovery_seconds: 15.0 # completion deadline; expiry does not revoke healthy airborne custody
     aa_px4_land_ack_seconds: 5.0
+    # PX4 LAND后备尚未确认，也没有对应证据ID；不能推断飞控已完成后备接管。
     px4_land_fallback_confirmed: false
     px4_land_evidence_id: ""

@@ -1,0 +1,3622 @@
+{
+  "scope": "Only *.ulg directly in home and desktop; each log treated independently",
+  "logs": [
+    {
+      "path": "/home/jikl62/log_0_2026-10-18-21-02-18_1.ulg",
+      "bytes": 737590,
+      "sha256": "7e22d939c5a5faae6395cbcb54e73b96bd15c1f7c1188cce21a4f4519e5455f2",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 469074560,
+      "last_timestamp_us": 483478489,
+      "header_duration_s": 14.403929,
+      "nav_states": [
+        {
+          "value": 1,
+          "name": "Altitude"
+        },
+        {
+          "value": 14,
+          "name": "Offboard"
+        },
+        {
+          "value": 15,
+          "name": "Stabilized"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 469369945,
+          "nav_state": 14,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 481250106,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 481549463,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 482478166,
+          "nav_state": 15,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 141,
+          "finite_samples": 141,
+          "min": 0.235315203666687,
+          "max": 2.013063669204712,
+          "first": 2.0127053260803223,
+          "last": 0.235315203666687
+        },
+        "vz": {
+          "samples": 141,
+          "finite_samples": 141,
+          "min": -1.0905696153640747,
+          "max": 0.14799408614635468,
+          "first": 0.023360932245850563,
+          "last": -1.0905696153640747
+        },
+        "z_deriv": {
+          "samples": 141,
+          "finite_samples": 141,
+          "min": -0.6276646256446838,
+          "max": 0.18184863030910492,
+          "first": -0.007176578976213932,
+          "last": -0.45983749628067017
+        },
+        "z_valid": {
+          "samples": 141,
+          "finite_samples": 141,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 141,
+          "finite_samples": 141,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 141,
+          "finite_samples": 141,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "vz_reset_counter": {
+          "samples": 141,
+          "finite_samples": 141,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        }
+      },
+      "local_position_armed_by_nav": {
+        "1": {
+          "z": {
+            "samples": 3,
+            "finite_samples": 3,
+            "min": 0.3862427771091461,
+            "max": 0.41392752528190613,
+            "first": 0.41392752528190613,
+            "last": 0.3862427771091461
+          },
+          "vz": {
+            "samples": 3,
+            "finite_samples": 3,
+            "min": -0.7350744009017944,
+            "max": -0.676138162612915,
+            "first": -0.7350744009017944,
+            "last": -0.676138162612915
+          },
+          "z_deriv": {
+            "samples": 3,
+            "finite_samples": 3,
+            "min": -0.42216989398002625,
+            "max": -0.3196791112422943,
+            "first": -0.42216989398002625,
+            "last": -0.3196791112422943
+          },
+          "z_valid": {
+            "samples": 3,
+            "finite_samples": 3,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 3,
+            "finite_samples": 3,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 3,
+            "finite_samples": 3,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 3,
+            "finite_samples": 3,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        },
+        "14": {
+          "z": {
+            "samples": 119,
+            "finite_samples": 119,
+            "min": 0.43045687675476074,
+            "max": 2.013063669204712,
+            "first": 2.0127053260803223,
+            "last": 0.43045687675476074
+          },
+          "vz": {
+            "samples": 119,
+            "finite_samples": 119,
+            "min": -0.782791018486023,
+            "max": 0.14799408614635468,
+            "first": 0.023360932245850563,
+            "last": -0.7394180297851562
+          },
+          "z_deriv": {
+            "samples": 119,
+            "finite_samples": 119,
+            "min": -0.6276646256446838,
+            "max": 0.18184863030910492,
+            "first": -0.007176578976213932,
+            "last": -0.4482680559158325
+          },
+          "z_valid": {
+            "samples": 119,
+            "finite_samples": 119,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 119,
+            "finite_samples": 119,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 119,
+            "finite_samples": 119,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 119,
+            "finite_samples": 119,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        },
+        "15": {
+          "z": {
+            "samples": 9,
+            "finite_samples": 9,
+            "min": 0.3257485628128052,
+            "max": 0.37350180745124817,
+            "first": 0.37350180745124817,
+            "last": 0.33534127473831177
+          },
+          "vz": {
+            "samples": 9,
+            "finite_samples": 9,
+            "min": -0.7161639332771301,
+            "max": -0.6952996253967285,
+            "first": -0.7145801782608032,
+            "last": -0.7161639332771301
+          },
+          "z_deriv": {
+            "samples": 9,
+            "finite_samples": 9,
+            "min": -0.34243306517601013,
+            "max": -0.20664890110492706,
+            "first": -0.34243306517601013,
+            "last": -0.20664890110492706
+          },
+          "z_valid": {
+            "samples": 9,
+            "finite_samples": 9,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 9,
+            "finite_samples": 9,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 9,
+            "finite_samples": 9,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 9,
+            "finite_samples": 9,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 469489688,
+          "z_reset_counter": 1,
+          "vz_reset_counter": 1
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 469488827,
+          "quat_reset_counter": 0
+        }
+      ],
+      "offboard_control_mode": {
+        "present": true,
+        "samples": 118,
+        "first_us": 469414445,
+        "last_us": 481034862,
+        "max_logged_interval_s": 0.100775
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 468861644,
+          "level": 54,
+          "message": "[commander] Armed by external command\t"
+        },
+        {
+          "timestamp_us": 468863026,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 469070737,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-18/13_02_05.ulg\t"
+        },
+        {
+          "timestamp_us": 469074556,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-18/13_02_05.ulg"
+        },
+        {
+          "timestamp_us": 471464227,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 481340348,
+          "level": 52,
+          "message": "[commander] Switching to Land is currently not available\t"
+        },
+        {
+          "timestamp_us": 482478149,
+          "level": 54,
+          "message": "[commander] Disarmed by RC switch\t"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 31,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry"
+      ]
+    },
+    {
+      "path": "/home/jikl62/log_0_2026-10-20-10-02-06.ulg",
+      "bytes": 588312,
+      "sha256": "a197766716e5331f59cdddecb53538fc393818b6417f6041c1f701de6364251c",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 242643847,
+      "last_timestamp_us": 253678972,
+      "header_duration_s": 11.035125,
+      "nav_states": [
+        {
+          "value": 1,
+          "name": "Altitude"
+        },
+        {
+          "value": 14,
+          "name": "Offboard"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 242940611,
+          "nav_state": 14,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 247930324,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 1
+        },
+        {
+          "timestamp_us": 252683420,
+          "nav_state": 14,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 108,
+          "finite_samples": 108,
+          "min": -1.644087791442871,
+          "max": -0.677233099937439,
+          "first": -0.677233099937439,
+          "last": -1.255991816520691
+        },
+        "vz": {
+          "samples": 108,
+          "finite_samples": 108,
+          "min": -0.7145561575889587,
+          "max": 0.7980377674102783,
+          "first": -0.023123769089579582,
+          "last": 0.0664476826786995
+        },
+        "z_deriv": {
+          "samples": 108,
+          "finite_samples": 108,
+          "min": -0.7661474943161011,
+          "max": 0.7220321893692017,
+          "first": -0.009263061918318272,
+          "last": 0.11840188503265381
+        },
+        "z_valid": {
+          "samples": 108,
+          "finite_samples": 108,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 108,
+          "finite_samples": 108,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 108,
+          "finite_samples": 108,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "vz_reset_counter": {
+          "samples": 108,
+          "finite_samples": 108,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        }
+      },
+      "local_position_armed_by_nav": {
+        "1": {
+          "z": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": -1.644087791442871,
+            "max": -1.3790916204452515,
+            "first": -1.5149552822113037,
+            "last": -1.3790916204452515
+          },
+          "vz": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": -0.3034411668777466,
+            "max": 0.3017735779285431,
+            "first": 0.021032419055700302,
+            "last": 0.07615722715854645
+          },
+          "z_deriv": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": -0.29569190740585327,
+            "max": 0.30283984541893005,
+            "first": -0.054573558270931244,
+            "last": 0.07629639655351639
+          },
+          "z_valid": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        },
+        "14": {
+          "z": {
+            "samples": 50,
+            "finite_samples": 50,
+            "min": -1.5792427062988281,
+            "max": -0.677233099937439,
+            "first": -0.677233099937439,
+            "last": -1.5104217529296875
+          },
+          "vz": {
+            "samples": 50,
+            "finite_samples": 50,
+            "min": -0.7145561575889587,
+            "max": 0.7980377674102783,
+            "first": -0.023123769089579582,
+            "last": 0.7980377674102783
+          },
+          "z_deriv": {
+            "samples": 50,
+            "finite_samples": 50,
+            "min": -0.7661474943161011,
+            "max": 0.7220321893692017,
+            "first": -0.009263061918318272,
+            "last": 0.7220321893692017
+          },
+          "z_valid": {
+            "samples": 50,
+            "finite_samples": 50,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 50,
+            "finite_samples": 50,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 50,
+            "finite_samples": 50,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 50,
+            "finite_samples": 50,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 243045275,
+          "z_reset_counter": 1,
+          "vz_reset_counter": 1
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 243050157,
+          "quat_reset_counter": 0
+        }
+      ],
+      "offboard_control_mode": {
+        "present": true,
+        "samples": 41,
+        "first_us": 242964721,
+        "last_us": 246871196,
+        "max_logged_interval_s": 0.100401
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 242430395,
+          "level": 54,
+          "message": "[commander] Armed by external command\t"
+        },
+        {
+          "timestamp_us": 242432372,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 242641590,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-20/02_01_55.ulg\t"
+        },
+        {
+          "timestamp_us": 242643843,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-20/02_01_55.ulg"
+        },
+        {
+          "timestamp_us": 245238894,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 247673465,
+          "level": 52,
+          "message": "[commander] Kill engaged\t"
+        },
+        {
+          "timestamp_us": 247707204,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Flight termination active"
+        },
+        {
+          "timestamp_us": 247929936,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 248073607,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 250776806,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Flight termination active"
+        },
+        {
+          "timestamp_us": 252683016,
+          "level": 54,
+          "message": "[commander] Disarmed by kill-switch\t"
+        },
+        {
+          "timestamp_us": 252796128,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Kill switch engaged"
+        },
+        {
+          "timestamp_us": 252796629,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Flight termination active"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 67,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry"
+      ]
+    },
+    {
+      "path": "/home/jikl62/log_0_2026-10-20-11-12-26_1.ulg",
+      "bytes": 1216556,
+      "sha256": "33ea8241ad1adc7cdddb43765aff762973e598d0ff64acd6a229e1e4e1910a7b",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 1199038329,
+      "last_timestamp_us": 1226588023,
+      "header_duration_s": 27.549694,
+      "nav_states": [
+        {
+          "value": 1,
+          "name": "Altitude"
+        },
+        {
+          "value": 15,
+          "name": "Stabilized"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 1198829297,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1209999194,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1225222902,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1225588254,
+          "nav_state": 15,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 274,
+          "finite_samples": 274,
+          "min": -3.29850172996521,
+          "max": -1.2012581825256348,
+          "first": -1.20401132106781,
+          "last": -2.6476566791534424
+        },
+        "vz": {
+          "samples": 274,
+          "finite_samples": 274,
+          "min": -0.6154950857162476,
+          "max": 0.007205291651189327,
+          "first": 0.0018787361914291978,
+          "last": -0.08012013137340546
+        },
+        "z_deriv": {
+          "samples": 274,
+          "finite_samples": 274,
+          "min": -0.7017108798027039,
+          "max": 0.3987758755683899,
+          "first": 0.00560089573264122,
+          "last": 0.3987758755683899
+        },
+        "z_valid": {
+          "samples": 274,
+          "finite_samples": 274,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 274,
+          "finite_samples": 274,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 274,
+          "finite_samples": 274,
+          "min": 3.0,
+          "max": 3.0,
+          "first": 3,
+          "last": 3
+        },
+        "vz_reset_counter": {
+          "samples": 274,
+          "finite_samples": 274,
+          "min": 3.0,
+          "max": 3.0,
+          "first": 3,
+          "last": 3
+        }
+      },
+      "local_position_armed_by_nav": {
+        "1": {
+          "z": {
+            "samples": 153,
+            "finite_samples": 153,
+            "min": -3.29850172996521,
+            "max": -2.649610757827759,
+            "first": -2.649610757827759,
+            "last": -3.2114899158477783
+          },
+          "vz": {
+            "samples": 153,
+            "finite_samples": 153,
+            "min": -0.5105061531066895,
+            "max": -0.09572727978229523,
+            "first": -0.32514211535453796,
+            "last": -0.23910067975521088
+          },
+          "z_deriv": {
+            "samples": 153,
+            "finite_samples": 153,
+            "min": -0.42256078124046326,
+            "max": 0.07107777893543243,
+            "first": -0.3499155640602112,
+            "last": 0.031536780297756195
+          },
+          "z_valid": {
+            "samples": 153,
+            "finite_samples": 153,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 153,
+            "finite_samples": 153,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 153,
+            "finite_samples": 153,
+            "min": 3.0,
+            "max": 3.0,
+            "first": 3,
+            "last": 3
+          },
+          "vz_reset_counter": {
+            "samples": 153,
+            "finite_samples": 153,
+            "min": 3.0,
+            "max": 3.0,
+            "first": 3,
+            "last": 3
+          }
+        },
+        "15": {
+          "z": {
+            "samples": 111,
+            "finite_samples": 111,
+            "min": -3.171828508377075,
+            "max": -1.2012581825256348,
+            "first": -1.20401132106781,
+            "last": -3.089003086090088
+          },
+          "vz": {
+            "samples": 111,
+            "finite_samples": 111,
+            "min": -0.6154950857162476,
+            "max": 0.007205291651189327,
+            "first": 0.0018787361914291978,
+            "last": -0.20041309297084808
+          },
+          "z_deriv": {
+            "samples": 111,
+            "finite_samples": 111,
+            "min": -0.7017108798027039,
+            "max": 0.1613273024559021,
+            "first": 0.00560089573264122,
+            "last": 0.1613273024559021
+          },
+          "z_valid": {
+            "samples": 111,
+            "finite_samples": 111,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 111,
+            "finite_samples": 111,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 111,
+            "finite_samples": 111,
+            "min": 3.0,
+            "max": 3.0,
+            "first": 3,
+            "last": 3
+          },
+          "vz_reset_counter": {
+            "samples": 111,
+            "finite_samples": 111,
+            "min": 3.0,
+            "max": 3.0,
+            "first": 3,
+            "last": 3
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 1199306746,
+          "z_reset_counter": 3,
+          "vz_reset_counter": 3
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 1199305937,
+          "quat_reset_counter": 1
+        }
+      ],
+      "offboard_control_mode": {
+        "present": false,
+        "samples": 0,
+        "first_us": null,
+        "last_us": null,
+        "max_logged_interval_s": null
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 1198829288,
+          "level": 54,
+          "message": "[commander] Armed by RC switch\t"
+        },
+        {
+          "timestamp_us": 1198830017,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 1199037090,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-20/03_11_59.ulg\t"
+        },
+        {
+          "timestamp_us": 1199038325,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-20/03_11_59.ulg"
+        },
+        {
+          "timestamp_us": 1203106071,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 1224437877,
+          "level": 54,
+          "message": "[commander] Landing detected\t"
+        },
+        {
+          "timestamp_us": 1225588242,
+          "level": 54,
+          "message": "[commander] Disarmed by RC switch\t"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 19,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry",
+        "offboard_control_mode"
+      ]
+    },
+    {
+      "path": "/home/jikl62/log_2_2026-10-16-11-57-46_1.ulg",
+      "bytes": 1149211,
+      "sha256": "5bf44997346c403676483dfb2334a559c83c4275b7a4fbec2c27d3af14e5ef84",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 1465410841,
+      "last_timestamp_us": 1488828468,
+      "header_duration_s": 23.417627,
+      "nav_states": [
+        {
+          "value": 1,
+          "name": "Altitude"
+        },
+        {
+          "value": 15,
+          "name": "Stabilized"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 1465404216,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1471570176,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1486546198,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1488650509,
+          "nav_state": 15,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 233,
+          "finite_samples": 233,
+          "min": -1.2327244281768799,
+          "max": 11.518553733825684,
+          "first": 0.5572096109390259,
+          "last": 10.389150619506836
+        },
+        "vz": {
+          "samples": 233,
+          "finite_samples": 233,
+          "min": -1.120692491531372,
+          "max": 8.347065925598145,
+          "first": 0.7480353116989136,
+          "last": 5.867773056030273
+        },
+        "z_deriv": {
+          "samples": 233,
+          "finite_samples": 233,
+          "min": -1.7980927228927612,
+          "max": 3.029707193374634,
+          "first": 0.2930563688278198,
+          "last": -0.7899861335754395
+        },
+        "z_valid": {
+          "samples": 233,
+          "finite_samples": 233,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 233,
+          "finite_samples": 233,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 233,
+          "finite_samples": 233,
+          "min": 7.0,
+          "max": 8.0,
+          "first": 7,
+          "last": 8
+        },
+        "vz_reset_counter": {
+          "samples": 233,
+          "finite_samples": 233,
+          "min": 7.0,
+          "max": 8.0,
+          "first": 7,
+          "last": 8
+        }
+      },
+      "local_position_armed_by_nav": {
+        "1": {
+          "z": {
+            "samples": 150,
+            "finite_samples": 150,
+            "min": -1.2327244281768799,
+            "max": 11.497740745544434,
+            "first": -1.1239771842956543,
+            "last": 11.497740745544434
+          },
+          "vz": {
+            "samples": 150,
+            "finite_samples": 150,
+            "min": -0.013706489466130733,
+            "max": 8.347065925598145,
+            "first": -0.013706489466130733,
+            "last": 7.816339492797852
+          },
+          "z_deriv": {
+            "samples": 150,
+            "finite_samples": 150,
+            "min": -0.39594021439552307,
+            "max": 3.029707193374634,
+            "first": -0.39594021439552307,
+            "last": 1.1479692459106445
+          },
+          "z_valid": {
+            "samples": 150,
+            "finite_samples": 150,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 150,
+            "finite_samples": 150,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 150,
+            "finite_samples": 150,
+            "min": 8.0,
+            "max": 8.0,
+            "first": 8,
+            "last": 8
+          },
+          "vz_reset_counter": {
+            "samples": 150,
+            "finite_samples": 150,
+            "min": 8.0,
+            "max": 8.0,
+            "first": 8,
+            "last": 8
+          }
+        },
+        "15": {
+          "z": {
+            "samples": 81,
+            "finite_samples": 81,
+            "min": -1.121166706085205,
+            "max": 11.518553733825684,
+            "first": 0.5572096109390259,
+            "last": 10.581656455993652
+          },
+          "vz": {
+            "samples": 81,
+            "finite_samples": 81,
+            "min": -1.120692491531372,
+            "max": 7.755861282348633,
+            "first": 0.7480353116989136,
+            "last": 6.0665388107299805
+          },
+          "z_deriv": {
+            "samples": 81,
+            "finite_samples": 81,
+            "min": -1.7980927228927612,
+            "max": 1.0596286058425903,
+            "first": 0.2930563688278198,
+            "last": -0.6461983919143677
+          },
+          "z_valid": {
+            "samples": 81,
+            "finite_samples": 81,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 81,
+            "finite_samples": 81,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 81,
+            "finite_samples": 81,
+            "min": 7.0,
+            "max": 8.0,
+            "first": 7,
+            "last": 8
+          },
+          "vz_reset_counter": {
+            "samples": 81,
+            "finite_samples": 81,
+            "min": 7.0,
+            "max": 8.0,
+            "first": 7,
+            "last": 8
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 1465709363,
+          "z_reset_counter": 7,
+          "vz_reset_counter": 7
+        },
+        {
+          "timestamp_us": 1470111843,
+          "z_reset_counter": 8,
+          "vz_reset_counter": 8
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 1465707982,
+          "quat_reset_counter": 4
+        },
+        {
+          "timestamp_us": 1470110964,
+          "quat_reset_counter": 5
+        }
+      ],
+      "offboard_control_mode": {
+        "present": false,
+        "samples": 0,
+        "first_us": null,
+        "last_us": null,
+        "max_logged_interval_s": null
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 1465404207,
+          "level": 54,
+          "message": "[commander] Armed by RC switch\t"
+        },
+        {
+          "timestamp_us": 1465408271,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 1465409673,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-16/03_57_24.ulg\t"
+        },
+        {
+          "timestamp_us": 1465410837,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-16/03_57_24.ulg"
+        },
+        {
+          "timestamp_us": 1467240176,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 1469479603,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1470061298,
+          "level": 52,
+          "message": "[ekf2] primary EKF changed 1 (filter fault) -> 0"
+        },
+        {
+          "timestamp_us": 1475198545,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1482100519,
+          "level": 52,
+          "message": "[commander] Switching to Land is currently not available\t"
+        },
+        {
+          "timestamp_us": 1483654306,
+          "level": 52,
+          "message": "[commander] Kill engaged\t"
+        },
+        {
+          "timestamp_us": 1483688068,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Flight termination active"
+        },
+        {
+          "timestamp_us": 1486061588,
+          "level": 52,
+          "message": "[commander] Disarming denied: not landed\t"
+        },
+        {
+          "timestamp_us": 1486941944,
+          "level": 54,
+          "message": "[commander] Kill disengaged\t"
+        },
+        {
+          "timestamp_us": 1487748219,
+          "level": 52,
+          "message": "[commander] Kill engaged\t"
+        },
+        {
+          "timestamp_us": 1488650496,
+          "level": 54,
+          "message": "[commander] Disarmed by RC switch\t"
+        },
+        {
+          "timestamp_us": 1488652821,
+          "level": 54,
+          "message": "[vehicle_imu] GYRO 0 (6684682) offset committed: [-0.005 0.005 -0.001]->[-0.003 -0.009 0.000])"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 40,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry",
+        "offboard_control_mode"
+      ]
+    },
+    {
+      "path": "/home/jikl62/log_4_2026-10-16-11-58-42_1.ulg",
+      "bytes": 2001965,
+      "sha256": "4e0b00619fcc5b9d9be2924810732a1cd03cc034e976e2fa2a9f2a78595f7608",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 1499965597,
+      "last_timestamp_us": 1543516064,
+      "header_duration_s": 43.550467,
+      "nav_states": [
+        {
+          "value": 15,
+          "name": "Stabilized"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 1499961432,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1542510379,
+          "nav_state": 15,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 434,
+          "finite_samples": 434,
+          "min": -0.3153011202812195,
+          "max": 6.142018795013428,
+          "first": -0.3046663701534271,
+          "last": 4.0631632804870605
+        },
+        "vz": {
+          "samples": 434,
+          "finite_samples": 434,
+          "min": 0.17513516545295715,
+          "max": 4.080904960632324,
+          "first": 0.17786091566085815,
+          "last": 1.5155689716339111
+        },
+        "z_deriv": {
+          "samples": 434,
+          "finite_samples": 434,
+          "min": -0.4249451458454132,
+          "max": 1.008833885192871,
+          "first": -0.007826704531908035,
+          "last": -0.4249451458454132
+        },
+        "z_valid": {
+          "samples": 434,
+          "finite_samples": 434,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 434,
+          "finite_samples": 434,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 434,
+          "finite_samples": 434,
+          "min": 8.0,
+          "max": 8.0,
+          "first": 8,
+          "last": 8
+        },
+        "vz_reset_counter": {
+          "samples": 434,
+          "finite_samples": 434,
+          "min": 8.0,
+          "max": 8.0,
+          "first": 8,
+          "last": 8
+        }
+      },
+      "local_position_armed_by_nav": {
+        "15": {
+          "z": {
+            "samples": 424,
+            "finite_samples": 424,
+            "min": -0.3153011202812195,
+            "max": 6.142018795013428,
+            "first": -0.3046663701534271,
+            "last": 4.418943405151367
+          },
+          "vz": {
+            "samples": 424,
+            "finite_samples": 424,
+            "min": 0.17513516545295715,
+            "max": 4.080904960632324,
+            "first": 0.17786091566085815,
+            "last": 1.6764698028564453
+          },
+          "z_deriv": {
+            "samples": 424,
+            "finite_samples": 424,
+            "min": -0.3950352966785431,
+            "max": 1.008833885192871,
+            "first": -0.007826704531908035,
+            "last": -0.37920576333999634
+          },
+          "z_valid": {
+            "samples": 424,
+            "finite_samples": 424,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 424,
+            "finite_samples": 424,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 424,
+            "finite_samples": 424,
+            "min": 8.0,
+            "max": 8.0,
+            "first": 8,
+            "last": 8
+          },
+          "vz_reset_counter": {
+            "samples": 424,
+            "finite_samples": 424,
+            "min": 8.0,
+            "max": 8.0,
+            "first": 8,
+            "last": 8
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 1500256520,
+          "z_reset_counter": 8,
+          "vz_reset_counter": 8
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 1500261466,
+          "quat_reset_counter": 5
+        }
+      ],
+      "offboard_control_mode": {
+        "present": false,
+        "samples": 0,
+        "first_us": null,
+        "last_us": null,
+        "max_logged_interval_s": null
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 1499961424,
+          "level": 54,
+          "message": "[commander] Armed by RC switch\t"
+        },
+        {
+          "timestamp_us": 1499963073,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 1499963963,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-16/03_57_59.ulg\t"
+        },
+        {
+          "timestamp_us": 1499965593,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-16/03_57_59.ulg"
+        },
+        {
+          "timestamp_us": 1504340930,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 1506503851,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1512612764,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1515635202,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1518681859,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1524718899,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1529591844,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1533112556,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1536585217,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1538440781,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Attitude failure (roll)"
+        },
+        {
+          "timestamp_us": 1538451937,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 1540501896,
+          "level": 54,
+          "message": "[commander] Landing detected\t"
+        },
+        {
+          "timestamp_us": 1542510145,
+          "level": 54,
+          "message": "[commander] Disarmed by landing\t"
+        },
+        {
+          "timestamp_us": 1542511346,
+          "level": 54,
+          "message": "[vehicle_imu] GYRO 0 (6684682) offset committed: [-0.003 -0.009 0.000]->[0.004 -0.016 0.000])"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 50,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry",
+        "offboard_control_mode",
+        "trajectory_setpoint"
+      ]
+    },
+    {
+      "path": "/home/jikl62/log_5_2026-10-16-12-00-18_1.ulg",
+      "bytes": 1405550,
+      "sha256": "071817b2234aba68f299ebfffb07fbf5ad73c3a333629bd9712e59d349d27455",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 1609185956,
+      "last_timestamp_us": 1639311745,
+      "header_duration_s": 30.125789,
+      "nav_states": [
+        {
+          "value": 1,
+          "name": "Altitude"
+        },
+        {
+          "value": 15,
+          "name": "Stabilized"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 1609182357,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1624721108,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1638316742,
+          "nav_state": 1,
+          "arming_state": 1,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 1638896097,
+          "nav_state": 15,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 300,
+          "finite_samples": 300,
+          "min": -0.584473192691803,
+          "max": 4.285823345184326,
+          "first": -0.584473192691803,
+          "last": 3.889115571975708
+        },
+        "vz": {
+          "samples": 300,
+          "finite_samples": 300,
+          "min": 0.10902789235115051,
+          "max": 5.22873067855835,
+          "first": 0.10909050703048706,
+          "last": 1.9485249519348145
+        },
+        "z_deriv": {
+          "samples": 300,
+          "finite_samples": 300,
+          "min": -0.5301344394683838,
+          "max": 2.904123544692993,
+          "first": 0.0381062887609005,
+          "last": -0.19353610277175903
+        },
+        "z_valid": {
+          "samples": 300,
+          "finite_samples": 300,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 300,
+          "finite_samples": 300,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 300,
+          "finite_samples": 300,
+          "min": 8.0,
+          "max": 8.0,
+          "first": 8,
+          "last": 8
+        },
+        "vz_reset_counter": {
+          "samples": 300,
+          "finite_samples": 300,
+          "min": 8.0,
+          "max": 8.0,
+          "first": 8,
+          "last": 8
+        }
+      },
+      "local_position_armed_by_nav": {
+        "1": {
+          "z": {
+            "samples": 136,
+            "finite_samples": 136,
+            "min": 0.10936148464679718,
+            "max": 4.285823345184326,
+            "first": 0.10936148464679718,
+            "last": 4.087937831878662
+          },
+          "vz": {
+            "samples": 136,
+            "finite_samples": 136,
+            "min": 0.9126452803611755,
+            "max": 5.22873067855835,
+            "first": 0.9126452803611755,
+            "last": 2.1004347801208496
+          },
+          "z_deriv": {
+            "samples": 136,
+            "finite_samples": 136,
+            "min": -0.5301344394683838,
+            "max": 2.904123544692993,
+            "first": 0.4546273350715637,
+            "last": -0.12501877546310425
+          },
+          "z_valid": {
+            "samples": 136,
+            "finite_samples": 136,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 136,
+            "finite_samples": 136,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 136,
+            "finite_samples": 136,
+            "min": 8.0,
+            "max": 8.0,
+            "first": 8,
+            "last": 8
+          },
+          "vz_reset_counter": {
+            "samples": 136,
+            "finite_samples": 136,
+            "min": 8.0,
+            "max": 8.0,
+            "first": 8,
+            "last": 8
+          }
+        },
+        "15": {
+          "z": {
+            "samples": 154,
+            "finite_samples": 154,
+            "min": -0.584473192691803,
+            "max": 0.34770524501800537,
+            "first": -0.584473192691803,
+            "last": 0.07546983659267426
+          },
+          "vz": {
+            "samples": 154,
+            "finite_samples": 154,
+            "min": 0.10902789235115051,
+            "max": 0.9003263115882874,
+            "first": 0.10909050703048706,
+            "last": 0.9003263115882874
+          },
+          "z_deriv": {
+            "samples": 154,
+            "finite_samples": 154,
+            "min": -0.12624815106391907,
+            "max": 0.45414939522743225,
+            "first": 0.0381062887609005,
+            "last": 0.45414939522743225
+          },
+          "z_valid": {
+            "samples": 154,
+            "finite_samples": 154,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 154,
+            "finite_samples": 154,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 154,
+            "finite_samples": 154,
+            "min": 8.0,
+            "max": 8.0,
+            "first": 8,
+            "last": 8
+          },
+          "vz_reset_counter": {
+            "samples": 154,
+            "finite_samples": 154,
+            "min": 8.0,
+            "max": 8.0,
+            "first": 8,
+            "last": 8
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 1609485148,
+          "z_reset_counter": 8,
+          "vz_reset_counter": 8
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 1609484411,
+          "quat_reset_counter": 5
+        }
+      ],
+      "offboard_control_mode": {
+        "present": false,
+        "samples": 0,
+        "first_us": null,
+        "last_us": null,
+        "max_logged_interval_s": null
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 1609182348,
+          "level": 54,
+          "message": "[commander] Armed by RC switch\t"
+        },
+        {
+          "timestamp_us": 1609184158,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 1609184912,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-16/03_59_48.ulg\t"
+        },
+        {
+          "timestamp_us": 1609185952,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-16/03_59_48.ulg"
+        },
+        {
+          "timestamp_us": 1611552201,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 1614374599,
+          "level": 54,
+          "message": "[commander] Landing detected\t"
+        },
+        {
+          "timestamp_us": 1614473878,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 1629342180,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1630239878,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Attitude failure (roll)"
+        },
+        {
+          "timestamp_us": 1630251202,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 1632195058,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 1632690244,
+          "level": 52,
+          "message": "[vehicle_imu] Accel 1 clipping, not safe to fly!\t"
+        },
+        {
+          "timestamp_us": 1633310091,
+          "level": 52,
+          "message": "[commander] Kill engaged\t"
+        },
+        {
+          "timestamp_us": 1633783224,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 1635784097,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Flight termination active"
+        },
+        {
+          "timestamp_us": 1637937204,
+          "level": 52,
+          "message": "[commander] Disarming denied: not landed\t"
+        },
+        {
+          "timestamp_us": 1638313942,
+          "level": 54,
+          "message": "[commander] Disarmed by kill-switch\t"
+        },
+        {
+          "timestamp_us": 1638314884,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Kill switch engaged"
+        },
+        {
+          "timestamp_us": 1638316623,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Flight termination active"
+        },
+        {
+          "timestamp_us": 1638317518,
+          "level": 54,
+          "message": "[vehicle_imu] ACC 1 (3407906) offset committed: [0.014 -0.057 0.136]->[-0.179 -0.055 0.123])"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 71,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry",
+        "offboard_control_mode"
+      ]
+    },
+    {
+      "path": "/home/jikl62/桌面/log_0_2026-10-20-11-19-52.ulg",
+      "bytes": 731537,
+      "sha256": "6aba5c784d2728f050a551375dbc9d8715dbbd386b60f5f68907233d3135f1d0",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 198212716,
+      "last_timestamp_us": 214616021,
+      "header_duration_s": 16.403305,
+      "nav_states": [
+        {
+          "value": 1,
+          "name": "Altitude"
+        },
+        {
+          "value": 14,
+          "name": "Offboard"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 198012411,
+          "nav_state": 14,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 210146463,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 1
+        },
+        {
+          "timestamp_us": 213619043,
+          "nav_state": 14,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 162,
+          "finite_samples": 162,
+          "min": -1.3225029706954956,
+          "max": 0.7337450385093689,
+          "first": 0.7122740149497986,
+          "last": -0.6314036250114441
+        },
+        "vz": {
+          "samples": 162,
+          "finite_samples": 162,
+          "min": -0.4261063039302826,
+          "max": 0.019234130159020424,
+          "first": 0.008530773222446442,
+          "last": -0.14088228344917297
+        },
+        "z_deriv": {
+          "samples": 162,
+          "finite_samples": 162,
+          "min": -0.4384979009628296,
+          "max": 0.28280124068260193,
+          "first": 0.0004083587264176458,
+          "last": 0.28280124068260193
+        },
+        "z_valid": {
+          "samples": 162,
+          "finite_samples": 162,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 162,
+          "finite_samples": 162,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 162,
+          "finite_samples": 162,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "vz_reset_counter": {
+          "samples": 162,
+          "finite_samples": 162,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        }
+      },
+      "local_position_armed_by_nav": {
+        "1": {
+          "z": {
+            "samples": 34,
+            "finite_samples": 34,
+            "min": -1.3225029706954956,
+            "max": -0.9266068339347839,
+            "first": -1.0323262214660645,
+            "last": -0.9266068339347839
+          },
+          "vz": {
+            "samples": 34,
+            "finite_samples": 34,
+            "min": -0.3259316384792328,
+            "max": -0.19299329817295074,
+            "first": -0.3259316384792328,
+            "last": -0.19299329817295074
+          },
+          "z_deriv": {
+            "samples": 34,
+            "finite_samples": 34,
+            "min": -0.18761029839515686,
+            "max": 0.2237173318862915,
+            "first": -0.06220238283276558,
+            "last": 0.2237173318862915
+          },
+          "z_valid": {
+            "samples": 34,
+            "finite_samples": 34,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 34,
+            "finite_samples": 34,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 34,
+            "finite_samples": 34,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 34,
+            "finite_samples": 34,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        },
+        "14": {
+          "z": {
+            "samples": 118,
+            "finite_samples": 118,
+            "min": -1.0302226543426514,
+            "max": 0.7337450385093689,
+            "first": 0.7122740149497986,
+            "last": -1.0302226543426514
+          },
+          "vz": {
+            "samples": 118,
+            "finite_samples": 118,
+            "min": -0.4261063039302826,
+            "max": 0.019234130159020424,
+            "first": 0.008530773222446442,
+            "last": -0.3308388292789459
+          },
+          "z_deriv": {
+            "samples": 118,
+            "finite_samples": 118,
+            "min": -0.4384979009628296,
+            "max": 0.017081106081604958,
+            "first": 0.0004083587264176458,
+            "last": -0.06983384490013123
+          },
+          "z_valid": {
+            "samples": 118,
+            "finite_samples": 118,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 118,
+            "finite_samples": 118,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 118,
+            "finite_samples": 118,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 118,
+            "finite_samples": 118,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 198516002,
+          "z_reset_counter": 1,
+          "vz_reset_counter": 1
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 198521531,
+          "quat_reset_counter": 0
+        }
+      ],
+      "offboard_control_mode": {
+        "present": true,
+        "samples": 108,
+        "first_us": 198494740,
+        "last_us": 209114193,
+        "max_logged_interval_s": 0.100419
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 198012396,
+          "level": 54,
+          "message": "[commander] Armed by external command\t"
+        },
+        {
+          "timestamp_us": 198014223,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 198211092,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-20/03_19_37.ulg\t"
+        },
+        {
+          "timestamp_us": 198212711,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-20/03_19_37.ulg"
+        },
+        {
+          "timestamp_us": 200617985,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 210146377,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 211613178,
+          "level": 54,
+          "message": "[commander] Landing detected\t"
+        },
+        {
+          "timestamp_us": 213618922,
+          "level": 54,
+          "message": "[commander] Disarmed by landing\t"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 33,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry"
+      ]
+    },
+    {
+      "path": "/home/jikl62/桌面/log_10_2026-11-15-16-47-56.ulg",
+      "bytes": 418786,
+      "sha256": "8d510d25fbea1e6473939765532ca051705f18cbf967a740fbe05f992490ee11",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 62993146,
+      "last_timestamp_us": 70670498,
+      "header_duration_s": 7.677352,
+      "nav_states": [
+        {
+          "value": 15,
+          "name": "Stabilized"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 62932884,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 69672397,
+          "nav_state": 15,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 76,
+          "finite_samples": 76,
+          "min": -1.4853109121322632,
+          "max": 0.09694458544254303,
+          "first": 0.09694458544254303,
+          "last": -1.4853109121322632
+        },
+        "vz": {
+          "samples": 76,
+          "finite_samples": 76,
+          "min": -0.5196226239204407,
+          "max": 0.0002701034536585212,
+          "first": 0.0002701034536585212,
+          "last": -0.49831417202949524
+        },
+        "z_deriv": {
+          "samples": 76,
+          "finite_samples": 76,
+          "min": -0.5049888491630554,
+          "max": -0.0025469365064054728,
+          "first": -0.0025469365064054728,
+          "last": -0.36245793104171753
+        },
+        "z_valid": {
+          "samples": 76,
+          "finite_samples": 76,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 76,
+          "finite_samples": 76,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 76,
+          "finite_samples": 76,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "vz_reset_counter": {
+          "samples": 76,
+          "finite_samples": 76,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        }
+      },
+      "local_position_armed_by_nav": {
+        "15": {
+          "z": {
+            "samples": 66,
+            "finite_samples": 66,
+            "min": -1.178031325340271,
+            "max": 0.09694458544254303,
+            "first": 0.09694458544254303,
+            "last": -1.178031325340271
+          },
+          "vz": {
+            "samples": 66,
+            "finite_samples": 66,
+            "min": -0.5196226239204407,
+            "max": 0.0002701034536585212,
+            "first": 0.0002701034536585212,
+            "last": -0.5126804709434509
+          },
+          "z_deriv": {
+            "samples": 66,
+            "finite_samples": 66,
+            "min": -0.5049888491630554,
+            "max": -0.0025469365064054728,
+            "first": -0.0025469365064054728,
+            "last": -0.4848995804786682
+          },
+          "z_valid": {
+            "samples": 66,
+            "finite_samples": 66,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 66,
+            "finite_samples": 66,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 66,
+            "finite_samples": 66,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 66,
+            "finite_samples": 66,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 63264452,
+          "z_reset_counter": 1,
+          "vz_reset_counter": 1
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 63263943,
+          "quat_reset_counter": 2
+        }
+      ],
+      "offboard_control_mode": {
+        "present": false,
+        "samples": 0,
+        "first_us": null,
+        "last_us": null,
+        "max_logged_interval_s": null
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 62945765,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 62986093,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/sess100/log106.ulg\t"
+        },
+        {
+          "timestamp_us": 62991556,
+          "level": 54,
+          "message": "[logger] closed logfile, bytes written: 138803"
+        },
+        {
+          "timestamp_us": 62993142,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/sess100/log106.ulg"
+        },
+        {
+          "timestamp_us": 64132308,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 65835730,
+          "level": 52,
+          "message": "[uxrce_dds_client] initial agent ping round exhausted, retrying transport"
+        },
+        {
+          "timestamp_us": 66836129,
+          "level": 51,
+          "message": "[uxrce_dds_client] session setup failed, will retry now"
+        },
+        {
+          "timestamp_us": 66836591,
+          "level": 54,
+          "message": "[uxrce_dds_client] init serial /dev/ttyS3 @ 115200 baud"
+        },
+        {
+          "timestamp_us": 69672387,
+          "level": 54,
+          "message": "[commander] Disarmed by RC switch\t"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 10,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry",
+        "offboard_control_mode",
+        "trajectory_setpoint"
+      ]
+    },
+    {
+      "path": "/home/jikl62/桌面/log_1_2026-10-20-11-20-32.ulg",
+      "bytes": 145634,
+      "sha256": "a426241fb8985a2dfed617bc9f86f19e3e4c1a44608e12532f1e05f4409efb9c",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 253484982,
+      "last_timestamp_us": 254476675,
+      "header_duration_s": 0.991693,
+      "nav_states": [
+        {
+          "value": 15,
+          "name": "Stabilized"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 253478495,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 253815075,
+          "nav_state": 15,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 8,
+          "finite_samples": 8,
+          "min": 0.8556150197982788,
+          "max": 0.8595981597900391,
+          "first": 0.8556150197982788,
+          "last": 0.8595981597900391
+        },
+        "vz": {
+          "samples": 8,
+          "finite_samples": 8,
+          "min": 0.01752195507287979,
+          "max": 0.020821604877710342,
+          "first": 0.020821604877710342,
+          "last": 0.017558272927999496
+        },
+        "z_deriv": {
+          "samples": 8,
+          "finite_samples": 8,
+          "min": 0.008481849916279316,
+          "max": 0.01298920251429081,
+          "first": 0.01298920251429081,
+          "last": 0.008672257885336876
+        },
+        "z_valid": {
+          "samples": 8,
+          "finite_samples": 8,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 8,
+          "finite_samples": 8,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 8,
+          "finite_samples": 8,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "vz_reset_counter": {
+          "samples": 8,
+          "finite_samples": 8,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        }
+      },
+      "local_position_armed_by_nav": {
+        "15": {
+          "z": {
+            "samples": 2,
+            "finite_samples": 2,
+            "min": 0.8556150197982788,
+            "max": 0.8557754158973694,
+            "first": 0.8556150197982788,
+            "last": 0.8557754158973694
+          },
+          "vz": {
+            "samples": 2,
+            "finite_samples": 2,
+            "min": 0.020599843934178352,
+            "max": 0.020821604877710342,
+            "first": 0.020821604877710342,
+            "last": 0.020599843934178352
+          },
+          "z_deriv": {
+            "samples": 2,
+            "finite_samples": 2,
+            "min": 0.01280241645872593,
+            "max": 0.01298920251429081,
+            "first": 0.01298920251429081,
+            "last": 0.01280241645872593
+          },
+          "z_valid": {
+            "samples": 2,
+            "finite_samples": 2,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 2,
+            "finite_samples": 2,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 2,
+            "finite_samples": 2,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 2,
+            "finite_samples": 2,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 253789633,
+          "z_reset_counter": 1,
+          "vz_reset_counter": 1
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 253789101,
+          "quat_reset_counter": 0
+        }
+      ],
+      "offboard_control_mode": {
+        "present": false,
+        "samples": 0,
+        "first_us": null,
+        "last_us": null,
+        "max_logged_interval_s": null
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 253478485,
+          "level": 54,
+          "message": "[commander] Armed by RC switch\t"
+        },
+        {
+          "timestamp_us": 253482123,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 253483098,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-20/03_20_32.ulg\t"
+        },
+        {
+          "timestamp_us": 253484978,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-20/03_20_32.ulg"
+        },
+        {
+          "timestamp_us": 253815062,
+          "level": 54,
+          "message": "[commander] Disarmed by RC switch\t"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 17,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry",
+        "offboard_control_mode"
+      ]
+    },
+    {
+      "path": "/home/jikl62/桌面/log_2_2026-10-20-11-21-14.ulg",
+      "bytes": 780170,
+      "sha256": "3dbc919761a11325846c75dd804249b3c477317d8e8b13d9a9ea681f8c44d3c1",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 278444463,
+      "last_timestamp_us": 295926366,
+      "header_duration_s": 17.481903,
+      "nav_states": [
+        {
+          "value": 1,
+          "name": "Altitude"
+        },
+        {
+          "value": 14,
+          "name": "Offboard"
+        },
+        {
+          "value": 15,
+          "name": "Stabilized"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 278438333,
+          "nav_state": 14,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 291436427,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 1
+        },
+        {
+          "timestamp_us": 294077982,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 294397185,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 294926318,
+          "nav_state": 15,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 173,
+          "finite_samples": 173,
+          "min": -1.5874043703079224,
+          "max": 0.9606426954269409,
+          "first": 0.8604505658149719,
+          "last": -0.8521778583526611
+        },
+        "vz": {
+          "samples": 173,
+          "finite_samples": 173,
+          "min": -0.5059840083122253,
+          "max": 0.034158557653427124,
+          "first": 0.012734428979456425,
+          "last": -0.19530771672725677
+        },
+        "z_deriv": {
+          "samples": 173,
+          "finite_samples": 173,
+          "min": -0.4800214469432831,
+          "max": 0.30787673592567444,
+          "first": 0.017002446576952934,
+          "last": 0.30787673592567444
+        },
+        "z_valid": {
+          "samples": 173,
+          "finite_samples": 173,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 173,
+          "finite_samples": 173,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 173,
+          "finite_samples": 173,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "vz_reset_counter": {
+          "samples": 173,
+          "finite_samples": 173,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        }
+      },
+      "local_position_armed_by_nav": {
+        "1": {
+          "z": {
+            "samples": 30,
+            "finite_samples": 30,
+            "min": -1.5874043703079224,
+            "max": -1.1801849603652954,
+            "first": -1.1801849603652954,
+            "last": -1.3455266952514648
+          },
+          "vz": {
+            "samples": 30,
+            "finite_samples": 30,
+            "min": -0.4102589786052704,
+            "max": -0.30663254857063293,
+            "first": -0.4068944752216339,
+            "last": -0.30663254857063293
+          },
+          "z_deriv": {
+            "samples": 30,
+            "finite_samples": 30,
+            "min": -0.2625058591365814,
+            "max": 0.12053819745779037,
+            "first": -0.14530393481254578,
+            "last": 0.12053819745779037
+          },
+          "z_valid": {
+            "samples": 30,
+            "finite_samples": 30,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 30,
+            "finite_samples": 30,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 30,
+            "finite_samples": 30,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 30,
+            "finite_samples": 30,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        },
+        "14": {
+          "z": {
+            "samples": 128,
+            "finite_samples": 128,
+            "min": -1.170406460762024,
+            "max": 0.9606426954269409,
+            "first": 0.8604505658149719,
+            "last": -1.170406460762024
+          },
+          "vz": {
+            "samples": 128,
+            "finite_samples": 128,
+            "min": -0.5059840083122253,
+            "max": 0.034158557653427124,
+            "first": 0.012734428979456425,
+            "last": -0.41068723797798157
+          },
+          "z_deriv": {
+            "samples": 128,
+            "finite_samples": 128,
+            "min": -0.4800214469432831,
+            "max": 0.04832973703742027,
+            "first": 0.017002446576952934,
+            "last": -0.15379217267036438
+          },
+          "z_valid": {
+            "samples": 128,
+            "finite_samples": 128,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 128,
+            "finite_samples": 128,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 128,
+            "finite_samples": 128,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 128,
+            "finite_samples": 128,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        },
+        "15": {
+          "z": {
+            "samples": 5,
+            "finite_samples": 5,
+            "min": -1.3111768960952759,
+            "max": -1.1764767169952393,
+            "first": -1.3111768960952759,
+            "last": -1.1764767169952393
+          },
+          "vz": {
+            "samples": 5,
+            "finite_samples": 5,
+            "min": -0.2988961338996887,
+            "max": -0.26705044507980347,
+            "first": -0.2988961338996887,
+            "last": -0.26705044507980347
+          },
+          "z_deriv": {
+            "samples": 5,
+            "finite_samples": 5,
+            "min": 0.14521825313568115,
+            "max": 0.22383883595466614,
+            "first": 0.14521825313568115,
+            "last": 0.22383883595466614
+          },
+          "z_valid": {
+            "samples": 5,
+            "finite_samples": 5,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 5,
+            "finite_samples": 5,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 5,
+            "finite_samples": 5,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 5,
+            "finite_samples": 5,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 278766429,
+          "z_reset_counter": 1,
+          "vz_reset_counter": 1
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 278771565,
+          "quat_reset_counter": 0
+        }
+      ],
+      "offboard_control_mode": {
+        "present": true,
+        "samples": 118,
+        "first_us": 278728716,
+        "last_us": 290347726,
+        "max_logged_interval_s": 0.100405
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 278438316,
+          "level": 54,
+          "message": "[commander] Armed by external command\t"
+        },
+        {
+          "timestamp_us": 278440579,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 278441989,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-20/03_20_57.ulg\t"
+        },
+        {
+          "timestamp_us": 278444459,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-20/03_20_57.ulg"
+        },
+        {
+          "timestamp_us": 281002879,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 291436225,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 292917884,
+          "level": 54,
+          "message": "[commander] Landing detected\t"
+        },
+        {
+          "timestamp_us": 294925899,
+          "level": 54,
+          "message": "[commander] Disarmed by landing\t"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 32,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry"
+      ]
+    },
+    {
+      "path": "/home/jikl62/桌面/log_3_2026-10-20-11-22-20.ulg",
+      "bytes": 680876,
+      "sha256": "a68c79168746d1d99fc0f980e0852c5d5a71ed01e117c2b2c9c316bd05c0f8ed",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 347888050,
+      "last_timestamp_us": 362652952,
+      "header_duration_s": 14.764902,
+      "nav_states": [
+        {
+          "value": 1,
+          "name": "Altitude"
+        },
+        {
+          "value": 14,
+          "name": "Offboard"
+        },
+        {
+          "value": 15,
+          "name": "Stabilized"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 347883079,
+          "nav_state": 14,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 360049212,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 360424955,
+          "nav_state": 15,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 361654173,
+          "nav_state": 15,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 146,
+          "finite_samples": 146,
+          "min": -1.5591528415679932,
+          "max": 0.7590845227241516,
+          "first": 0.7270510196685791,
+          "last": -1.129891037940979
+        },
+        "vz": {
+          "samples": 146,
+          "finite_samples": 146,
+          "min": -0.5227567553520203,
+          "max": 0.03219986334443092,
+          "first": 0.021124042570590973,
+          "last": -0.2112876921892166
+        },
+        "z_deriv": {
+          "samples": 146,
+          "finite_samples": 146,
+          "min": -0.4307103455066681,
+          "max": 0.2898036241531372,
+          "first": -0.0007193915662355721,
+          "last": 0.2898036241531372
+        },
+        "z_valid": {
+          "samples": 146,
+          "finite_samples": 146,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 146,
+          "finite_samples": 146,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 146,
+          "finite_samples": 146,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "vz_reset_counter": {
+          "samples": 146,
+          "finite_samples": 146,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        }
+      },
+      "local_position_armed_by_nav": {
+        "1": {
+          "z": {
+            "samples": 4,
+            "finite_samples": 4,
+            "min": -1.5320367813110352,
+            "max": -1.4863722324371338,
+            "first": -1.4863722324371338,
+            "last": -1.5320367813110352
+          },
+          "vz": {
+            "samples": 4,
+            "finite_samples": 4,
+            "min": -0.5227567553520203,
+            "max": -0.5022119879722595,
+            "first": -0.5104124546051025,
+            "last": -0.5022119879722595
+          },
+          "z_deriv": {
+            "samples": 4,
+            "finite_samples": 4,
+            "min": -0.26388347148895264,
+            "max": -0.2282242476940155,
+            "first": -0.25836285948753357,
+            "last": -0.2282242476940155
+          },
+          "z_valid": {
+            "samples": 4,
+            "finite_samples": 4,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 4,
+            "finite_samples": 4,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 4,
+            "finite_samples": 4,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 4,
+            "finite_samples": 4,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        },
+        "14": {
+          "z": {
+            "samples": 120,
+            "finite_samples": 120,
+            "min": -1.4684014320373535,
+            "max": 0.7590845227241516,
+            "first": 0.7270510196685791,
+            "last": -1.4684014320373535
+          },
+          "vz": {
+            "samples": 120,
+            "finite_samples": 120,
+            "min": -0.5175600647926331,
+            "max": 0.03219986334443092,
+            "first": 0.021124042570590973,
+            "last": -0.512713611125946
+          },
+          "z_deriv": {
+            "samples": 120,
+            "finite_samples": 120,
+            "min": -0.4307103455066681,
+            "max": 0.018426191061735153,
+            "first": -0.0007193915662355721,
+            "last": -0.26890912652015686
+          },
+          "z_valid": {
+            "samples": 120,
+            "finite_samples": 120,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 120,
+            "finite_samples": 120,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 120,
+            "finite_samples": 120,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 120,
+            "finite_samples": 120,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        },
+        "15": {
+          "z": {
+            "samples": 12,
+            "finite_samples": 12,
+            "min": -1.5591528415679932,
+            "max": -1.4304187297821045,
+            "first": -1.5440037250518799,
+            "last": -1.4304187297821045
+          },
+          "vz": {
+            "samples": 12,
+            "finite_samples": 12,
+            "min": -0.4905688166618347,
+            "max": -0.34475594758987427,
+            "first": -0.4905688166618347,
+            "last": -0.34475594758987427
+          },
+          "z_deriv": {
+            "samples": 12,
+            "finite_samples": 12,
+            "min": -0.20902793109416962,
+            "max": 0.09553985297679901,
+            "first": -0.20902793109416962,
+            "last": 0.09553985297679901
+          },
+          "z_valid": {
+            "samples": 12,
+            "finite_samples": 12,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 12,
+            "finite_samples": 12,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 12,
+            "finite_samples": 12,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 12,
+            "finite_samples": 12,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 348206414,
+          "z_reset_counter": 1,
+          "vz_reset_counter": 1
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 348211648,
+          "quat_reset_counter": 0
+        }
+      ],
+      "offboard_control_mode": {
+        "present": true,
+        "samples": 121,
+        "first_us": 348168258,
+        "last_us": 360039180,
+        "max_logged_interval_s": 0.100483
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 347883064,
+          "level": 54,
+          "message": "[commander] Armed by external command\t"
+        },
+        {
+          "timestamp_us": 347885161,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 347886201,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-20/03_22_06.ulg\t"
+        },
+        {
+          "timestamp_us": 347888045,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-20/03_22_06.ulg"
+        },
+        {
+          "timestamp_us": 350744151,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 361475187,
+          "level": 54,
+          "message": "[commander] Landing detected\t"
+        },
+        {
+          "timestamp_us": 361654159,
+          "level": 54,
+          "message": "[commander] Disarmed by RC switch\t"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 31,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry"
+      ]
+    },
+    {
+      "path": "/home/jikl62/桌面/log_4_2026-10-20-11-23-54.ulg",
+      "bytes": 857825,
+      "sha256": "6de756522288ccf57df545ec9f7f98b5e9437bb9861b7c03e39bb3c7c81f5b0f",
+      "firmware_hash": "07983bfb894b9372d7520d43ac10dc792d0b4b9f",
+      "header_start_us": 437477201,
+      "last_timestamp_us": 456770291,
+      "header_duration_s": 19.29309,
+      "nav_states": [
+        {
+          "value": 1,
+          "name": "Altitude"
+        },
+        {
+          "value": 14,
+          "name": "Offboard"
+        }
+      ],
+      "status_transitions": [
+        {
+          "timestamp_us": 437471664,
+          "nav_state": 14,
+          "arming_state": 2,
+          "failsafe": 0
+        },
+        {
+          "timestamp_us": 450906580,
+          "nav_state": 1,
+          "arming_state": 2,
+          "failsafe": 1
+        },
+        {
+          "timestamp_us": 455771495,
+          "nav_state": 14,
+          "arming_state": 1,
+          "failsafe": 0
+        }
+      ],
+      "local_position_all": {
+        "z": {
+          "samples": 191,
+          "finite_samples": 191,
+          "min": -2.511939525604248,
+          "max": 0.8812134265899658,
+          "first": 0.8129370808601379,
+          "last": -2.428323984146118
+        },
+        "vz": {
+          "samples": 191,
+          "finite_samples": 191,
+          "min": -1.079813838005066,
+          "max": 0.04688398167490959,
+          "first": 0.023601533845067024,
+          "last": -0.2660348415374756
+        },
+        "z_deriv": {
+          "samples": 191,
+          "finite_samples": 191,
+          "min": -0.7962169051170349,
+          "max": 0.1981818526983261,
+          "first": 0.00614630151540041,
+          "last": -0.11286023259162903
+        },
+        "z_valid": {
+          "samples": 191,
+          "finite_samples": 191,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "v_z_valid": {
+          "samples": 191,
+          "finite_samples": 191,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "z_reset_counter": {
+          "samples": 191,
+          "finite_samples": 191,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        },
+        "vz_reset_counter": {
+          "samples": 191,
+          "finite_samples": 191,
+          "min": 1.0,
+          "max": 1.0,
+          "first": 1,
+          "last": 1
+        }
+      },
+      "local_position_armed_by_nav": {
+        "1": {
+          "z": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": -2.297647476196289,
+            "max": -0.6952654123306274,
+            "first": -0.6973166465759277,
+            "last": -2.297647476196289
+          },
+          "vz": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": -1.079813838005066,
+            "max": 0.009750104509294033,
+            "first": -0.3031708896160126,
+            "last": -0.308319091796875
+          },
+          "z_deriv": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": -0.7962169051170349,
+            "max": 0.070194773375988,
+            "first": 0.00606149947270751,
+            "last": -0.30880942940711975
+          },
+          "z_valid": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 48,
+            "finite_samples": 48,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        },
+        "14": {
+          "z": {
+            "samples": 133,
+            "finite_samples": 133,
+            "min": -0.721710205078125,
+            "max": 0.8812134265899658,
+            "first": 0.8129370808601379,
+            "last": -0.7085763216018677
+          },
+          "vz": {
+            "samples": 133,
+            "finite_samples": 133,
+            "min": -0.4970606565475464,
+            "max": 0.04688398167490959,
+            "first": 0.023601533845067024,
+            "last": -0.11211927980184555
+          },
+          "z_deriv": {
+            "samples": 133,
+            "finite_samples": 133,
+            "min": -0.4455530345439911,
+            "max": 0.1981818526983261,
+            "first": 0.00614630151540041,
+            "last": 0.1981818526983261
+          },
+          "z_valid": {
+            "samples": 133,
+            "finite_samples": 133,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "v_z_valid": {
+            "samples": 133,
+            "finite_samples": 133,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "z_reset_counter": {
+            "samples": 133,
+            "finite_samples": 133,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          },
+          "vz_reset_counter": {
+            "samples": 133,
+            "finite_samples": 133,
+            "min": 1.0,
+            "max": 1.0,
+            "first": 1,
+            "last": 1
+          }
+        }
+      },
+      "vertical_reset_transitions": [
+        {
+          "timestamp_us": 437796483,
+          "z_reset_counter": 1,
+          "vz_reset_counter": 1
+        }
+      ],
+      "attitude_reset_transitions": [
+        {
+          "timestamp_us": 437795663,
+          "quat_reset_counter": 0
+        }
+      ],
+      "offboard_control_mode": {
+        "present": true,
+        "samples": 123,
+        "first_us": 437755189,
+        "last_us": 449878727,
+        "max_logged_interval_s": 0.100417
+      },
+      "logged_messages": [
+        {
+          "timestamp_us": 437471648,
+          "level": 54,
+          "message": "[commander] Armed by external command\t"
+        },
+        {
+          "timestamp_us": 437474638,
+          "level": 54,
+          "message": "[logger] Start file log (type: full)"
+        },
+        {
+          "timestamp_us": 437475761,
+          "level": 54,
+          "message": "[logger] [logger] /fs/microsd/log/2026-10-20/03_23_36.ulg\t"
+        },
+        {
+          "timestamp_us": 437477196,
+          "level": 54,
+          "message": "[logger] Opened full log file: /fs/microsd/log/2026-10-20/03_23_36.ulg"
+        },
+        {
+          "timestamp_us": 440224499,
+          "level": 54,
+          "message": "[commander] Takeoff detected\t"
+        },
+        {
+          "timestamp_us": 450762074,
+          "level": 52,
+          "message": "[commander] Kill engaged\t"
+        },
+        {
+          "timestamp_us": 450785016,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Flight termination active"
+        },
+        {
+          "timestamp_us": 450906246,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 451954280,
+          "level": 52,
+          "message": "[failsafe] Failsafe activated\t"
+        },
+        {
+          "timestamp_us": 454051042,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Flight termination active"
+        },
+        {
+          "timestamp_us": 455770108,
+          "level": 54,
+          "message": "[commander] Disarmed by kill-switch\t"
+        },
+        {
+          "timestamp_us": 456098749,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Kill switch engaged"
+        },
+        {
+          "timestamp_us": 456099214,
+          "level": 52,
+          "message": "[health_and_arming_checks] Preflight Fail: Flight termination active"
+        }
+      ],
+      "dropouts": [],
+      "event_samples": 67,
+      "missing_topics": [
+        "vehicle_visual_odometry",
+        "vehicle_odometry"
+      ]
+    }
+  ],
+  "counts": {
+    "logs": 12,
+    "position_logs": 0,
+    "offboard_logs": 6
+  }
+}
